@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-""" -- a versatile microsimulation free software"""
+""" -- simulating French public servants' careers"""
 
 
 from setuptools import setup, find_packages
@@ -10,8 +10,8 @@ from setuptools import setup, find_packages
 setup(
     name = 'Fonction-Publique',
     version = '0.1',
-    author = 'OpenFisca Team',
-    author_email = 'contact@openfisca.fr',
+    author = 'IPP Team',
+    author_email = 'lisa.degalle@gmail.com',
     classifiers = [
         "Development Status :: 2 - Pre-Alpha",
         "License :: OSI Approved :: GNU Affero General Public License v3",
@@ -20,12 +20,12 @@ setup(
         "Topic :: Scientific/Engineering :: Information Analysis",
         ],
     description = u'',
-    keywords = 'benefit france microsimulation social tax',
+    keywords = 'public servant france microsimulation career earnings',
     license = 'http://www.fsf.org/licensing/licenses/agpl-3.0.html',
-    url = 'https://github.com/openfisca/openfisca-france',
+    url = 'https://git.framasoft.org/ipp/fonction-publique',
 
     data_files = [
-        ('share/openfisca/openfisca-france', ['LICENSE', 'README.md']),
+        ('share/openfisca/fonction-publique', ['LICENSE', 'README.md']),
         ],
 
     include_package_data = True,  # Will read MANIFEST.in
