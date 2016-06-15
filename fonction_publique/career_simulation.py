@@ -171,7 +171,6 @@ class AgentFpt:
             (grille_adjoint_technique['echelon'] == self.echelon) &
             (grille_adjoint_technique['date_effet_grille'] < str(instant))
             ]
-        print indiv_grille
         indiv_grille = indiv_grille[
             (grille_adjoint_technique['date_effet_grille'] == indiv_grille['date_effet_grille'].max())
         ]
@@ -240,7 +239,6 @@ class AgentFpt:
                     grade.append(self.grade)
                     identif.append(self.identif)
         career_states_formatted = map(periods.instant, career_states)
-        print career_states_formatted
         result = [identif, grade, echelon, career_states_formatted]
         result = pd.DataFrame(result).transpose()[:-1]
         result.columns = ("id", "code_grade_NEG", "echelon", "date_du_changement")

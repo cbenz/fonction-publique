@@ -39,3 +39,5 @@ def test_end_period_echelon_grille_in_effect_at_start():
         "Got {} instead of {}".format(
             agent1.end_echelon_grille_in_effect_at_start(True),
             periods.instant('2007-11-30'))
+
+def test_end_period_echelon_grille_in_effect_at_start():
