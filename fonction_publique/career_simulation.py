@@ -10,10 +10,9 @@ from datetime import datetime
 from time import gmtime, strftime
 
 asset_path = os.path.join(
-    pkg_resources.get_distribution('openfisca_france').location,
-    'openfisca_france',
+    pkg_resources.get_distribution('fonction_publique').location,
+    'fonction_publique',
     'assets',
-    'grilles_fonction_publique',
     )
 
 grille_adjoint_technique = os.path.join(
