@@ -79,6 +79,12 @@ class AgentFpt:
         period_at_end = self._echelon_duration_with_grille_in_effect_at_end(speed)
         return period_at_start != period_at_end
 
+    def _duration_in_career_state(self, speed):
+        period_to_offset = (self._echelon_duration_with_grille_in_effect(speed))
+        duration_in_career_state = periods.period('month', self.period).offset(period_to_offset)
+        duration_in_career_state = periods.period('month', self.period, period_to_offset)
+        return duration_in_career_state
+
     def _echelon_duration_with_grille_in_effect(self, speed):
         echelon_max = self._echelon_max()
         next_echelon = self.echelon + 1
@@ -157,10 +163,11 @@ class AgentFpt:
     def get_career_states_in_grade(self, speed):
         self._conditions_on_agent()
         career_states = [self.period]
+        period_to_offset = (self._echelon_duration_with_grille_in_effect(speed))
+        durations_in_career_states = [periods.period(u'month', self.period, period_to_offset)]
         echelon = []
         grade = []
         identif = []
-        # grille_in_effect = []
         if self.echelon == self._echelon_max():
             echelon.append(self.echelon)
             grade.append(self.grade)
@@ -178,18 +185,22 @@ class AgentFpt:
                 identif.append(self.identif)
                 setattr(self, 'period', career_state)
                 setattr(self, 'echelon', self.echelon + 1)
-
+                if self.echelon < self._echelon_max():
+                    duration_in_career_state = self._duration_in_career_state(speed)
+                    durations_in_career_states.append(duration_in_career_state)
             if self.echelon == self._echelon_max():
                 career_state = career_state
+                duration_in_career_state = 0
                 career_states.append(career_state)
+                durations_in_career_states.append(duration_in_career_state)
                 echelon.append(self.echelon)
                 grade.append(self.grade)
                 identif.append(self.identif)
 
         career_states_formatted = map(periods.instant, career_states)
-        result = [identif, grade, echelon, career_states_formatted]
+        result = [identif, grade, echelon, career_states_formatted, durations_in_career_states]
         result = pd.DataFrame(result).transpose()[:-1]
-        result.columns = ("id", "code_grade_NEG", "echelon", "date_du_changement")
+        result.columns = ("id", "code_grade_NEG", "echelon", "date_du_changement", "duree_dans_etat")
         return result
 
     def _grille_date_effet_at_start(self):
