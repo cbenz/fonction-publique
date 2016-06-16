@@ -40,6 +40,7 @@ agent9 = AgentFpt(3, '2003-11', 500, 1000)
 # agent3's acceedes to echelon 4 in 2003. However, we don't have information on the legislation back then.
 # This raises an error is handled in _conditions_on_agent
 
+
 def test_grid_date_effet_at_start():
     assert agent1._grille_date_effet_at_start() == periods.instant('2006-11-01')  # TODO write error message
 

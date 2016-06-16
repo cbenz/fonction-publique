@@ -169,7 +169,7 @@ class AgentFpt:
             result = pd.DataFrame(result).transpose()[:]
             return result
         else:
-            while self.echelon <= self._echelon_max():
+            while self.echelon < self._echelon_max():
                 career_state = self._date_change_career_state(speed)
                 career_state = periods.period(career_state)
                 career_states.append(career_state)
