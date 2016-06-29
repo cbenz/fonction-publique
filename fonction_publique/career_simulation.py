@@ -9,18 +9,17 @@ from datetime import datetime
 
 from time import gmtime, strftime
 
+
 asset_path = os.path.join(
     pkg_resources.get_distribution('fonction_publique').location,
     'fonction_publique',
     'assets',
     )
-
-grille_adjoint_technique = os.path.join(
+grille_adjoint_technique_path = os.path.join(
     asset_path,
     'FPT_adjoint_technique.xlsx',
     )
-
-grille_adjoint_technique = pd.read_excel(grille_adjoint_technique, encoding='utf-8')
+grille_adjoint_technique = pd.read_excel(grille_adjoint_technique_path, encoding='utf-8')
 dates_effet_grille = grille_adjoint_technique['date_effet_grille']
 
 
@@ -28,21 +27,7 @@ donnees_adjoints_techniques = os.path.join(
     asset_path,
     'donnees_indiv_adjoint_technique_test.xlsx',
     )
-
 donnees_adjoints_techniques = pd.read_excel(donnees_adjoints_techniques)
-
-
-datefunc = lambda x: datetime.strptime(x, '%Y-%m-%d')
-
-
-def timestampToDate(timestamp, datePattern):
-    return strftime("%b %d %Y %H:%M", gmtime(float(timestamp)))
-
-
-def days_between(m1, m2):
-    m1 = datetime.strptime(m1, "%Y-%m")
-    m2 = datetime.strptime(m2, "%Y-%m-%d")
-    return ((m2 - m1).days)
 
 
 class AgentFpt:
@@ -283,6 +268,24 @@ class AgentFpt:
             date_debut_effet = date_debut_effet.start
 
         return date_debut_effet
+
+
+def datefunc(x):
+    datetime.strptime(x, '%Y-%m-%d')
+
+
+def timestampToDate(timestamp, datePattern):
+    return strftime("%b %d %Y %H:%M", gmtime(float(timestamp)))
+
+
+def days_between(m1, m2):
+    m1 = datetime.strptime(m1, "%Y-%m")
+    m2 = datetime.strptime(m2, "%Y-%m-%d")
+    return ((m2 - m1).days)
+
+
+
+
 
 #agents_fpt_identif = [agent1.identif, agent2.identif, agent5.identif]
 #agents_fpt_echelon = [agent1.echelon, agent2.echelon, agent5.echelon]
