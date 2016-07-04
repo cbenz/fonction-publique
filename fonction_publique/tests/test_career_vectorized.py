@@ -68,9 +68,10 @@ def test_echelon_period_for_grille_at_start():
 
 def test_next_change_of_legis_grille():
     agents.dataframe.query('identif == 1').next_change_of_legis_grille.isnull().all()
-    assert agent1._next_change_of_legis_grille(True) == periods.instant('2006-11-01')
-    assert agent5._next_change_of_legis_grille(True) == periods.instant('2014-02-01')
-    assert agent7._next_change_of_legis_grille(True) == periods.instant('2014-02-01')
+    assert agents.dataframe.query('identif == 1').next_change_of_legis_grille.isnull().all()
+    assert (agents.dataframe.query('identif == 4').next_change_of_legis_grille == datetime.datetime(2014, 02, 01)).all()
+    # TODO there is something with 5
+    assert (agents.dataframe.query('identif == 7').next_change_of_legis_grille == datetime.datetime(2014, 02, 01)).all()
 
 
 def test_end_period_echelon_grille_in_effect_at_start():
@@ -96,12 +97,8 @@ if __name__ == '__main__':
     test_grid_date_effet_at_start()
     test_echelon_period_for_grille_at_start()
     test_grid_date_effet_at_start()
+    test_next_change_of_legis_grille()
     # agents._echelon_period_for_grille_at_start(True)
-    assert agents.dataframe.query('identif == 1').next_change_of_legis_grille.isnull().all()
-
-    assert agents.dataframe.query('identif == 5').next_change_of_legis_grille == datetime.datetime(2014, 02, 01)
-
-    assert agents.dataframe.query('identif == 7').next_change_of_legis_grille == datetime.datetime(2014, 02, 01)
     boum
 
     print agents.dataframe

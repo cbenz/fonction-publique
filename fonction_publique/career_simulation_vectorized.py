@@ -282,9 +282,12 @@ class AgentFpt:
 
                         print dataframe
                 #
-
                 previous_start_date = start_date
-
+            #
+            dataframe['end_echelon_grille_in_effect_at_start'] = (
+                dataframe.period +
+                dataframe.echelon_period_for_grille_at_start.values.astype("timedelta64[M]")
+                )
 
 
     def _next_change_of_legis_grille(self, speed):  # echelon level
