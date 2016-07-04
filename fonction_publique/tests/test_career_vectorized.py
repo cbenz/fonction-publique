@@ -56,7 +56,7 @@ agents = AgentFpt(df)
 def test_grid_date_effet_at_start():
     agents._grille_date_effet_at_start()
     assert (agents.dataframe.query('identif == 1').date_debut_effet == datetime.datetime(2006, 11, 01)).all()
-    (agents.dataframe.query('identif == 1').next_grille_date_effet == datetime.datetime(2008, 07, 01)).all()
+    assert (agents.dataframe.query('identif == 1').next_grille_date_effet == datetime.datetime(2008, 07, 01)).all()
     # TODO extend test
     # TODO write error message
 
@@ -67,6 +67,7 @@ def test_echelon_period_for_grille_at_start():
 
 
 def test_next_change_of_legis_grille():
+    agents.dataframe.query('identif == 1').next_change_of_legis_grille.isnull().all()
     assert agent1._next_change_of_legis_grille(True) == periods.instant('2006-11-01')
     assert agent5._next_change_of_legis_grille(True) == periods.instant('2014-02-01')
     assert agent7._next_change_of_legis_grille(True) == periods.instant('2014-02-01')
@@ -94,8 +95,13 @@ if __name__ == '__main__':
     agents._grille_date_effet_at_start()
     test_grid_date_effet_at_start()
     test_echelon_period_for_grille_at_start()
-    print agents.dataframe.query('identif == 1').date_debut_effet == datetime.datetime(2006, 11, 01)
-    print (agents.dataframe.query('identif == 1').date_debut_effet == datetime.datetime(2006, 11, 01)).all()
-    print (agents.dataframe.query('identif == 1').next_grille_date_effet == datetime.datetime(2008, 07, 01)).all()
+    test_grid_date_effet_at_start()
     # agents._echelon_period_for_grille_at_start(True)
+    assert agents.dataframe.query('identif == 1').next_change_of_legis_grille.isnull().all()
+
+    assert agents.dataframe.query('identif == 5').next_change_of_legis_grille == datetime.datetime(2014, 02, 01)
+
+    assert agents.dataframe.query('identif == 7').next_change_of_legis_grille == datetime.datetime(2014, 02, 01)
+    boum
+
     print agents.dataframe

@@ -16,6 +16,7 @@ asset_path = os.path.join(
     pkg_resources.get_distribution('fonction_publique').location,
     'fonction_publique',
     'assets',
+    'grilles fonction publique',
     )
 grille_adjoint_technique_path = os.path.join(
     asset_path,
