@@ -1,13 +1,15 @@
 from __future__ import division
 
 
-from openfisca_core import periods
+from datetime import datetime
+import numpy as np
 import os
 import pandas as pd
 import pkg_resources
-from datetime import datetime
-
 from time import gmtime, strftime
+
+
+from openfisca_core import periods
 
 
 asset_path = os.path.join(
@@ -32,16 +34,15 @@ donnees_adjoints_techniques = pd.read_excel(donnees_adjoints_techniques)
 
 class AgentFpt:
     'common base class for all agent of French fonction publique'
-    agentfptCount = 0
-    _registry = []
 
-    def __init__(self, identif, period, grade, echelon):
-        self.identif = identif
-        self.period = period
-        self.grade = grade
-        self.echelon = echelon
-        self._registry.append(self)
-        AgentFpt.agentfptCount += 1
+    def __init__(self, dataframe):
+        self.dataframe = dataframe
+        self.identif = dataframe.identif
+        dataframe.period = pd.to_datetime(dataframe.period)
+        self.period = dataframe.period
+        self.grade = dataframe.grade
+        self.echelon = dataframe.echelon
+        self.agentfptCount = len(dataframe)
 
     def _conditions_on_agent(self):
         if self.period < '2006-11':
@@ -189,17 +190,101 @@ class AgentFpt:
         return result
 
     def _grille_date_effet_at_start(self):
-        period = periods.period(self.period)
-        indiv_grille = grille_adjoint_technique[
-            (grille_adjoint_technique['code_grade_NEG'] == self.grade) &
-            (grille_adjoint_technique['date_effet_grille'] < str(period.start))
+        dataframe = self.dataframe
+        grades = dataframe.grade.unique()  # TODO: use a cache for this
+        grade_filtered_grille = grille_adjoint_technique.loc[
+            grille_adjoint_technique.code_grade_NEG.isin(grades)
             ]
-        indiv_grille = indiv_grille[
-            (grille_adjoint_technique['date_effet_grille'] == indiv_grille['date_effet_grille'].max())
-            ]
-        date_debut_effet = indiv_grille['date_effet_grille'].map(lambda x: x.strftime('%Y-%m'))
-        date_debut_effet = periods.period(date_debut_effet.unique()[0])
-        return date_debut_effet.start
+        for grade in grades:
+            print '==========================='
+            print 'grade: ', grade
+            max_dates_effet_grille = dataframe.loc[
+                dataframe.grade == grade,
+                'period'
+                ].max()
+            date_effet_filtered_grille = grade_filtered_grille.loc[
+                grade_filtered_grille.date_effet_grille <= max_dates_effet_grille
+                ]
+            dates_effet_grille = np.sort(date_effet_filtered_grille.date_effet_grille.unique())
+
+            previous_start_date = None
+            # TODO use a grade extract out of the next loop
+            for start_date in dates_effet_grille:
+                dataframe.loc[
+                    (dataframe.grade == grade) & (dataframe.period >= start_date),
+                    'date_debut_effet',
+                    ] = start_date
+
+                if previous_start_date:
+                    settled_grille = (
+                        (dataframe.grade == grade) &
+                        (dataframe.date_debut_effet >= previous_start_date) &
+                        (dataframe.date_debut_effet < start_date)
+                        )
+                    print 'number of settled_grille: ', settled_grille.sum()
+                    print 'identif of setteld_grille: ', dataframe.loc[settled_grille, 'identif'].tolist()
+
+                    dataframe.loc[
+                        settled_grille,
+                        'next_grille_date_effet',
+                        ] = start_date
+
+                    echelons = dataframe.loc[
+                        settled_grille,
+                        'echelon',
+                        ].unique()
+                    print 'echelons: ', echelons
+                    for echelon in echelons:
+                        print 'echelon: ', echelon
+                        # TODO usa as parameter
+                        speed = True
+                        if speed:
+                            speed_str = 'max'
+                        else:
+                            speed_str = 'min'
+
+                        duree = date_effet_filtered_grille.loc[
+                            (date_effet_filtered_grille.date_effet_grille == previous_start_date) &
+                            (date_effet_filtered_grille.code_grade_NEG == grade) &
+                            (date_effet_filtered_grille.echelon == echelon),
+                            '{}_mois'.format(speed_str)
+                            ]
+                        print 'duree: ', duree.tolist()
+                        assert not duree.empty
+                        assert len(duree) == 1
+                        duree = duree.squeeze()
+                        dataframe.loc[
+                            settled_grille & (dataframe.echelon == echelon),
+                            'echelon_period_for_grille_at_start',
+                            ] = duree
+
+                        durees_by_date = date_effet_filtered_grille.loc[
+                            (date_effet_filtered_grille.date_effet_grille >= start_date) &
+                            (date_effet_filtered_grille.code_grade_NEG == grade) &
+                            (date_effet_filtered_grille.echelon == echelon),
+                            [
+                                'date_effet_grille',
+                                '{}_mois'.format(speed_str)
+                                ]
+                            ].set_index('date_effet_grille', drop = True)
+                        print 'durees_by_date: ', durees_by_date
+                        print durees_by_date['{}_mois'.format(speed_str)].unique().tolist()
+                        if [duree] != durees_by_date['{}_mois'.format(speed_str)].unique().tolist():
+                            next_change_of_legis_grille = durees_by_date.loc[
+                                durees_by_date['{}_mois'.format(speed_str)] != duree,
+                                ].index.min()
+                            dataframe.loc[
+                                settled_grille & (dataframe.echelon == echelon),
+                                'next_change_of_legis_grille',
+                                ] = next_change_of_legis_grille
+
+
+                        print dataframe
+                #
+
+                previous_start_date = start_date
+
+
 
     def _next_change_of_legis_grille(self, speed):  # echelon level
         period = periods.period(self.period)
