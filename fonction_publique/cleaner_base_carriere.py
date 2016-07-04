@@ -50,6 +50,8 @@ def get_subset(string):
         get_subset = get_subset.append(subset)
     return get_subset
 
+#df_ib = get_subset('ib_')
+
 
 @timing
 def clean_subset(string, period, trimestre):
@@ -58,12 +60,23 @@ def clean_subset(string, period, trimestre):
     subset = get_subset(string)
     for annee in period:
         if trimestre:
-            for trimestre in range(1, 5):
-                subset_cleaned = subset[['ident', '{}{}_{}'.format(string, annee, trimestre)]].copy()
-                subset_cleaned.rename(columns = {'{}{}_{}'.format(string, annee, trimestre): string}, inplace = True)
-                subset_cleaned['trimestre'] = trimestre
-                subset_cleaned['annee'] = annee
-                subset_result = pd.concat([subset_result, subset_cleaned])
+            if string == 'ib_':
+                for trimestre in range(1, 5):
+                    subset_cleaned = subset[['ident', '{}{}_{}'.format(string, annee, trimestre)]].copy()
+                    subset_cleaned.rename(columns = {'{}{}_{}'.format(string, annee, trimestre): string},
+                                                     inplace = True
+                                                     )
+                    subset_cleaned['trimestre'] = trimestre
+                    subset_cleaned['annee'] = annee
+                    subset_result = pd.concat([subset_result, subset_cleaned])
+            else:
+                    subset_cleaned = subset[['ident', '{}_{}_{}'.format(string, annee, trimestre)]].copy()
+                    subset_cleaned.rename(columns = {'{}_{}_{}'.format(string, annee, trimestre): string},
+                                                     inplace = True
+                                                     )
+                    subset_cleaned['trimestre'] = trimestre
+                    subset_cleaned['annee'] = annee
+                    subset_result = pd.concat([subset_result, subset_cleaned])
         else:
             subset_cleaned = subset[['ident', '{}_{}'.format(string, annee)]].copy()
             subset_cleaned.rename(columns = {'{}_{}'.format(string, annee): string}, inplace = True)
@@ -72,16 +85,16 @@ def clean_subset(string, period, trimestre):
     return subset_result
 
 arg_format_columns = [
-                    ('c_netneh', range(2010, 2015), False),
-                    ('c_cir', range(2010, 2015), False),
-                    ('libemploi', range(2000, 2015), False),
-                    ('ib_', range(1970, 2015), True),
-                    ('qualite', range(1970, 2015), False),
-                    ('statut', range(1970, 2015), False),
-                    ('etat', range(1970, 2015), True) #doing
+                    ('c_netneh', range(2010, 2015), False),#
+                    ('c_cir', range(2010, 2015), False),#
+                    ('libemploi', range(2000, 2015), False),#
+                    ('ib_', range(1970, 2015), True),#
+                    ('qualite', range(1970, 2015), False),#
+                    ('statut', range(1970, 2015), False),#
+                    ('etat', range(1970, 2015), True)
                     ]
 
-os.chdir('C:/Users/lisa.degalle/Documents/Carriere-CNRACL/base_carriere_clean')
+os.chdir('M:\CNRACL\Carriere-CNRACL/base_carriere_clean')
 
 @timing
 def format_columns(string, periode, trimestre):
@@ -92,15 +105,30 @@ def format_columns(string, periode, trimestre):
     elif string in ['ident', '_netneh', 'cir']:
         subset_to_format[string] = subset_to_format[string].astype('int')
     elif string in ['ib_']:
-        subset_to_format[string] = subset_to_format[string]
+        subset_ib = subset_to_format['ib_'].fillna(-1)
+        subset_ib = subset_ib.astype('int32')
+        subset_to_format['ib_'] = subset_ib
     else:
         subset_to_format[string] = subset_to_format[string].astype('str')
-    subset_to_format.to_hdf('base_carriere_1', '{}'.format(string), format = 'table',
-                            data_columns = True)
+    subset_to_format.to_hdf('base_carriere_2', '{}'.format(string), format = 'table', data_columns = True)
+#    with pd.HDFStore('base_carriere_2',  mode='w') as store:
+#        store.open()
+#        store.put('{}'.format(string), subset_to_format, data_columns= subset_to_format.columns, format='table')
+#        store.close()
     return 'df is cleaned'
 
+#def delete_useless_values(string):
+#        subset_to_format = pd.read_hdf('base_carriere_2', '{}'.format(string))
+#        if string == "ib_":
+#            subset_ib = subset_to_format['ib_'].fillna(-1)
+#            subset_ib = subset_ib.astype('int32')
+#            subset_to_format['ib_'] = subset_ib
+#        subset_to_format.to_hdf('base_carriere_2', ('ib_'), format = 'table', data_columns = True)
+#        else:
+#            print 0
+
 #def gen_libemploi_2010_2014():
-#    """ Cree une table libemploi_2010_2014 provisoire pour comparer le nb de libelles grades sur la periode avec
+#    """ Cree une table libemploi_2010_2014 p'rovisoire pour comparer le nb de libelles grades sur la periode avec
 #    les nb de codes grades sur la periodes. La table libemploi est en effet disponible pour 2000-2014.
 #    """
 #    df_libemploi = get_df('libemploi')
