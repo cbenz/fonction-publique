@@ -6,7 +6,7 @@ import pandas as pd
 from openfisca_core import periods
 
 from fonction_publique.career_simulation_vectorized import AgentFpt
-
+from fonction_publique.career_simulation_vectorized import grille_adjoint_technique, compute_changing_echelons_by_grade
 # Case tests
 
 
@@ -54,7 +54,6 @@ agents = AgentFpt(df)
 
 
 def test_grid_date_effet_at_start():
-    agents._grille_date_effet_at_start()
     assert (agents.dataframe.query('identif == 1').date_debut_effet == datetime.datetime(2006, 11, 01)).all()
     assert (agents.dataframe.query('identif == 1').next_grille_date_effet == datetime.datetime(2008, 07, 01)).all()
     # TODO extend test
@@ -75,15 +74,16 @@ def test_next_change_of_legis_grille():
 
 
 def test_end_period_echelon_grille_in_effect_at_start():
-    assert agent1._end_echelon_grille_in_effect_at_start(True) == periods.instant('2007-11-30'), \
-        "Got {} instead of {}".format(
-            agent1._end_echelon_grille_in_effect_at_start(True),
-            periods.instant('2007-11-30'))
+#    assert agent1._end_echelon_grille_in_effect_at_start(True) == periods.instant('2007-11-30'), \
+#        "Got {} instead of {}".format(
+#            agent1._end_echelon_grille_in_effect_at_start(True),
+#            periods.instant('2007-11-30'))
+    assert (agents.dataframe.query('identif == 1').end_echelon_grille_in_effect_at_start ==
+        datetime.datetime(2007, 12, 01)).all()
 
 
 def test_echelon_duration_with_grille_in_effect_at_end():
-    assert agent1._echelon_duration_with_grille_in_effect_at_end(True) == \
-        periods.instant('2007-11-30').period('month', 12)
+    assert (agents.dataframe.query('identif == 1').echelon_duration_with_grille_in_effect_at_end == 12).all()
 
 
 def test_echelon_duration_with_grille_in_effect():
@@ -93,12 +93,37 @@ def test_echelon_duration_with_grille_in_effect():
 
 
 if __name__ == '__main__':
-    agents._grille_date_effet_at_start()
+
+    agents.set_dates_effet(date_observation='period', next_variable_name = 'next_grille_date_effet')
+
+    agents.compute_echelon_duree(
+        date_effet_variable_name='date_debut_effet',
+        duree_variable_name='echelon_period_for_grille_at_start'
+        )
+
+    agents.compute_date_effet_legislation_change(
+        start_date_effet_variable_name = 'date_debut_effet',
+        date_effet_legislation_change_variable_name = 'next_change_of_legis_grille'
+        )
+    agents.compose_date_duree_echelon(
+        new_date_variable_name = 'end_echelon_grille_in_effect_at_start',
+        start_date_variable_name = 'period',
+        duree_variable_name = 'echelon_period_for_grille_at_start')
+
+    agents.set_dates_effet(
+        date_observation = 'end_echelon_grille_in_effect_at_start',
+        start_variable_name = "date_debut_effet2",
+        next_variable_name = None)
+
+    agents.compute_echelon_duree(
+        date_effet_variable_name= 'date_debut_effet2',
+        duree_variable_name='echelon_duration_with_grille_in_effect_at_end'
+        )
+
     test_grid_date_effet_at_start()
     test_echelon_period_for_grille_at_start()
-    test_grid_date_effet_at_start()
     test_next_change_of_legis_grille()
+    test_end_period_echelon_grille_in_effect_at_start()
+    test_echelon_duration_with_grille_in_effect_at_end()
     # agents._echelon_period_for_grille_at_start(True)
-    boum
-
     print agents.dataframe
