@@ -2,7 +2,7 @@ statistiques_ib.png : ib moyen, minimum et maximum par année de 1970 à 2014.
 
 distrib_duree_carriere.png: distribution des durées de carrière (en trimestre)
 
-distributions_actes_mobilite : 
+distributions_nb_etats_carriere : 
 	- distributions du nombre de codes grades et de libellés grades
 	au cours de la carrière de chaque ident de 2010 à 2014. (quatre histogrammes)
 	- distribution du nombre d'ib au cours de la carrière de chaque ident de 1970 à 2014.
@@ -11,15 +11,6 @@ distributions_actes_mobilite :
 effectifs_par_categorie :
 	1. total :
 		-> effectifs annuels pour chaque valeur des variables qualites et statut
-	2. IB_nul :
-		-> effectifs annuels pour chaque valeur des variables qualites, statut et etat 
-		pour les indices bruts nuls
-	3. IB_nan :
-		-> effectifs annuels pour chaque valeur des variables qualites, statut et etat 
-		pour les indices bruts nans
-	4. grade_cir_nul :
-		-> effectifs annuels pour chaque valeur des variables qualites, statut et etat 
-		pour les codes grades cir nuls
-	5. grade_cir_nans :
-		-> effectifs annuels pour chaque valeur des variables qualites, statut et etat 
-		pour les codes grades cir nans
+	2. IB_sup_1015 :
+
+dispersion_grade_example: montre la distribution du nombre de grades unique en 2011 selon les grades uniques de 2010

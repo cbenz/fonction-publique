@@ -174,14 +174,24 @@ def get_weird_ib_progression():
 def get_effectifs_annuels_entre_sort(entre_ou_sort):
     df_etat_activite = store.select('etat', where = 'etat = 1.0', columns = ['ident', 'annee'])
     if entre_ou_sort == 'entree':
-        df = df_etat_activite.groupby('ident')['annee'].min()
+        df = df_etat_activite.groupby('ident')['annee'].min().reset_index()
+        df_generation = store.select('generation')
+        df_with_age = df.merge(df_generation, on = 'ident')
+        df_with_age['age_entree'] = df_with_age['annee'] - df_with_age['generation']
+        print len(df_with_age['age_entree'] < 18), len(df_with_age['age_entree'] < 18) / len(df_with_age['age_entree'])
+        plt.hist(df_with_age['age_entree'], bins=range(min(df_with_age['age_entree']), max(df_with_age['age_entree']) + 1, 1))
     else:
-        df = df_etat_activite.groupby('ident')['annee'].max()
-    df = df.reset_index()
-    df.columns = ['ident', 'annee_{}'.format(entre_ou_sort)]
-    df = df.groupby('annee_{}'.format(entre_ou_sort)).size().reset_index()
-    df.columns = ['annee_{}'.format(entre_ou_sort), 'compte']
-    sns.pointplot(df['annee_{}'.format(entre_ou_sort)], df.compte)
+        df = df_etat_activite.groupby('ident')['annee'].max().reset_index()
+        df_generation = store.select('generation')
+        df_with_age = df.merge(df_generation, on = 'ident')
+        df_with_age['age_sortie'] = df_with_age['annee'] - df_with_age['generation']
+#        print len(df_with_age['age_entree'] < 18), len(df_with_age['age_entree'] < 18) / len(df_with_age['age_entree'])
+        plt.hist(df_with_age['age_sortie'], bins=range(min(df_with_age['age_sortie']), max(df_with_age['age_sortie']) + 1, 1))
+#    df = df.reset_index()
+#    df.columns = ['ident', 'annee_{}'.format(entre_ou_sort)]
+#    df = df.groupby('annee_{}'.format(entre_ou_sort)).size().reset_index()
+#    df.columns = ['annee_{}'.format(entre_ou_sort), 'compte']
+
 
 
 ## Effectifs par durée d'activité sur la cohorte # etat uniquement
@@ -192,9 +202,8 @@ def get_distribution_duree_activite():
     df_activite = df_activite[['ident', 'etat']]
     annee_activite = df_activite.groupby('ident').size().reset_index()
     annee_activite.columns = ['ident', 'nb_annee_activite']
-    plt.hist(annee_activite.nb_annee_activite)
+    plt.hist(annee_activite.nb_annee_activite, bins=range(min(annee_activite.nb_annee_activite), max(annee_activite.nb_annee_activite) + 1, 1))
     plt.title('Distribution des durees d activite au cours de la carriere (trimestres)')
-    plt.save()
 
 def get_df_ib_condition(condition): #condition : True pour 0 et false pour
     """ dataframe des ib_ egaux à 0"""
@@ -254,15 +263,17 @@ def get_distribution_nb_actes_mobilite(cat):
     connaître le nb d'acte exploitable pour l'étude et déceler des anomalies de c_cir, c_netneh et libemploi"""
 #    for cat in ['ib_', 'c_netneh', 'c_cir', 'libemploi']:
     df = get_df(cat)
-    df = df[df[cat] != ''] ## drop empty
+#    df = df[df[cat] != ''] ## drop empty
     if cat != 'libemploi_2010_2014':
         df = df.groupby(['ident', '{}'.format(cat)]).size().reset_index()
     else:
-        df = df.groupby(['ident', 'libemploi']).size().reset_index()
+        df = df.groupby(['ident', cat]).size().reset_index()
     df = df.ident.value_counts().reset_index()
     df.columns = ['ident', '{}_count'.format(cat)]
 
-    plt.hist(df['{}_count'.format(cat)], label = '{}'.format(cat))
+    plt.hist(df['{}_count'.format(cat)], label = '{}'.format(cat),
+                bins=range(min(df['{}_count'.format(cat)]), max(df['{}_count'.format(cat)]) + 1, 1)
+                )
     plt.title('Effectifs par nombre de {} uniques au cours de la carriere'.format(cat))
     plt.legend()
 
@@ -291,26 +302,37 @@ def get_carriere_unique(include_empty_state):
 #                                                                )
 
 def dispersion_grade_paths():
-    """ connaître la distribution du nombre de grade accessibles à partir d'un grade """
-    df_grade = store.select('c_netneh', stop = 1000000)
+    """ matrice de transition des grades """
+    df_grade = store.select('c_netneh', stop = 3000000)
     df_grade = df_grade[df_grade['c_netneh'] != [''] * len(df_grade['c_netneh'])]
     df_grades_uniques = df_grade.groupby(['ident'])['c_netneh'].unique().reset_index()
     df_grades_uniques.columns = ['ident', 'career_netneh']
     df_careers = pd.DataFrame(df_grades_uniques.career_netneh)
-    df_careers
-    for i in range(4):
+    for i in range(3):
         df_careers['etat_netneh'+str(i)] = df_careers['career_netneh'].str[i]
-    df_careers = df_careers.drop('career_netneh', 1)
-    df_careers = df_careers.loc[df_careers['etat_netneh1'].notnull() or
-                            df_careers['etat_netneh2'].notnull() or
-                            df_careers['etat_netneh3'].notnull()]
-    return df_careers.head()
+    df_careers_prin = df_careers.drop('career_netneh', 1)
 
+    # Valeurs d'etat_netneh1 pour unique etatnetneh0
+    df_careers = df_careers_prin[pd.notnull(df_careers_prin['etat_netneh1'])]
+    df_careers = df_careers[df_careers['etat_netneh1'] != df_careers['etat_netneh0']]
+    unique_etat_netneh0 = df_careers.groupby(['etat_netneh0', 'etat_netneh1']).size().reset_index()
+    unique_etat_netneh1 = unique_etat_netneh0.groupby('etat_netneh0')['etat_netneh1'].unique().reset_index()
+    unique_etat_netneh1.columns = ['etat_netneh0', 'etat_netneh1']
 
+    # Valeurs d'etat_netneh2 pour unique etatnetneh1
+    df_careers_2 = df_careers_prin[pd.notnull(df_careers_prin['etat_netneh2'])]
+    df_careers_2 = df_careers_2[df_careers_2['etat_netneh2'] != df_careers_2['etat_netneh1']]
+    unique_etat_netneh1bis = df_careers_2.groupby(['etat_netneh1', 'etat_netneh2']).size().reset_index()
+    unique_etat_netneh2 = unique_etat_netneh1bis.groupby('etat_netneh1')['etat_netneh2'].unique().reset_index()
+    unique_etat_netneh2.columns = ['etat_netneh1', 'etat_netneh2']
 
-
-
-
-
-
-
+    #print unique_etat_netneh1
+    #print unique_etat_netneh2
+    full_grades = unique_etat_netneh1.merge(unique_etat_netneh2, left_on='etat_netneh0', right_on='etat_netneh1', how = 'outer')
+    full_grades['total'] = zip(full_grades.etat_netneh1_x.tolist(), full_grades.etat_netneh2.tolist())
+    return full_grades
+#    get_count_grades_etat_netneh1 = unique_etat_netneh1.etat_netneh1
+#    get_count_grades_etat_netneh1 = map(len, get_count_grades_etat_netneh1)
+#    plt.hist(get_count_grades_etat_netneh1, color = '#FF69B4')
+#    plt.title('Distribution du nb de grades differents apres un grade unique. {} ident/grades de departs sont consideres' """
+#    incluant tous les idents ayant un grade en 2010 et un grade different en 2011 (nans exclus). Il y a {} ident/grades uniques en 2010. """.format(len(df_careers.etat_netneh0), len(df_careers['etat_netneh0'].unique())))

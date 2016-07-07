@@ -102,7 +102,7 @@ def format_columns(string, periode, trimestre):
     subset_to_format['ident'] = subset_to_format['ident'].astype('int')
     if string in ['qualite', 'statut', 'etat_']:
         subset_to_format[string] = subset_to_format[string].astype('category')
-    elif string in ['ident', '_netneh', 'cir']:
+    elif string in ['ident', '_netneh', 'cir', 'generation']:
         subset_to_format[string] = subset_to_format[string].astype('int')
     elif string in ['ib_']:
         subset_ib = subset_to_format['ib_'].fillna(-1)
@@ -117,15 +117,13 @@ def format_columns(string, periode, trimestre):
 #        store.close()
     return 'df is cleaned'
 
-#def delete_useless_values(string):
-#        subset_to_format = pd.read_hdf('base_carriere_2', '{}'.format(string))
-#        if string == "ib_":
-#            subset_ib = subset_to_format['ib_'].fillna(-1)
-#            subset_ib = subset_ib.astype('int32')
-#            subset_to_format['ib_'] = subset_ib
-#        subset_to_format.to_hdf('base_carriere_2', ('ib_'), format = 'table', data_columns = True)
-#        else:
-#            print 0
+
+def format_generation():
+    generation = get_subset('generation')
+    generation['ident'] = generation['ident'].astype('int')
+    generation['generation'] = generation['generation'].astype('int32')
+    generation.to_hdf('base_carriere_2', 'generation', format = 'table', data_columns = True)
+    return 'generation was added to base_carriere'
 
 #def gen_libemploi_2010_2014():
 #    """ Cree une table libemploi_2010_2014 p'rovisoire pour comparer le nb de libelles grades sur la periode avec
