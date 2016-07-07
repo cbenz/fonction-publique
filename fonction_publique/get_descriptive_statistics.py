@@ -1,10 +1,13 @@
 from __future__ import division
+
+
 from collections import Counter
+import numpy as np
 import os
 import pandas as pd
 import pylab as plt
 import seaborn as sns
-import numpy as np
+import time
 
 data_path = "M:\CNRACL\Carriere-CNRACL"
 
@@ -224,7 +227,13 @@ def get_var_ib_null_or_nan(variable, condition): #condition == null ou condition
     idents_annee = get_df_ib_condition(condition)
     idents = idents_annee['ident'].tolist()
     annees = idents_annee['annee'].tolist()
-    df = pd.read_hdf(hdf5_file_path,'{}'.format(variable), where = [pd.Term("ident", "=", idents)], start = 800000, stop = 999999)
+    df = pd.read_hdf(
+        hdf5_file_path,
+        '{}'.format(variable),
+        where = [pd.Term("ident", "=", idents)],
+        start = 800000,
+        stop = 999999,
+        )
     df = df[df['annee'].isin(annees)]
     df_per_year = df.groupby(['annee', variable]).size().reset_index()
     df_per_year.columns = ['annee', '{}_categorie'.format(variable), '{}_compte'.format(variable)]

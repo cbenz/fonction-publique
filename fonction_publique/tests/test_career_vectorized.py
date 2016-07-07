@@ -6,10 +6,12 @@ import pandas as pd
 from openfisca_core import periods
 
 from fonction_publique.career_simulation_vectorized import AgentFpt
+from fonction_publique.career_simulation_vectorized import grille_adjoint_technique, compute_changing_echelons_by_grade
+
+# TODO:
+# - Start at zero
 
 # Case tests
-
-
 agent1 = (1, datetime.date(2006, 12, 1), 793, 1)
 # agent1 is a basic case: the periods associated with his echelons change once in 2014, in a non problematic manner.
 # agent1 acceedes to echelon 5 in 2012-12 and is, according to the law of 2008-07, supposed to stay there for
@@ -46,20 +48,15 @@ agent9 = (9, datetime.date(2003, 11, 1), 500, 1000)
 # This raises an error is handled in _conditions_on_agent
 
 agent_tuples = [locals()['agent{}'.format(i)] for i in range(1, 10)]
-
 df = pd.DataFrame(agent_tuples, columns = ['identif', 'period', 'grade', 'echelon'])
-
-
 agents = AgentFpt(df)
 
 
 def test_grid_date_effet_at_start():
-    agents._grille_date_effet_at_start()
     assert (agents.dataframe.query('identif == 1').date_debut_effet == datetime.datetime(2006, 11, 01)).all()
-    (agents.dataframe.query('identif == 1').next_grille_date_effet == datetime.datetime(2008, 07, 01)).all()
+    assert (agents.dataframe.query('identif == 1').next_grille_date_effet == datetime.datetime(2008, 07, 01)).all()
     # TODO extend test
     # TODO write error message
-
 
 def test_echelon_period_for_grille_at_start():
     assert (agents.dataframe.query('identif == 1').echelon_period_for_grille_at_start == 12).all()
@@ -67,21 +64,24 @@ def test_echelon_period_for_grille_at_start():
 
 
 def test_next_change_of_legis_grille():
-    assert agent1._next_change_of_legis_grille(True) == periods.instant('2006-11-01')
-    assert agent5._next_change_of_legis_grille(True) == periods.instant('2014-02-01')
-    assert agent7._next_change_of_legis_grille(True) == periods.instant('2014-02-01')
+    agents.dataframe.query('identif == 1').next_change_of_legis_grille.isnull().all()
+    assert agents.dataframe.query('identif == 1').next_change_of_legis_grille.isnull().all()
+    assert (agents.dataframe.query('identif == 4').next_change_of_legis_grille == datetime.datetime(2014, 02, 01)).all()
+    # TODO there is something with 5
+    assert (agents.dataframe.query('identif == 7').next_change_of_legis_grille == datetime.datetime(2014, 02, 01)).all()
 
 
 def test_end_period_echelon_grille_in_effect_at_start():
-    assert agent1._end_echelon_grille_in_effect_at_start(True) == periods.instant('2007-11-30'), \
-        "Got {} instead of {}".format(
-            agent1._end_echelon_grille_in_effect_at_start(True),
-            periods.instant('2007-11-30'))
+#    assert agent1._end_echelon_grille_in_effect_at_start(True) == periods.instant('2007-11-30'), \
+#        "Got {} instead of {}".format(
+#            agent1._end_echelon_grille_in_effect_at_start(True),
+#            periods.instant('2007-11-30'))
+    assert (agents.dataframe.query('identif == 1').end_echelon_grille_in_effect_at_start ==
+        datetime.datetime(2007, 12, 01)).all()
 
 
 def test_echelon_duration_with_grille_in_effect_at_end():
-    assert agent1._echelon_duration_with_grille_in_effect_at_end(True) == \
-        periods.instant('2007-11-30').period('month', 12)
+    assert (agents.dataframe.query('identif == 1').echelon_duration_with_grille_in_effect_at_end == 12).all()
 
 
 def test_echelon_duration_with_grille_in_effect():
@@ -91,11 +91,39 @@ def test_echelon_duration_with_grille_in_effect():
 
 
 if __name__ == '__main__':
-    agents._grille_date_effet_at_start()
+
+    agents.set_dates_effet(
+        date_observation='period',
+        start_variable_name = "date_debut_effet",
+        next_variable_name = 'next_grille_date_effet'
+        )
+    agents.compute_echelon_duree(
+        date_effet_variable_name='date_debut_effet',
+        duree_variable_name='echelon_period_for_grille_at_start'
+        )
+    agents.compute_date_effet_legislation_change(
+        start_date_effet_variable_name = 'date_debut_effet',
+        date_effet_legislation_change_variable_name = 'next_change_of_legis_grille'
+        )
+    agents.compose_date_duree_echelon(
+        new_date_variable_name = 'end_echelon_grille_in_effect_at_start',
+        start_date_variable_name = 'period',
+        duree_variable_name = 'echelon_period_for_grille_at_start')
+
+    agents.set_dates_effet(
+        date_observation = 'end_echelon_grille_in_effect_at_start',
+        start_variable_name = "date_debut_effet2",
+        next_variable_name = None)
+
+    agents.compute_echelon_duree(
+        date_effet_variable_name= 'date_debut_effet2',
+        duree_variable_name='echelon_duration_with_grille_in_effect_at_end'
+        )
+
     test_grid_date_effet_at_start()
     test_echelon_period_for_grille_at_start()
-    print agents.dataframe.query('identif == 1').date_debut_effet == datetime.datetime(2006, 11, 01)
-    print (agents.dataframe.query('identif == 1').date_debut_effet == datetime.datetime(2006, 11, 01)).all()
-    print (agents.dataframe.query('identif == 1').next_grille_date_effet == datetime.datetime(2008, 07, 01)).all()
+    test_next_change_of_legis_grille()
+    test_end_period_echelon_grille_in_effect_at_start()
+    test_echelon_duration_with_grille_in_effect_at_end()
     # agents._echelon_period_for_grille_at_start(True)
     print agents.dataframe
