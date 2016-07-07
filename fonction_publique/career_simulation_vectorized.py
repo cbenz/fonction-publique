@@ -272,17 +272,3 @@ def compute_changing_echelons_by_grade(grilles = None, start_date = None, speed 
 #TODO construire la table
 #grade echelon star_date new_date new_duree
 
-
-
-def datefunc(x):
-    datetime.strptime(x, '%Y-%m-%d')
-
-
-def timestampToDate(timestamp, datePattern):
-    return strftime("%b %d %Y %H:%M", gmtime(float(timestamp)))
-
-
-def days_between(m1, m2):
-    m1 = datetime.strptime(m1, "%Y-%m")
-    m2 = datetime.strptime(m2, "%Y-%m-%d")
-    return ((m2 - m1).days)
