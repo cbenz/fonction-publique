@@ -19,7 +19,7 @@ asset_path = os.path.join(
     pkg_resources.get_distribution('fonction_publique').location,
     'fonction_publique',
     'assets',
-    'grilles fonction publique',
+    'grilles_fonction_publique',
     )
 grille_adjoint_technique_path = os.path.join(
     asset_path,
@@ -71,7 +71,6 @@ class AgentFpt:
             echelon_period = periods.period(self.period)
         return echelon_period.size
 
-
     def set_echelon_duration_with_grille_in_effect(self):
         dataframe = self.dataframe
         dataframe['grille_change_during_period'] = (
@@ -119,7 +118,6 @@ class AgentFpt:
 
                 previous_start_date = start_date
 
-
     def compute_echelon_duree(self, date_effet_variable_name = None, duree_variable_name =None):
         # TODO may be a merge is faster
         assert date_effet_variable_name is not None
@@ -156,8 +154,8 @@ class AgentFpt:
                         grilles = date_effet_filtered_grille, speed = True)
                     dataframe.loc[
                         selected_entries & (dataframe.echelon == echelon),
-                            duree_variable_name,
-                            ] = duree
+                        duree_variable_name,
+                        ] = duree
 
     def compute_date_effet_legislation_change(self, start_date_effet_variable_name = None,
             date_effet_legislation_change_variable_name = None, speed = True):
@@ -186,7 +184,7 @@ class AgentFpt:
                 ]
             for echelon in echelons:  # Only changing echlons
                 if not ((dataframe.echelon == echelon) & (dataframe.grade)).any():
-                    continue # We skip those not in the dataframe
+                    continue  # We skip those not in the dataframe
 
                 dates_effet_grille = dataframe.loc[
                     (dataframe.echelon == echelon) & (dataframe.grade == grade),
@@ -204,11 +202,11 @@ class AgentFpt:
                         (date_effet_filtered_grille.date_effet_grille >= date_effet_grille) &
                         (date_effet_filtered_grille.code_grade_NEG == grade) &
                         (date_effet_filtered_grille.echelon == echelon),
-                            [
-                                'date_effet_grille',
-                                duree_str
-                                ]
-                            ].set_index('date_effet_grille', drop = True)
+                        [
+                            'date_effet_grille',
+                            duree_str
+                            ]
+                        ].set_index('date_effet_grille', drop = True)
 
                     if [duree] != durees_by_date[duree_str].unique().tolist():
                         next_change_of_legis_grille = durees_by_date.loc[
@@ -221,16 +219,13 @@ class AgentFpt:
                             'next_change_of_legis_grille',
                             ] = next_change_of_legis_grille
 
-
-    def compose_date_duree_echelon(self, new_date_variable_name = None, start_date_variable_name = None, duree_variable_name = None):
+    def compose_date_duree_echelon(self, new_date_variable_name = None, start_date_variable_name = None,
+            duree_variable_name = None):
         dataframe = self.dataframe
         dataframe[new_date_variable_name] = (
             dataframe[start_date_variable_name].values.astype("datetime64[M]") +
             dataframe[duree_variable_name].values.astype("timedelta64[M]")
             )
-
-
-
 
 
 def get_duree_echelon_from_grilles_dataframe(
@@ -269,6 +264,6 @@ def compute_changing_echelons_by_grade(grilles = None, start_date = None, speed 
     echelons_by_grade = df.groupby('code_grade_NEG')['echelon'].unique().to_dict()
     return echelons_by_grade
 
-#TODO construire la table
-#grade echelon star_date new_date new_duree
-
+# TODO construire la table
+# grade echelon start_date new_date new_duree
+# et faire des merge

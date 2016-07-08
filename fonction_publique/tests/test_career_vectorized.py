@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import datetime
+import numpy as np
 import pandas as pd
 
 from openfisca_core import periods
@@ -126,4 +127,44 @@ if __name__ == '__main__':
     test_end_period_echelon_grille_in_effect_at_start()
     test_echelon_duration_with_grille_in_effect_at_end()
     # agents._echelon_period_for_grille_at_start(True)
+
+    agents.dataframe['condit_1'] = (
+        agents.dataframe.next_change_of_legis_grille < agents.dataframe.end_echelon_grille_in_effect_at_start
+        )
+    agents.dataframe['condit_3'] = (
+        agents.dataframe.period +
+        agents.dataframe.echelon_duration_with_grille_in_effect_at_end.values.astype("timedelta64[M]")
+        ) < (
+        agents.dataframe.period +
+        agents.dataframe.echelon_period_for_grille_at_start.values.astype("timedelta64[M]")
+        )
+    agents.dataframe['does_grille_change_during_period'] = (
+        agents.dataframe.end_echelon_grille_in_effect_at_start >
+        agents.dataframe.next_change_of_legis_grille
+        ) & ~agents.dataframe.next_change_of_legis_grille.isnull()
+
+    agents.dataframe['duree_a'] = (
+        agents.dataframe.eval('does_grille_change_during_period & condit_1 & condit_3') *
+        (
+            agents.dataframe.next_change_of_legis_grille - agents.dataframe.period
+            ).values.astype("timedelta64[M]") / np.timedelta64(1, 'M')
+        )
+
+    agents.dataframe['duree_b'] = (
+        agents.dataframe.eval('does_grille_change_during_period & ~(condit_1 & condit_3)') *
+        agents.dataframe.echelon_duration_with_grille_in_effect_at_end
+        )
+
+    agents.dataframe['duree_b'] = (
+        agents.dataframe.eval('does_grille_change_during_period & ~(condit_1 & condit_3)') *
+        agents.dataframe.echelon_duration_with_grille_in_effect_at_end
+        )
+
+    agents.dataframe['duree_c'] = (
+            agents.dataframe.eval('~does_grille_change_during_period') *
+            agents.dataframe.echelon_period_for_grille_at_start
+            )
+
     print agents.dataframe
+
+#    agents.dataframe.echelon_duration_with_grille_in_effect =
