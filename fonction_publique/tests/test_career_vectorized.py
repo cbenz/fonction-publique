@@ -29,7 +29,7 @@ agent4 = (4, datetime.date(2011, 11, 1), 793, 6)
 # spend 36 to 48 months in echelon 7. However, in 2014-02, the law shortens the duration in echelon 7 to 20 to 24
 # months. Instead of acceeding echelon 8 on the 2016-11, as planned by the law before 2014-02, agent4 is at echelon 8
 # in 2015-07 if he has a fast career.
-agent5 = (5, datetime.date(2013, 06, 1), 796, 7)
+agent5 = (5, datetime.date(2013, 6, 1), 796, 7)
 # agent5 is supposed to stay in echelon 7 from 36 to 48 months at start before acceeding echelon 8, the top echelon
 # of the grade. However, the law of 2014 extends the duration of echelon 7 to 40 to 48 month and creates a new echelon,
 # echelon 9, in the grade.
@@ -54,10 +54,11 @@ agents = AgentFpt(df)
 
 
 def test_grid_date_effet_at_start():
-    assert (agents.dataframe.query('identif == 1').date_debut_effet == datetime.datetime(2006, 11, 01)).all()
-    assert (agents.dataframe.query('identif == 1').next_grille_date_effet == datetime.datetime(2008, 07, 01)).all()
+    assert (agents.dataframe.query('identif == 1').date_debut_effet == datetime.datetime(2006, 11, 1)).all()
+    assert (agents.dataframe.query('identif == 1').next_grille_date_effet == datetime.datetime(2008, 7, 1)).all()
     # TODO extend test
     # TODO write error message
+
 
 def test_echelon_period_for_grille_at_start():
     assert (agents.dataframe.query('identif == 1').echelon_period_for_grille_at_start == 12).all()
@@ -67,18 +68,18 @@ def test_echelon_period_for_grille_at_start():
 def test_next_change_of_legis_grille():
     agents.dataframe.query('identif == 1').next_change_of_legis_grille.isnull().all()
     assert agents.dataframe.query('identif == 1').next_change_of_legis_grille.isnull().all()
-    assert (agents.dataframe.query('identif == 4').next_change_of_legis_grille == datetime.datetime(2014, 02, 01)).all()
+    assert (agents.dataframe.query('identif == 4').next_change_of_legis_grille == datetime.datetime(2014, 2, 1)).all()
     # TODO there is something with 5
-    assert (agents.dataframe.query('identif == 7').next_change_of_legis_grille == datetime.datetime(2014, 02, 01)).all()
+    assert (agents.dataframe.query('identif == 7').next_change_of_legis_grille == datetime.datetime(2014, 2, 1)).all()
 
 
 def test_end_period_echelon_grille_in_effect_at_start():
-#    assert agent1._end_echelon_grille_in_effect_at_start(True) == periods.instant('2007-11-30'), \
-#        "Got {} instead of {}".format(
-#            agent1._end_echelon_grille_in_effect_at_start(True),
-#            periods.instant('2007-11-30'))
+    #    assert agent1._end_echelon_grille_in_effect_at_start(True) == periods.instant('2007-11-30'), \
+    #        "Got {} instead of {}".format(
+    #            agent1._end_echelon_grille_in_effect_at_start(True),
+    #            periods.instant('2007-11-30'))
     assert (agents.dataframe.query('identif == 1').end_echelon_grille_in_effect_at_start ==
-        datetime.datetime(2007, 12, 01)).all()
+        datetime.datetime(2007, 12, 1)).all()
 
 
 def test_echelon_duration_with_grille_in_effect_at_end():
@@ -106,7 +107,7 @@ if __name__ == '__main__':
         start_date_effet_variable_name = 'date_debut_effet',
         date_effet_legislation_change_variable_name = 'next_change_of_legis_grille'
         )
-    agents.compose_date_duree_echelon(
+    agents.add_duree_echelon_to_date(
         new_date_variable_name = 'end_echelon_grille_in_effect_at_start',
         start_date_variable_name = 'period',
         duree_variable_name = 'echelon_period_for_grille_at_start')
@@ -121,6 +122,11 @@ if __name__ == '__main__':
         duree_variable_name='echelon_duration_with_grille_in_effect_at_end'
         )
 
+    agents.add_echelon_max(date_effet_grille='date_debut_effet', echelon_max_variable_name='echelon_max')
+    agents.compute_echelon_duration_with_grille_in_effect()
+
+    print agents.dataframe
+
     test_grid_date_effet_at_start()
     test_echelon_period_for_grille_at_start()
     test_next_change_of_legis_grille()
@@ -128,43 +134,4 @@ if __name__ == '__main__':
     test_echelon_duration_with_grille_in_effect_at_end()
     # agents._echelon_period_for_grille_at_start(True)
 
-    agents.dataframe['condit_1'] = (
-        agents.dataframe.next_change_of_legis_grille < agents.dataframe.end_echelon_grille_in_effect_at_start
-        )
-    agents.dataframe['condit_3'] = (
-        agents.dataframe.period +
-        agents.dataframe.echelon_duration_with_grille_in_effect_at_end.values.astype("timedelta64[M]")
-        ) < (
-        agents.dataframe.period +
-        agents.dataframe.echelon_period_for_grille_at_start.values.astype("timedelta64[M]")
-        )
-    agents.dataframe['does_grille_change_during_period'] = (
-        agents.dataframe.end_echelon_grille_in_effect_at_start >
-        agents.dataframe.next_change_of_legis_grille
-        ) & ~agents.dataframe.next_change_of_legis_grille.isnull()
-
-    agents.dataframe['duree_a'] = (
-        agents.dataframe.eval('does_grille_change_during_period & condit_1 & condit_3') *
-        (
-            agents.dataframe.next_change_of_legis_grille - agents.dataframe.period
-            ).values.astype("timedelta64[M]") / np.timedelta64(1, 'M')
-        )
-
-    agents.dataframe['duree_b'] = (
-        agents.dataframe.eval('does_grille_change_during_period & ~(condit_1 & condit_3)') *
-        agents.dataframe.echelon_duration_with_grille_in_effect_at_end
-        )
-
-    agents.dataframe['duree_b'] = (
-        agents.dataframe.eval('does_grille_change_during_period & ~(condit_1 & condit_3)') *
-        agents.dataframe.echelon_duration_with_grille_in_effect_at_end
-        )
-
-    agents.dataframe['duree_c'] = (
-            agents.dataframe.eval('~does_grille_change_during_period') *
-            agents.dataframe.echelon_period_for_grille_at_start
-            )
-
-    print agents.dataframe
-
-#    agents.dataframe.echelon_duration_with_grille_in_effect =
+    # agents.dataframe.echelon_duration_with_grille_in_effect =

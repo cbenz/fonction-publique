@@ -6,34 +6,15 @@ from __future__ import division
 
 from datetime import datetime
 import numpy as np
-import os
 import pandas as pd
-import pkg_resources
 from time import gmtime, strftime
 
 
 from openfisca_core import periods
+from .base import grille_adjoint_technique
 
 
-asset_path = os.path.join(
-    pkg_resources.get_distribution('fonction_publique').location,
-    'fonction_publique',
-    'assets',
-    'grilles_fonction_publique',
-    )
-grille_adjoint_technique_path = os.path.join(
-    asset_path,
-    'FPT_adjoint_technique.xlsx',
-    )
-grille_adjoint_technique = pd.read_excel(grille_adjoint_technique_path, encoding='utf-8')
 dates_effet_grille = grille_adjoint_technique['date_effet_grille']
-
-
-donnees_adjoints_techniques = os.path.join(
-    asset_path,
-    'donnees_indiv_adjoint_technique_test.xlsx',
-    )
-donnees_adjoints_techniques = pd.read_excel(donnees_adjoints_techniques)
 
 
 class AgentFpt:
@@ -48,28 +29,46 @@ class AgentFpt:
         self.echelon = dataframe.echelon
         self.agentfptCount = len(dataframe)
 
+    def compute_echelon_duration_with_grille_in_effect(self):
+        dataframe = self.dataframe
+        echelon_condition = (dataframe.echelon + 1) <= dataframe.echelon_max
+        condit_1 = (
+            dataframe.next_change_of_legis_grille < dataframe.end_echelon_grille_in_effect_at_start
+            )
+        condit_3 = (
+            dataframe.period +
+            dataframe.echelon_duration_with_grille_in_effect_at_end.values.astype("timedelta64[M]")
+            ) < (
+            dataframe.period +
+            dataframe.echelon_period_for_grille_at_start.values.astype("timedelta64[M]")
+            )
+        grille_change_during_period = (
+            dataframe.end_echelon_grille_in_effect_at_start >
+            dataframe.next_change_of_legis_grille
+            ) & ~dataframe.next_change_of_legis_grille.isnull()
 
-    def _echelon_duration_with_grille_in_effect(self, speed):
-        echelon_max = self._echelon_max()
-        next_echelon = self.echelon + 1
-        diff = days_between(
-            str(self.period), str(self._next_change_of_legis_grille(speed)))
-        period_echelon_days = (self._echelon_period_for_grille_at_start(speed)).days
-        if next_echelon <= echelon_max:
-            if self._does_grille_change_during_period(speed):
-                condit_1 = diff < period_echelon_days
-                condit_2 = self._next_change_of_legis_grille(speed) > self._grille_date_effet_at_start()
-                condit_3 = diff > self._echelon_duration_with_grille_in_effect_at_end(speed).days
-                if condit_1 and condit_2 and condit_3:
-                    echelon_period = diff
-                    echelon_period = periods.instant(self.period).period('month', int(round(echelon_period / 30)))
-                else:
-                    echelon_period = self._echelon_duration_with_grille_in_effect_at_end(speed)
-            else:
-                echelon_period = self._echelon_period_for_grille_at_start(speed)
-        else:
-            echelon_period = periods.period(self.period)
-        return echelon_period.size
+        duree_a = (
+            dataframe.next_change_of_legis_grille - dataframe.period
+            ).values.astype("timedelta64[M]") / np.timedelta64(1, 'M')
+
+        duree_b = dataframe.echelon_duration_with_grille_in_effect_at_end
+
+        duree_c = dataframe.echelon_period_for_grille_at_start
+
+        dataframe['echelon_duration_with_grille_in_effect'] = np.where(
+            echelon_condition,
+            np.where(
+                grille_change_during_period,
+                np.where(
+                    condit_1 & condit_3,
+                    duree_a,
+                    duree_b,
+                    ),
+                duree_c,
+                ),
+            np.inf,
+            )
+        print(dataframe)
 
     def set_echelon_duration_with_grille_in_effect(self):
         dataframe = self.dataframe
@@ -219,7 +218,7 @@ class AgentFpt:
                             'next_change_of_legis_grille',
                             ] = next_change_of_legis_grille
 
-    def compose_date_duree_echelon(self, new_date_variable_name = None, start_date_variable_name = None,
+    def add_duree_echelon_to_date(self, new_date_variable_name = None, start_date_variable_name = None,
             duree_variable_name = None):
         dataframe = self.dataframe
         dataframe[new_date_variable_name] = (
@@ -227,6 +226,18 @@ class AgentFpt:
             dataframe[duree_variable_name].values.astype("timedelta64[M]")
             )
 
+    def add_echelon_max(self, date_effet_grille, echelon_max_variable_name):
+        echelon_max_by_grille = compute_echelon_max(grilles = grille_adjoint_technique, start_date = None)
+        dataframe = self.dataframe
+        dataframe = dataframe.merge(
+            echelon_max_by_grille,
+            how = 'left',
+            left_on = [date_effet_grille, 'grade'],
+            right_on = ['date_effet_grille', 'code_grade_NEG'],
+            copy = False
+            )
+        self.dataframe = dataframe
+        print self.dataframe
 
 def get_duree_echelon_from_grilles_dataframe(
         echelon = None, grade = None, date_effet = None, grilles = None, speed = True):
@@ -241,11 +252,11 @@ def get_duree_echelon_from_grilles_dataframe(
     #    assert not duree.empty, u"Pas d'echelon {} valide dans le grade {} a la date {}".format(
     #        echelon, grade, date_effet)
     if duree.empty:
-        print u"Pas d'echelon {} valide dans le grade {} a la date {}".format(
-            echelon, grade, date_effet)
-        print 'using NaN'
+        print(
+            u"Pas d'echelon {} valide dans le grade {} a la date {}. Using NaN".format(
+                echelon, grade, date_effet)
+            )
         return np.nan
-
     return duree.squeeze()
 
 
@@ -263,6 +274,15 @@ def compute_changing_echelons_by_grade(grilles = None, start_date = None, speed 
     df = df.loc[df['max_mois'] > 1][['code_grade_NEG', 'echelon']]
     echelons_by_grade = df.groupby('code_grade_NEG')['echelon'].unique().to_dict()
     return echelons_by_grade
+
+
+def compute_echelon_max(grilles = None, start_date = None):
+    if start_date is not None:
+        grilles = grilles.query('date_effet_grille >= start_date')
+
+    df = grilles.groupby(['date_effet_grille', 'code_grade_NEG'])['echelon'].max()
+    df.name = 'echelon_max'
+    return df.reset_index()
 
 # TODO construire la table
 # grade echelon start_date new_date new_duree
