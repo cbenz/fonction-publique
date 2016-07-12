@@ -55,19 +55,29 @@ class AgentFpt:
 
         duree_c = dataframe.echelon_period_for_grille_at_start
 
+        grades_from_dataframe = dataframe.grade.unique()  # TODO: use a cache for this
+        grades_from_grilles = grille_adjoint_technique.code_grade_NEG.unique()
+        valid_grades = set(grades_from_dataframe).intersection(set(grades_from_grilles))
+
         dataframe['echelon_duration_with_grille_in_effect'] = np.where(
-            echelon_condition,
+            dataframe.grade.isin(valid_grades),
             np.where(
-                grille_change_during_period,
+                echelon_condition,
                 np.where(
-                    condit_1 & condit_3,
-                    duree_a,
-                    duree_b,
+                    grille_change_during_period,
+                    np.where(
+                        condit_1 & condit_3,
+                        duree_a,
+                        duree_b,
+                        ),
+                    duree_c,
                     ),
-                duree_c,
+                np.inf,
                 ),
             np.NaN,
             )
+
+
         print(dataframe)
 
 #    def set_echelon_duration_with_grille_in_effect(self):
@@ -83,7 +93,12 @@ class AgentFpt:
 
         assert date_observation is not None
         dataframe = self.dataframe
-        grades = dataframe.grade.unique()  # TODO: use a cache for this
+
+        grades_from_dataframe = dataframe.grade.unique()  # TODO: use a cache for this
+        grades_from_grilles = grille_adjoint_technique.code_grade_NEG.unique()
+        grades = set(grades_from_dataframe).intersection(set(grades_from_grilles))
+
+
         grade_filtered_grille = grille_adjoint_technique.loc[
             grille_adjoint_technique.code_grade_NEG.isin(grades)
             ]
@@ -93,7 +108,8 @@ class AgentFpt:
                 'period'
                 ].max()
             date_effet_filtered_grille = grade_filtered_grille.loc[
-                grade_filtered_grille.date_effet_grille <= max_dates_effet_grille
+                (grade_filtered_grille.code_grade_NEG == grade) &
+                (grade_filtered_grille.date_effet_grille <= max_dates_effet_grille)
                 ]
             dates_effet_grille = np.sort(date_effet_filtered_grille.date_effet_grille.unique())
 

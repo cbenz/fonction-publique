@@ -60,23 +60,25 @@ def test():
     list_of_id = ['identif == {}'.format(x) for x in range(9)]
     queries = map(agents.dataframe.query, list_of_id)
 
-    results_labels = ['date_debut_effet_result',
-                         'date_next_effet_result',
-                         'date_next_change_effet_result',
-                         'date_end_period_echelon_grille_in_effect_at_start_result',
-                         'echelon_period_for_grille_at_start_max_result',
-                         'echelon_period_for_grille_at_end_max_result',
-                         'echelon_duration',
-                         ]
+    results_labels = [
+        'date_debut_effet_result',
+        'date_next_effet_result',
+        'date_next_change_effet_result',
+        'date_end_period_echelon_grille_in_effect_at_start_result',
+        'echelon_period_for_grille_at_start_max_result',
+        'echelon_period_for_grille_at_end_max_result',
+        'echelon_duration',
+        ]
 
-    variables = ['date_debut_effet',
-                           'next_grille_date_effet',
-                           'next_change_of_legis_grille',
-                           'end_echelon_grille_in_effect_at_start',
-                           'echelon_period_for_grille_at_start',
-                           'echelon_duration_with_grille_in_effect_at_end',
-                           'echelon_duration_with_grille_in_effect',
-                           ]
+    variables = [
+        'date_debut_effet',
+        'next_grille_date_effet',
+        'next_change_of_legis_grille',
+        'end_echelon_grille_in_effect_at_start',
+        'echelon_period_for_grille_at_start',
+        'echelon_duration_with_grille_in_effect_at_end',
+        'echelon_duration_with_grille_in_effect',
+        ]
 
     results = []
 
@@ -96,12 +98,14 @@ def test():
         resultat_obtenu = [item[index] for item in results]
         resultats_obtenus += resultat_obtenu
 
-    resultats = pd.DataFrame({'identif' : [i for i in range(9) for _ in range(7)],
-                                'variable' : variables * 9,
-                                'resultats_obtenus' : resultats_obtenus,
-                                'resultats_attendus' : resultats_attendus,
-                                'resultats_obtenus' : resultats_obtenus,
-                                })
+    resultats = pd.DataFrame(
+        {'identif': [i for i in range(9) for _ in range(7)],
+        'variable': variables * 9,
+        'resultats_obtenus': resultats_obtenus,
+        'resultats_attendus': resultats_attendus,
+        'resultats_obtenus': resultats_obtenus,
+        }
+        )
 
     resultats['tests_results'] = np.array(resultats.resultats_attendus) == np.array(resultats.resultats_obtenus)
 
@@ -122,35 +126,35 @@ def test():
     assert np.equal(resultats.resultats_attendus, resultats.resultats_obtenus).all(), mess()
 
 
-if __name__ == '__main__':
+#if __name__ == '__main__':
 
-    agents.set_dates_effet(
-        date_observation='period',
-        start_variable_name = "date_debut_effet",
-        next_variable_name = 'next_grille_date_effet'
-        )
-    agents.compute_echelon_duree(
-        date_effet_variable_name='date_debut_effet',
-        duree_variable_name='echelon_period_for_grille_at_start'
-        )
-    agents.compute_date_effet_legislation_change(
-        start_date_effet_variable_name = 'date_debut_effet',
-        date_effet_legislation_change_variable_name = 'next_change_of_legis_grille'
-        )
-    agents.add_duree_echelon_to_date(
-        new_date_variable_name = 'end_echelon_grille_in_effect_at_start',
-        start_date_variable_name = 'period',
-        duree_variable_name = 'echelon_period_for_grille_at_start')
+agents.set_dates_effet(
+    date_observation='period',
+    start_variable_name = "date_debut_effet",
+    next_variable_name = 'next_grille_date_effet'
+    )
+agents.compute_echelon_duree(
+    date_effet_variable_name='date_debut_effet',
+    duree_variable_name='echelon_period_for_grille_at_start'
+    )
+agents.compute_date_effet_legislation_change(
+    start_date_effet_variable_name = 'date_debut_effet',
+    date_effet_legislation_change_variable_name = 'next_change_of_legis_grille'
+    )
+agents.add_duree_echelon_to_date(
+    new_date_variable_name = 'end_echelon_grille_in_effect_at_start',
+    start_date_variable_name = 'period',
+    duree_variable_name = 'echelon_period_for_grille_at_start')
 
-    agents.set_dates_effet(
-        date_observation = 'end_echelon_grille_in_effect_at_start',
-        start_variable_name = "date_debut_effet2",
-        next_variable_name = None)
+agents.set_dates_effet(
+    date_observation = 'end_echelon_grille_in_effect_at_start',
+    start_variable_name = "date_debut_effet2",
+    next_variable_name = None)
 
-    agents.compute_echelon_duree(
-        date_effet_variable_name= 'date_debut_effet2',
-        duree_variable_name='echelon_duration_with_grille_in_effect_at_end'
-        )
+agents.compute_echelon_duree(
+    date_effet_variable_name= 'date_debut_effet2',
+    duree_variable_name='echelon_duration_with_grille_in_effect_at_end'
+    )
 
-    agents.add_echelon_max(date_effet_grille='date_debut_effet', echelon_max_variable_name='echelon_max')
-    agents.compute_echelon_duration_with_grille_in_effect()
+agents.add_echelon_max(date_effet_grille = 'date_debut_effet', echelon_max_variable_name = 'echelon_max')
+agents.compute_echelon_duration_with_grille_in_effect()

@@ -50,103 +50,98 @@ agents = AgentFpt(df)
 
 # 3. Expected results
 date_effet_at_start_expect = [
-                                datetime.datetime(2006, 11, 1),
-                                datetime.datetime(2015, 01, 01),
-                                pd.NaT,
-                                datetime.datetime(2008, 07, 01),
-                                datetime.datetime(2012, 05, 01),
-                                datetime.datetime(2006, 11, 01),
-                                datetime.datetime(2012, 05, 01),
-                                datetime.datetime(2015, 01, 01),
-                                pd.NaT
-                                    ]
+    datetime.datetime(2006, 11, 1),
+    datetime.datetime(2015, 01, 01),
+    pd.NaT,
+    datetime.datetime(2008, 07, 01),
+    datetime.datetime(2012, 05, 01),
+    datetime.datetime(2006, 11, 01),
+    datetime.datetime(2012, 05, 01),
+    datetime.datetime(2015, 01, 01),
+    pd.NaT,
+    ]
 
 date_next_effet_expect = [
-                            datetime.datetime(2008, 7, 1),
-                            pd.NaT,
-                            pd.NaT,
-                            datetime.datetime(2014, 02, 05),
-                            datetime.datetime(2013, 07, 07),
-                            datetime.datetime(2008, 07, 01),
-                            datetime.datetime(2013, 07, 07),
-                            pd.NaT,
-                            pd.NaT
-                                    ]
+    datetime.datetime(2008, 7, 1),
+    pd.NaT,
+    pd.NaT,
+    datetime.datetime(2014, 02, 01),
+    datetime.datetime(2013, 07, 07),
+    datetime.datetime(2008, 07, 01),
+    datetime.datetime(2013, 07, 07),
+    pd.NaT,
+    pd.NaT,
+    ]
 
 date_next_change_effet_expect = [
-                                pd.NaT,
-                                pd.NaT,
-                                pd.NaT,
-                                datetime.datetime(2014, 02, 01),
-                                pd.NaT,
-                                pd.NaT,
-                                datetime.datetime(2014, 02, 01),
-                                pd.NaT,
-                                pd.NaT,
-                                ]
-
-
+    pd.NaT,
+    pd.NaT,
+    pd.NaT,
+    datetime.datetime(2014, 02, 01),
+    pd.NaT,
+    pd.NaT,
+    datetime.datetime(2014, 02, 01),
+    pd.NaT,
+    pd.NaT,
+    ]
 
 date_end_period_echelon_grille_in_effect_at_start_expect = [
-                                                            datetime.datetime(2007, 12, 01),
-                                                            datetime.datetime(2020, 11, 01),
-                                                            pd.NaT,
-                                                            datetime.datetime(2014, 11, 01),
-                                                            datetime.datetime(2017, 06, 01),
-                                                            pd.NaT,
-                                                            datetime.datetime(2014, 11, 01),
-                                                            datetime.datetime(2030, 10, 01),
-                                                            pd.NaT,
-                                                            ]
-
+    datetime.datetime(2007, 12, 01),
+    datetime.datetime(2020, 11, 01),
+    pd.NaT,
+    datetime.datetime(2014, 11, 01),
+    datetime.datetime(2017, 06, 01),
+    pd.NaT,
+    datetime.datetime(2014, 11, 01),
+    datetime.datetime(2030, 10, 01),
+    pd.NaT,
+    ]
 
 echelon_period_for_grille_at_start_max_expect = [
-                                              '12.0',
-                                              '24.0',
-                                              'nan', # should raise an error
-                                              '36.0',
-                                              '48.0',
-                                              '0.0', # should be inf or a prob of transition
-                                              '24.0',
-                                              '48.0',
-                                              'nan',
-                                                  ]
-
+  '12.0',
+  '24.0',
+  'nan', # should raise an error
+  '36.0',
+  '48.0',
+  '0.0', # should be inf or a prob of transition
+  '24.0',
+  '48.0',
+  'nan',
+  ]
 
 duration_echelon_grille_in_effect_at_end_expect = [
-                                                    '12.0',
-                                                    '24.0',
-                                                    'nan',
-                                                    '24.0',
-                                                    '48.0',
-                                                    'inf',
-                                                    '12.0',
-                                                    '48.0',
-                                                    'nan',
-                                                    ]
+    '12.0',
+    '24.0',
+    'nan',
+    '24.0',
+    '48.0',
+    'inf',
+    '12.0',
+    '48.0',
+    'nan',
+    ]
 
 duration_echelon_expect = [
-                    '12.0',
-                    '24.0',
-                    'nan',
-                    '27.0',
-                    '48.0',
-                    'inf',
-                    '15.0',
-                    '48.0',
-                    'nan',
-                    ]
+    '12.0',
+    '24.0',
+    'nan',
+    '27.0',
+    '48.0',
+    'inf',
+    '15.0',
+    '48.0',
+    'nan',
+    ]
 
-results_expect = [date_effet_at_start_expect,
-                      date_next_effet_expect,
-                      date_next_change_effet_expect,
-                      date_end_period_echelon_grille_in_effect_at_start_expect,
-                      echelon_period_for_grille_at_start_max_expect,
-                      duration_echelon_grille_in_effect_at_end_expect,
-                      duration_echelon_expect,
-                      ]
-
-print results_expect
+results_expect = [
+    date_effet_at_start_expect,
+    date_next_effet_expect,
+    date_next_change_effet_expect,
+    date_end_period_echelon_grille_in_effect_at_start_expect,
+    echelon_period_for_grille_at_start_max_expect,
+    duration_echelon_grille_in_effect_at_end_expect,
+    duration_echelon_expect,
+    ]
 
 resultats_attendus = []
 for index in range(9):
