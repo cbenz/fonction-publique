@@ -8,11 +8,10 @@ from openfisca_core import periods
 
 from fonction_publique.career_simulation_vectorized import AgentFpt
 from fonction_publique.career_simulation_vectorized import grille_adjoint_technique, compute_changing_echelons_by_grade
+from fonction_publique import career_simulation_expected_results
+from fonction_publique.career_simulation_expected_results import resultats_attendus as ra
 
-# TODO:
-# - Start at zero
-
-# Case tests
+#1. Case tests
 agent0 = (0, datetime.date(2006, 12, 1), 793, 1)
 # agent0 is a basic case: the periods associated with his echelons change once in 2014, in a non problematic manner.
 # agent0 acceedes to echelon 5 in 2012-12 and is, according to the law of 2008-07, supposed to stay there for
@@ -48,90 +47,81 @@ agent8 = (8, datetime.date(2003, 11, 1), 796, 4)
 # agent 8 acceedes to echelon 4 in 2003. However, we don't have information on the legislation back then.
 # This raises an error is handled in _conditions_on_agent
 
-agent_tuples = [locals()['agent{}'.format(i)] for i in range(0, 10)]
+
+# 2. Format case tests into a dataframe and an instance of AgentFpt
+agent_tuples = [locals()['agent{}'.format(i)] for i in range(0, 9)]
 df = pd.DataFrame(agent_tuples, columns = ['identif', 'period', 'grade', 'echelon'])
 agents = AgentFpt(df)
 
+def test():
 
-def test_grid_date_effet_at_start():
-
-    resultats_attendus = [datetime.datetime(2006, 11, 1),
-                        datetime.datetime(2008, 7, 1),
-                        datetime.datetime(2015, 01, 01),
-                        'NaT',
-                        'NaT',
-                        'NaT',
-                        datetime.datetime(2008, 07, 01),
-                        datetime.datetime(2014, 02, 05),
-                        datetime.datetime(2012, 05, 01),
-                        datetime.datetime(2013, 07, 07),
-                        datetime.datetime(2006, 11, 01),
-                        datetime.datetime(2008, 07, 01),
-                        datetime.datetime(2012, 05, 01),
-                        datetime.datetime(2013, 07, 07),
-                        datetime.datetime(2015, 01, 01),
-                        'NaT',
-                        'NaT',
-                        'NaT'
-            ]
+    resultats_attendus = ra # defined in career_simulation_expected_results.py
 
     list_of_id = ['identif == {}'.format(x) for x in range(9)]
     queries = map(agents.dataframe.query, list_of_id)
-    resultat_date_debut_effet = [pd.Series(list(x.date_debut_effet)).values.astype(str) for x in queries]
-    resultat_next_grille_date_effet = [pd.Series(list(x.next_grille_date_effet)).values.astype(str) for x in queries]
 
-    resultats_obtenus = [None]*(len(resultat_date_debut_effet)+len(resultat_next_grille_date_effet))
-    resultats_obtenus[::2] = resultat_date_debut_effet
-    resultats_obtenus[1::2] = resultat_next_grille_date_effet
+    results_labels = ['date_debut_effet_result',
+                         'date_next_effet_result',
+                         'date_next_change_effet_result',
+                         'date_end_period_echelon_grille_in_effect_at_start_result',
+                         'echelon_period_for_grille_at_start_max_result',
+                         'echelon_period_for_grille_at_end_max_result',
+                         'echelon_duration',
+                         ]
 
-    variable = ('date_debut_effet', 'date_next_grille_date_effet') * 9
+    variables = ['date_debut_effet',
+                           'next_grille_date_effet',
+                           'next_change_of_legis_grille',
+                           'end_echelon_grille_in_effect_at_start',
+                           'echelon_period_for_grille_at_start',
+                           'echelon_duration_with_grille_in_effect_at_end',
+                           'echelon_duration_with_grille_in_effect',
+                           ]
 
-    resultats_obtenus = [''.join(x) for x in resultats_obtenus]
-    resultats_obtenus = [pd.to_datetime(str(x)[:10]) for x in resultats_obtenus]
+    results = []
 
-    results = pd.DataFrame({'identif' : [i for i in range(9) for _ in range(2)],
-                            'variable' : variable,
-                            'resultats_attendus' : resultats_attendus,
-                            'resultats_obtenus' : resultats_obtenus,
-                            })
+    for index in range(len(results_labels)):
+        result = results_labels[index]
+        variable = variables[index]
+        result = [pd.Series(list(x[variable])).values.astype(str) for x in queries]
+        result = [''.join(x) for x in result]
+        if 'date' in results_labels[index]:
+            result = [pd.to_datetime(str(x)[:10]) for x in result]
+        else:
+            result = result
+        results.append(result)
 
-    results['tests_results'] = np.array(results.resultats_attendus) == np.array(results.resultats_obtenus)
+    resultats_obtenus = []
+    for index in range(9):
+        resultat_obtenu = [item[index] for item in results]
+        resultats_obtenus += resultat_obtenu
 
-    return results
+    resultats = pd.DataFrame({'identif' : [i for i in range(9) for _ in range(7)],
+                                'variable' : variables * 9,
+                                'resultats_obtenus' : resultats_obtenus,
+                                'resultats_attendus' : resultats_attendus,
+                                'resultats_obtenus' : resultats_obtenus,
+                                })
+
+    resultats['tests_results'] = np.array(resultats.resultats_attendus) == np.array(resultats.resultats_obtenus)
+
+    results_errors = resultats.loc[resultats['tests_results'] == False].reset_index()
+    return results_errors
+    def mess():
+        messages = ''
+        for row in range(len(results_errors)):
+            message = 'La variable {} pour l\'identifiant {} vaut {} et devrait valoir {}'.format(
+                results_errors['variable'][row],
+                results_errors['identif'][row],
+                results_errors['resultats_obtenus'][row],
+                results_errors['resultats_attendus'][row],
+                )
+            messages += message + '\n'
+        return messages
+
+    assert np.equal(resultats.resultats_attendus, resultats.resultats_obtenus).all(), mess()
 
 
-#def test_echelon_period_for_grille_at_start():
-#    assert (agents.dataframe.query('identif == 0').echelon_period_for_grille_at_start == 12).all()
-    # TODO ask lisa for this one: print agent4._echelon_period_for_grille_at_start(True)
-
-#
-#def test_next_change_of_legis_grille():
-#    agents.dataframe.query('identif == 0').next_change_of_legis_grille.isnull().all()
-#    assert agents.dataframe.query('identif == 0').next_change_of_legis_grille.isnull().all()
-#    assert (agents.dataframe.query('identif == 3').next_change_of_legis_grille == datetime.datetime(2014, 2, 1)).all()
-#    # TODO there is something with 5
-##    assert (agents.dataframe.query('identif == 6').next_change_of_legis_grille == datetime.datetime(2014, 2, 1)).all()
-#
-#
-#def test_end_period_echelon_grille_in_effect_at_start():
-#    #    assert agent1._end_echelon_grille_in_effect_at_start(True) == periods.instant('2007-11-30'), \
-#    #        "Got {} instead of {}".format(
-#    #            agent1._end_echelon_grille_in_effect_at_start(True),
-#    #            periods.instant('2007-11-30'))
-#    assert (agents.dataframe.query('identif == 0').end_echelon_grille_in_effect_at_start ==
-#        datetime.datetime(2007, 12, 1)).all()
-#
-#
-#def test_echelon_duration_with_grille_in_effect_at_end():
-#    assert (agents.dataframe.query('identif == 0').echelon_duration_with_grille_in_effect_at_end == 12).all()
-
-
-#def test_echelon_duration_with_grille_in_effect():
-#    assert agent1._echelon_duration_with_grille_in_effect(True) == 12
-#    assert agent7._echelon_duration_with_grille_in_effect(True) == 15
-##    assert agent6.echelon_duration_with_grille_in_effect(True) == 40 CASE TO HANDLE
-#
-#
 if __name__ == '__main__':
 
     agents.set_dates_effet(
@@ -164,14 +154,3 @@ if __name__ == '__main__':
 
     agents.add_echelon_max(date_effet_grille='date_debut_effet', echelon_max_variable_name='echelon_max')
     agents.compute_echelon_duration_with_grille_in_effect()
-
-    print agents.dataframe
-
-    test_grid_date_effet_at_start()
-    test_echelon_period_for_grille_at_start()
-    test_next_change_of_legis_grille()
-    test_end_period_echelon_grille_in_effect_at_start()
-    test_echelon_duration_with_grille_in_effect_at_end()
-#     agents._echelon_period_for_grille_at_start(True)
-#
-#     agents.dataframe.echelon_duration_with_grille_in_effect =
