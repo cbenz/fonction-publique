@@ -106,7 +106,7 @@ def test():
     resultats['tests_results'] = np.array(resultats.resultats_attendus) == np.array(resultats.resultats_obtenus)
 
     results_errors = resultats.loc[resultats['tests_results'] == False].reset_index()
-    return results_errors
+
     def mess():
         messages = ''
         for row in range(len(results_errors)):

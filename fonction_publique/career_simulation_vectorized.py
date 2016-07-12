@@ -11,7 +11,7 @@ from time import gmtime, strftime
 
 
 from openfisca_core import periods
-from .base import grille_adjoint_technique
+from fonction_publique.base import grille_adjoint_technique
 
 
 dates_effet_grille = grille_adjoint_technique['date_effet_grille']
@@ -31,7 +31,7 @@ class AgentFpt:
 
     def compute_echelon_duration_with_grille_in_effect(self):
         dataframe = self.dataframe
-        echelon_condition = (dataframe.echelon + 1) <= dataframe.echelon_max
+        echelon_condition = (dataframe.echelon + 1) <= dataframe.echelon_max # Echelon sera une str
         condit_1 = (
             dataframe.next_change_of_legis_grille < dataframe.end_echelon_grille_in_effect_at_start
             )
@@ -66,16 +66,17 @@ class AgentFpt:
                     ),
                 duree_c,
                 ),
-            np.inf,
+            np.NaN,
             )
         print(dataframe)
 
-    def set_echelon_duration_with_grille_in_effect(self):
-        dataframe = self.dataframe
-        dataframe['grille_change_during_period'] = (
-            dataframe['echelon_period_for_grille_at_start'] ==
-            dataframe['echelon_duration_with_grille_in_effect_at_end']
-            )
+#    def set_echelon_duration_with_grille_in_effect(self):
+#        """ Non utilisée ? Est-ce une version de does_grid_change etc ?  """
+#        dataframe = self.dataframe
+#        dataframe['grille_change_during_period'] = (
+#            dataframe['echelon_period_for_grille_at_start'] ==
+#            dataframe['echelon_duration_with_grille_in_effect_at_end']
+#            )
 
     def set_dates_effet(self, date_observation = None, start_variable_name = "date_debut_effet",
             next_variable_name = None):
@@ -160,9 +161,9 @@ class AgentFpt:
             date_effet_legislation_change_variable_name = None, speed = True):
 
         if speed:
-            duree_str = '{}_mois'.format('max')
+            duree_str = 'max_mois'
         else:
-            duree_str = '{}_mois'.format('min')
+            duree_str = 'min_mois'
 
         dataframe = self.dataframe
         grades = dataframe.grade.unique()  # TODO: use a cache for this
@@ -242,9 +243,9 @@ class AgentFpt:
 def get_duree_echelon_from_grilles_dataframe(
         echelon = None, grade = None, date_effet = None, grilles = None, speed = True):
     if speed:
-        duree_str = '{}_mois'.format('max')
+        duree_str = 'max_mois'
     else:
-        duree_str = '{}_mois'.format('min')
+        duree_str = 'min_mois'
 
     expr = '(code_grade_NEG == @grade) & (echelon == @echelon) & (date_effet_grille == @date_effet)'
     duree = grilles.query(expr)[duree_str].copy()
@@ -269,7 +270,7 @@ def compute_changing_echelons_by_grade(grilles = None, start_date = None, speed 
     if start_date is not None:
         grilles = grilles.query('date_effet_grille >= start_date')
 
-    df = grilles.groupby(['code_grade_NEG', 'echelon'])[duree_str].nunique()
+    df = grilles.groupby(['code_grade_NEG', 'echelon'])[duree_str].nunique() # unique() ?
     df = df.reset_index()
     df = df.loc[df['max_mois'] > 1][['code_grade_NEG', 'echelon']]
     echelons_by_grade = df.groupby('code_grade_NEG')['echelon'].unique().to_dict()
