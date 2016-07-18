@@ -174,11 +174,7 @@ class AgentFpt:
     def compute_date_effet_legislation_change(self, start_date_effet_variable_name = None,
             date_effet_legislation_change_variable_name = None, speed = True):
 
-        if speed:
-            duree_str = 'max_mois'
-        else:
-            duree_str = 'min_mois'
-
+        duree_str = get_duree_str_from_speed(speed)
         dataframe = self.dataframe
         grades = dataframe.grade.unique()  # TODO: use a cache for this
         grade_filtered_grille = grille_adjoint_technique.loc[
@@ -256,11 +252,7 @@ class AgentFpt:
 
 def get_duree_echelon_from_grilles_dataframe(
         echelon = None, grade = None, date_effet = None, grilles = None, speed = True):
-    if speed:
-        duree_str = 'max_mois'
-    else:
-        duree_str = 'min_mois'
-
+    duree_str = get_duree_str_from_speed(speed)
     expr = '(code_grade_NEG == @grade) & (echelon == @echelon) & (date_effet_grille == @date_effet)'
     duree = grilles.query(expr)[duree_str].copy()
 
@@ -276,11 +268,7 @@ def get_duree_echelon_from_grilles_dataframe(
 
 
 def compute_changing_echelons_by_grade(grilles = None, start_date = None, speed = True):
-    if speed:
-        duree_str = '{}_mois'.format('max')
-    else:
-        duree_str = '{}_mois'.format('min')
-
+    duree_str = get_duree_str_from_speed(speed)
     if start_date is not None:
         grilles = grilles.query('date_effet_grille >= start_date')
 
@@ -298,6 +286,7 @@ def compute_echelon_max(grilles = None, start_date = None):
     df = grilles.groupby(['date_effet_grille', 'code_grade_NEG'])['echelon'].max()
     df.name = 'echelon_max'
     return df.reset_index()
+
 
 def compute_all(agents):
     agents.set_dates_effet(
@@ -331,6 +320,13 @@ def compute_all(agents):
     agents.add_echelon_max(date_effet_grille = 'date_debut_effet', echelon_max_variable_name = 'echelon_max')
     agents.compute_echelon_duration_with_grille_in_effect()
 
+
+def get_duree_str_from_speed(speed):
+    if speed:
+        duree_str = '{}_mois'.format('max')
+    else:
+        duree_str = '{}_mois'.format('min')
+    return duree_str
 # TODO construire la table
 # grade echelon start_date new_date new_duree
 # et faire des merge
