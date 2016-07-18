@@ -298,6 +298,38 @@ def compute_echelon_max(grilles = None, start_date = None):
     df.name = 'echelon_max'
     return df.reset_index()
 
+def compute_all(agents):
+    agents.set_dates_effet(
+        date_observation='period',
+        start_variable_name = "date_debut_effet",
+        next_variable_name = 'next_grille_date_effet'
+        )
+    agents.compute_echelon_duree(
+        date_effet_variable_name='date_debut_effet',
+        duree_variable_name='echelon_period_for_grille_at_start'
+        )
+    agents.compute_date_effet_legislation_change(
+        start_date_effet_variable_name = 'date_debut_effet',
+        date_effet_legislation_change_variable_name = 'next_change_of_legis_grille'
+        )
+    agents.add_duree_echelon_to_date(
+        new_date_variable_name = 'end_echelon_grille_in_effect_at_start',
+        start_date_variable_name = 'period',
+        duree_variable_name = 'echelon_period_for_grille_at_start')
+
+    agents.set_dates_effet(
+        date_observation = 'end_echelon_grille_in_effect_at_start',
+        start_variable_name = "date_debut_effet2",
+        next_variable_name = None)
+
+    agents.compute_echelon_duree(
+        date_effet_variable_name= 'date_debut_effet2',
+        duree_variable_name='echelon_duration_with_grille_in_effect_at_end'
+        )
+
+    agents.add_echelon_max(date_effet_grille = 'date_debut_effet', echelon_max_variable_name = 'echelon_max')
+    agents.compute_echelon_duration_with_grille_in_effect()
+
 # TODO construire la table
 # grade echelon start_date new_date new_duree
 # et faire des merge
