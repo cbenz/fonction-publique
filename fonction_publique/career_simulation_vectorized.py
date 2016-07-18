@@ -77,6 +77,7 @@ class AgentFpt:
             np.NaN,
             )
 
+
 #    def set_echelon_duration_with_grille_in_effect(self):
 #        """ Non utilisée ? Est-ce une version de does_grid_change etc ?  """
 #        dataframe = self.dataframe

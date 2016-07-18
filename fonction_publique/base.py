@@ -14,6 +14,7 @@ asset_path = os.path.join(
     'assets',
     'grilles_fonction_publique',
     )
+
 grille_adjoint_technique_path = os.path.join(
     asset_path,
     'FPT_adjoint_technique.xlsx',
@@ -25,3 +26,15 @@ donnees_adjoints_techniques = os.path.join(
     'donnees_indiv_adjoint_technique_test.xlsx',
     )
 donnees_adjoints_techniques = pd.read_excel(donnees_adjoints_techniques)
+
+
+linux_cnracl_path = os.path.join("/run/user/1000/gvfs", "smb-share:server=192.168.1.2,share=data", "CNRACL")
+windows_cnracl_path = os.path("M:/CNRACL/")
+
+if os.path.exists(linux_cnracl_path):
+    cnracl_path = linux_cnracl_path
+else:
+    cnracl_path = windows_cnracl_path
+
+stata_data_path = os.path.join(cnracl_path, "Stata")
+hdf_directory_path = os.path.join(cnracl_path, 'Carriere-CNRACL/base_carriere_clean')

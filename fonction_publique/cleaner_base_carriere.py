@@ -6,11 +6,8 @@ import seaborn as sns
 import time
 
 
-# TODO: prepare data and export to hdf table
-
-# path to stata data
-data_path = "M:\CNRACL\Stata"
-
+from fonction_publique.base import stata_data_path, hdf_directory_path
+stata_file_path = os.path.join(stata_data_path, 'c_g1950_g1959.dta')
 
 
 # Timer
@@ -22,11 +19,6 @@ def timing(f):
         print '%s function took %0.3f ms' % (f.func_name, (time2-time1)*1000.0)
         return ret
     return wrap
-
-
-# TODO move to the top
-stata_file_path = os.path.join(data_path, 'c_g1950_g1959.dta')
-
 
 
 def select_columns(string):  # e.g 'ident' 'qualite' 'statut' 'cir' '_netneh' 'libemploi' 'ib_' 'etat_'
@@ -93,13 +85,11 @@ def clean_subset(string, period, trimestre):
     return subset_result
 
 
-# TODO define a destination path
-os.chdir('M:\CNRACL\Carriere-CNRACL/base_carriere_clean')
-
-
+hdf_file_path = os.path.jojn(hdf_directory_path, 'base_carriere_2')
 
 @timing
 def format_columns(string, periode, trimestre):
+
     subset_to_format = clean_subset(string, periode, trimestre)
     subset_to_format['ident'] = subset_to_format['ident'].astype('int')
     if string in ['qualite', 'statut', 'etat_']:

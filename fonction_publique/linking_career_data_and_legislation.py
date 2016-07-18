@@ -9,6 +9,8 @@ from datetime import datetime, timedelta, date
 import dateutil.parser as parser
 from collections import Counter
 
+from fonction_publique.base import asset_path
+
 data_path = "M:\CNRACL\Carriere-CNRACL"
 
 hdf5_file_path = os.path.join(
@@ -20,17 +22,17 @@ hdf5_file_path = os.path.join(
 def clean_law():
     """ identifier les extraits de la loi dont on a besoin et nettoyer les colonnes, stocker le résultat dans une
     table hdf"""
-    legislation_path = "C:/Users/lisa.degalle/fonction-publique/fonction_publique/assets/grilles_fonction_publique"
+
     law_xls_path = os.path.join(
-        legislation_path,
+        asset_path,
         "neg_pour_ipp.txt")
     law = pd.read_table(law_xls_path)
-    law = law[['date_effet_grille', 'ib', 'code_grade_NETNEH', 'echelon']]
+    law = law[['date_effet_grille', 'ib', 'code_grade_NETNEH', 'echelon']].copy()
     law['date_effet_grille'] = pd.to_datetime(law['date_effet_grille'])
     law['ib'] = law['ib'].fillna(-1)
     law['ib'] = law['ib'].astype('int32')
     law['code_grade_NETNEH'] = law['code_grade_NETNEH'].astype('str')
-    law = law[~law['ib'].isin([-1, 0])]
+    law = law[~law['ib'].isin([-1, 0])].copy()
     law.to_hdf('carrieres_a_lier', 'grilles', format = 'table', data_columns = True)
     return law
 

@@ -9,7 +9,9 @@ import pylab as plt
 import seaborn as sns
 import time
 
-data_path = "M:\CNRACL\Carriere-CNRACL"
+from fonction_publique.base import cnracl_path
+
+data_path = os.path.join(cnracl_path, "Carriere-CNRACL")
 
 #hdf5_file_path = os.path.join(data_path, 'c_g1950_g1959_1.h5')
 #read_only_store = pd.HDFStore(hdf5_file_path, 'r')
