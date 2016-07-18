@@ -77,9 +77,6 @@ class AgentFpt:
             np.NaN,
             )
 
-
-        print(dataframe)
-
 #    def set_echelon_duration_with_grille_in_effect(self):
 #        """ Non utilisée ? Est-ce une version de does_grid_change etc ?  """
 #        dataframe = self.dataframe
@@ -254,7 +251,7 @@ class AgentFpt:
             copy = False
             )
         self.dataframe = dataframe
-        print self.dataframe
+
 
 def get_duree_echelon_from_grilles_dataframe(
         echelon = None, grade = None, date_effet = None, grilles = None, speed = True):

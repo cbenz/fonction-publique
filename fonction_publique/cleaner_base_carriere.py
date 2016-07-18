@@ -1,5 +1,4 @@
 from __future__ import division
-import h5py
 import os
 import pandas as pd
 import pylab as plt
@@ -85,14 +84,14 @@ def clean_subset(string, period, trimestre):
     return subset_result
 
 arg_format_columns = [
-                    ('c_netneh', range(2010, 2015), False),#
-                    ('c_cir', range(2010, 2015), False),#
-                    ('libemploi', range(2000, 2015), False),#
-                    ('ib_', range(1970, 2015), True),#
-                    ('qualite', range(1970, 2015), False),#
-                    ('statut', range(1970, 2015), False),#
-                    ('etat', range(1970, 2015), True)
-                    ]
+    ('c_netneh', range(2010, 2015), False),
+    ('c_cir', range(2010, 2015), False),
+    ('libemploi', range(2000, 2015), False),
+    ('ib_', range(1970, 2015), True),
+    ('qualite', range(1970, 2015), False),
+    ('statut', range(1970, 2015), False),
+    ('etat', range(1970, 2015), True)
+    ]
 
 os.chdir('M:\CNRACL\Carriere-CNRACL/base_carriere_clean')
 
