@@ -6,6 +6,13 @@ import seaborn as sns
 import time
 
 
+# TODO: prepare data and export to hdf table
+
+# path to stata data
+data_path = "M:\CNRACL\Stata"
+
+
+
 # Timer
 def timing(f):
     def wrap(*args):
@@ -16,20 +23,19 @@ def timing(f):
         return ret
     return wrap
 
-data_path = "M:\CNRACL\Stata"
-#hdf5_file_path = os.path.join(data_path, 'c_g1950_g1959_1.h5')
-#read_only_store = pd.HDFStore(hdf5_file_path, 'r')
 
+# TODO move to the top
 stata_file_path = os.path.join(data_path, 'c_g1950_g1959.dta')
-reader = pd.read_stata(stata_file_path, chunksize = 50000)
-reader_for_colnames = pd.read_stata(stata_file_path, chunksize = 1)
-for chunk in reader_for_colnames:
-    chunk_to_get_colnames = chunk
-    break
+
+
 
 def select_columns(string):  # e.g 'ident' 'qualite' 'statut' 'cir' '_netneh' 'libemploi' 'ib_' 'etat_'
 #    colnames = read_only_store.select('data', 'index < 2').columns.to_series()
     """ selectionne les noms de colonnes correspondant à la variable (string) qui nous interesse """
+    reader_for_colnames = pd.read_stata(stata_file_path, chunksize = 1)
+    for chunk in reader_for_colnames:
+        chunk_to_get_colnames = chunk
+        break
     colnames = chunk_to_get_colnames.columns.to_series()
     colnames_subset = pd.Series(['ident'])
     colnames_to_keep = colnames.str.contains(string)
@@ -41,6 +47,7 @@ def select_columns(string):  # e.g 'ident' 'qualite' 'statut' 'cir' '_netneh' 'l
 @timing
 def get_subset(string):
     """ selectionne le sous-dataframe pour une variable, appelee string ici"""
+    reader = pd.read_stata(stata_file_path, chunksize = 50000)
     colnames = select_columns(string)
 #    get_subset = read_only_store.select('data', 'columns = colnames')  # try full size
     get_subset = pd.DataFrame()
@@ -62,20 +69,22 @@ def clean_subset(string, period, trimestre):
             if string == 'ib_':
                 for trimestre in range(1, 5):
                     subset_cleaned = subset[['ident', '{}{}_{}'.format(string, annee, trimestre)]].copy()
-                    subset_cleaned.rename(columns = {'{}{}_{}'.format(string, annee, trimestre): string},
-                                                     inplace = True
-                                                     )
+                    subset_cleaned.rename(
+                        columns = {'{}{}_{}'.format(string, annee, trimestre): string},
+                        inplace = True
+                        )
                     subset_cleaned['trimestre'] = trimestre
                     subset_cleaned['annee'] = annee
                     subset_result = pd.concat([subset_result, subset_cleaned])
             else:
-                    subset_cleaned = subset[['ident', '{}_{}_{}'.format(string, annee, trimestre)]].copy()
-                    subset_cleaned.rename(columns = {'{}_{}_{}'.format(string, annee, trimestre): string},
-                                                     inplace = True
-                                                     )
-                    subset_cleaned['trimestre'] = trimestre
-                    subset_cleaned['annee'] = annee
-                    subset_result = pd.concat([subset_result, subset_cleaned])
+                subset_cleaned = subset[['ident', '{}_{}_{}'.format(string, annee, trimestre)]].copy()
+                subset_cleaned.rename(
+                    columns = {'{}_{}_{}'.format(string, annee, trimestre): string},
+                    inplace = True
+                    )
+                subset_cleaned['trimestre'] = trimestre
+                subset_cleaned['annee'] = annee
+                subset_result = pd.concat([subset_result, subset_cleaned])
         else:
             subset_cleaned = subset[['ident', '{}_{}'.format(string, annee)]].copy()
             subset_cleaned.rename(columns = {'{}_{}'.format(string, annee): string}, inplace = True)
@@ -83,17 +92,11 @@ def clean_subset(string, period, trimestre):
             subset_result = pd.concat([subset_result, subset_cleaned])
     return subset_result
 
-arg_format_columns = [
-    ('c_netneh', range(2010, 2015), False),
-    ('c_cir', range(2010, 2015), False),
-    ('libemploi', range(2000, 2015), False),
-    ('ib_', range(1970, 2015), True),
-    ('qualite', range(1970, 2015), False),
-    ('statut', range(1970, 2015), False),
-    ('etat', range(1970, 2015), True)
-    ]
 
+# TODO define a destination path
 os.chdir('M:\CNRACL\Carriere-CNRACL/base_carriere_clean')
+
+
 
 @timing
 def format_columns(string, periode, trimestre):
@@ -131,3 +134,15 @@ def format_generation():
 #    df_libemploi = get_df('libemploi')
 #    df_libemploi_subset = df_libemploi.to_hdf(hdf5_file_path, 'libemploi_2010_2014',
 #                                          mode='w', format='table', data_columns=True)
+
+
+if __name__ == '__main__':
+    arg_format_columns = [
+    ('c_netneh', range(2010, 2015), False),
+    ('c_cir', range(2010, 2015), False),
+    ('libemploi', range(2000, 2015), False),
+    ('ib_', range(1970, 2015), True),
+    ('qualite', range(1970, 2015), False),
+    ('statut', range(1970, 2015), False),
+    ('etat', range(1970, 2015), True)
+    ]
