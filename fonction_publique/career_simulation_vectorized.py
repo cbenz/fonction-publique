@@ -4,7 +4,7 @@
 from __future__ import division
 
 
-from datetime import datetime
+from datetime import datetime, date
 import numpy as np
 import pandas as pd
 from time import gmtime, strftime
@@ -31,7 +31,11 @@ class AgentFpt:
 
     def compute_echelon_duration_with_grille_in_effect(self):
         dataframe = self.dataframe
-        echelon_condition = (dataframe.echelon + 1) <= dataframe.echelon_max # Echelon sera une str
+        # TODO this bloc should be reworked
+        date_effet_variable_name = 'date_debut_effet'
+        echelon_max_variable_name = 'echelon_max_at_{}'.format(date_effet_variable_name)
+
+        echelon_condition = (dataframe.echelon + 1) <= dataframe[echelon_max_variable_name]  # TODO echelon sera une str
         condit_1 = (
             dataframe.next_change_of_legis_grille < dataframe.end_echelon_grille_in_effect_at_start
             )
@@ -77,7 +81,6 @@ class AgentFpt:
             np.NaN,
             )
 
-
 #    def set_echelon_duration_with_grille_in_effect(self):
 #        """ Non utilisée ? Est-ce une version de does_grid_change etc ?  """
 #        dataframe = self.dataframe
@@ -95,7 +98,6 @@ class AgentFpt:
         grades_from_dataframe = dataframe.grade.unique()  # TODO: use a cache for this
         grades_from_grilles = grille_adjoint_technique.code_grade_NEG.unique()
         grades = set(grades_from_dataframe).intersection(set(grades_from_grilles))
-
 
         grade_filtered_grille = grille_adjoint_technique.loc[
             grille_adjoint_technique.code_grade_NEG.isin(grades)
@@ -135,7 +137,13 @@ class AgentFpt:
     def compute_echelon_duree(self, date_effet_variable_name = None, duree_variable_name =None):
         # TODO may be a merge is faster
         assert date_effet_variable_name is not None
+        echelon_max_variable_name = 'echelon_max_at_{}'.format(date_effet_variable_name)
+        self.add_echelon_max(
+            date_effet_grille = date_effet_variable_name,
+            echelon_max_variable_name = echelon_max_variable_name,
+            )
         dataframe = self.dataframe
+        print dataframe
         grades = dataframe.grade.unique()  # TODO: use a cache for this
         grade_filtered_grille = grille_adjoint_technique.loc[
             grille_adjoint_technique.code_grade_NEG.isin(grades)
@@ -170,6 +178,16 @@ class AgentFpt:
                         selected_entries & (dataframe.echelon == echelon),
                         duree_variable_name,
                         ] = duree
+                    dataframe.loc[
+                        selected_entries & (dataframe.echelon == dataframe[echelon_max_variable_name]),
+                        duree_variable_name,
+                        ] = np.inf
+
+        # # Agent stucked in ultimate echelon
+        # dataframe.loc[
+        #     (dataframe[date_effet_variable_name] == pd.Timestamp.max.floor('D')) & (dataframe.echelon == dataframe[echelon_max_variable_name]),
+        #     duree_variable_name,
+        #     ] = np.inf
 
     def compute_date_effet_legislation_change(self, start_date_effet_variable_name = None,
             date_effet_legislation_change_variable_name = None, speed = True):
@@ -237,9 +255,15 @@ class AgentFpt:
             dataframe[duree_variable_name].values.astype("timedelta64[M]")
             )
 
-    def add_echelon_max(self, date_effet_grille, echelon_max_variable_name):
-        echelon_max_by_grille = compute_echelon_max(grilles = grille_adjoint_technique, start_date = None)
+        dataframe.loc[dataframe[duree_variable_name] == np.inf, new_date_variable_name] = pd.Timestamp.max.floor('D')
+
+
+    def add_echelon_max(self, date_effet_grille, echelon_max_variable_name = None):
+        assert echelon_max_variable_name is not None
+        echelon_max_by_grille = compute_echelon_max(grilles = grille_adjoint_technique, start_date = None,
+            echelon_max_variable_name = echelon_max_variable_name)
         dataframe = self.dataframe
+        assert date_effet_grille != 'date_effet_grille'
         dataframe = dataframe.merge(
             echelon_max_by_grille,
             how = 'left',
@@ -247,6 +271,8 @@ class AgentFpt:
             right_on = ['date_effet_grille', 'code_grade_NEG'],
             copy = False
             )
+        del dataframe['date_effet_grille']
+        del dataframe['code_grade_NEG']
         self.dataframe = dataframe
 
 
@@ -279,12 +305,13 @@ def compute_changing_echelons_by_grade(grilles = None, start_date = None, speed 
     return echelons_by_grade
 
 
-def compute_echelon_max(grilles = None, start_date = None):
+def compute_echelon_max(grilles = None, start_date = None, echelon_max_variable_name = None):
+    print
     if start_date is not None:
         grilles = grilles.query('date_effet_grille >= start_date')
 
     df = grilles.groupby(['date_effet_grille', 'code_grade_NEG'])['echelon'].max()
-    df.name = 'echelon_max'
+    df.name = echelon_max_variable_name
     return df.reset_index()
 
 
@@ -294,6 +321,7 @@ def compute_all(agents):
         start_variable_name = "date_debut_effet",
         next_variable_name = 'next_grille_date_effet'
         )
+
     agents.compute_echelon_duree(
         date_effet_variable_name='date_debut_effet',
         duree_variable_name='echelon_period_for_grille_at_start'
@@ -313,12 +341,12 @@ def compute_all(agents):
         next_variable_name = None)
 
     agents.compute_echelon_duree(
-        date_effet_variable_name= 'date_debut_effet2',
-        duree_variable_name='echelon_duration_with_grille_in_effect_at_end'
+        date_effet_variable_name = 'date_debut_effet2',
+        duree_variable_name = 'echelon_duration_with_grille_in_effect_at_end'
         )
 
-    agents.add_echelon_max(date_effet_grille = 'date_debut_effet', echelon_max_variable_name = 'echelon_max')
     agents.compute_echelon_duration_with_grille_in_effect()
+    print agents.dataframe
 
 
 def get_duree_str_from_speed(speed):

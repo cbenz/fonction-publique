@@ -9,25 +9,10 @@ from datetime import datetime
 
 from time import gmtime, strftime
 
+from fonction_publique.base import grille_adjoint_technique, donnees_adjoints_techniques
 
-asset_path = os.path.join(
-    pkg_resources.get_distribution('fonction_publique').location,
-    'fonction_publique',
-    'assets',
-    )
-grille_adjoint_technique_path = os.path.join(
-    asset_path,
-    'FPT_adjoint_technique.xlsx',
-    )
-grille_adjoint_technique = pd.read_excel(grille_adjoint_technique_path, encoding='utf-8')
+
 dates_effet_grille = grille_adjoint_technique['date_effet_grille']
-
-
-donnees_adjoints_techniques = os.path.join(
-    asset_path,
-    'donnees_indiv_adjoint_technique_test.xlsx',
-    )
-donnees_adjoints_techniques = pd.read_excel(donnees_adjoints_techniques)
 
 
 class AgentFpt:
