@@ -6,10 +6,10 @@ import pandas as pd
 
 from openfisca_core import periods
 
-from fonction_publique.career_simulation_vectorized import AgentFpt, compute_all
+from fonction_publique.career_simulation_vectorized import AgentFpt
 from fonction_publique.career_simulation_vectorized import grille_adjoint_technique, compute_changing_echelons_by_grade
 
-#1. Case tests
+# 1. Case tests
 agent0 = (0, datetime.date(2006, 12, 1), 793, 1)
 # agent0 is a basic case: the periods associated with his echelons change once in 2014, in a non problematic manner.
 # agent0 acceedes to echelon 5 in 2012-12 and is, according to the law of 2008-07, supposed to stay there for
@@ -48,7 +48,8 @@ agent8 = (8, datetime.date(2003, 11, 1), 796, 4)
 agent_tuples = [locals()['agent{}'.format(i)] for i in range(0, 9)]
 df = pd.DataFrame(agent_tuples, columns = ['identif', 'period', 'grade', 'echelon'])
 agents = AgentFpt(df)
-compute_all(agents)
+agents.compute_all()
+
 
 date_effet_at_start_expect = [
     datetime.datetime(2006, 11, 1),
@@ -92,46 +93,46 @@ date_end_period_echelon_grille_in_effect_at_start_expect = [
     pd.NaT,
     datetime.datetime(2014, 11, 01),
     datetime.datetime(2017, 06, 01),
-    pd.NaT,
+    pd.Timestamp.max.floor('D'),
     datetime.datetime(2014, 11, 01),
     datetime.datetime(2030, 10, 01),
     pd.NaT,
     ]
 
 echelon_period_for_grille_at_start_max_expect = [
-  '12.0',
-  '24.0',
-  'nan', # should raise an error
-  '36.0',
-  '48.0',
-  '0.0', # should be inf or a prob of transition
-  '24.0',
-  '48.0',
-  'nan',
-  ]
+    12.0,
+    24.0,
+    np.nan,  # should raise an errr
+    36.0,
+    48.0,
+    np.inf,  # should be inf or a prob of transitin
+    24.0,
+    48.0,
+    np.nan,
+    ]
 
 duration_echelon_grille_in_effect_at_end_expect = [
-    '12.0',
-    '24.0',
-    'nan',
-    '24.0',
-    '48.0',
-    'inf',
-    '12.0',
-    '48.0',
-    'nan',
+    12.0,
+    24.0,
+    np.nan,
+    24.0,
+    48.0,
+    np.inf,
+    12.0,
+    48.0,
+    np.nan,
     ]
 
 duration_echelon_expect = [
-    '12.0',
-    '24.0',
-    'nan',
-    '27.0',
-    '48.0',
-    'inf',
-    '15.0',
-    '48.0',
-    'nan',
+    12.0,
+    24.0,
+    np.nan,
+    27.0,
+    48.0,
+    np.inf,
+    15.0,
+    48.0,
+    np.nan,
     ]
 
 results_expect = [
@@ -144,65 +145,52 @@ results_expect = [
     duration_echelon_expect,
     ]
 
+results_expect_dataframe = pd.DataFrame.from_dict(dict(
+    date_debut_effet = date_effet_at_start_expect,
+    next_grille_date_effet = date_next_effet_expect,
+    next_change_of_legis_grille = date_next_change_effet_expect,
+    end_echelon_grille_in_effect_at_start = date_end_period_echelon_grille_in_effect_at_start_expect,
+    echelon_period_for_grille_at_start = echelon_period_for_grille_at_start_max_expect,
+    echelon_duration_with_grille_in_effect_at_end = duration_echelon_grille_in_effect_at_end_expect,
+    echelon_duration_with_grille_in_effect = duration_echelon_expect,
+    ))
+results_expect_dataframe.index.name = 'identif'
+results_expect_dataframe = pd.melt(
+    results_expect_dataframe.reset_index(),
+    id_vars = 'identif',
+    value_vars = results_expect_dataframe.columns.tolist(),
+    value_name = 'resultats_attendus',
+    )
+
+
 def test():
+    # print agents.dataframe
+    print results_expect_dataframe
+    value_vars = results_expect_dataframe.variable.unique().tolist()
+    print value_vars
+    print agents.dataframe.identif
+    assert set(value_vars) < set(agents.dataframe.columns)
+    results_actual_dataframe = pd.melt(
+        agents.dataframe,
+        id_vars = 'identif',
+        value_vars = value_vars,
+        value_name = 'resultats_obtenus',
+        )
 
-    resultats_attendus = []
-    for index in range(9):
-        resultat_attendu = [item[index] for item in results_expect]
-        resultats_attendus += resultat_attendu
+    print results_actual_dataframe
 
-    list_of_id = ['identif == {}'.format(x) for x in range(9)]
-    queries = map(agents.dataframe.query, list_of_id)
-
-    results_labels = [
-        'date_debut_effet_result',
-        'date_next_effet_result',
-        'date_next_change_effet_result',
-        'date_end_period_echelon_grille_in_effect_at_start_result',
-        'echelon_period_for_grille_at_start_max_result',
-        'echelon_period_for_grille_at_end_max_result',
-        'echelon_duration',
-        ]
-
-    variables = [
-        'date_debut_effet',
-        'next_grille_date_effet',
-        'next_change_of_legis_grille',
-        'end_echelon_grille_in_effect_at_start',
-        'echelon_period_for_grille_at_start',
-        'echelon_duration_with_grille_in_effect_at_end',
-        'echelon_duration_with_grille_in_effect',
-        ]
-
-    results = []
-
-    for index in range(len(results_labels)):
-        result = results_labels[index]
-        variable = variables[index]
-        result = [pd.Series(list(x[variable])).values.astype(str) for x in queries]
-        result = [''.join(x) for x in result]
-        if 'date' in results_labels[index]:
-            result = [pd.to_datetime(str(x)[:10]) for x in result]
-        else:
-            result = result
-        results.append(result)
-
-    resultats_obtenus = []
-    for index in range(9):
-        resultat_obtenu = [item[index] for item in results]
-        resultats_obtenus += resultat_obtenu
-
-    resultats = pd.DataFrame({
-        'identif': [i for i in range(9) for _ in range(7)],
-        'variable': variables * 9,
-        'resultats_obtenus': resultats_obtenus,
-        'resultats_attendus': resultats_attendus,
-        'resultats_obtenus': resultats_obtenus,
-        })
-
-    resultats['tests_results'] = np.array(resultats.resultats_attendus) == np.array(resultats.resultats_obtenus)
-
-    results_errors = resultats.loc[resultats['tests_results'] == False].reset_index()
+    resultats = results_expect_dataframe.merge(
+        results_actual_dataframe,
+        )
+    print resultats
+    results_errors = resultats.loc[
+        ~(
+            np.equal(resultats.resultats_attendus, resultats.resultats_obtenus) |
+            (
+                resultats.resultats_obtenus.isnull() & resultats.resultats_attendus.isnull()
+                )
+            )
+        ].reset_index()
 
     def mess():
         messages = ''
@@ -217,3 +205,10 @@ def test():
         return messages
 
     assert np.equal(resultats.resultats_attendus, resultats.resultats_obtenus).all(), mess()
+
+
+def test_result():
+    print '===='
+    result = agents.complete()
+    print result
+    print result.loc[result.identif == 0]

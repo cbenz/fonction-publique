@@ -76,7 +76,3 @@ def test_echelon_duration_with_grille_in_effect():
     assert agent1._echelon_duration_with_grille_in_effect(True) == 12
     assert agent7._echelon_duration_with_grille_in_effect(True) == 15
 #    assert agent6.echelon_duration_with_grille_in_effect(True) == 40 CASE TO HANDLE
-
-
-if __name__ == '__main__':
-    print AgentFpt.agentfptCount
