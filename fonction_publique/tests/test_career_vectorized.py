@@ -47,8 +47,7 @@ agent8 = (8, datetime.date(2003, 11, 1), 796, 4)
 
 agent_tuples = [locals()['agent{}'.format(i)] for i in range(0, 9)]
 df = pd.DataFrame(agent_tuples, columns = ['identif', 'period', 'grade', 'echelon'])
-agents = AgentFpt(df)
-agents.compute_all()
+
 
 
 date_effet_at_start_expect = [
@@ -207,3 +206,8 @@ def test_result():
     print result
     print agents.dataframe
     print result.loc[result.identif == 0]
+
+
+def test_next():
+    agents = AgentFpt(df)
+    print agents.compute_result()

@@ -28,6 +28,7 @@ class AgentFpt:
         self.grade = dataframe.grade
         self.echelon = dataframe.echelon
         self.agentfptCount = len(dataframe)
+        self.result = pd.DataFrame()
 
     def compute_echelon_duration_with_grille_in_effect(self):
         dataframe = self.dataframe
@@ -179,6 +180,10 @@ class AgentFpt:
 
         duree_str = get_duree_str_from_speed(speed)
         dataframe = self.dataframe
+
+        if date_effet_legislation_change_variable_name is not None:
+            self.dataframe[date_effet_legislation_change_variable_name] = pd.Timestamp.max.floor('D')
+
         grades = dataframe.grade.unique()  # TODO: use a cache for this
         grade_filtered_grille = grille_adjoint_technique.loc[
             grille_adjoint_technique.code_grade_NEG.isin(grades)
@@ -229,7 +234,7 @@ class AgentFpt:
                             (dataframe.echelon == echelon) &
                             (dataframe.grade == grade) &
                             (dataframe[start_date_effet_variable_name] == date_effet_grille),
-                            'next_change_of_legis_grille',
+                            date_effet_legislation_change_variable_name,
                             ] = next_change_of_legis_grille
 
     def add_duree_echelon_to_date(self, new_date_variable_name = None, start_date_variable_name = None,
@@ -302,8 +307,8 @@ class AgentFpt:
         start_date = (
             dataframe.period.min() + pd.tseries.offsets.QuarterEnd() + pd.tseries.offsets.MonthBegin(n=1)
             ).floor('D')
-        # end_date = dataframe.end_date_in_echelon.max() + pd.tseries.offsets.QuarterEnd()
-        quarters_range = pd.date_range(start = start_date, periods = 60, freq = 'Q')
+        end_date = pd.Timestamp("2020-01-01").floor('D')
+        quarters_range = pd.date_range(start = start_date, end = end_date, freq = 'Q')
         result = pd.DataFrame()
         for quarter_date in quarters_range:
             quarter_begin = quarter_date - pd.tseries.offsets.QuarterBegin(startingMonth = 1)
@@ -315,7 +320,32 @@ class AgentFpt:
                 ]
             df['quarter'] = quarter_date
             result = pd.concat([result, df])
+        self.result = pd.concat([self.result, result])
         return result
+
+    def next(self):
+        dataframe = self.dataframe
+        next_dataframe = dataframe.loc[
+            dataframe.end_date_in_echelon.notnull() & (dataframe.end_date_in_echelon < pd.Timestamp.max.floor('D')),
+            ['identif', 'end_date_in_echelon', 'grade', 'echelon'],
+            ].copy()
+        next_dataframe.rename(columns = dict(end_date_in_echelon = 'period'), inplace = True)
+        next_dataframe.echelon += 1
+        return next_dataframe
+
+    def compute_result(self):
+        iteration = 0
+        while not self.dataframe.empty:
+            print 'iteration', iteration
+            print self.dataframe
+            print 'compute_all'
+            self.compute_all()
+            print 'complete'
+            self.complete()
+            print 'next'
+            self.dataframe = self.next().copy()
+            print self.result.sort_values(by = ['identif', 'quarter'])
+            iteration += 1
 
 
 def get_duree_echelon_from_grilles_dataframe(
