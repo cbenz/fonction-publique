@@ -9,19 +9,18 @@ from datetime import datetime, timedelta, date
 import dateutil.parser as parser
 from collections import Counter
 
-from fonction_publique.base import asset_path
+from fonction_publique.base import asset_path, hdf_directory_path
 
-data_path = "M:\CNRACL\Carriere-CNRACL"
 
 hdf5_file_path = os.path.join(
-    data_path,
-    "base_carriere_clean",
+    hdf_directory_path,
     "base_carriere_2",
     )
 
+
 def clean_law():
-    """ identifier les extraits de la loi dont on a besoin et nettoyer les colonnes, stocker le résultat dans une
-    table hdf"""
+    """ Extract relevant data from grille and change to convenient dtype then save to HDFStore.
+    Returns stored DataFrame"""
 
     law_xls_path = os.path.join(
         asset_path,
@@ -36,10 +35,17 @@ def clean_law():
     law.to_hdf('carrieres_a_lier', 'grilles', format = 'table', data_columns = True)
     return law
 
+
 def get_careers_for_which_we_have_law():
-    """ identifier les etats de carrieres auxquels on peut associer une grille, nettoyer ces etats au max en supprimant
-    les ib nuls, nans et supérieurs à 1016 (erreur, should be 1015), changer les types etc. stocker le resultat dans
-    une table hdf """
+    """Get carrer data (id, annee, grade, ib) of ids which:
+      - grade is present in legislation data at least for one year (freq of grade)
+      - year > 2009
+      - trimesre == 1
+      - ib < 2016, != -1, != 0, != NaN
+     Save to HDFStore
+     Returns stored DataFrame
+     TODO: passer e trimestriel et rajouter etat
+     """
     law = pd.read_hdf('carrieres_a_lier', 'grilles')
     store_carriere = pd.HDFStore(hdf5_file_path)
     codes_grades_NEG_in_law = law.code_grade_NETNEH.unique()
@@ -62,14 +68,14 @@ def get_careers_for_which_we_have_law():
 
 def find_grille_en_effet_indiv(c_netneh, annee):
     """ Pour chaque c_grade_netneh unique et pour chaque annee de 2010 à 2014, trouver la date d'effet de la grille
-    qui s'applique et stocker cette date et l'identifiant associé aux c_grade_netneh unique pour chaque annees dans le df
-    effectifs_par_grades_annees """
+    qui s'applique et stocker cette date et l'identifiant associé aux c_grade_netneh unique pour chaque annees dans le
+    df effectifs_par_grades_annees """
     carrieres_a_lier = pd.HDFStore('carrieres_a_lier')
     law_grade = carrieres_a_lier.select('grilles', where='code_grade_NETNEH = c_netneh')
     dates = law_grade['date_effet_grille']
     dates = dates[dates < datetime.strptime(annee, '%Y-%m-%d')]
     if dates.empty:
-        date = "Not_found"
+        date = pd.NaT
     else:
         date = str(dates.max())
         date = datetime.strptime(date[:10], "%Y-%m-%d")
@@ -104,8 +110,8 @@ def append_date_effet_grille_to_etats_uniques():
 #                               format = 'table', data_columns = True)
     return dates_effet_grille
 
-## fusionné à la main avec les états uniques pour donner le fichier etats_uniques_avec_dates_effets_1950_1959_1
-### TO DO BELOW
+# fusionné à la main avec les états uniques pour donner le fichier etats_uniques_avec_dates_effets_1950_1959_1
+# TO DO BELOW
 
 
 def merge_date_effet_grille_with_careers():
@@ -116,11 +122,17 @@ def merge_date_effet_grille_with_careers():
 
     carrieres = carrieres_a_lier.select('carrieres_a_lier_1950_1959_1')
     carrieres['annee'] = [str(annee)[:10] for annee in carrieres['annee']]
-    carrieres_avec_date_effet_grilles = etats_uniques_avec_date_effet.merge(carrieres,
-                                                                            on = ['annee', 'c_netneh', 'ib_'],
-                                                                            how = 'outer')
-    carrieres_avec_date_effet_grilles.to_hdf('carrieres_a_lier', 'carrieres_avec_date_effet_grilles', format = 'table',
-                                             data_columns = True, )
+    carrieres_avec_date_effet_grilles = etats_uniques_avec_date_effet.merge(
+        carrieres,
+        on = ['annee', 'c_netneh', 'ib_'],
+        how = 'outer'
+        )
+    carrieres_avec_date_effet_grilles.to_hdf(
+        'carrieres_a_lier',
+        'carrieres_avec_date_effet_grilles',
+        format = 'table',
+        data_columns = True,
+        )
     return carrieres_avec_date_effet_grilles
 
 
@@ -129,21 +141,24 @@ def merge_careers_with_legislation():
     carrieres_a_lier = pd.HDFStore('carrieres_a_lier')
     carrieres_avec_date_effet_grilles = carrieres_a_lier.select('carrieres_avec_date_effet_grilles')
     carrieres_avec_date_effet_grilles.columns = ['annee', 'code_grade_NETNEH', 'ib', 'date_effet_grille', 'ident']
-    carrieres_avec_date_effet_grilles['date_effet_grille'] = [str(annee)[:10] for annee in carrieres_avec_date_effet_grilles['date_effet_grille']]
+    carrieres_avec_date_effet_grilles['date_effet_grille'] = [
+        str(annee)[:10] for annee in carrieres_avec_date_effet_grilles['date_effet_grille']
+        ]
     law['date_effet_grille'] = [str(annee)[:10] for annee in law['date_effet_grille']]
-    carrieres_with_echelon = carrieres_avec_date_effet_grilles.merge(law, on=['code_grade_NETNEH',                                                                          'date_effet_grille',
-                                                                                  'ib'],
-                                                                              how='outer')
+    carrieres_with_echelon = carrieres_avec_date_effet_grilles.merge(
+        law,
+        on = ['code_grade_NETNEH', 'date_effet_grille', 'ib'],
+        how = 'outer'
+        )
 #   carrieres_with_echelon.to_hdf('carrieres_a_lier', 'carrieres_with_echelon', format = 'table', data_columns = True)
     return carrieres_with_echelon
 
-## DO DESCRIPTION DE LA BASE MERGEE
-#
-#carrieres_a_lier = pd.HDFStore('carrieres_a_lier')
-#carrieres_with_echelon = carrieres_a_lier.select('carrieres_with_echelon')
-#carrieres_with_echelon[carrieres_with_echelon['date_effet_grille'] == 'Not_found']
-#carrieres_wechelon_cleaned = carrieres_with_echelon[~carrieres_with_echelon['date_effet_grille'].isnull()]
-#carrieres_wechelon_cleaned = carrieres_with_echelon[~carrieres_with_echelon['echelon'].isnull()]
+# # DO DESCRIPTION DE LA BASE MERGEE
+# carrieres_a_lier = pd.HDFStore('carrieres_a_lier')
+# carrieres_with_echelon = carrieres_a_lier.select('carrieres_with_echelon')
+# carrieres_with_echelon[carrieres_with_echelon['date_effet_grille'] == 'Not_found']
+# carrieres_wechelon_cleaned = carrieres_with_echelon[~carrieres_with_echelon['date_effet_grille'].isnull()]
+# carrieres_wechelon_cleaned = carrieres_with_echelon[~carrieres_with_echelon['echelon'].isnull()]
 
 
 def nb_de_grades_uniques_par_agent_2010_2014(unique):
@@ -162,6 +177,3 @@ def nb_de_grades_uniques_par_agent_2010_2014(unique):
         print car
 
         return
-
-
-

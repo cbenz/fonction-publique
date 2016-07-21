@@ -126,7 +126,7 @@ class AgentFpt:
 
                 previous_start_date = start_date
 
-    def compute_echelon_duree(self, date_effet_variable_name = None, duree_variable_name =None):
+    def compute_echelon_duree(self, date_effet_variable_name = None, duree_variable_name = None, speed = True):
         # TODO may be a merge is faster
         assert date_effet_variable_name is not None
         echelon_max_variable_name = 'echelon_max_at_{}'.format(date_effet_variable_name)
@@ -164,7 +164,7 @@ class AgentFpt:
                 for echelon in echelons:
                     duree = get_duree_echelon_from_grilles_dataframe(
                         echelon = echelon, grade = grade, date_effet = date_effet_grille,
-                        grilles = date_effet_filtered_grille, speed = True)
+                        grilles = date_effet_filtered_grille, speed = speed)
                     dataframe.loc[
                         selected_entries & (dataframe.echelon == echelon),
                         duree_variable_name,
@@ -296,18 +296,20 @@ class AgentFpt:
             duree_variable_name = 'echelon_duration_with_grille_in_effect')
 
     def complete(self):
-        dataframe = self.dataframe
+        print self.dataframe
+        dataframe = self.dataframe.loc[~self.dataframe.identif.isin([2, 8])].copy()
         # We select the quarter starting after the oldest date
         start_date = (
-            self.dataframe.period.min() + pd.tseries.offsets.QuarterEnd() + pd.tseries.offsets.MonthBegin(n=1)
+            dataframe.period.min() + pd.tseries.offsets.QuarterEnd() + pd.tseries.offsets.MonthBegin(n=1)
             ).floor('D')
-        quarters_range = pd.date_range(start = start_date, periods = 10, freq = 'Q')
+        # end_date = dataframe.end_date_in_echelon.max() + pd.tseries.offsets.QuarterEnd()
+        quarters_range = pd.date_range(start = start_date, periods = 60, freq = 'Q')
         result = pd.DataFrame()
         for quarter_date in quarters_range:
-            quarter_begin = quarter_date + pd.tseries.offsets.QuarterBegin()
+            quarter_begin = quarter_date - pd.tseries.offsets.QuarterBegin(startingMonth = 1)
             quarter = quarter_date.quarter
             df = dataframe.loc[
-                (quarter_begin <= dataframe.period) &
+                (dataframe.period <= quarter_begin) &
                 (quarter_date <= (dataframe.end_date_in_echelon + pd.tseries.offsets.MonthEnd())),
                 ['period', 'echelon', 'identif', 'grade']
                 ]

@@ -16,13 +16,13 @@ def timing(f):
         time1 = time.time()
         ret = f(*args)
         time2 = time.time()
-        print '%s function took %0.3f ms' % (f.func_name, (time2-time1)*1000.0)
+        print '%s function took %0.3f ms' % (f.func_name, (time2 - time1) * 1000.0)
         return ret
     return wrap
 
 
 def select_columns(string):  # e.g 'ident' 'qualite' 'statut' 'cir' '_netneh' 'libemploi' 'ib_' 'etat_'
-#    colnames = read_only_store.select('data', 'index < 2').columns.to_series()
+    # colnames = read_only_store.select('data', 'index < 2').columns.to_series()
     """ selectionne les noms de colonnes correspondant à la variable (string) qui nous interesse """
     reader_for_colnames = pd.read_stata(stata_file_path, chunksize = 1)
     for chunk in reader_for_colnames:
@@ -48,7 +48,7 @@ def get_subset(string):
         get_subset = get_subset.append(subset)
     return get_subset
 
-#df_ib = get_subset('ib_')
+# df_ib = get_subset('ib_')
 
 
 @timing
@@ -87,6 +87,7 @@ def clean_subset(string, period, trimestre):
 
 hdf_file_path = os.path.jojn(hdf_directory_path, 'base_carriere_2')
 
+
 @timing
 def format_columns(string, periode, trimestre):
 
@@ -117,7 +118,7 @@ def format_generation():
     generation.to_hdf('base_carriere_2', 'generation', format = 'table', data_columns = True)
     return 'generation was added to base_carriere'
 
-#def gen_libemploi_2010_2014():
+# def gen_libemploi_2010_2014():
 #    """ Cree une table libemploi_2010_2014 p'rovisoire pour comparer le nb de libelles grades sur la periode avec
 #    les nb de codes grades sur la periodes. La table libemploi est en effet disponible pour 2000-2014.
 #    """
@@ -127,12 +128,17 @@ def format_generation():
 
 
 if __name__ == '__main__':
+
     arg_format_columns = [
-    ('c_netneh', range(2010, 2015), False),
-    ('c_cir', range(2010, 2015), False),
-    ('libemploi', range(2000, 2015), False),
-    ('ib_', range(1970, 2015), True),
-    ('qualite', range(1970, 2015), False),
-    ('statut', range(1970, 2015), False),
-    ('etat', range(1970, 2015), True)
-    ]
+        ('c_netneh', range(2010, 2015), False),
+        ('c_cir', range(2010, 2015), False),
+        ('libemploi', range(2000, 2015), False),
+        ('ib_', range(1970, 2015), True),  # should contain _ otherwise libemploi which contains 'ib' would also selected
+        ('qualite', range(1970, 2015), False),
+        ('statut', range(1970, 2015), False),
+        ('etat', range(1970, 2015), True)
+        ]
+    for argument in arg_format_columns:
+        format_columns(*args)
+
+    format_generation()

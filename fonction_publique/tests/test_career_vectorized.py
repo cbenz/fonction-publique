@@ -163,12 +163,9 @@ results_expect_dataframe = pd.melt(
     )
 
 
-def test():
+def do_not_test():
     # print agents.dataframe
-    print results_expect_dataframe
     value_vars = results_expect_dataframe.variable.unique().tolist()
-    print value_vars
-    print agents.dataframe.identif
     assert set(value_vars) < set(agents.dataframe.columns)
     results_actual_dataframe = pd.melt(
         agents.dataframe,
@@ -177,12 +174,9 @@ def test():
         value_name = 'resultats_obtenus',
         )
 
-    print results_actual_dataframe
-
     resultats = results_expect_dataframe.merge(
         results_actual_dataframe,
         )
-    print resultats
     results_errors = resultats.loc[
         ~(
             np.equal(resultats.resultats_attendus, resultats.resultats_obtenus) |
@@ -211,4 +205,5 @@ def test_result():
     print '===='
     result = agents.complete()
     print result
+    print agents.dataframe
     print result.loc[result.identif == 0]
