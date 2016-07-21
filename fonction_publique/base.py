@@ -38,3 +38,10 @@ else:
 
 stata_data_path = os.path.join(cnracl_path, "Stata")
 hdf_directory_path = os.path.join(cnracl_path, 'Carriere-CNRACL/base_carriere_clean')
+
+data_path = os.path.join(cnracl_path, "Carriere-CNRACL")
+hdf5_file_path = os.path.join(
+    data_path,
+    "base_carriere_clean",
+    "base_carriere_2",
+    )

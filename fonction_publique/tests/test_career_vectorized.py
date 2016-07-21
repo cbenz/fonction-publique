@@ -49,7 +49,6 @@ agent_tuples = [locals()['agent{}'.format(i)] for i in range(0, 9)]
 df = pd.DataFrame(agent_tuples, columns = ['identif', 'period', 'grade', 'echelon'])
 
 
-
 date_effet_at_start_expect = [
     datetime.datetime(2006, 11, 1),
     datetime.datetime(2015, 01, 01),

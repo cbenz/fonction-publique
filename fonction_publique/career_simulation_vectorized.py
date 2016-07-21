@@ -203,7 +203,6 @@ class AgentFpt:
             for echelon in echelons:  # Only changing echlons
                 if not ((dataframe.echelon == echelon) & (dataframe.grade)).any():
                     continue  # We skip those not in the dataframe
-
                 dates_effet_grille = dataframe.loc[
                     (dataframe.echelon == echelon) & (dataframe.grade == grade),
                     start_date_effet_variable_name

@@ -9,12 +9,11 @@ import pylab as plt
 import seaborn as sns
 import time
 
-from fonction_publique.base import cnracl_path
+from fonction_publique.base import cnracl_path, hdf5_file_path, data_path
 
-data_path = os.path.join(cnracl_path, "Carriere-CNRACL")
 
-#hdf5_file_path = os.path.join(data_path, 'c_g1950_g1959_1.h5')
-#read_only_store = pd.HDFStore(hdf5_file_path, 'r')
+# hdf5_file_path = os.path.join(data_path, 'c_g1950_g1959_1.h5')
+# read_only_store = pd.HDFStore(hdf5_file_path, 'r')
 
 
 """ Ce fichier permet d'effectuer des statistiques descriptives sur les bases carrières de la CNRACL
@@ -42,11 +41,6 @@ def timing(f):
         return ret
     return wrap
 
-hdf5_file_path = os.path.join(
-    data_path,
-    "base_carriere_clean",
-    "base_carriere_2",
-    )
 
 variables_value_count = [
             'qualite',
