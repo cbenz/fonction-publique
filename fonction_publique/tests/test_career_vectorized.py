@@ -6,8 +6,10 @@ import pandas as pd
 
 from openfisca_core import periods
 
+from fonction_publique.base import grille_adjoint_technique
+
 from fonction_publique.career_simulation_vectorized import AgentFpt
-from fonction_publique.career_simulation_vectorized import grille_adjoint_technique, compute_changing_echelons_by_grade
+from fonction_publique.career_simulation_vectorized import compute_changing_echelons_by_grade
 
 # 1. Case tests
 agent0 = (0, datetime.date(2006, 12, 1), 793, 1)
@@ -46,7 +48,7 @@ agent8 = (8, datetime.date(2003, 11, 1), 796, 4)
 # This raises an error is handled in _conditions_on_agent
 
 agent_tuples = [locals()['agent{}'.format(i)] for i in range(0, 9)]
-df = pd.DataFrame(agent_tuples, columns = ['identif', 'period', 'grade', 'echelon'])
+df = pd.DataFrame(agent_tuples, columns = ['ident', 'period', 'grade', 'echelon'])
 
 
 date_effet_at_start_expect = [
@@ -152,22 +154,23 @@ results_expect_dataframe = pd.DataFrame.from_dict(dict(
     echelon_duration_with_grille_in_effect_at_end = duration_echelon_grille_in_effect_at_end_expect,
     echelon_duration_with_grille_in_effect = duration_echelon_expect,
     ))
-results_expect_dataframe.index.name = 'identif'
+results_expect_dataframe.index.name = 'ident'
 results_expect_dataframe = pd.melt(
     results_expect_dataframe.reset_index(),
-    id_vars = 'identif',
+    id_vars = 'ident',
     value_vars = results_expect_dataframe.columns.tolist(),
     value_name = 'resultats_attendus',
     )
 
 
 def do_not_test():
-    # print agents.dataframe
+    agents = AgentFpt(df)
+    agents.set_grille(grille_adjoint_technique)
     value_vars = results_expect_dataframe.variable.unique().tolist()
     assert set(value_vars) < set(agents.dataframe.columns)
     results_actual_dataframe = pd.melt(
         agents.dataframe,
-        id_vars = 'identif',
+        id_vars = 'ident',
         value_vars = value_vars,
         value_name = 'resultats_obtenus',
         )
@@ -189,7 +192,7 @@ def do_not_test():
         for row in range(len(results_errors)):
             message = 'La variable {} pour l\'identifiant {} vaut {} et devrait valoir {}'.format(
                 results_errors['variable'][row],
-                results_errors['identif'][row],
+                results_errors['ident'][row],
                 results_errors['resultats_obtenus'][row],
                 results_errors['resultats_attendus'][row],
                 )
@@ -204,9 +207,10 @@ def test_result():
     result = agents.complete()
     print result
     print agents.dataframe
-    print result.loc[result.identif == 0]
+    print result.loc[result.ident == 0]
 
 
 def test_next():
     agents = AgentFpt(df)
+    agents.set_grille(grille_adjoint_technique)
     print agents.compute_result()

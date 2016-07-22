@@ -6,11 +6,8 @@ import os
 import pandas as pd
 from datetime import datetime
 
-from fonction_publique.base import asset_path, hdf_directory_path, hdf5_file_path
+from fonction_publique.base import asset_path, hdf_directory_path, hdf5_file_path, DEBUG, debug_chunk_size
 
-DEBUG = True
-
-debug_chunk_size = 100000 if DEBUG else None
 carrieres_a_lier_file_path = os.path.join(
     hdf_directory_path,
     "carrieres_a_lier_debug.hdf5",
@@ -34,11 +31,15 @@ def clean_law():
         asset_path,
         "neg_pour_ipp.txt")
     law = pd.read_table(law_xls_path)
-    law = law[['date_effet_grille', 'ib', 'code_grade_NETNEH', 'echelon']].copy()
-    law['date_effet_grille'] = pd.to_datetime(law['date_effet_grille'])
-    law['ib'] = law['ib'].fillna(-1)
-    law['ib'] = law['ib'].astype('int32')
+    law = law[['date_effet_grille', 'ib', 'code_grade_NETNEH', 'echelon', 'max_mois', 'min_mois', 'moy_mois']].copy()
+
+    law['date_effet_grille'] = pd.to_datetime(law.date_effet_grille)
+
+    for variable in ['ib', 'max_mois', 'min_mois', 'moy_mois']:
+        law[variable] = law[variable].fillna(-1).astype('int32')
+
     law['code_grade_NETNEH'] = law['code_grade_NETNEH'].astype('str')
+
     law = law[~law['ib'].isin([-1, 0])].copy()
     law.to_hdf(carrieres_a_lier_file_path, 'grilles', format = 'table', data_columns = True, mode = 'w')
 
@@ -69,18 +70,21 @@ def get_careers_for_which_we_have_law(start_year = 2009):
     careers = careers[careers['c_netneh'].notnull()]
     careers['annee'] = careers['annee'].astype('str').map(lambda x: str(x)[:4])
     careers['annee'] = pd.to_datetime(careers['annee'])
+    assert not careers.empty, 'careers is an empty DataFrame'
     careers.to_hdf(
         carrieres_a_lier_file_path,
         'carrieres_a_lier_1950_1959_1',
         format = 'table',
         data_columns = True,
         )
+    print careers
 
 
 def etats_uniques():
     """ identifier les etats de carrieres uniques, cad les triplets uniques codes grades NETNEH, annee, ib"""
 
     carrieres_a_lier = pd.HDFStore(carrieres_a_lier_file_path)
+    print carrieres_a_lier
     careers = carrieres_a_lier.select('carrieres_a_lier_1950_1959_1')
     etats_uniques = careers.groupby(['annee', 'trimestre', 'c_netneh', 'ib_']).size().reset_index()[[
         'annee',
@@ -105,10 +109,13 @@ def append_date_effet_grille_to_etats_uniques_bis():
         dataframe = dataframe[['grade', 'annee', 'trimestre', 'period']]
         carrieres_a_lier = pd.HDFStore(carrieres_a_lier_file_path)
         grilles = carrieres_a_lier.select('grilles')
-        _set_dates_effet(dataframe, date_observation = 'period', start_variable_name = 'date_effet_grille',
-
-                next_variable_name = None, grille = grilles)
-        dataframe['date_effet_grille'] = dataframe.date_effet_grille
+        grilles = grilles.rename(columns = dict(code_grade_NETNEH = 'code_grade'))
+        _set_dates_effet(
+            dataframe,
+            date_observation = 'period',
+            start_variable_name = 'date_effet_grille',
+            next_variable_name = None,
+            grille = grilles)
         dataframe.to_hdf(etats_uniques_file_path,
             'etats_uniques_date_effet_1950_1959_1',
             format = 'table',
@@ -171,7 +178,12 @@ def merge_careers_with_legislation():
         on = ['code_grade_NETNEH', 'date_effet_grille', 'ib'],
         how = 'outer'
         )
-    carrieres_with_echelon.to_hdf('carrieres_a_lier', 'carrieres_with_echelon', format = 'table', data_columns = True)
+    carrieres_with_echelon.to_hdf(
+        carrieres_a_lier_file_path,
+        'carrieres_with_echelon',
+        format = 'table',
+        data_columns = True,
+        )
 
 
 if __name__ == '__main__':

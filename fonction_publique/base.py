@@ -20,6 +20,7 @@ grille_adjoint_technique_path = os.path.join(
     'FPT_adjoint_technique.xlsx',
     )
 grille_adjoint_technique = pd.read_excel(grille_adjoint_technique_path, encoding='utf-8')
+grille_adjoint_technique = grille_adjoint_technique.rename(columns = dict(code_grade_NEG = 'code_grade'))
 
 donnees_adjoints_techniques = os.path.join(
     asset_path,
@@ -40,8 +41,18 @@ stata_data_path = os.path.join(cnracl_path, "Stata")
 hdf_directory_path = os.path.join(cnracl_path, 'Carriere-CNRACL/base_carriere_clean')
 
 data_path = os.path.join(cnracl_path, "Carriere-CNRACL")
+
+DEBUG_CLEAN_CARRIERES = False
+DEBUG = True
+
 hdf5_file_path = os.path.join(
     data_path,
     "base_carriere_clean",
-    "base_carriere_2",
-    )
+    "base_carriere_2_debug.hdf5",
+    ) if DEBUG_CLEAN_CARRIERES else os.path.join(
+        data_path,
+        "base_carriere_clean",
+        "base_carriere_2",
+        )
+
+debug_chunk_size = 100000 if DEBUG else None

@@ -20,8 +20,8 @@ class AgentFpt:
     agentfptCount = 0
     _registry = []
 
-    def __init__(self, identif, period, grade, echelon):
-        self.identif = identif
+    def __init__(self, ident, period, grade, echelon):
+        self.ident = ident
         self.period = period
         self.grade = grade
         self.echelon = echelon
@@ -42,7 +42,7 @@ class AgentFpt:
         return date_change
 
     def display_agent(self):
-        print "Identif : ", self.identif, "Period :", self.period, ", Grade :", self.grade, ", Echelon :", self.echelon
+        print "Identif : ", self.ident, "Period :", self.period, ", Grade :", self.grade, ", Echelon :", self.echelon
 
     def _does_grille_change_during_period(self, speed):
         period_at_start = self._echelon_period_for_grille_at_start(speed)
@@ -137,12 +137,12 @@ class AgentFpt:
         durations_in_career_states = [periods.period(u'month', self.period, period_to_offset)]
         echelon = []
         grade = []
-        identif = []
+        ident = []
         if self.echelon == self._echelon_max():
             echelon.append(self.echelon)
             grade.append(self.grade)
-            identif.append(self.identif)
-            result = [identif, grade, echelon, career_states]
+            ident.append(self.ident)
+            result = [ident, grade, echelon, career_states]
             result = pd.DataFrame(result).transpose()[:]
             return result
         else:
@@ -152,7 +152,7 @@ class AgentFpt:
                 career_states.append(career_state)
                 echelon.append(self.echelon)
                 grade.append(self.grade)
-                identif.append(self.identif)
+                ident.append(self.ident)
                 setattr(self, 'period', career_state)
                 setattr(self, 'echelon', self.echelon + 1)
                 if self.echelon < self._echelon_max():
@@ -165,10 +165,10 @@ class AgentFpt:
                 durations_in_career_states.append(duration_in_career_state)
                 echelon.append(self.echelon)
                 grade.append(self.grade)
-                identif.append(self.identif)
+                ident.append(self.ident)
 
         career_states_formatted = map(periods.instant, career_states)
-        result = [identif, grade, echelon, career_states_formatted, durations_in_career_states]
+        result = [ident, grade, echelon, career_states_formatted, durations_in_career_states]
         result = pd.DataFrame(result).transpose()[:-1]
         result.columns = ("id", "code_grade_NEG", "echelon", "date_du_changement", "duree_dans_etat")
         return result
