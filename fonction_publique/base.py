@@ -27,8 +27,8 @@ donnees_adjoints_techniques = os.path.join(
     )
 donnees_adjoints_techniques = pd.read_excel(donnees_adjoints_techniques)
 
-
-linux_cnracl_path = os.path.join("/run/user/1000/gvfs", "smb-share:server=192.168.1.2,share=data", "CNRACL")
+# linux_cnracl_path = os.path.join("/run/user/1000/gvfs", "smb-share:server=192.168.1.2,share=data", "CNRACL")
+linux_cnracl_path = os.path.join("/home/benjello/data", "CNRACL")
 windows_cnracl_path = os.path.join("M:/CNRACL/")
 
 if os.path.exists(linux_cnracl_path):
