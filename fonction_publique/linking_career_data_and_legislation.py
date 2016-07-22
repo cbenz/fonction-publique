@@ -60,8 +60,8 @@ def get_careers_for_which_we_have_law(start_year = 2009):
      Returns stored DataFrame
      TODO: passer en trimestriel et rajouter etat
      """
-    law = pd.read_hdf(carrieres_a_lier_file_path, 'grilles', mode = 'r')
-    store_carriere = pd.HDFStore(hdf5_file_path, 'r')
+    law = pd.read_hdf(carrieres_a_lier_file_path, 'grilles')
+    store_carriere = pd.HDFStore(hdf5_file_path)
     codes_grades_NEG_in_law = law.code_grade_NETNEH.unique()
     valid_grades = store_carriere.select(
         'c_netneh',
@@ -79,14 +79,13 @@ def get_careers_for_which_we_have_law(start_year = 2009):
     careers = careers[careers['c_netneh'].notnull()]
     careers['annee'] = careers['annee'].astype('str').map(lambda x: str(x)[:4])
     careers['annee'] = pd.to_datetime(careers['annee'])
+    print careers
     careers.to_hdf(
-        carrieres_a_lier_file_path,
+        carrieres_a_lier_file_path, ## changer le chemin
         'carrieres_a_lier_1950_1959_1',
         format = 'table',
         data_columns = True,
         )
-    print carrieers
-    boum
     return careers
 
 
@@ -110,29 +109,52 @@ def etats_uniques():
     """ identifier les etats de carrieres uniques, cad les triplets uniques codes grades NETNEH, annee, ib"""
     carrieres_a_lier = pd.HDFStore(carrieres_a_lier_file_path)
     careers = carrieres_a_lier.select('carrieres_a_lier_1950_1959_1')
-    etats_uniques = careers.groupby(['annee', 'c_netneh', 'ib_']).size().reset_index()[['annee', 'c_netneh', 'ib_']]
-    etats_uniques['annee'] = [str(annee)[:10] for annee in etats_uniques['annee']]
+    etats_uniques = careers.groupby(['annee', 'trimestre', 'c_netneh', 'ib_']).size().reset_index()[['annee', 'trimestre', 'c_netneh', 'ib_']]
+    etats_uniques['annee'] = [str(annee)[:4] for annee in etats_uniques['annee']]
+    print etats_uniques
     etats_uniques.to_hdf(etats_uniques_file_path, 'etats_uniques_1950_1959_1', format = 'table', data_columns = True)
     return etats_uniques
 
 
-def append_date_effet_grille_to_etats_uniques():
-    """ ajouter les dates d'effets aux états uniques de carrières """
-#    etats_uniques = pd.HDFStore('etats_uniques')
-#    etats_uniques_table = etats_uniques.select('etats_uniques_1950_1959_1').copy()
-    dates_effet_grille = []
+def append_date_effet_grille_to_etats_uniques_bis():
+    from fonction_publique.career_simulation_vectorized import _set_dates_effet
+
     with pd.HDFStore(etats_uniques_file_path) as store:
         etats_uniques_table = store.select('etats_uniques_1950_1959_1').copy()
-        for etat in range(0, len(etats_uniques_table)):
-            print etat
-            c_netneh = etats_uniques_table['c_netneh'][etat]
-            annees = etats_uniques_table['annee'][etat]
-            date_effet_grille = find_grille_en_effet_indiv(c_netneh, annees)
-            dates_effet_grille.append(date_effet_grille)
-#    etats_uniques_table['date_effet_grille'] = dates_effet_grille
-#    etats_uniques_table.to_hdf('etats_uniques', 'etats_uniques_with_date_effet_1950_1959_1',
-#                               format = 'table', data_columns = True)
-    return dates_effet_grille
+        dataframe = etats_uniques_table[['c_netneh', 'annee', 'trimestre']]
+        dataframe['year'] = dataframe.annee.astype('int')
+        dataframe['month'] = (dataframe.trimestre - 1) * 3 + 1
+        dataframe['day'] = 1
+        dataframe['observation_date'] = dataframe[['year', 'month', 'day']].apply(lambda s : datetime(*s),axis = 1)
+        dataframe.columns = ['grade', 'annee', 'trimestre', 'year', 'month', 'day', 'period']
+        carrieres_a_lier = pd.HDFStore(carrieres_a_lier_file_path)
+        grilles = carrieres_a_lier.select('grilles')
+        _set_dates_effet(dataframe, date_observation = 'period', start_variable_name = 'date_effet_grille',
+                next_variable_name = None, grille = grilles)
+        dataframe['date_effet_grille'] = dataframe.date_effet_grille
+        dataframe.to_hdf(etats_uniques_file_path,
+            'etats_uniques_date_effet_1950_1959_1',
+            format = 'table',
+            data_columns = True)
+        return dataframe
+
+#def append_date_effet_grille_to_etats_uniques():
+#    """ ajouter les dates d'effets aux états uniques de carrières """
+##    etats_uniques = pd.HDFStore('etats_uniques')
+##    etats_uniques_table = etats_uniques.select('etats_uniques_1950_1959_1').copy()
+#    dates_effet_grille = []
+#    with pd.HDFStore(etats_uniques_file_path) as store:
+#        etats_uniques_table = store.select('etats_uniques_1950_1959_1').copy()
+#        for etat in range(0, len(etats_uniques_table)):
+#            print etat
+#            c_netneh = etats_uniques_table['c_netneh'][etat]
+#            annees = etats_uniques_table['annee'][etat]
+#            date_effet_grille = find_grille_en_effet_indiv(c_netneh, annees)
+#            dates_effet_grille.append(date_effet_grille)
+##    etats_uniques_table['date_effet_grille'] = dates_effet_grille
+##    etats_uniques_table.to_hdf('etats_uniques', 'etats_uniques_with_date_effet_1950_1959_1',
+##                               format = 'table', data_columns = True)
+#    return dates_effet_grille
 
 # fusionné à la main avec les états uniques pour donner le fichier etats_uniques_avec_dates_effets_1950_1959_1
 # TO DO BELOW
@@ -141,22 +163,29 @@ def append_date_effet_grille_to_etats_uniques():
 def merge_date_effet_grille_with_careers():
     """ ajouter les dates d'effets de grilles aux carrieres """
     etats_uniques = pd.HDFStore(etats_uniques_file_path)
-    etats_uniques_avec_date_effet = etats_uniques.select('etats_uniques_avec_dates_effets_1950_1959_1')
+    etats_uniques_avec_date_effet = etats_uniques.select('etats_uniques_date_effet_1950_1959_1')
     carrieres_a_lier = pd.HDFStore(carrieres_a_lier_file_path)
+    print etats_uniques_avec_date_effet.columns
+
+    carrieres_a_lier['year'] = dataframe.annee.astype('int')
+    dataframe['month'] = (dataframe.trimestre - 1) * 3 + 1
+    dataframe['day'] = 1
+    dataframe['observation_date'] = dataframe[['year', 'month', 'day']].apply(lambda s : datetime(*s),axis = 1)
 
     carrieres = carrieres_a_lier.select('carrieres_a_lier_1950_1959_1')
+    carrieres.columns = ['ident', 'ib_', 'trimestre', 'annee', 'grade']
     carrieres['annee'] = [str(annee)[:10] for annee in carrieres['annee']]
     carrieres_avec_date_effet_grilles = etats_uniques_avec_date_effet.merge(
         carrieres,
-        on = ['annee', 'c_netneh', 'ib_'],
+        on = ['period', 'grade', 'trimestre'],
         how = 'outer'
         )
-    carrieres_avec_date_effet_grilles.to_hdf(
-        carrieres_a_lier_file_path,
-        'carrieres_avec_date_effet_grilles',
-        format = 'table',
-        data_columns = True,
-        )
+#    carrieres_avec_date_effet_grilles.to_hdf(
+#        carrieres_a_lier_file_path,
+#        'carrieres_avec_date_effet_grilles',
+#        format = 'table',
+#        data_columns = True,
+#        )
     return carrieres_avec_date_effet_grilles
 
 
@@ -203,6 +232,6 @@ def nb_de_grades_uniques_par_agent_2010_2014(unique):
         return
 
 
-if __name__ == '__main__':
-    # clean_law()
-    get_careers_for_which_we_have_law(start_year = 2009)
+#if __name__ == '__main__':
+   #clean_law()
+   # get_careers_for_which_we_have_law(start_year = 2009)

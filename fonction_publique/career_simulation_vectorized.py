@@ -88,44 +88,8 @@ class AgentFpt:
         assert date_observation is not None
         dataframe = self.dataframe
 
-        grades_from_dataframe = dataframe.grade.unique()  # TODO: use a cache for this
-        grades_from_grilles = grille_adjoint_technique.code_grade_NEG.unique()
-        grades = set(grades_from_dataframe).intersection(set(grades_from_grilles))
-
-        grade_filtered_grille = grille_adjoint_technique.loc[
-            grille_adjoint_technique.code_grade_NEG.isin(grades)
-            ]
-        for grade in grades:
-            max_dates_effet_grille = dataframe.loc[
-                dataframe.grade == grade,
-                'period'
-                ].max()
-            date_effet_filtered_grille = grade_filtered_grille.loc[
-                (grade_filtered_grille.code_grade_NEG == grade) &
-                (grade_filtered_grille.date_effet_grille <= max_dates_effet_grille)
-                ]
-            dates_effet_grille = np.sort(date_effet_filtered_grille.date_effet_grille.unique())
-
-            previous_start_date = None
-            # TODO use a grade extract out of the next loop
-            for start_date in dates_effet_grille:
-                dataframe.loc[
-                    (dataframe.grade == grade) & (dataframe[date_observation] >= start_date),
-                    start_variable_name,
-                    ] = start_date
-
-                if previous_start_date and next_variable_name is not None:
-                    settled_grille = (
-                        (dataframe.grade == grade) &
-                        (dataframe.date_debut_effet >= previous_start_date) &
-                        (dataframe.date_debut_effet < start_date)
-                        )
-                    dataframe.loc[
-                        settled_grille,
-                        next_variable_name,
-                        ] = start_date
-
-                previous_start_date = start_date
+        _set_dates_effet(dataframe, date_observation = date_observation, start_variable_name = start_variable_name,
+            next_variable_name = next_variable_name, grille = grille_adjoint_technique)
 
     def compute_echelon_duree(self, date_effet_variable_name = None, duree_variable_name = None, speed = True):
         # TODO may be a merge is faster
@@ -391,6 +355,51 @@ def get_duree_str_from_speed(speed):
     else:
         duree_str = '{}_mois'.format('min')
     return duree_str
+
+
+def _set_dates_effet(dataframe, date_observation = None, start_variable_name = "date_debut_effet",
+        next_variable_name = None, grille = grille_adjoint_technique):
+
+    grades_from_dataframe = dataframe.grade.unique()  # TODO: use a cache for this
+    grades_from_grilles = grille.code_grade_NETNEH.unique()
+    grades = set(grades_from_dataframe).intersection(set(grades_from_grilles))
+
+    grade_filtered_grille = grille.loc[
+        grille.code_grade_NETNEH.isin(grades)
+        ]
+    for grade in grades:
+        max_dates_effet_grille = dataframe.loc[
+            dataframe.grade == grade,
+            'period'
+            ].max()
+        date_effet_filtered_grille = grade_filtered_grille.loc[
+            (grade_filtered_grille.code_grade_NETNEH == grade) &
+            (grade_filtered_grille.date_effet_grille <= max_dates_effet_grille)
+            ]
+        dates_effet_grille = np.sort(date_effet_filtered_grille.date_effet_grille.unique())
+
+        previous_start_date = None
+        # TODO use a grade extract out of the next loop
+        for start_date in dates_effet_grille:
+            dataframe.loc[
+                (dataframe.grade == grade) & (dataframe[date_observation] >= start_date),
+                start_variable_name,
+                ] = start_date
+
+            if previous_start_date and next_variable_name is not None:
+                settled_grille = (
+                    (dataframe.grade == grade) &
+                    (dataframe.date_debut_effet >= previous_start_date) &
+                    (dataframe.date_debut_effet < start_date)
+                    )
+                dataframe.loc[
+                    settled_grille,
+                    next_variable_name,
+                    ] = start_date
+
+            previous_start_date = start_date
+
+
 # TODO construire la table
 # grade echelon start_date new_date new_duree
 # et faire des merge
