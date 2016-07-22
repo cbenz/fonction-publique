@@ -19,7 +19,7 @@ def timing(f):
         time1 = time.time()
         ret = f(*args)
         time2 = time.time()
-        print '%s function took %0.3f' % (f.func_name, (time2 - time1))
+        print '%s function took %0.3f s' % (f.func_name, (time2 - time1))
         return ret
     return wrap
 
@@ -74,15 +74,16 @@ def clean_subset(variable, period, quarterly):
                     columns = {'{}_{}_{}'.format(variable, annee, quarter): variable},
                     inplace = True
                     )
-            #
-            subset_cleaned['trimestre'] = quarter
+                subset_cleaned['trimestre'] = quarter
+                subset_cleaned['annee'] = annee
+                subset_result = pd.concat([subset_result, subset_cleaned])
 
         else:
             subset_cleaned = subset[['ident', '{}_{}'.format(variable, annee)]].copy()
             subset_cleaned.rename(columns = {'{}_{}'.format(variable, annee): variable}, inplace = True)
-        #
-        subset_cleaned['annee'] = annee
-        subset_result = pd.concat([subset_result, subset_cleaned])
+            subset_cleaned['annee'] = annee
+            subset_result = pd.concat([subset_result, subset_cleaned])
+
     return subset_result
 
 
@@ -126,11 +127,11 @@ def format_generation():
 if __name__ == '__main__':
 
     arg_format_columns = [
-        ('c_netneh', range(2010, 2015), False),
+        # ('c_netneh', range(2010, 2015), False),
         # ('c_cir', range(2010, 2015), False),
         # ('libemploi', range(2000, 2015), False),
         # # should contain _ otherwise libemploi which contains 'ib' would also selected
-        # ('ib_', range(1970, 2015), True),
+        ('ib_', range(1970, 2015), True),
         # ('qualite', range(1970, 2015), False),
         # ('statut', range(1970, 2015), False),
         # ('etat', range(1970, 2015), True),
