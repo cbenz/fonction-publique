@@ -76,15 +76,15 @@ date_next_effet_expect = [
     ]
 
 date_next_change_effet_expect = [
-    pd.NaT,
-    pd.NaT,
-    pd.NaT,
+    pd.Timestamp.max.floor('D'),
+    pd.Timestamp.max.floor('D'),
+    pd.Timestamp.max.floor('D'),
     datetime.datetime(2014, 02, 01),
-    pd.NaT,
-    pd.NaT,
+    pd.Timestamp.max.floor('D'),
+    pd.Timestamp.max.floor('D'),
     datetime.datetime(2014, 02, 01),
-    pd.NaT,
-    pd.NaT,
+    pd.Timestamp.max.floor('D'),
+    pd.Timestamp.max.floor('D'),
     ]
 
 date_end_period_echelon_grille_in_effect_at_start_expect = [
@@ -163,11 +163,32 @@ results_expect_dataframe = pd.melt(
     )
 
 
-def do_not_test():
+def mess(resultats):
+    results_errors = resultats.loc[
+        ~(
+            np.equal(resultats.resultats_attendus, resultats.resultats_obtenus) |
+            (
+                resultats.resultats_obtenus.isnull() & resultats.resultats_attendus.isnull()
+                )
+            )
+        ].reset_index()
+    messages = ''
+    for row in range(len(results_errors)):
+        message = 'La variable {} pour l\'identifiant {} vaut {} et devrait valoir {}'.format(
+            results_errors['variable'][row],
+            results_errors['ident'][row],
+            results_errors['resultats_obtenus'][row],
+            results_errors['resultats_attendus'][row],
+            )
+        messages += message + '\n'
+    return messages
+
+
+def test():
     agents = AgentFpt(df)
     agents.set_grille(grille_adjoint_technique)
     value_vars = results_expect_dataframe.variable.unique().tolist()
-    assert set(value_vars) < set(agents.dataframe.columns)
+    agents.compute_all()
     results_actual_dataframe = pd.melt(
         agents.dataframe,
         id_vars = 'ident',
@@ -178,32 +199,20 @@ def do_not_test():
     resultats = results_expect_dataframe.merge(
         results_actual_dataframe,
         )
-    results_errors = resultats.loc[
-        ~(
-            np.equal(resultats.resultats_attendus, resultats.resultats_obtenus) |
-            (
-                resultats.resultats_obtenus.isnull() & resultats.resultats_attendus.isnull()
-                )
-            )
-        ].reset_index()
 
-    def mess():
-        messages = ''
-        for row in range(len(results_errors)):
-            message = 'La variable {} pour l\'identifiant {} vaut {} et devrait valoir {}'.format(
-                results_errors['variable'][row],
-                results_errors['ident'][row],
-                results_errors['resultats_obtenus'][row],
-                results_errors['resultats_attendus'][row],
-                )
-            messages += message + '\n'
-        return messages
+    ignored_idents = [8]
+    resultats = resultats[~resultats.ident.isin(ignored_idents)].copy()
 
-    assert np.equal(resultats.resultats_attendus, resultats.resultats_obtenus).all(), mess()
+    assert resultats.resultats_attendus.equals(resultats.resultats_obtenus), resultats[
+        ~(resultats.resultats_attendus == resultats.resultats_obtenus) &
+        ~(resultats.resultats_attendus.isnull() & resultats.resultats_obtenus.isnull())
+        ]
 
 
 def test_result():
-    print '===='
+    agents = AgentFpt(df)
+    agents.set_grille(grille_adjoint_technique)
+    agents.compute_all()
     result = agents.complete()
     print result
     print agents.dataframe
