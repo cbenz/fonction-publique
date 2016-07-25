@@ -5,16 +5,16 @@ from __future__ import division
 
 
 from datetime import datetime, date
+import logging
 import numpy as np
 import pandas as pd
 from time import gmtime, strftime
 
 
 from openfisca_core import periods
-# from fonction_publique.base import grille_adjoint_technique
 
 
-# dates_effet_grille = grille_adjoint_technique['date_effet_grille']
+log = logging.getLogger(__name__)
 
 
 class AgentFpt:
@@ -34,7 +34,7 @@ class AgentFpt:
 
     def compute_echelon_duration_with_grille_in_effect(self):
         dataframe = self.dataframe
-        # TODO this bloc should be reworked
+        # TODO this bloc should be reworked (variable names)
         date_effet_variable_name = 'date_debut_effet'
         echelon_max_variable_name = 'echelon_max_at_{}'.format(date_effet_variable_name)
 
@@ -168,7 +168,7 @@ class AgentFpt:
                 ]
             for echelon in echelons:  # Only changing echlons
                 if not ((dataframe.echelon == echelon) & (dataframe.grade)).any():
-                    continue  # We skip those not in the dataframe
+                    continue  # We skip the echelons not present in the dataframe
                 dates_effet_grille = dataframe.loc[
                     (dataframe.echelon == echelon) & (dataframe.grade == grade),
                     start_date_effet_variable_name
@@ -266,7 +266,6 @@ class AgentFpt:
             duree_variable_name = 'echelon_duration_with_grille_in_effect')
 
     def complete(self):
-        print self.dataframe
         dataframe = self.dataframe.loc[~self.dataframe.ident.isin([2, 8])].copy()
         # We select the quarter starting after the oldest date
         start_date = (
@@ -301,21 +300,16 @@ class AgentFpt:
     def compute_result(self):
         iteration = 0
         while not self.dataframe.empty:
-            print 'iteration', iteration
-            print self.dataframe
-            print 'compute_all'
             self.compute_all()
-            print 'complete'
             self.complete()
-            print 'next'
             self.dataframe = self.next().copy()
-            print self.result.sort_values(by = ['ident', 'quarter'])
             iteration += 1
 
     def set_grille(self, grille = None):
         assert grille is not None
         assert 'code_grade' in grille
         assert 'max_mois' in grille
+        assert 'min_mois' in grille
         self.grille = grille
 
 
@@ -328,7 +322,7 @@ def get_duree_echelon_from_grilles_dataframe(
     #    assert not duree.empty, u"Pas d'echelon {} valide dans le grade {} a la date {}".format(
     #        echelon, grade, date_effet)
     if duree.empty:
-        print(
+        log.info(
             u"Pas d'echelon {} valide dans le grade {} a la date {}. Using NaN".format(
                 echelon, grade, date_effet)
             )
@@ -343,7 +337,7 @@ def compute_changing_echelons_by_grade(grilles = None, start_date = None, speed 
 
     df = grilles.groupby(['code_grade', 'echelon'])[duree_str].nunique()  # unique() ?
     df = df.reset_index()
-    df = df.loc[df['max_mois'] > 1][['code_grade', 'echelon']]  # TODO adapt to all speeds
+    df = df.loc[df[duree_str] > 1][['code_grade', 'echelon']]
     echelons_by_grade = df.groupby('code_grade')['echelon'].unique().to_dict()
     return echelons_by_grade
 
@@ -369,7 +363,6 @@ def _set_dates_effet(dataframe, date_observation = None, start_variable_name = "
         next_variable_name = None, grille = None):
 
     grades_from_dataframe = dataframe.grade.unique()  # TODO: use a cache for this
-    print grille
     assert 'code_grade' in grille.columns
     grades_from_grilles = grille.code_grade.unique()
 
