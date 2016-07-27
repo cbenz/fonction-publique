@@ -62,7 +62,7 @@ output_directory_path = os.path.join(cnracl_path, "output")
 
 DEBUG_CLEAN_CARRIERES = True
 DEBUG = True
-debug_chunk_size = 1000 if DEBUG else None
+debug_chunk_size = 50000 if DEBUG else None
 
 # HDF5 files paths (temporary):
 ## Store des variables liées aux carrières nettoyées et stockées dans des tables du fichier donnees_de_carrieres.hdf5
@@ -77,34 +77,25 @@ def get_careers_hdf_path(stata_file_path, debug_cleaner_base_carriere = None):
             )
     return careers_hdf_path
 
-
-## Store des carrieres dont on a la législation contenant une table des carrieres dont on a la legislation et une
-## table des états uniques de carrières rencontrés
-def get_careers_for_which_we_have_law_hdf_file_path(careers_hdf_path):
-    careers_for_which_we_have_law_hdf_file_path = os.path.join(
+def get_tmp_hdf_path(stata_file_path, debug_cleaner_base_carriere = None):
+    tmp_hdf_path = os.path.join(
         tmp_directory_path,
-        "{}_dont_on_a_la_legislation.hdf5".format(careers_hdf_path[-36:-31])
-        )
-    return careers_for_which_we_have_law_hdf_file_path
-
-
-## Store des carrières partiellement fusionnées avec la législation
-def get_careers_partly_merged_with_law_hdf_file_path(careers_hdf_path):
-    careers_partly_merged_with_law = os.path.join(
-        tmp_directory_path,
-        "{}_{}_partiellement_fusionnees_avec_les_grilles.hdf5".format(
-            careers_hdf_path[-36:-31], careers_hdf_path[-30:-26]
+        "debug",
+        "{}_{}_tmp.hdf5".format(stata_file_path[-14:-10], stata_file_path[-8:-4]),
+        ) if debug_cleaner_base_carriere else os.path.join(
+            tmp_directory_path,
+            "{}_{}_tmp.hdf5".format(stata_file_path[-14:-10], stata_file_path[-8:-4]),
             )
-        )
-    return careers_partly_merged_with_law
+    return tmp_hdf_path
 
 
-# CSV files paths (final files):
-def get_careers_merged_with_law_csv_file_path(careers_hdf_path):
-    careers_merged_with_law_csv_file_path = os.path.join(
+def get_output_hdf_path(stata_file_path, debug_cleaner_base_carriere = None):
+    output_hdf_path = os.path.join(
         output_directory_path,
-        "{}_{}.csv".format(careers_hdf_path[-35:-31], careers_hdf_path[-30:-26])
-        )
-    return careers_merged_with_law_csv_file_path
-
-
+        "debug",
+        "{}_{}.hdf5".format(stata_file_path[-14:-10], stata_file_path[-8:-4]),
+        ) if debug_cleaner_base_carriere else os.path.join(
+            output_directory_path,
+            "{}_{}.hdf5".format(stata_file_path[-14:-10], stata_file_path[-8:-4]),
+            )
+    return output_hdf_path
