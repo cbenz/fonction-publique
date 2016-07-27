@@ -9,7 +9,7 @@ import pandas as pd
 import pkg_resources
 
 
-## Paths to legislation
+# Paths to legislation
 
 asset_path = os.path.join(
     pkg_resources.get_distribution('fonction_publique').location,
@@ -25,20 +25,6 @@ law_xls_path = os.path.join(
 law_hdf_path = os.path.join(
     asset_path,
     "grilles.hdf5")
-
-#grille_adjoint_technique_path = os.path.join(
-#    asset_path,
-#    'FPT_adjoint_technique.xlsx',
-#    )
-#grille_adjoint_technique = pd.read_excel(grille_adjoint_technique_path, encoding='utf-8')
-#grille_adjoint_technique = grille_adjoint_technique.rename(columns = dict(code_grade_NEG = 'code_grade'))
-#
-#donnees_adjoints_techniques = os.path.join(
-#    asset_path,
-#    'donnees_indiv_adjoint_technique_test.xlsx',
-#    )
-#donnees_adjoints_techniques = pd.read_excel(donnees_adjoints_techniques)
-
 
 
 # linux_cnracl_path = os.path.join("/run/user/1000/gvfs", "smb-share:server=192.168.1.2,share=data", "CNRACL")
@@ -64,14 +50,18 @@ DEBUG_CLEAN_CARRIERES = True
 DEBUG = True
 debug_chunk_size = 50000 if DEBUG else None
 
+
 # HDF5 files paths (temporary):
-## Store des variables liées aux carrières nettoyées et stockées dans des tables du fichier donnees_de_carrieres.hdf5
-def get_careers_hdf_path(stata_file_path, debug_cleaner_base_carriere = None):
+# Store des variables liées aux carrières nettoyées et stockées dans des tables du fichier donnees_de_carrieres.hdf5
+def get_careers_hdf_path(clean_directory_path = None, stata_file_path = None, debug = None):
+    assert clean_directory_path is not None
+    assert stata_file_path is not None
+    assert debug is not None, 'debug should be True or False'
     careers_hdf_path = os.path.join(
         clean_directory_path,
         "debug",
         "{}_{}_carrieres.hdf5".format(stata_file_path[-14:-10], stata_file_path[-8:-4]),
-        ) if debug_cleaner_base_carriere else os.path.join(
+        ) if debug else os.path.join(
             clean_directory_path,
             "{}_{}_carrieres.hdf5".format(stata_file_path[-14:-10], stata_file_path[-8:-4])
             )
