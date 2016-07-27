@@ -7,11 +7,8 @@ import pandas as pd
 import pylab as plt
 import seaborn as sns
 import time
-
-
-from fonction_publique.base import stata_data_path, hdf_directory_path, DEBUG_CLEAN_CARRIERES, hdf5_file_path
-stata_file_path = os.path.join(stata_data_path, 'c_g1950_g1959.dta')
-
+from fonction_publique.base import raw_directory_path, clean_directory_path, get_careers_hdf_path, \
+DEBUG_CLEAN_CARRIERES, debug_chunk_size
 
 # Timer
 def timing(f):
@@ -24,7 +21,7 @@ def timing(f):
     return wrap
 
 
-def select_columns(variable):  # e.g 'ident' 'qualite' 'statut' 'cir' '_netneh' 'libemploi' 'ib_' 'etat_'
+def select_columns(variable = None, stata_file_path = None):  # e.g 'ident' 'qualite' 'statut' 'cir' '_netneh' 'libemploi' 'ib_' 'etat_'
     # colnames = read_only_store.select('data', 'index < 2').columns.to_series()
     """ selectionne les noms de colonnes correspondant à la variable (variable) qui nous interesse """
     reader_for_colnames = pd.read_stata(stata_file_path, chunksize = 1)
@@ -40,10 +37,13 @@ def select_columns(variable):  # e.g 'ident' 'qualite' 'statut' 'cir' '_netneh' 
 
 
 @timing
-def get_subset(variable):
+def get_subset(variable = None, stata_file_path = None):
     """ selectionne le sous-dataframe pour une variable, appelee variable ici"""
-    reader = pd.read_stata(stata_file_path, chunksize = 50000)
-    colnames = select_columns(variable)
+    if DEBUG_CLEAN_CARRIERES:
+        reader = pd.read_stata(stata_file_path, chunksize = debug_chunk_size)
+    else:
+        reader = pd.read_stata(stata_file_path, chunksize = 50000)
+    colnames = select_columns(variable, stata_file_path)
     get_subset = pd.DataFrame()
     for chunk in reader:
         subset = chunk[colnames]
@@ -54,12 +54,12 @@ def get_subset(variable):
 
 
 @timing
-def clean_subset(variable, period, quarterly):
+def clean_subset(variable = None, years_range = None, quarterly = False, stata_file_path = None):
     """ nettoie chaque variable pour en faire un df propre """
     subset_result = pd.DataFrame()
-    subset = get_subset(variable)
+    subset = get_subset(variable, stata_file_path)
     # Build a hierarchical index as in http://stackoverflow.com/questions/17819119/coverting-index-into-multiindex-hierachical-index-in-pandas
-    for annee in period:
+    for annee in years_range:
         if quarterly:
             if variable == 'ib_':
                 for quarter in range(1, 5):
@@ -88,9 +88,9 @@ def clean_subset(variable, period, quarterly):
 
 
 @timing
-def format_columns(variable = None, years_range = None, quarterly = False):
+def format_columns(variable = None, years_range = None, quarterly = False, stata_file_path = None):
 
-    subset_to_format = clean_subset(variable, years_range, quarterly)
+    subset_to_format = clean_subset(variable, years_range, quarterly, stata_file_path)
     subset_to_format['ident'] = subset_to_format['ident'].astype('int')
     if variable in ['qualite', 'statut', 'etat_']:
         subset_to_format[variable] = subset_to_format[variable].astype('category')
@@ -103,40 +103,39 @@ def format_columns(variable = None, years_range = None, quarterly = False):
     else:
         subset_to_format[variable] = subset_to_format[variable].astype('str')
 
-    subset_to_format.to_hdf(hdf5_file_path, '{}'.format(variable), format = 'table', data_columns = True)
+    careers_hdf_path = get_careers_hdf_path(stata_file_path, DEBUG_CLEAN_CARRIERES)
 
-    return 'df is cleaned'
+    subset_to_format.to_hdf(
+        careers_hdf_path, '{}'.format(variable), format = 'table', data_columns = True
+        )
 
 
-def format_generation():
-    generation = get_subset('generation')
+def format_generation(stata_file_path):
+    generation = get_subset('generation', stata_file_path)
     generation['ident'] = generation['ident'].astype('int')
     generation['generation'] = generation['generation'].astype('int32')
-    generation.to_hdf(hdf5_file_path, 'generation', format = 'table', data_columns = True)
+
+    careers_hdf_path = get_careers_hdf_path(stata_file_path, DEBUG_CLEAN_CARRIERES)
+    print careers_hdf_path
+    generation.to_hdf(careers_hdf_path, 'generation', format = 'table', data_columns = True)
     return 'generation was added to base_carriere'
 
-# def gen_libemploi_2010_2014():
-#    """ Cree une table libemploi_2010_2014 p'rovisoire pour comparer le nb de libelles grades sur la periode avec
-#    les nb de codes grades sur la periodes. La table libemploi est en effet disponible pour 2000-2014.
-#    """
-#    df_libemploi = get_df('libemploi')
-#    df_libemploi_subset = df_libemploi.to_hdf(hdf5_file_path, 'libemploi_2010_2014',
-#                                          mode='w', format='table', data_columns=True)
-
-
 if __name__ == '__main__':
-
     arg_format_columns = [
-        # ('c_netneh', range(2010, 2015), False),
-        # ('c_cir', range(2010, 2015), False),
-        # ('libemploi', range(2000, 2015), False),
-        # # should contain _ otherwise libemploi which contains 'ib' would also selected
-        ('ib_', range(1970, 2015), True),
-        # ('qualite', range(1970, 2015), False),
-        # ('statut', range(1970, 2015), False),
-        # ('etat', range(1970, 2015), True),
+         ('c_netneh', range(2010, 2015), False),
+         ('c_cir', range(2010, 2015), False),
+         ('libemploi', range(2000, 2015), False),
+         # should contain _ otherwise libemploi which contains 'ib' would also selected
+         ('ib_', range(1970, 2015), True),
+         ('qualite', range(1970, 2015), False),
+         ('statut', range(1970, 2015), False),
+         ('etat', range(1970, 2015), True),
         ]
-    for args in arg_format_columns:
-        format_columns(*args)
+    for stata_file in os.listdir(raw_directory_path):
+        stata_file_path = os.path.join(raw_directory_path, '{}'.format(stata_file))
+        format_generation(stata_file_path)
+        break
+        for args in arg_format_columns:
+            format_columns(*(args, stata_file_path))
+            break
 
-    format_generation()
