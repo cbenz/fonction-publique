@@ -266,7 +266,7 @@ class AgentFpt:
             duree_variable_name = 'echelon_duration_with_grille_in_effect')
 
     def complete(self):
-        dataframe = self.dataframe.loc[~self.dataframe.ident.isin([2, 8])].copy()
+        dataframe = self.dataframe.loc[~self.dataframe.ident.isin([2, 8])].copy()  # TOOD remove this
         # We select the quarter starting after the oldest date
         start_date = (
             dataframe.period.min() + pd.tseries.offsets.QuarterEnd() + pd.tseries.offsets.MonthBegin(n=1)
@@ -288,13 +288,14 @@ class AgentFpt:
         return result
 
     def next(self):
+        '''Remove from dataframe all agents that have reached their ultimate echelon'''
         dataframe = self.dataframe
         next_dataframe = dataframe.loc[
             dataframe.end_date_in_echelon.notnull() & (dataframe.end_date_in_echelon < pd.Timestamp.max.floor('D')),
             ['ident', 'end_date_in_echelon', 'grade', 'echelon'],
             ].copy()
         next_dataframe.rename(columns = dict(end_date_in_echelon = 'period'), inplace = True)
-        next_dataframe.echelon += 1
+        next_dataframe.echelon += 1  # TODO deal with str echelon
         return next_dataframe
 
     def compute_result(self):

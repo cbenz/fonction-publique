@@ -181,15 +181,20 @@ def merge_careers_with_echelon_with_etat(stata_file_path = None):
     clean_hdf = pd.HDFStore(clean_hdf_path)
     table_var_etat = clean_hdf.select('etat', where = 'annee > 2009')
     table_var_etat = table_var_etat[['ident', 'etat', 'annee']]
-    table_var_etat['annee'] = [str(x) + '-01-01' for x in table_var_etat['annee']]
     table_var_etat = table_var_etat[~table_var_etat['ident'].isnull()]
     table_var_etat['ident'] = table_var_etat['ident'].astype(int)
     careers = tmp_hdf.select('tmp_5')
     careers = careers[~careers['ident'].isnull()]
     careers['ident'] = careers['ident'].astype(int)
+
+    print table_var_etat['annee']
+    careers['annee'] = careers.period.dt.year
+    print careers['annee']
     careers = careers.merge(table_var_etat, on = ['ident', 'annee'], how = 'outer')
     careers = careers[~careers['echelon'].isnull()]
     output_hdf_path = get_output_hdf_path(stata_file_path, DEBUG_CLEAN_CARRIERES)
+    assert os.path.exists(os.path.dirname(output_hdf_path)), '{} is not a valid path'.format(
+        os.path.dirname(output_hdf_path))
     careers.to_hdf(output_hdf_path, 'output', format = 'table', data_columns = True)
 
 

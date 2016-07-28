@@ -6,18 +6,9 @@ import os
 import pandas as pd
 from datetime import datetime
 
-from fonction_publique.base import asset_path, hdf_directory_path, hdf5_file_path, DEBUG, debug_chunk_size
+from fonction_publique.base import asset_path, get_output_hdf_path, law_hdf_path, DEBUG, debug_chunk_size
 
 from fonction_publique.career_simulation_vectorized import AgentFpt
-
-
-carrieres_a_lier_file_path = os.path.join(
-    hdf_directory_path,
-    "carrieres_a_lier_debug.hdf5",
-    ) if DEBUG else os.path.join(
-        hdf_directory_path,
-        "carrieres_a_lier",
-        )
 
 
 def temporary_clean_echelon(dataframe):
@@ -28,7 +19,8 @@ def temporary_clean_echelon(dataframe):
 
 
 def extract_initial():
-    careers = pd.read_hdf(carrieres_a_lier_file_path, 'carrieres_with_echelon')
+    careers_file_path = get_output_hdf_path(stata_file_path = 'c_g1950_g1959.dta', debug_cleaner_base_carriere = DEBUG)
+    careers = pd.read_hdf(careers_file_path, 'output')
     # print careers.head()
     # print careers.dtypes
     careers = careers.dropna(subset = ['echelon'])
@@ -50,22 +42,25 @@ def extract_initial():
     print starting_careers.head()
     starting_careers = starting_careers.rename(columns = dict(code_grade_NETNEH = 'grade'))
 
-    carrieres_a_lier = pd.HDFStore(carrieres_a_lier_file_path)
-    grilles = carrieres_a_lier.select('grilles')
+    law_store = pd.HDFStore(law_hdf_path)
+    grilles = law_store.select('grilles')
     grilles = grilles[
         (grilles.max_mois > 0)  # TODO: add other conditions
         ]
     grilles = temporary_clean_echelon(grilles)
     print grilles.dtypes
     print grilles.echelon.value_counts(dropna = False)
-    grilles = grilles.rename(columns = dict(code_grade_NETNEH = 'code_grade'))
+    # grilles = grilles.rename(columns = dict(code_grade_NETNEH = 'code_grade'))
     print grilles.head()
 
     agents = AgentFpt(
         starting_careers[['ident', 'period', 'grade', 'echelon']].copy(),
         grille = grilles)
+    print agents.dataframe
     print agents.compute_result()
-
+    # print agents.result.to_hdf('toto.h5', 'toto', format = 'table', data_columns = True)
+    return agents.result
 
 if __name__ == '__main__':
-    extract_initial()
+    result = extract_initial().sort_values(['ident', 'echelon', 'quarter'])
+    result

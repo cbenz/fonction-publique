@@ -67,6 +67,7 @@ def get_careers_hdf_path(clean_directory_path = None, stata_file_path = None, de
             )
     return careers_hdf_path
 
+
 def get_tmp_hdf_path(stata_file_path, debug_cleaner_base_carriere = None):
     tmp_hdf_path = os.path.join(
         tmp_directory_path,
