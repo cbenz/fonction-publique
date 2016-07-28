@@ -68,24 +68,26 @@ def get_careers_hdf_path(clean_directory_path = None, stata_file_path = None, de
     return careers_hdf_path
 
 
-def get_tmp_hdf_path(stata_file_path, debug_cleaner_base_carriere = None):
+def get_tmp_hdf_path(stata_file_path, debug = None):
+    assert debug is not None, 'debug should be True or False'
     tmp_hdf_path = os.path.join(
         tmp_directory_path,
         "debug",
         "{}_{}_tmp.hdf5".format(stata_file_path[-14:-10], stata_file_path[-8:-4]),
-        ) if debug_cleaner_base_carriere else os.path.join(
+        ) if debug else os.path.join(
             tmp_directory_path,
             "{}_{}_tmp.hdf5".format(stata_file_path[-14:-10], stata_file_path[-8:-4]),
             )
     return tmp_hdf_path
 
 
-def get_output_hdf_path(stata_file_path, debug_cleaner_base_carriere = None):
+def get_output_hdf_path(stata_file_path, debug = None):
+    assert debug is not None, 'debug should be True or False'
     output_hdf_path = os.path.join(
         output_directory_path,
         "debug",
         "{}_{}.hdf5".format(stata_file_path[-14:-10], stata_file_path[-8:-4]),
-        ) if debug_cleaner_base_carriere else os.path.join(
+        ) if debug else os.path.join(
             output_directory_path,
             "{}_{}.hdf5".format(stata_file_path[-14:-10], stata_file_path[-8:-4]),
             )

@@ -18,25 +18,19 @@ def temporary_clean_echelon(dataframe):
     return dataframe
 
 
-def extract_initial():
-    careers_file_path = get_output_hdf_path(stata_file_path = 'c_g1950_g1959.dta', debug_cleaner_base_carriere = DEBUG)
+def extract_initial(stata_file_path, debug = None):
+    careers_file_path = get_output_hdf_path(stata_file_path = stata_file_path, debug = debug)
     careers = pd.read_hdf(careers_file_path, 'output')
-    # print careers.head()
-    # print careers.dtypes
     careers = careers.dropna(subset = ['echelon'])
     careers = careers.dropna(subset = ['ident'])
     careers = temporary_clean_echelon(careers)
-    print careers.ident.isnull().sum()
-    print careers.head()
-    print careers.dtypes
-    print 'dup', careers.duplicated().sum()
-    print careers[careers.duplicated()]
-    careers = careers.drop_duplicates()
-    print 'dup', careers.duplicated().sum()
-    print careers.head()
-    print careers.duplicated(subset = ['ident', 'period']).sum()
-    print careers.groupby('ident')['period'].idxmin().values.ravel()
-    print len(careers)
+    assert careers.ident.notnull().all()
+    if careers.duplicated().sum():  # change this to assert
+        print 'the following are duplicated careers'
+        print careers[careers.duplicated()]
+        print 'We drop the duplicated careers'
+        careers = careers.drop_duplicates()
+
     careers.reset_index(inplace = True)
     starting_careers = careers.iloc[careers.groupby('ident')['period'].idxmin().values.ravel()]
     print starting_careers.head()
@@ -50,7 +44,6 @@ def extract_initial():
     grilles = temporary_clean_echelon(grilles)
     print grilles.dtypes
     print grilles.echelon.value_counts(dropna = False)
-    # grilles = grilles.rename(columns = dict(code_grade_NETNEH = 'code_grade'))
     print grilles.head()
 
     agents = AgentFpt(
@@ -58,9 +51,11 @@ def extract_initial():
         grille = grilles)
     print agents.dataframe
     print agents.compute_result()
-    # print agents.result.to_hdf('toto.h5', 'toto', format = 'table', data_columns = True)
     return agents.result
 
+
 if __name__ == '__main__':
-    result = extract_initial().sort_values(['ident', 'echelon', 'quarter'])
-    result
+    result = extract_initial(
+        stata_file_path = 'c_g1950_g1959.dta',
+        debug = DEBUG,
+        ).sort_values(['ident', 'echelon', 'quarter'])

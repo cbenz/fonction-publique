@@ -56,7 +56,7 @@ def get_careers_for_which_we_have_law(start_year = 2009, stata_file_path = None)
     careers['annee'] = careers['annee'].astype('str').map(lambda x: str(x)[:4])
     careers['annee'] = pd.to_datetime(careers['annee'])
     assert not careers.empty, 'careers is an empty DataFrame'
-    tmp_hdf_path = get_tmp_hdf_path(stata_file_path, DEBUG_CLEAN_CARRIERES)
+    tmp_hdf_path = get_tmp_hdf_path(stata_file_path, debug = DEBUG_CLEAN_CARRIERES)
     assert os.path.exists(os.path.dirname(tmp_hdf_path)), 'Invalid path {}'.format(os.path.dirname(tmp_hdf_path))
     careers.to_hdf(
         tmp_hdf_path,
@@ -68,7 +68,7 @@ def get_careers_for_which_we_have_law(start_year = 2009, stata_file_path = None)
 
 def get_unique_career_states(stata_file_path = None):
     """ identifier les etats de carrieres uniques, cad les triplets uniques codes grades NETNEH, annee, ib"""
-    tmp_hdf_path = get_tmp_hdf_path(stata_file_path, DEBUG_CLEAN_CARRIERES)
+    tmp_hdf_path = get_tmp_hdf_path(stata_file_path, debug = DEBUG_CLEAN_CARRIERES)
     tmp_hdf = pd.HDFStore(tmp_hdf_path)
     careers = tmp_hdf.select('tmp_1')
     unique_career_states = careers.groupby(['annee', 'trimestre', 'c_netneh', 'ib']).size().reset_index()[[
@@ -81,19 +81,24 @@ def get_unique_career_states(stata_file_path = None):
 
 
 def append_date_effet_to_unique_career_states(stata_file_path = None):
-    tmp_hdf_path = get_tmp_hdf_path(stata_file_path, DEBUG_CLEAN_CARRIERES)
+    tmp_hdf_path = get_tmp_hdf_path(stata_file_path, debug = DEBUG_CLEAN_CARRIERES)
     tmp_hdf = pd.HDFStore(tmp_hdf_path)
     law = pd.HDFStore(law_hdf_path)
     with tmp_hdf as store:
         unique_career_states = store.select('tmp_2').copy()
-        dataframe = unique_career_states[['c_netneh', 'annee', 'trimestre']]
+        dataframe = unique_career_states[['c_netneh', 'annee', 'trimestre']].copy()
+        assert not dataframe.duplicated().any(), 'There are duplicatd row in dataframe'
         dataframe['year'] = dataframe.annee
         dataframe['month'] = (dataframe.trimestre - 1) * 3 + 1
         dataframe['day'] = 1
         dataframe['observation_date'] = pd.to_datetime(dataframe[['year', 'month', 'day']])
-        dataframe.columns = ['grade', 'annee', 'trimestre', 'year', 'month', 'day', 'period']
-        dataframe = dataframe[['grade', 'annee', 'trimestre', 'period']]
-        careers = store.select('tmp_1').copy()
+        assert not dataframe.duplicated().any(), 'There are duplicatd row in dataframe'
+        print dataframe.columns
+        dataframe.columns = ['grade', 'annee', 'trimestre', 'year', 'month', 'day', 'period']  # TODO use rename like below
+        dataframe = dataframe[['grade', 'annee', 'trimestre', 'period']].copy()
+        assert not dataframe.duplicated().any(), 'There are duplicatd row in dataframe'
+        careers = store.select('tmp_1')
+        assert not careers.duplicated().any(), 'There are duplicatd row in careers'
         grilles = law.select('grilles')
         grilles = grilles.rename(columns = dict(code_grade_NETNEH = 'grade'))
         _set_dates_effet(
@@ -102,6 +107,7 @@ def append_date_effet_to_unique_career_states(stata_file_path = None):
             start_variable_name = 'date_effet_grille',
             next_variable_name = None,
             grille = grilles)
+        assert not dataframe.duplicated().any(), 'There are duplicatd row in unique_career_states (tmp_3)'
         dataframe.to_hdf(tmp_hdf_path,
             'tmp_3',
             format = 'table',
@@ -110,22 +116,27 @@ def append_date_effet_to_unique_career_states(stata_file_path = None):
 
 def merge_date_effet_grille_with_careers(stata_file_path = None):
     """ ajouter les dates d'effets de grilles aux carrieres """
-    tmp_hdf_path = get_tmp_hdf_path(stata_file_path, DEBUG_CLEAN_CARRIERES)
+    tmp_hdf_path = get_tmp_hdf_path(stata_file_path, debug = DEBUG_CLEAN_CARRIERES)
     tmp_hdf = pd.HDFStore(tmp_hdf_path)
     unique_career_states = tmp_hdf.select('tmp_3')
+    assert not unique_career_states.duplicated().any(), 'There are duplicatd row in unique_career_states'
     careers = tmp_hdf.select('tmp_1')
     careers['annee'] = [str(annee)[:4] for annee in careers['annee']]
     careers['year'] = careers.annee.astype('int')
     careers['month'] = (careers.trimestre - 1) * 3 + 1
     careers['day'] = 1
     careers['period'] = pd.to_datetime(careers[['year', 'month', 'day']])
-    careers = careers[['ident', 'ib', 'trimestre', 'c_netneh', 'period']]
+    careers = careers[['ident', 'ib', 'trimestre', 'c_netneh', 'period']].copy()
     careers.columns = ['ident', 'ib', 'trimestre', 'grade', 'period']
+    careers.rename(columns = dict(c_netneh = 'grade'), inplace = True)
+    assert not careers.duplicated().any(), 'There are duplicatd row in careers'
+    assert not unique_career_states.duplicated().any(), 'There are duplicatd row in unique_career_states'
     careers = unique_career_states.merge(
         careers,
         on = ['period', 'grade', 'trimestre'],
         how = 'outer'
         )
+    assert not careers.duplicated().any(), 'There are duplicatd row in careers'
     careers.to_hdf(
         tmp_hdf_path,
         'tmp_4',
@@ -136,12 +147,13 @@ def merge_date_effet_grille_with_careers(stata_file_path = None):
 
 def merge_careers_with_legislation(stata_file_path = None):
     """ ajouter les echelons aux carrieres """
-    tmp_hdf_path = get_tmp_hdf_path(stata_file_path, DEBUG_CLEAN_CARRIERES)
+    tmp_hdf_path = get_tmp_hdf_path(stata_file_path, debug = DEBUG_CLEAN_CARRIERES)
     tmp_hdf = pd.HDFStore(tmp_hdf_path)
     law = pd.HDFStore(law_hdf_path)
     grilles = law.select('grilles')
 
     careers = tmp_hdf.select('tmp_4')
+    assert not careers.duplicated().any(), 'There are duplicatd row in careers'
     careers = careers[[
         'grade',
         'trimestre',
@@ -149,15 +161,9 @@ def merge_careers_with_legislation(stata_file_path = None):
         'date_effet_grille',
         'ident',
         'ib'
-        ]]
-    careers.columns = [
-        'code_grade_NETNEH',
-        'trimestre',
-        'period',
-        'date_effet_grille',
-        'ident',
-        'ib'
-        ]
+        ]].copy()
+    careers.rename(columns = dict(grade = 'code_grade_NETNEH'), inplace = True)
+    assert not careers.duplicated().any(), 'There are duplicatd row in careers'
     grilles['date_effet_grille'] = [str(annee)[:10] for annee in grilles['date_effet_grille']]
     grilles['date_effet_grille'] = pd.to_datetime(grilles.date_effet_grille)
     careers = careers.merge(
@@ -165,6 +171,7 @@ def merge_careers_with_legislation(stata_file_path = None):
         on = ['code_grade_NETNEH', 'date_effet_grille', 'ib'],
         how = 'outer'
         )
+    assert not careers.duplicated().any(), 'There are duplicatd row in careers (after merge)'
     careers.to_hdf(
         tmp_hdf_path,
         'tmp_5',
@@ -174,7 +181,7 @@ def merge_careers_with_legislation(stata_file_path = None):
 
 
 def merge_careers_with_echelon_with_etat(stata_file_path = None):
-    tmp_hdf_path = get_tmp_hdf_path(stata_file_path, DEBUG_CLEAN_CARRIERES)
+    tmp_hdf_path = get_tmp_hdf_path(stata_file_path, debug = DEBUG_CLEAN_CARRIERES)
     tmp_hdf = pd.HDFStore(tmp_hdf_path)
     clean_hdf_path = get_careers_hdf_path(clean_directory_path = clean_directory_path,
         stata_file_path = stata_file_path, debug = DEBUG_CLEAN_CARRIERES)
@@ -192,11 +199,11 @@ def merge_careers_with_echelon_with_etat(stata_file_path = None):
     print careers['annee']
     careers = careers.merge(table_var_etat, on = ['ident', 'annee'], how = 'outer')
     careers = careers[~careers['echelon'].isnull()]
-    output_hdf_path = get_output_hdf_path(stata_file_path, DEBUG_CLEAN_CARRIERES)
+    output_hdf_path = get_output_hdf_path(stata_file_path, debug = DEBUG_CLEAN_CARRIERES)
     assert os.path.exists(os.path.dirname(output_hdf_path)), '{} is not a valid path'.format(
         os.path.dirname(output_hdf_path))
+    assert not careers.duplicated().any(), 'There are duplicatd row in careers'
     careers.to_hdf(output_hdf_path, 'output', format = 'table', data_columns = True)
-
 
 if __name__ == '__main__':
     law_to_hdf()
