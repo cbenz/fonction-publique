@@ -134,42 +134,42 @@ def format_generation(stata_file_path, clean_directory_path = None, debug = Fals
 def main(raw_directory_path = None, clean_directory_path = None, debug = None):
     assert raw_directory_path is not None
     arg_format_columns = [
-        # dict(
-        #     variable = 'c_netneh',
-        #     years_range = range(2010, 2015),
-        #     quarterly = False,
-        #     ),
-        # dict(
-        #     variable = 'c_cir',
-        #     years_range = range(2010, 2015),
-        #     quarterly = False,
-        #     ),
-        # dict(
-        #     variable = 'libemploi',
-        #     years_range = range(2000, 2015),
-        #     quarterly = False,
-        #     ),
+        dict(
+            variable = 'c_netneh',
+            years_range = range(2010, 2015),
+            quarterly = False,
+            ),
+        dict(
+            variable = 'c_cir',
+            years_range = range(2010, 2015),
+            quarterly = False,
+            ),
+        dict(
+            variable = 'libemploi',
+            years_range = range(2000, 2015),
+            quarterly = False,
+            ),
         # should contain _ otherwise libemploi which contains 'ib' would also selected
         dict(
             variable = 'ib_',
             years_range = range(1970, 2015),
             quarterly = True,
             ),
-        # dict(
-        #     variable = 'qualite',
-        #     years_range = range(1970, 2015),
-        #     quarterly = False,
-        #     ),
-        # dict(
-        #     variable = 'statut',
-        #     years_range = range(1970, 2015),
-        #     quarterly = False,
-        #     ),
-        # dict(
-        #     variable = 'etat',
-        #     years_range = range(1970, 2015),
-        #     quarterly = True,
-        #     ),
+        dict(
+            variable = 'qualite',
+            years_range = range(1970, 2015),
+            quarterly = False,
+            ),
+        dict(
+            variable = 'statut',
+            years_range = range(1970, 2015),
+            quarterly = False,
+            ),
+        dict(
+            variable = 'etat',
+            years_range = range(1970, 2015),
+            quarterly = True,
+            ),
         ]
     for stata_file in os.listdir(raw_directory_path):
         stata_file_path = os.path.join(raw_directory_path, '{}'.format(stata_file))
