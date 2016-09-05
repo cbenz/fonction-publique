@@ -2,9 +2,10 @@
 
 
 from __future__ import division
-from datetime import datetime
+
+
 from fonction_publique.base import law_xls_path, law_hdf_path, get_careers_hdf_path, get_tmp_hdf_path, \
-    debug_chunk_size, DEBUG_CLEAN_CARRIERES, get_output_hdf_path, raw_directory_path, clean_directory_path
+    debug_chunk_size, DEBUG_CLEAN_CARRIERES, get_output_hdf_path, clean_directory_path
 from fonction_publique.career_simulation_vectorized import _set_dates_effet
 import logging
 import os
@@ -23,7 +24,6 @@ def law_to_hdf():
     law['code_grade'] = law['code_grade_NETNEH'].astype('str')
     law = law[~law['ib'].isin([-1, 0])].copy()
     law.to_hdf(law_hdf_path, 'grilles', format = 'table', data_columns = True, mode = 'w')
-    return law.head()
 
 
 def get_careers_for_which_we_have_law(start_year = 2009, stata_file_path = None):
@@ -38,13 +38,13 @@ def get_careers_for_which_we_have_law(start_year = 2009, stata_file_path = None)
     careers_hdf_path = get_careers_hdf_path(clean_directory_path = clean_directory_path,
         stata_file_path = stata_file_path, debug = DEBUG_CLEAN_CARRIERES)
     careers_hdf = pd.HDFStore(careers_hdf_path)
-    grades_in_law = law.code_grade.unique()
+    grades_in_law = law.code_grade.unique()  # analysis:ignore
     valid_grades = careers_hdf.select(
         'c_netneh',
         where = 'c_netneh in grades_in_law',
         stop = debug_chunk_size,
         )
-    valid_idents = valid_grades.ident.unique()
+    valid_idents = valid_grades.ident.unique()  # analysis:ignore
     condition = "annee > {} & ident in valid_idents & ib < 1016".format(start_year)
     valid_ib = careers_hdf.select('ib', where = condition)
     careers = valid_ib.merge(valid_grades, on = ['ident', 'annee'], how = 'outer')
@@ -205,7 +205,7 @@ def merge_careers_with_echelon_with_etat(stata_file_path = None):
         os.path.dirname(output_hdf_path))
     assert not careers.duplicated().any(), 'There are duplicatd row in careers'
     careers.to_hdf(output_hdf_path, 'output', format = 'table', data_columns = True)
-    return careers
+
 
 #if __name__ == '__main__':
 #    law_to_hdf()

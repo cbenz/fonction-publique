@@ -2,9 +2,12 @@
 
 
 from __future__ import division
+
+
+import logging
 import os
 import pandas as pd
-from datetime import datetime
+
 
 from fonction_publique.base import asset_path, hdf_directory_path, hdf5_file_path, DEBUG, debug_chunk_size
 
@@ -58,13 +61,13 @@ def get_careers_for_which_we_have_law(start_year = 2009):
      """
     law = pd.read_hdf(carrieres_a_lier_file_path, 'grilles')
     store_carriere = pd.HDFStore(hdf5_file_path)
-    codes_grades_NETNEH_in_law = law.code_grade_NETNEH.unique()
+    codes_grades_NETNEH_in_law = law.code_grade_NETNEH.unique()  # analysis:ignore
     valid_grades = store_carriere.select(
         'c_netneh',
         where = 'c_netneh in codes_grades_NETNEH_in_law',
         stop = debug_chunk_size,
         )
-    ident_connus = valid_grades.ident.unique()
+    ident_connus = valid_grades.ident.unique()  # analysis:ignore
     condition = "(annee > {}) & (ident in ident_connus) & (ib_ < 1016)".format(start_year)
     valid_ib = store_carriere.select('ib_', where = condition)
     careers = valid_ib.merge(valid_grades, on = ['ident', 'annee'], how = 'outer')

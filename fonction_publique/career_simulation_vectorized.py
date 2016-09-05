@@ -4,14 +4,9 @@
 from __future__ import division
 
 
-from datetime import datetime, date
 import logging
 import numpy as np
 import pandas as pd
-from time import gmtime, strftime
-
-
-from openfisca_core import periods
 
 
 log = logging.getLogger(__name__)
@@ -36,18 +31,21 @@ class AgentFpt:
         dataframe = self.dataframe
         # TODO this bloc should be reworked (variable names)
         date_effet_variable_name = 'date_debut_effet'
+        date_fin_echelon_grille_initiale = 'end_echelon_grille_in_effect_at_start'
         echelon_max_variable_name = 'echelon_max_at_{}'.format(date_effet_variable_name)
+        duree_echelon_grille_suivante = 'echelon_duration_with_grille_in_effect_at_end'
+        duree_echelon_grille_initiale = 'echelon_period_for_grille_at_start'
 
         echelon_condition = (dataframe.echelon + 1) <= dataframe[echelon_max_variable_name]  # TODO echelon sera une str
         condit_1 = (
-            dataframe.next_change_of_legis_grille < dataframe.end_echelon_grille_in_effect_at_start
+            dataframe.next_change_of_legis_grille < dataframe[date_fin_echelon_grille_initiale]
             )
         condit_3 = (
             dataframe.period +
-            dataframe.echelon_duration_with_grille_in_effect_at_end.values.astype("timedelta64[M]")
+            dataframe[duree_echelon_grille_suivante].values.astype("timedelta64[M]")
             ) < (
             dataframe.period +
-            dataframe.echelon_period_for_grille_at_start.values.astype("timedelta64[M]")
+            dataframe[duree_echelon_grille_initiale].values.astype("timedelta64[M]")
             )
         grille_change_during_period = (
             dataframe.end_echelon_grille_in_effect_at_start >
@@ -58,9 +56,9 @@ class AgentFpt:
             dataframe.next_change_of_legis_grille - dataframe.period
             ).values.astype("timedelta64[M]") / np.timedelta64(1, 'M')
 
-        duree_b = dataframe.echelon_duration_with_grille_in_effect_at_end
+        duree_b = dataframe[duree_echelon_grille_suivante]
 
-        duree_c = dataframe.echelon_period_for_grille_at_start
+        duree_c = dataframe[duree_echelon_grille_initiale]
 
         grades_from_dataframe = dataframe.grade.unique()  # TODO: use a cache for this
         grades_from_grilles = self.grille.code_grade.unique()
@@ -212,8 +210,11 @@ class AgentFpt:
 
         dataframe.loc[dataframe[duree_variable_name] == np.inf, new_date_variable_name] = pd.Timestamp.max.floor('D')
 
-    def add_echelon_max(self, date_effet_grille, echelon_max_variable_name = None):
-        assert echelon_max_variable_name is not None
+    def add_echelon_max(self, date_effet_grille = None, echelon_max_variable_name = None):
+        """
+        Ajoute le rang de l'echelon le plus élevé à la nouvelle date d'effet de la grille date_effet_grille
+        """
+        assert date_effet_grille is not None and echelon_max_variable_name is not None
         echelon_max_by_grille = compute_echelon_max(grilles = self.grille, start_date = None,
             echelon_max_variable_name = echelon_max_variable_name)
         dataframe = self.dataframe
@@ -229,16 +230,17 @@ class AgentFpt:
         del dataframe['code_grade']
         self.dataframe = dataframe
 
+
     def compute_all(self):
         self.set_dates_effet(
-            date_observation='period',
+            date_observation = 'period',
             start_variable_name = "date_debut_effet",
             next_variable_name = 'next_grille_date_effet'
             )
 
         self.compute_echelon_duree(
-            date_effet_variable_name='date_debut_effet',
-            duree_variable_name='echelon_period_for_grille_at_start'
+            date_effet_variable_name = 'date_debut_effet',
+            duree_variable_name = 'echelon_period_for_grille_at_start'
             )
         self.compute_date_effet_legislation_change(
             start_date_effet_variable_name = 'date_debut_effet',
@@ -265,22 +267,26 @@ class AgentFpt:
             start_date_variable_name = 'period',
             duree_variable_name = 'echelon_duration_with_grille_in_effect')
 
-    def complete(self):
-        dataframe = self.dataframe.loc[~self.dataframe.ident.isin([2, 8])].copy()  # TOOD remove this
+    def complete(self, date_observation = None):
+
+        if date_observation is None:
+            date_observation = 'period'
+            log.info('date_observation is none. Using period')
+
+        dataframe = self.dataframe.loc[~self.dataframe.ident.isin([2, 8])].copy()  # TOOD remove this
         # We select the quarter starting after the oldest date
         start_date = (
-            dataframe.period.min() + pd.tseries.offsets.QuarterEnd() + pd.tseries.offsets.MonthBegin(n=1)
+            dataframe[date_observation].min() + pd.tseries.offsets.QuarterEnd() + pd.tseries.offsets.MonthBegin(n=1)
             ).floor('D')
         end_date = pd.Timestamp("2020-01-01").floor('D')
         quarters_range = pd.date_range(start = start_date, end = end_date, freq = 'Q')
         result = pd.DataFrame()
         for quarter_date in quarters_range:
             quarter_begin = quarter_date - pd.tseries.offsets.QuarterBegin(startingMonth = 1)
-            quarter = quarter_date.quarter
             df = dataframe.loc[
-                (dataframe.period <= quarter_begin) &
+                (dataframe[date_observation] <= quarter_begin) &
                 (quarter_date <= (dataframe.end_date_in_echelon + pd.tseries.offsets.MonthEnd())),
-                ['period', 'echelon', 'ident', 'grade']
+                [date_observation, 'echelon', 'ident', 'grade']
                 ]
             df['quarter'] = quarter_date
             result = pd.concat([result, df])
@@ -363,6 +369,10 @@ def get_duree_str_from_speed(speed):
 def _set_dates_effet(dataframe, date_observation = None, start_variable_name = "date_debut_effet",
         next_variable_name = None, grille = None):
 
+    if date_observation is None:
+        date_observation = 'period'
+        log.info('date_observation is None. using period')
+
     grades_from_dataframe = dataframe.grade.unique()  # TODO: use a cache for this
     assert 'code_grade' in grille.columns
     grades_from_grilles = grille.code_grade.unique()
@@ -375,7 +385,7 @@ def _set_dates_effet(dataframe, date_observation = None, start_variable_name = "
     for grade in grades:
         max_dates_effet_grille = dataframe.loc[
             dataframe.grade == grade,
-            'period'
+            date_observation
             ].max()
         date_effet_filtered_grille = grade_filtered_grille.loc[
             (grade_filtered_grille.code_grade == grade) &

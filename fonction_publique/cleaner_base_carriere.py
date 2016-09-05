@@ -6,8 +6,6 @@ from __future__ import division
 import logging
 import os
 import pandas as pd
-import pylab as plt
-import seaborn as sns
 import time
 
 
@@ -45,7 +43,7 @@ def select_columns(variable = None, stata_file_path = None):
 @timing
 def get_subset(variable = None, stata_file_path = None, debug = False):
     """ selectionne le sous-dataframe pour une variable, appelee variable ici"""
-    log.info('getting variable {}'.format(variable))
+    log.info('getting variable {} from {}'.format(variable, stata_file_path))
     if debug:
         reader = pd.read_stata(stata_file_path, chunksize = debug_chunk_size)
     else:
@@ -121,6 +119,7 @@ def format_columns(variable = None, years_range = None, quarterly = False, clean
 
 
 def format_generation(stata_file_path, clean_directory_path = None, debug = False):
+    log.info('formatting generation')
     generation = get_subset('generation', stata_file_path, debug)
     generation['ident'] = generation['ident'].astype('int')
     generation['generation'] = generation['generation'].astype('int32')
@@ -173,7 +172,6 @@ def main(raw_directory_path = None, clean_directory_path = None, debug = None):
         ]
     for stata_file in os.listdir(raw_directory_path):
         stata_file_path = os.path.join(raw_directory_path, '{}'.format(stata_file))
-        log.info('formatting generation')
         format_generation(stata_file_path, clean_directory_path = clean_directory_path, debug = debug)
         for kwargs in arg_format_columns:
             kwargs.update(dict(
