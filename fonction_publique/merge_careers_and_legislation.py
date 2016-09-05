@@ -13,7 +13,6 @@ import pandas as pd
 log = logging.getLogger(__name__)
 
 
-
 def law_to_hdf():
     """ Extract relevant data from grille and change to convenient dtype then save to HDFStore."""
     law = pd.read_table(law_xls_path)

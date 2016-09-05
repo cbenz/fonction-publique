@@ -12,10 +12,6 @@ import time
 from fonction_publique.base import cnracl_path, hdf5_file_path, data_path
 
 
-# hdf5_file_path = os.path.join(data_path, 'c_g1950_g1959_1.h5')
-# read_only_store = pd.HDFStore(hdf5_file_path, 'r')
-
-
 """ Ce fichier permet d'effectuer des statistiques descriptives sur les bases carrières de la CNRACL
 Son plan est comme suit :
 
@@ -32,44 +28,33 @@ III. Graphiques :
 - nombre d'actes de mobilité (nb d'ib, de codes grades et de libemploi de 2010 à 2014)
 """
 
+
 def timing(f):
     def wrap(*args):
         time1 = time.time()
         ret = f(*args)
         time2 = time.time()
-        print '%s function took %0.3f ms' % (f.func_name, (time2-time1)*1000.0)
+        print '%s function took %0.3f ms' % (f.func_name, (time2 - time1) * 1000.0)
         return ret
     return wrap
 
 
-variables_value_count = [
-            'qualite',
-            'statut',
-            'etat',
-            ]
+variables_value_count = ['qualite', 'statut', 'etat']
 
-variables_unique = [
-            'ib_',
-            'c_netneh',
-            'c_cir',
-            'libemploi'
-            ]
+variables_unique = ['ib_', 'c_netneh', 'c_cir', 'libemploi']
 
-variables =  ['qualite',
-            'statut',
-            'etat',
-            'ib_',
-            'c_netneh',
-            'c_cir',
-            'libemploi'
-            ]
+variables = ['qualite', 'statut', 'etat', 'ib_', 'c_netneh', 'c_cir', 'libemploi']
+
+store = pd.HDFStore(hdf5_file_path)
+
 
 def get_df(variable):
     """recupere une table du store base_carriere_2 en fonction du nom de la variable"""
-    df = pd.read_hdf(hdf5_file_path,'{}'.format(variable))
+    df = pd.read_hdf(hdf5_file_path, variable)
     return df
 
-## I. Description des variables: value counts, nan counts, zero counts
+
+# I. Description des variables: value counts, nan counts, zero counts
 ######################################################################
 
 # A) Fonctions
@@ -77,9 +62,11 @@ def get_value_counts(variable):
     df = get_df(variable)
     return df[variable].value_counts(dropna = False)
 
+
 def get_count_unique(variable):
     df = get_df(variable)
     return len(df[variable].unique())
+
 
 def get_counts_var_to_remove(variable):
     df = get_df(variable)
@@ -94,6 +81,7 @@ def get_counts_var_to_remove(variable):
             '{}_empty_count'.format(variable),
             ],
         )
+
 
 # B) Ecriture des résultats du 1. dans un fichier texte
 def get_all_counts():
@@ -113,12 +101,13 @@ def get_all_counts():
         to_remove_count.to_csv(r'statistiques_descriptives.txt', header=True, index=None, sep=' ', mode='a')
     return True
 
-## II.
-def get_stat_ib(): # pour IB uniquement
+
+# II.
+def get_stat_ib():  # pour IB uniquement
     """ graphe ib moyen, minimum et maximum pour chaque annee de 1970 à 2014"""
     df = get_df('ib_')
     df_ib = df[['annee', 'ib_']]
-    df_ib = df_ib.groupby(['annee', 'ib_']).size().reset_index() #TOFIX factoriser
+    df_ib = df_ib.groupby(['annee', 'ib_']).size().reset_index()  # FIXME factoriser
     df_ib_max = df_ib.groupby(['annee']).max().reset_index()
     df_ib_max.columns = ['annee', 'ib_max', 'count']
     df_ib_min = df_ib.groupby(['annee']).min().reset_index()
@@ -131,8 +120,9 @@ def get_stat_ib(): # pour IB uniquement
     plt.legend()
     plt.title('Minimum, maximum et moyenne des indices bruts par annee')
 
+
 def get_weird_ib_index(distribution):
-    """ part des ib supérieurs à 1015 """ # 98564 (nb d'ident ib trimestre)
+    """ part des ib supérieurs à 1015 """  # 98564 (nb d'ident ib trimestre)
     if distribution:
         df = pd.read_hdf(hdf5_file_path, 'ib_', columns = ['ident', 'annee', 'ib_'])
         df_indiv_annee = df[df.ib_ > 1015].groupby('ib_').size().reset_index()
@@ -140,11 +130,11 @@ def get_weird_ib_index(distribution):
         plt.plot(df_indiv_annee.ib_, df_indiv_annee.compte)
         plt.title('Distribution des ib superieurs a 1015 sur toute la base (en ident-annee-trimestre)')
     else:
-        df = pd.read_hdf(hdf5_file_path, 'ib_', where = "annee > 2010", columns = ['ident', 'annee', 'ib_'], start = 1000000)
+        df = pd.read_hdf(
+            hdf5_file_path, 'ib_', where = "annee > 2010", columns = ['ident', 'annee', 'ib_'], start = 1000000)
         df_indiv_annee = df[df.ib_ > 1015].groupby(['ident', 'annee']).size().reset_index()
         return df_indiv_annee.ident.tolist(), df_indiv_annee.annee.tolist()
 
-store = pd.HDFStore(hdf5_file_path)
 
 def get_grades_agents_ib_ouf():
     """ distribution des codes grades des agents dont l'ib est supérieur à 1015, agents hors classe"""
@@ -163,12 +153,14 @@ def get_grades_agents_ib_ouf():
     sns.barplot(df.c_netneh, df.count_indiv_annee)
     plt.title('codes grades netneh des agents ayant un ib etranges')
 
+
 def get_weird_ib_progression():
     """ compte des agents dont la progession de l'IB est douteuse, i.e descendante par moment /!\ attention,
     il se peut que certains ib passent à 0 en cours de carrière et que ce soit normal TOCHECK"""
     df = store.select('ib_', columns = ['ident', 'annee', 'ib_'])
     df = df.transpose()
     return
+
 
 def get_effectifs_annuels_entre_sort(entre_ou_sort):
     df_etat_activite = store.select('etat', where = 'etat = 1.0', columns = ['ident', 'annee'])
@@ -178,22 +170,30 @@ def get_effectifs_annuels_entre_sort(entre_ou_sort):
         df_with_age = df.merge(df_generation, on = 'ident')
         df_with_age['age_entree'] = df_with_age['annee'] - df_with_age['generation']
         print len(df_with_age['age_entree'] < 18), len(df_with_age['age_entree'] < 18) / len(df_with_age['age_entree'])
-        plt.hist(df_with_age['age_entree'], bins=range(min(df_with_age['age_entree']), max(df_with_age['age_entree']) + 1, 1))
+        plt.hist(
+            df_with_age['age_entree'],
+            bins = range(
+                min(df_with_age['age_entree']),
+                max(df_with_age['age_entree']) + 1, 1
+                )
+            )
     else:
         df = df_etat_activite.groupby('ident')['annee'].max().reset_index()
         df_generation = store.select('generation')
         df_with_age = df.merge(df_generation, on = 'ident')
         df_with_age['age_sortie'] = df_with_age['annee'] - df_with_age['generation']
 #        print len(df_with_age['age_entree'] < 18), len(df_with_age['age_entree'] < 18) / len(df_with_age['age_entree'])
-        plt.hist(df_with_age['age_sortie'], bins=range(min(df_with_age['age_sortie']), max(df_with_age['age_sortie']) + 1, 1))
+        plt.hist(
+            df_with_age['age_sortie'],
+            bins = range(min(df_with_age['age_sortie']), max(df_with_age['age_sortie']) + 1, 1)
+            )
 #    df = df.reset_index()
 #    df.columns = ['ident', 'annee_{}'.format(entre_ou_sort)]
 #    df = df.groupby('annee_{}'.format(entre_ou_sort)).size().reset_index()
 #    df.columns = ['annee_{}'.format(entre_ou_sort), 'compte']
 
 
-
-## Effectifs par durée d'activité sur la cohorte # etat uniquement
+# Effectifs par durée d'activité sur la cohorte # etat uniquement
 def get_distribution_duree_activite():
     """  donne la distribution des durees d activite (i.e etat == 1)"""
     df_etat = get_df('etat')
@@ -201,23 +201,30 @@ def get_distribution_duree_activite():
     df_activite = df_activite[['ident', 'etat']]
     annee_activite = df_activite.groupby('ident').size().reset_index()
     annee_activite.columns = ['ident', 'nb_annee_activite']
-    plt.hist(annee_activite.nb_annee_activite, bins=range(min(annee_activite.nb_annee_activite), max(annee_activite.nb_annee_activite) + 1, 1))
+    plt.hist(
+        annee_activite.nb_annee_activite,
+        bins = range(
+            min(annee_activite.nb_annee_activite),
+            max(annee_activite.nb_annee_activite) + 1, 1),
+        )
     plt.title('Distribution des durees d activite au cours de la carriere (trimestres)')
 
-def get_df_ib_condition(condition): #condition : True pour 0 et false pour
+
+def get_df_ib_condition(condition):  # condition : True pour 0 et false pour
     """ dataframe des ib_ egaux à 0"""
     df_ib = get_df('ib_')
     if condition:
         df_ib = df_ib[df_ib.ib_ == 0]
     else:
-        df_ib = df_ib[df_ib.ib_.isnull()] #TOFIX
+        df_ib = df_ib[df_ib.ib_.isnull()]  # FIXME
     df_ib = df_ib.groupby(['ident', 'annee']).size().reset_index()
     df_ib.set_index(df_ib.ident, df_ib.annee)
     df_ib = df_ib.groupby(['ident', 'annee']).size().reset_index()
     df_ib.set_index(df_ib.ident, df_ib.annee)
     return df_ib[['ident', 'annee']]
 
-def get_var_ib_null_or_nan(variable, condition): #condition == null ou condition == Nan
+
+def get_var_ib_null_or_nan(variable, condition):  # condition == null ou condition == Nan
     """ voir dans quelles catégories des variables etat, qualite et statut sont les indiv dont l'ib est égal à 0, pour
     comprendre le sens d'un ib égal à 0 et déceler d'éventuelles anomalies."""
     idents_annee = get_df_ib_condition(condition)
@@ -236,21 +243,22 @@ def get_var_ib_null_or_nan(variable, condition): #condition == null ou condition
     sns.pointplot(x="annee", y="{}_compte".format(variable), hue="{}_categorie".format(variable), data=df_per_year)
     plt.title('Effectifs annuels par categorie de la variable {} pour ib {}'.format(variable, condition))
 
-
-## on veut les nb d'ident qui ont etat == 1, indice_brut  == 0 ou null (nan). on veut leur qualite
-## on veut les nb d'ident qui ont qualite == titulaire, etat == activite. on veut leur savoir si ib null ou 0
+# on veut les nb d'ident qui ont etat == 1, indice_brut  == 0 ou null (nan). on veut leur qualite
+# on veut les nb d'ident qui ont qualite == titulaire, etat == activite. on veut leur savoir si ib null ou 0
 #
-#store = pd.HDFStore(hdf5_file_path)
-#ib_null = store.select('ib_', where=['ib_=0'], columns = ['ident', 'annee'], stop = 10000000)
-#etat_activite = store.select('etat', where=['etat=1.0'], columns = ['ident', 'annee'], stop = 10000000)
-#qualite_titulaire = store.select('qualite', where=['qualite=T'], columns = ['ident', 'annee'], stop = 10000000)
-#statut = store.select('statut', where=['statut=T or statut = H'], columns = ['ident', 'annee'], stop = 10000000)
-#check_intersection = pd.merge(ib_null, etat_activite, qualite_titulaire)
+# store = pd.HDFStore(hdf5_file_path)
+# ib_null = store.select('ib_', where=['ib_=0'], columns = ['ident', 'annee'], stop = 10000000)
+# etat_activite = store.select('etat', where=['etat=1.0'], columns = ['ident', 'annee'], stop = 10000000)
+# qualite_titulaire = store.select('qualite', where=['qualite=T'], columns = ['ident', 'annee'], stop = 10000000)
+# statut = store.select('statut', where=['statut=T or statut = H'], columns = ['ident', 'annee'], stop = 10000000)
+# check_intersection = pd.merge(ib_null, etat_activite, qualite_titulaire)
 
-## III.
-## LOOP SUR STATUT QUALITE ETAT
-## Evolution des effectifs par an par valeur de chaque variable (moyenne annuelle si la variable est trimestrielle)
-def get_effectifs_over_time(variable): # statut, qualite
+
+# III.
+# LOOP SUR STATUT QUALITE ETAT
+# Evolution des effectifs par an par valeur de chaque variable (moyenne annuelle si la variable est trimestrielle)
+
+def get_effectifs_over_time(variable):  # statut, qualite
     """ voir les effectifs par valeur de chaque variable au cours du temps"""
     df = get_df(variable)
     df_per_year = df.groupby(['annee', variable]).size().reset_index()
@@ -259,10 +267,10 @@ def get_effectifs_over_time(variable): # statut, qualite
     plt.title('Effectifs annuels par categorie de la variable {}'.format(variable))
 
 
-## LOOP SUR IB CODES ET LABEL GRADES
-## Effectifs par acte de mobilité déclaré
-## (effectifs par nb d'IB / de codes grades / de labels grades uniques sur la carrière)
-## Obj. check si les différentes sources de données pour le grade donnent le même nombre de changement
+# LOOP SUR IB CODES ET LABEL GRADES
+# Effectifs par acte de mobilité déclaré
+# (effectifs par nb d'IB / de codes grades / de labels grades uniques sur la carrière)
+# Obj. check si les différentes sources de données pour le grade donnent le même nombre de changement
 def get_distribution_nb_actes_mobilite(cat):
     """ voir le nombre d'acte de mobilité (i.e environ d'uniques c_cir, c_netneh, libemploi et ib_) pour
     connaître le nb d'acte exploitable pour l'étude et déceler des anomalies de c_cir, c_netneh et libemploi"""
@@ -275,10 +283,10 @@ def get_distribution_nb_actes_mobilite(cat):
         df = df.groupby(['ident', cat]).size().reset_index()
     df = df.ident.value_counts().reset_index()
     df.columns = ['ident', '{}_count'.format(cat)]
-
-    plt.hist(df['{}_count'.format(cat)], label = '{}'.format(cat),
-                bins=range(min(df['{}_count'.format(cat)]), max(df['{}_count'.format(cat)]) + 1, 1)
-                )
+    plt.hist(
+        df['{}_count'.format(cat)], label = '{}'.format(cat),
+        bins = range(min(df['{}_count'.format(cat)]), max(df['{}_count'.format(cat)]) + 1, 1)
+        )
     plt.title('Effectifs par nombre de {} uniques au cours de la carriere'.format(cat))
     plt.legend()
 
@@ -298,13 +306,15 @@ def get_carriere_unique(include_empty_state):
     else:
         dict_uniques_career_effectifs = dict_uniques_career_effectifs
     sns.pointplot(dict_uniques_career_effectifs.keys(), dict_uniques_career_effectifs.values())
-#    plt.title('Effectifs par carriere unique, carriere c_netneh vide exclues. Il y a {} c.u. et {} ident. rps. Carriere ac eff max ={}. c_netneh vide inclus :{}"""'.format(
-#                                                                len(dict_uniques_career_effectifs),
-#                                                                sum((dict_uniques_career_effectifs.values())),
-#                                                                max(dict_uniques_career_effectifs,
-#                                                                    key=dict_uniques_career_effectifs.get)),
-#                                                                include_empty_state
-#                                                                )
+    plt.title(
+        'Effectifs par carriere unique, carriere c_netneh vide exclues. \
+        Il y a {} c.u. et {} ident. rps. Carriere ac eff max ={}. c_netneh vide inclus :{}"""'.format(
+            len(dict_uniques_career_effectifs),
+            sum((dict_uniques_career_effectifs.values())),
+            max(dict_uniques_career_effectifs, key = dict_uniques_career_effectifs.get)),
+        include_empty_state
+        )
+
 
 def dispersion_grade_paths():
     """ matrice de transition des grades """
@@ -314,7 +324,7 @@ def dispersion_grade_paths():
     df_grades_uniques.columns = ['ident', 'career_netneh']
     df_careers = pd.DataFrame(df_grades_uniques.career_netneh)
     for i in range(3):
-        df_careers['etat_netneh'+str(i)] = df_careers['career_netneh'].str[i]
+        df_careers['etat_netneh' + str(i)] = df_careers['career_netneh'].str[i]
     df_careers_prin = df_careers.drop('career_netneh', 1)
 
     # Valeurs d'etat_netneh1 pour unique etatnetneh0
@@ -331,13 +341,16 @@ def dispersion_grade_paths():
     unique_etat_netneh2 = unique_etat_netneh1bis.groupby('etat_netneh1')['etat_netneh2'].unique().reset_index()
     unique_etat_netneh2.columns = ['etat_netneh1', 'etat_netneh2']
 
-    #print unique_etat_netneh1
-    #print unique_etat_netneh2
-    full_grades = unique_etat_netneh1.merge(unique_etat_netneh2, left_on='etat_netneh0', right_on='etat_netneh1', how = 'outer')
+    full_grades = unique_etat_netneh1.merge(
+        unique_etat_netneh2,
+        left_on='etat_netneh0',
+        right_on='etat_netneh1',
+        how = 'outer'
+        )
     full_grades['total'] = zip(full_grades.etat_netneh1_x.tolist(), full_grades.etat_netneh2.tolist())
     return full_grades
-#    get_count_grades_etat_netneh1 = unique_etat_netneh1.etat_netneh1
-#    get_count_grades_etat_netneh1 = map(len, get_count_grades_etat_netneh1)
-#    plt.hist(get_count_grades_etat_netneh1, color = '#FF69B4')
-#    plt.title('Distribution du nb de grades differents apres un grade unique. {} ident/grades de departs sont consideres' """
-#    incluant tous les idents ayant un grade en 2010 et un grade different en 2011 (nans exclus). Il y a {} ident/grades uniques en 2010. """.format(len(df_careers.etat_netneh0), len(df_careers['etat_netneh0'].unique())))
+    # get_count_grades_etat_netneh1 = unique_etat_netneh1.etat_netneh1
+    # get_count_grades_etat_netneh1 = map(len, get_count_grades_etat_netneh1)
+    # plt.hist(get_count_grades_etat_netneh1, color = '#FF69B4')
+    # plt.title('Distribution du nb de grades differents apres un grade unique. {} ident/grades de departs sont consideres' """
+    # incluant tous les idents ayant un grade en 2010 et un grade different en 2011 (nans exclus). Il y a {} ident/grades uniques en 2010. """.format(len(df_careers.etat_netneh0), len(df_careers['etat_netneh0'].unique())))

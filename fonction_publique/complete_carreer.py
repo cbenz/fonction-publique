@@ -11,6 +11,9 @@ from fonction_publique.base import asset_path, get_output_hdf_path, law_hdf_path
 from fonction_publique.career_simulation_vectorized import AgentFpt
 
 
+log = logging.getLogger(__name__)
+
+
 def temporary_clean_echelon(dataframe):
     dataframe.echelon = pd.to_numeric(dataframe.echelon, errors = 'coerce')
     dataframe = dataframe[dataframe.echelon.notnull()].copy()
@@ -26,14 +29,13 @@ def extract_initial(stata_file_path, debug = None):
     careers = temporary_clean_echelon(careers)
     assert careers.ident.notnull().all()
     if careers.duplicated().sum():  # change this to assert
-        print 'the following are duplicated careers'
-        print careers[careers.duplicated()]
-        print 'We drop the duplicated careers'
+        log.info('the following are duplicated careers: \n {}'.format(careers[careers.duplicated()]))
+        log.info('We drop the duplicated careers')
         careers = careers.drop_duplicates()
 
     careers.reset_index(inplace = True)
     starting_careers = careers.iloc[careers.groupby('ident')['period'].idxmin().values.ravel()]
-    print starting_careers.head()
+    log.info(starting_careers.head())
     starting_careers = starting_careers.rename(columns = dict(code_grade_NETNEH = 'grade'))
 
     law_store = pd.HDFStore(law_hdf_path)

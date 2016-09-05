@@ -8,6 +8,10 @@ from datetime import datetime
 
 from fonction_publique.base import asset_path, hdf_directory_path, hdf5_file_path, DEBUG, debug_chunk_size
 
+
+log = logging.getLogger(__name__)
+
+
 carrieres_a_lier_file_path = os.path.join(
     hdf_directory_path,
     "carrieres_a_lier_debug.hdf5",
@@ -77,14 +81,14 @@ def get_careers_for_which_we_have_law(start_year = 2009):
         format = 'table',
         data_columns = True,
         )
-    print careers
+    log.info(careers)
 
 
 def etats_uniques():
     """ identifier les etats de carrieres uniques, cad les triplets uniques codes grades NETNEH, annee, ib"""
 
     carrieres_a_lier = pd.HDFStore(carrieres_a_lier_file_path)
-    print carrieres_a_lier
+    log.info(carrieres_a_lier)
     careers = carrieres_a_lier.select('carrieres_a_lier_1950_1959_1')
     etats_uniques = careers.groupby(['annee', 'trimestre', 'c_netneh', 'ib_']).size().reset_index()[[
         'annee',
