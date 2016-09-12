@@ -90,6 +90,7 @@ class AgentFpt:
 
         _set_dates_effet(dataframe, date_observation = date_observation, start_variable_name = start_variable_name,
             next_variable_name = next_variable_name, grille = self.grille)
+        assert start_variable_name in dataframe.columns
 
     def compute_echelon_duree(self, date_effet_variable_name = None, duree_variable_name = None, speed = True):
         # TODO may be a merge is faster
@@ -219,6 +220,8 @@ class AgentFpt:
             echelon_max_variable_name = echelon_max_variable_name)
         dataframe = self.dataframe
         assert date_effet_grille != 'date_effet_grille'
+        assert date_effet_grille in dataframe, '{} is not present in dataframe which columns are {}'.format(
+            date_effet_grille, dataframe.columns)
         dataframe = dataframe.merge(
             echelon_max_by_grille,
             how = 'left',
@@ -381,6 +384,9 @@ def _set_dates_effet(dataframe, date_observation = None, start_variable_name = "
     grade_filtered_grille = grille.loc[
         grille.code_grade.isin(grades)
         ]
+
+    if not grades:
+        log.info('No grades present')
     for grade in grades:
         max_dates_effet_grille = dataframe.loc[
             dataframe.grade == grade,
@@ -413,6 +419,7 @@ def _set_dates_effet(dataframe, date_observation = None, start_variable_name = "
 
             previous_start_date = start_date
 
+    # assert start_variable_name in dataframe.columns
 
 # TODO construire la table
 # grade echelon start_date new_date new_duree

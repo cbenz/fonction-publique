@@ -2,14 +2,24 @@
 
 import datetime
 import numpy as np
+import os
 import pandas as pd
 
 from openfisca_core import periods
 
-from fonction_publique.base import grille_adjoint_technique
+from fonction_publique.base import asset_path
 
 from fonction_publique.career_simulation_vectorized import AgentFpt
 from fonction_publique.career_simulation_vectorized import compute_changing_echelons_by_grade
+
+
+grille_adjoint_technique_path = os.path.join(
+    asset_path,
+    'FPT_adjoint_technique.xlsx',
+    )
+grille_adjoint_technique = pd.read_excel(grille_adjoint_technique_path, encoding='utf-8')
+grille_adjoint_technique = grille_adjoint_technique.rename(columns = dict(code_grade_NEG = 'code_grade'))
+
 
 # 1. Case tests
 agent0 = (0, datetime.date(2006, 12, 1), 793, 1)

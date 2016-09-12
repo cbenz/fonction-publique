@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from fonction_publique.base import grille_adjoint_technique
+
+import pandas as pd
+
+from fonction_publique.base import law_hdf_path
 from fonction_publique.career_simulation_vectorized import compute_echelon_max
 
 
-grilles = grille_adjoint_technique
+law_store = pd.HDFStore(law_hdf_path)
+grilles = law_store.select('grilles')
 
 print compute_echelon_max(grilles = grilles, start_date = None)

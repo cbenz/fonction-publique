@@ -37,7 +37,6 @@ else:
     cnracl_path = windows_cnracl_path
 
 # Directories paths:
-
 raw_directory_path = os.path.join(cnracl_path, "raw")
 tmp_directory_path = os.path.join(cnracl_path, "tmp")
 clean_directory_path = os.path.join(cnracl_path, "clean")
