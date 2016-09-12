@@ -171,6 +171,8 @@ def main(raw_directory_path = None, clean_directory_path = None, debug = None):
             ),
         ]
     for stata_file in os.listdir(raw_directory_path):
+        if not stata_file.endswith('.dta'):
+            continue
         stata_file_path = os.path.join(raw_directory_path, '{}'.format(stata_file))
         format_generation(stata_file_path, clean_directory_path = clean_directory_path, debug = debug)
         for kwargs in arg_format_columns:

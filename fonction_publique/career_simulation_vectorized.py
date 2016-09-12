@@ -38,7 +38,7 @@ class AgentFpt:
 
         echelon_condition = (dataframe.echelon + 1) <= dataframe[echelon_max_variable_name]  # TODO echelon sera une str
         condit_1 = (
-            dataframe.next_change_of_legis_grille < dataframe[date_fin_echelon_grille_initiale]
+            dataframe.date_prochaine_reforme_grille < dataframe[date_fin_echelon_grille_initiale]
             )
         condit_3 = (
             dataframe.period +
@@ -49,11 +49,11 @@ class AgentFpt:
             )
         grille_change_during_period = (
             dataframe.end_echelon_grille_in_effect_at_start >
-            dataframe.next_change_of_legis_grille
-            ) & ~dataframe.next_change_of_legis_grille.isnull()
+            dataframe.date_prochaine_reforme_grille
+            ) & ~dataframe.date_prochaine_reforme_grille.isnull()
 
         duree_a = (
-            dataframe.next_change_of_legis_grille - dataframe.period
+            dataframe.date_prochaine_reforme_grille - dataframe.period
             ).values.astype("timedelta64[M]") / np.timedelta64(1, 'M')
 
         duree_b = dataframe[duree_echelon_grille_suivante]
@@ -190,7 +190,7 @@ class AgentFpt:
                         ].set_index('date_effet_grille', drop = True)
 
                     if [duree] != durees_by_date[duree_str].unique().tolist():
-                        next_change_of_legis_grille = durees_by_date.loc[
+                        date_prochaine_reforme_grille = durees_by_date.loc[
                             durees_by_date[duree_str] != duree,
                             ].index.min()
                         dataframe.loc[
@@ -198,7 +198,7 @@ class AgentFpt:
                             (dataframe.grade == grade) &
                             (dataframe[start_date_effet_variable_name] == date_effet_grille),
                             date_effet_legislation_change_variable_name,
-                            ] = next_change_of_legis_grille
+                            ] = date_prochaine_reforme_grille
 
     def add_duree_echelon_to_date(self, new_date_variable_name = None, start_date_variable_name = None,
             duree_variable_name = None):
@@ -230,7 +230,6 @@ class AgentFpt:
         del dataframe['code_grade']
         self.dataframe = dataframe
 
-
     def compute_all(self):
         self.set_dates_effet(
             date_observation = 'period',
@@ -244,7 +243,7 @@ class AgentFpt:
             )
         self.compute_date_effet_legislation_change(
             start_date_effet_variable_name = 'date_debut_effet',
-            date_effet_legislation_change_variable_name = 'next_change_of_legis_grille'
+            date_effet_legislation_change_variable_name = 'date_prochaine_reforme_grille'
             )
         self.add_duree_echelon_to_date(
             new_date_variable_name = 'end_echelon_grille_in_effect_at_start',
