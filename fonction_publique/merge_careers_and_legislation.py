@@ -89,17 +89,17 @@ def append_date_effet_to_unique_career_states(stata_file_path = None):
         unique_career_states = store.select('tmp_2').copy()
         dataframe = unique_career_states[['c_netneh', 'annee', 'trimestre']].copy()
 
-        assert not dataframe.duplicated().any(), 'There are duplicatd row in dataframe'
+        assert not dataframe.duplicated().any(), 'There are duplicated row in dataframe'
         dataframe['year'] = dataframe.annee
         dataframe['month'] = (dataframe.trimestre - 1) * 3 + 1
         dataframe['day'] = 1
         dataframe['observation_date'] = pd.to_datetime(dataframe[['year', 'month', 'day']])
-        assert not dataframe.duplicated().any(), 'There are duplicatd row in dataframe'
-        dataframe.columns = ['grade', 'annee', 'trimestre', 'year', 'month', 'day', 'period']  # TODO use rename like below
+        assert not dataframe.duplicated().any(), 'There are duplicated row in dataframe'
+        dataframe.rename(columns = dict(observation_date = 'period'), inplace = True)
         dataframe = dataframe[['grade', 'annee', 'trimestre', 'period']].copy()
-        assert not dataframe.duplicated().any(), 'There are duplicatd row in dataframe'
+        assert not dataframe.duplicated().any(), 'There are duplicated row in dataframe'
         careers = store.select('tmp_1')
-        assert not careers.duplicated().any(), 'There are duplicatd row in careers'
+        assert not careers.duplicated().any(), 'There are duplicated row in careers'
         grilles = law.select('grilles')
         grilles = grilles.rename(columns = dict(code_grade_NETNEH = 'grade'))
         _set_dates_effet(
@@ -107,8 +107,9 @@ def append_date_effet_to_unique_career_states(stata_file_path = None):
             date_observation = 'period',
             start_variable_name = 'date_effet_grille',
             next_variable_name = None,
-            grille = grilles)
-        assert not dataframe.duplicated().any(), 'There are duplicatd row in unique_career_states (tmp_3)'
+            grille = grilles,
+            )
+        assert not dataframe.duplicated().any(), 'There are duplicated row in unique_career_states (tmp_3)'
         dataframe.to_hdf(tmp_hdf_path,
             'tmp_3',
             format = 'table',
@@ -121,7 +122,7 @@ def merge_date_effet_grille_with_careers(stata_file_path = None):
     tmp_hdf = pd.HDFStore(tmp_hdf_path)
     unique_career_states = tmp_hdf.select('tmp_3')
 
-    assert not unique_career_states.duplicated().any(), 'There are duplicatd row in unique_career_states'
+    assert not unique_career_states.duplicated().any(), 'There are duplicated row in unique_career_states'
     careers = tmp_hdf.select('tmp_1')
 
     careers['annee'] = [str(annee)[:4] for annee in careers['annee']]
@@ -130,16 +131,15 @@ def merge_date_effet_grille_with_careers(stata_file_path = None):
     careers['day'] = 1
     careers['period'] = pd.to_datetime(careers[['year', 'month', 'day']])
     careers = careers[['ident', 'ib', 'trimestre', 'c_netneh', 'period']].copy()
-    careers.columns = ['ident', 'ib', 'trimestre', 'grade', 'period']
     careers.rename(columns = dict(c_netneh = 'grade'), inplace = True)
-    assert not careers.duplicated().any(), 'There are duplicatd row in careers'
-    assert not unique_career_states.duplicated().any(), 'There are duplicatd row in unique_career_states'
+    assert not careers.duplicated().any(), 'There are duplicated row in careers'
+    assert not unique_career_states.duplicated().any(), 'There are duplicated row in unique_career_states'
     careers = unique_career_states.merge(
         careers,
         on = ['period', 'grade', 'trimestre'],
         how = 'outer'
         )
-    assert not careers.duplicated().any(), 'There are duplicatd row in careers'
+    assert not careers.duplicated().any(), 'There are duplicated row in careers'
     careers.to_hdf(
         tmp_hdf_path,
         'tmp_4',
@@ -156,7 +156,7 @@ def merge_careers_with_legislation(stata_file_path = None):
     grilles = law.select('grilles')
 
     careers = tmp_hdf.select('tmp_4')
-    assert not careers.duplicated().any(), 'There are duplicatd row in careers'
+    assert not careers.duplicated().any(), 'There are duplicated row in careers'
     careers = careers[[
         'grade',
         'trimestre',
@@ -166,7 +166,7 @@ def merge_careers_with_legislation(stata_file_path = None):
         'ib'
         ]].copy()
     careers.rename(columns = dict(grade = 'code_grade_NETNEH'), inplace = True)
-    assert not careers.duplicated().any(), 'There are duplicatd row in careers'
+    assert not careers.duplicated().any(), 'There are duplicated row in careers'
     grilles['date_effet_grille'] = [str(annee)[:10] for annee in grilles['date_effet_grille']]
     grilles['date_effet_grille'] = pd.to_datetime(grilles.date_effet_grille)
     careers = careers.merge(
@@ -174,7 +174,7 @@ def merge_careers_with_legislation(stata_file_path = None):
         on = ['code_grade_NETNEH', 'date_effet_grille', 'ib'],
         how = 'outer'
         )
-    assert not careers.duplicated().any(), 'There are duplicatd row in careers (after merge)'
+    assert not careers.duplicated().any(), 'There are duplicated row in careers (after merge)'
     careers.to_hdf(
         tmp_hdf_path,
         'tmp_5',
@@ -203,7 +203,7 @@ def merge_careers_with_echelon_with_etat(stata_file_path = None):
     output_hdf_path = get_output_hdf_path(stata_file_path, debug = DEBUG_CLEAN_CARRIERES)
     assert os.path.exists(os.path.dirname(output_hdf_path)), '{} is not a valid path'.format(
         os.path.dirname(output_hdf_path))
-    assert not careers.duplicated().any(), 'There are duplicatd row in careers'
+    assert not careers.duplicated().any(), 'There are duplicated row in careers'
     careers.to_hdf(output_hdf_path, 'output', format = 'table', data_columns = True)
 
 

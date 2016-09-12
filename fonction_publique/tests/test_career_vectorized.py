@@ -109,7 +109,7 @@ date_end_period_echelon_grille_in_effect_at_start_expect = [
     pd.NaT,
     ]
 
-echelon_period_for_grille_at_start_max_expect = [
+duree_echelon_grille_initiale_max_expect = [
     12.0,
     24.0,
     np.nan,  # should raise an errr
@@ -150,19 +150,19 @@ results_expect = [
     date_next_effet_expect,
     date_next_change_effet_expect,
     date_end_period_echelon_grille_in_effect_at_start_expect,
-    echelon_period_for_grille_at_start_max_expect,
+    duree_echelon_grille_initiale_max_expect,
     duration_echelon_grille_in_effect_at_end_expect,
     duration_echelon_expect,
     ]
 
 results_expect_dataframe = pd.DataFrame.from_dict(dict(
-    date_debut_effet = date_effet_at_start_expect,
+    date_effet_grille_en_cours = date_effet_at_start_expect,
     next_grille_date_effet = date_next_effet_expect,
     date_prochaine_reforme_grille = date_next_change_effet_expect,
-    end_echelon_grille_in_effect_at_start = date_end_period_echelon_grille_in_effect_at_start_expect,
-    echelon_period_for_grille_at_start = echelon_period_for_grille_at_start_max_expect,
+    date_fin_echelon_grille_initiale = date_end_period_echelon_grille_in_effect_at_start_expect,
+    duree_echelon_grille_initiale = duree_echelon_grille_initiale_max_expect,
     echelon_duration_with_grille_in_effect_at_end = duration_echelon_grille_in_effect_at_end_expect,
-    echelon_duration_with_grille_in_effect = duration_echelon_expect,
+    duree_effective_echelon = duration_echelon_expect,
     ))
 results_expect_dataframe.index.name = 'ident'
 results_expect_dataframe = pd.melt(
