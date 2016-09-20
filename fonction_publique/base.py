@@ -55,7 +55,7 @@ debug_chunk_size = 50000 if DEBUG else None
 def get_careers_hdf_path(clean_directory_path = None, stata_file_path = None, debug = None):
     assert clean_directory_path is not None
     assert stata_file_path is not None
-    assert debug is not None, 'debug should be True or False'
+    assert (debug is False) or (debug is True), 'debug should be True or False'
     careers_hdf_path = os.path.join(
         clean_directory_path,
         "debug",

@@ -49,7 +49,7 @@ store = pd.HDFStore(hdf5_file_path)
 
 
 def get_df(variable):
-    """recupere une table du store base_carriere_2 en fonction du nom de la variable"""
+    """Recupere une table du store en fonction du nom de la variable"""
     df = pd.read_hdf(hdf5_file_path, variable)
     return df
 
