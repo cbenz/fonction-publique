@@ -22,7 +22,7 @@ age_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--debug', action = 'store_true', default = False,
-        help = 'Use smaller subset for debugging purposes')
+        help = 'use smaller subset for debugging purposes')
     parser.add_argument('-s', '--source', default = raw_directory_path,
         help = 'path of source directory containing the stata files')
     parser.add_argument('-t', '--target', default = clean_directory_path,

@@ -299,7 +299,9 @@ class AgentFpt:
         '''Remove from dataframe all agents that have reached their ultimate echelon'''
         dataframe = self.dataframe
         next_dataframe = dataframe.loc[
-            dataframe.date_finale_dans_echelon.notnull() & (dataframe.date_finale_dans_echelon < pd.Timestamp.max.floor('D')),
+            dataframe.date_finale_dans_echelon.notnull() & (
+                dataframe.date_finale_dans_echelon < pd.Timestamp.max.floor('D')
+                ),
             ['ident', 'date_finale_dans_echelon', 'grade', 'echelon'],
             ].copy()
         next_dataframe.rename(columns = dict(date_finale_dans_echelon = 'period'), inplace = True)

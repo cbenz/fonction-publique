@@ -63,7 +63,8 @@ def clean_subset(variable = None, years_range = None, quarterly = False, stata_f
     """ nettoie chaque variable pour en faire un df propre """
     subset_result = pd.DataFrame()
     subset = get_subset(variable, stata_file_path, debug)
-    # Build a hierarchical index as in http://stackoverflow.com/questions/17819119/coverting-index-into-multiindex-hierachical-index-in-pandas
+    # Build a hierarchical index as in
+    # http://stackoverflow.com/questions/17819119/coverting-index-into-multiindex-hierachical-index-in-pandas
     for annee in years_range:
         if quarterly:
             for quarter in range(1, 5):

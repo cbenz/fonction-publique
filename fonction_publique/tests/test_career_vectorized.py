@@ -214,8 +214,9 @@ def test():
     resultats = resultats[~resultats.ident.isin(ignored_idents)].copy()
 
     assert resultats.resultats_attendus.equals(resultats.resultats_obtenus), resultats[
-        ~(resultats.resultats_attendus == resultats.resultats_obtenus) &
-        ~(resultats.resultats_attendus.isnull() & resultats.resultats_obtenus.isnull())
+        ~(resultats.resultats_attendus == resultats.resultats_obtenus) & ~(
+            resultats.resultats_attendus.isnull() & resultats.resultats_obtenus.isnull()
+            )
         ]
 
 
