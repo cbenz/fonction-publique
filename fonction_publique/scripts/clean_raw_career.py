@@ -12,7 +12,7 @@ import sys
 
 
 from fonction_publique.base import raw_directory_path, clean_directory_path
-from fonction_publique import cleaner_base_carriere
+from fonction_publique import raw_data_cleaner
 
 app_name = os.path.splitext(os.path.basename(__file__))[0]
 log = logging.getLogger(app_name)
