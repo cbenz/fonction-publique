@@ -1,15 +1,18 @@
+# -*- coding:utf-8 -*-
+
+
 from __future__ import division
 
-
-from collections import Counter
-import numpy as np
 import os
+import time
+from collections import Counter
+
+import numpy as np
 import pandas as pd
 import pylab as plt
 import seaborn as sns
-import time
 
-from fonction_publique.base import cnracl_path, hdf5_file_path, data_path
+from fonction_publique.base import cnracl_path, data_path, hdf5_file_path
 
 
 """ Ce fichier permet d'effectuer des statistiques descriptives sur les bases carrières de la CNRACL

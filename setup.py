@@ -31,7 +31,8 @@ setup(
     include_package_data = True,  # Will read MANIFEST.in
     install_requires = [
         'numpy >= 1.6',
-        'OpenFisca-France >= 0.5.3',
+        #  'OpenFisca-France >= 0.5.3',
+        'pandas >= 0.18.1',
         ],
 
     packages = find_packages(exclude=['fonction_publique.tests*']),
