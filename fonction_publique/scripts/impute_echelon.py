@@ -35,7 +35,7 @@ def main():
         log.error('{} is not a valid path')
         raise ValueError
     merge_careers_and_legislation.main(
-        stata_file = args.source,
+        source = args.source,
         force_rebuild = args.force_rebuild,
         debug = args.debug,
         )

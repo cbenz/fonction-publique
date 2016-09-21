@@ -46,11 +46,17 @@ def get_careers_for_which_we_have_law(start_year = 2009, stata_file_path = None,
         stata_file_path = stata_file_path, debug = debug)
     careers_hdf = pd.HDFStore(careers_hdf_path)
     grades_in_law = law.code_grade.unique()  # analysis:ignore
-    valid_grades = careers_hdf.select(
-        'c_netneh',
-        where = 'c_netneh in grades_in_law',
-        stop = debug_chunk_size,
-        )
+    if debug:
+        valid_grades = careers_hdf.select(
+            'c_netneh',
+            where = 'c_netneh in grades_in_law',
+            stop = debug_chunk_size,
+            )
+    else:
+        valid_grades = careers_hdf.select(
+            'c_netneh',
+            where = 'c_netneh in grades_in_law',
+            )
     valid_idents = valid_grades.ident.unique()  # analysis:ignore
     condition = "annee > {} & ident in valid_idents & ib < 1016".format(start_year)
     valid_ib = careers_hdf.select('ib', where = condition)
@@ -102,7 +108,10 @@ def append_date_effet_to_unique_career_states(stata_file_path = None, debug = DE
         dataframe['day'] = 1
         dataframe['observation_date'] = pd.to_datetime(dataframe[['year', 'month', 'day']])
         assert not dataframe.duplicated().any(), 'There are duplicated row in dataframe'
-        dataframe.rename(columns = dict(observation_date = 'period'), inplace = True)
+        dataframe.rename(
+            columns = dict(observation_date = 'period', c_netneh = 'grade'),
+            inplace = True,
+            )
         dataframe = dataframe[['grade', 'annee', 'trimestre', 'period']].copy()
         assert not dataframe.duplicated().any(), 'There are duplicated row in dataframe'
         careers = store.select('tmp_1')
@@ -214,19 +223,21 @@ def merge_careers_with_echelon_with_etat(stata_file_path = None, debug = DEBUG_C
     careers.to_hdf(output_hdf_path, 'output', format = 'table', data_columns = True)
 
 
-def main(stata_file = None, force_rebuild = False, debug = DEBUG_CLEAN_CARRIERES):
+def main(source = None, force_rebuild = False, debug = DEBUG_CLEAN_CARRIERES):
     law_to_hdf(force_rebuild = force_rebuild)
-    if stata_file is not None:
-        stata_files = [stata_file]
-    else:
-        stata_files = os.listdir(raw_directory_path)
+    if os.path.isfile(source):    
+        stata_files = [source]
+    elif os.path.isdir(source):
+        stata_files = os.listdir(source)
     for stata_file in stata_files:
         if not stata_file.endswith('.dta'):
+            log.info('{} is not a valid stata file. Skipping.'.format(stata_file))
             continue
+        log.info('Processing {}'.format(stata_file))
         get_careers_for_which_we_have_law(start_year = 2009, stata_file_path = stata_file, debug = debug)
         get_unique_career_states(stata_file_path = stata_file, debug = debug)
         append_date_effet_to_unique_career_states(stata_file_path = stata_file, debug = debug)
         merge_date_effet_grille_with_careers(stata_file_path = stata_file, debug = debug)
         merge_careers_with_legislation(stata_file_path = stata_file, debug = debug)
         merge_careers_with_echelon_with_etat(stata_file_path = stata_file, debug = debug)
-
+        break
