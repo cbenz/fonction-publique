@@ -15,14 +15,15 @@ import seaborn as sns
 from fonction_publique.base import cnracl_path, output_directory_path, clean_directory_path, law_hdf_path
 from fonction_publique.merge_careers_and_legislation import fix_dtypes
 
+# output = carrières matchées avec grilles
 hdf5_file_path = os.path.join(output_directory_path, '1950_1959.hdf5')
 
-
-store = pd.HDFStore(hdf5_file_path)
+# carrièrs brutes
+careers_hdf_path = os.path.join(clean_directory_path, '1950_1959_carrieres.hdf5')
 
 
 def get_variables(variables = None, stop = None):
-    """Recupere une table du store en fonction du nom de la variable"""
+    """Recupere certaines variables de la table des carrières matchées avec grilles"""
     return pd.read_hdf(hdf5_file_path, 'output', columns = variables, stop = stop)
 
 
@@ -30,20 +31,20 @@ def get_grilles():
     return pd.read_hdf(law_hdf_path)
 
 
+def get_careers(variable = None, stop = None):
+    """Recupere certaines variables de la table des carrières brut"""
+    return pd.read_hdf(careers_hdf_path, variable, stop = stop)
+
+
+# distribution du nombres de trimestres par generation
 df = get_variables()
 fix_dtypes(df)
 
-df.dtypes
-
-
-df.groupby('ident')['code_grade'].unique()
-
-
 tmp = df.groupby(['generation', 'ident'])['trimestre'].count().reset_index()
-
 tmp2 = tmp.groupby(['generation', 'trimestre']).count()
 
 
+# duree dans le rgade pour différente grilles
 grilles = get_grilles()
 grilles.columns
 
@@ -63,5 +64,16 @@ duree_carriere_by_grade = grilles.groupby(['code_grade', 'date_effet_grille']).a
 max_mois = (duree_carriere_by_grade.max_mois.sort_values(ascending = False) / 12
 max_mois.hist()
 
+tmp3 = duree_carriere_by_grade.reset_index()
+
+# Pour les 5 grilles les plus fréquentes
+for grade in ['TTH1', '3001', '2154', 'TAJ1', '3256', 'TTH3', 'TAJ2']:
+    print tmp3.query("code_grade == @grade")[['max_mois', 'min_mois', 'moy_mois']] / 12
 
 
+carrieres = get_careers(variable = 'c_netneh')
+tmp4 = carrieres.groupby(['ident'])['c_netneh'].unique()
+
+# tmp5 = tmp4.reset_index()
+# tmp4.memory_usage()
+# tmp6 = tmp5.groupby('c_netneh').size() doesn't work because c_netneht sequences are numpy array which are not hashable

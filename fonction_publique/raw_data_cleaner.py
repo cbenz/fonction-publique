@@ -5,12 +5,11 @@ from __future__ import division
 
 import logging
 import os
-import pandas as pd
 import time
 
+import pandas as pd
 
-from fonction_publique.base import get_careers_hdf_path, debug_chunk_size
-
+from fonction_publique.base import debug_chunk_size, get_careers_hdf_path
 
 log = logging.getLogger(__name__)
 
