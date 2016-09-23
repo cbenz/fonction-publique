@@ -44,10 +44,7 @@ def select_columns(variable = None, stata_file_path = None):
 def get_subset(variable = None, stata_file_path = None, debug = False):
     """ selectionne le sous-dataframe pour une variable, appelee variable ici"""
     log.info('getting variable {} from {}'.format(variable, stata_file_path))
-    if debug:
-        reader = pd.read_stata(stata_file_path, chunksize = debug_chunk_size)
-    else:
-        reader = pd.read_stata(stata_file_path, chunksize = 50000)
+    reader = pd.read_stata(stata_file_path, chunksize = debug_chunk_size)
     colnames = select_columns(variable, stata_file_path)
     get_subset = pd.DataFrame()
     for chunk in reader:
