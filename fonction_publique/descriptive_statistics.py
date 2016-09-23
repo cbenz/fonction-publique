@@ -3,16 +3,17 @@
 
 from __future__ import division
 
-import os
-import time
-from collections import Counter
 
+from collections import Counter
 import numpy as np
+import os
 import pandas as pd
 import pylab as plt
 import seaborn as sns
+import time
 
-from fonction_publique.base import cnracl_path, data_path, hdf5_file_path
+
+from fonction_publique.base import cnracl_path, output_directory_path
 
 
 """ Ce fichier permet d'effectuer des statistiques descriptives sur les bases carrières de la CNRACL
@@ -31,6 +32,8 @@ III. Graphiques :
 - nombre d'actes de mobilité (nb d'ib, de codes grades et de libemploi de 2010 à 2014)
 """
 
+hdf5_file_path = os.path.join(output_directory_path, '1950_1959.hdf5')
+
 
 def timing(f):
     def wrap(*args):
@@ -48,7 +51,7 @@ variables_unique = ['ib_', 'c_netneh', 'c_cir', 'libemploi']
 
 variables = ['qualite', 'statut', 'etat', 'ib_', 'c_netneh', 'c_cir', 'libemploi']
 
-store = pd.HDFStore(hdf5_file_path)
+store = pd.HDFStstoreore(hdf5_file_path)
 
 
 def get_df(variable):

@@ -45,6 +45,7 @@ def get_careers_for_which_we_have_law(start_year = 2009, stata_file_path = None,
     careers_hdf_path = get_careers_hdf_path(clean_directory_path = clean_directory_path,
         stata_file_path = stata_file_path, debug = debug)
     careers_hdf = pd.HDFStore(careers_hdf_path)
+    # Keeping only valid grades
     grades_in_law = law.code_grade.unique()  # analysis:ignore
     if debug:
         valid_grades = careers_hdf.select(
@@ -59,13 +60,12 @@ def get_careers_for_which_we_have_law(start_year = 2009, stata_file_path = None,
             )
     valid_idents = valid_grades.ident.unique()  # analysis:ignore
     condition = "annee > {} & ident in valid_idents & ib < 1016".format(start_year)
-    valid_ib = careers_hdf.select('ib', where = condition)
+    valid_ib = careers_hdf.select('ib', where = condition, auto_close = True)
     careers = valid_ib.merge(valid_grades, on = ['ident', 'annee'], how = 'outer')
     careers = careers[~careers['ib'].isin([-1, 0])]
     careers = careers[careers['ib'].notnull()]
     careers['ib'] = careers['ib'].astype('int')
     careers = careers[careers['c_netneh'].notnull()]
-
     careers['annee'] = careers['annee'].astype('str').map(lambda x: str(x)[:4])
     careers['annee'] = pd.to_datetime(careers['annee'])
     assert not careers.empty, 'careers is an empty DataFrame'
@@ -199,39 +199,87 @@ def merge_careers_with_legislation(stata_file_path = None, debug = DEBUG_CLEAN_C
         )
 
 
-def merge_careers_with_echelon_with_etat(stata_file_path = None, debug = DEBUG_CLEAN_CARRIERES):
+def merge_with_additional_variables(variables = None, stata_file_path = None, debug = DEBUG_CLEAN_CARRIERES):
+    assert variables is not None
     tmp_hdf_path = get_tmp_hdf_path(stata_file_path, debug = debug)
     tmp_hdf = pd.HDFStore(tmp_hdf_path)
     clean_hdf_path = get_careers_hdf_path(clean_directory_path = clean_directory_path,
         stata_file_path = stata_file_path, debug = debug)
     clean_hdf = pd.HDFStore(clean_hdf_path)
-    table_var_etat = clean_hdf.select('etat', where = 'annee > 2009')
-    table_var_etat = table_var_etat[~table_var_etat['ident'].isnull()]
-    table_var_etat['ident'] = table_var_etat['ident'].astype(int)
+
+    variables_dataframe = None
+    for variable in variables:
+        log.info('Getting additional variable {}'.format(variable))
+        if 'annee' in clean_hdf.select(variable, stop = 1).columns:
+            dataframe = clean_hdf.select(variable, where = 'annee > 2009')
+        elif 'generation' in clean_hdf.select(variable, stop = 1).columns:
+            dataframe = clean_hdf.select(variable, where = 'generation >= 1950 and generation <= 1959')
+        else:
+            dataframe = clean_hdf.select(variable)
+
+        dataframe = dataframe[~dataframe['ident'].isnull()]
+        dataframe['ident'] = dataframe['ident'].astype(int)
+
+        if variables_dataframe is None:
+            variables_dataframe = dataframe
+        else:
+            longitudinal_data_condition = (
+                set(['annee', 'trimestre']) <= set(clean_hdf.select(variable, stop = 1).columns)
+                ) and (
+                variables_dataframe is None or set(['annee', 'trimestre']) <= set(variables_dataframe.columns)
+                )
+            merge_on = ['ident', 'annee', 'trimestre'] if longitudinal_data_condition else ['ident']
+            variables_dataframe = variables_dataframe.merge(dataframe, on = merge_on, how = 'outer')
+            #
+        #
+        del dataframe
+        log.info('variables_dataframe columns are {}'.format(variables_dataframe.columns))
+    #
     careers = tmp_hdf.select('tmp_5')
     careers = careers[~careers['ident'].isnull()]
     careers['ident'] = careers['ident'].astype(int)
     careers['trimestre'] = careers['trimestre'].astype(int)
-
     careers['annee'] = careers.period.dt.year
-    careers = careers.merge(table_var_etat, on = ['ident', 'annee', 'trimestre'], how = 'outer')
+    careers = careers.merge(variables_dataframe, on = ['ident', 'annee', 'trimestre'], how = 'outer')
     careers = careers[~careers['echelon'].isnull()]
     output_hdf_path = get_output_hdf_path(stata_file_path, debug = debug)
     assert os.path.exists(os.path.dirname(output_hdf_path)), '{} is not a valid path'.format(
         os.path.dirname(output_hdf_path))
     assert not careers.duplicated().any(), 'There are duplicated row in careers'
+    fix_dtypes(careers)
     careers.to_hdf(output_hdf_path, 'output', format = 'table', data_columns = True)
+
+
+def fix_dtypes(careers):  # dtype change might be due to merge and solved in recent version of pandas
+    # code_grade_NETNEH            object
+    # period               datetime64[ns]
+    # date_effet_grille    datetime64[ns]
+    # echelon = 'object'
+    # code_grade = 'object'
+    # etat = 'object'o
+    dtype_by_variable = dict(
+        trimestre = 'int',
+        ident = 'int',
+        ib = 'int',
+        max_mois = 'int',
+        min_mois = 'int',
+        moy_mois = 'int',
+        annee = 'int',
+        )
+    for variable, dtype in dtype_by_variable.iteritems():
+        if careers[variable].dtype != dtype:
+            careers[variable] = careers[variable].astype(dtype)
 
 
 def main(source = None, force_rebuild = False, debug = DEBUG_CLEAN_CARRIERES):
     law_to_hdf(force_rebuild = force_rebuild)
-    if os.path.isfile(source):    
+    if os.path.isfile(source):
         stata_files = [source]
     elif os.path.isdir(source):
         stata_files = os.listdir(source)
     for stata_file in stata_files:
         if not stata_file.endswith('.dta'):
-            log.info('{} is not a valid stata file. Skipping.'.format(stata_file))
+            log.info('{} is not a valid stata file. Skipping.'.format(stata_file))
             continue
         log.info('Processing {}'.format(stata_file))
         get_careers_for_which_we_have_law(start_year = 2009, stata_file_path = stata_file, debug = debug)
@@ -239,5 +287,5 @@ def main(source = None, force_rebuild = False, debug = DEBUG_CLEAN_CARRIERES):
         append_date_effet_to_unique_career_states(stata_file_path = stata_file, debug = debug)
         merge_date_effet_grille_with_careers(stata_file_path = stata_file, debug = debug)
         merge_careers_with_legislation(stata_file_path = stata_file, debug = debug)
-        merge_careers_with_echelon_with_etat(stata_file_path = stata_file, debug = debug)
+        merge_with_additional_variables(variables = ['etat', 'generation'], stata_file_path = stata_file, debug = debug)
         break

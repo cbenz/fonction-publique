@@ -124,11 +124,12 @@ def format_generation(stata_file_path, clean_directory_path = None, debug = Fals
     generation = get_subset('generation', stata_file_path, debug)
     generation['ident'] = generation['ident'].astype('int')
     generation['generation'] = generation['generation'].astype('int32')
-
     careers_hdf_path = get_careers_hdf_path(clean_directory_path, stata_file_path, debug)
-    assert os.path.exists(os.path.dirname(careers_hdf_path)), '{} is not a valid path'.format(careers_hdf_path)
+    if not os.path.exists(os.path.dirname(careers_hdf_path)):
+        log.info('{} is not a valid path. Creating it'.format(os.path.dirname(careers_hdf_path)))
+        os.makedirs(os.path.dirname(careers_hdf_path))
     generation.to_hdf(careers_hdf_path, 'generation', format = 'table', data_columns = True)
-    return 'generation was added to base_carriere'
+    log.info('generation was added to carriere')
 
 
 def main(raw_directory_path = None, clean_directory_path = None, debug = None):
