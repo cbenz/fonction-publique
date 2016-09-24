@@ -17,14 +17,14 @@ log = logging.getLogger(__name__)
 
 carrieres_a_lier_file_path = os.path.join(
     hdf_directory_path,
-    "carrieres_a_lier_debug.hdf5",
+    "carrieres_a_lier_debug.h5",
     ) if DEBUG else os.path.join(
         hdf_directory_path,
         "carrieres_a_lier",
         )
 etats_uniques_file_path = os.path.join(
     hdf_directory_path,
-    "etats_uniques_debug.hdf5",
+    "etats_uniques_debug.h5",
     ) if DEBUG else os.path.join(
         hdf_directory_path,
         "etats_uniques",
