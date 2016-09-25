@@ -3,28 +3,16 @@
 
 from __future__ import division
 
+
+import gc
 import logging
 import os
 
 import pandas as pd
 
-from fonction_publique.base import debug_chunk_size, get_careers_hdf_path, timing
+from fonction_publique.base import DEFAULT_CHUNKSIZE, get_careers_hdf_path, timing
 
 log = logging.getLogger(__name__)
-
-
-def select_columns(variable = None, stata_file_path = None):
-    """ selectionne les noms de colonnes correspondant à la variable (variable) qui nous interesse """
-    reader_for_colnames = pd.read_stata(stata_file_path, chunksize = 1)
-    for chunk in reader_for_colnames:
-        chunk_to_get_colnames = chunk
-        break
-    colnames = chunk_to_get_colnames.columns.to_series()
-    colnames_subset = pd.Series(['ident'])
-    colnames_to_keep = colnames.str.contains(variable)
-    colnames_kept = colnames[colnames_to_keep]
-    colnames_subset = colnames_subset.append(colnames_kept)
-    return colnames_subset.reset_index(drop = True)
 
 
 @timing
@@ -35,16 +23,21 @@ def get_subset(variable = None, stata_file_path = None, debug = False, chunksize
     else:
         assert chunksize is None
     if chunksize is None:
-        chunksize = 100000  # We need a chunlsize since the whole data cannot be read in memory
+        chunksize = DEFAULT_CHUNKSIZE
     log.info('getting variable {} from {}'.format(variable, stata_file_path))
     reader = pd.read_stata(stata_file_path, chunksize = chunksize)
-    colnames = select_columns(variable, stata_file_path)
     result = pd.DataFrame()
+    selected_columns = None
     for chunk in reader:
-        subset = chunk[colnames]
-        result = result.append(subset)
+        if selected_columns is None:
+            # variable and column name may mismatch: ib vs ib_*, etc
+            columns = chunk.columns.tolist()
+            selected_columns = [column for column in columns if (variable in column)]
+        #
+        result = result.append(chunk[selected_columns + ['ident']])
         if debug:
             break
+    gc.collect()
     return result
 
 
@@ -82,6 +75,7 @@ def clean_subset(variable = None, years_range = None, quarterly = False, stata_f
             subset_cleaned['annee'] = annee
             subset_result = pd.concat([subset_result, subset_cleaned])
 
+    gc.collect()
     return subset_result
 
 
@@ -89,7 +83,7 @@ def clean_subset(variable = None, years_range = None, quarterly = False, stata_f
 def format_columns(variable = None, years_range = None, quarterly = False, clean_directory_path = None,
         stata_file_path = None, debug = False, chunksize = None):
     log.info('formatting column {}'.format(variable))
-    subset_to_format = clean_subset(variable, years_range, quarterly, stata_file_path, debug = debug, 
+    subset_to_format = clean_subset(variable, years_range, quarterly, stata_file_path, debug = debug,
         chunksize = chunksize)
     # dtype format
     # always format ident
@@ -165,15 +159,15 @@ def main(raw_directory_path = None, clean_directory_path = None, debug = None, c
             quarterly = True,
             ),
         ]
-    
+
     for stata_file in os.listdir(raw_directory_path):
         if not stata_file.endswith('.dta'):
             continue
         stata_file_path = os.path.join(raw_directory_path, '{}'.format(stata_file))
         log.info('Processing {}'.format(stata_file_path))
         format_generation(
-            stata_file_path, 
-            clean_directory_path = clean_directory_path, 
+            stata_file_path,
+            clean_directory_path = clean_directory_path,
             debug = debug,
             chunksize = chunksize,
             )

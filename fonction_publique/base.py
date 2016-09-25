@@ -47,10 +47,9 @@ output_directory_path = os.path.join(cnracl_path, "output")
 
 
 # Options:
-
+DEFAULT_CHUNKSIZE = 30000
 DEBUG_CLEAN_CARRIERES = True
-DEBUG = True
-debug_chunk_size = 50000 if DEBUG else None
+debug_chunk_size = 30000
 
 
 # HDF5 files paths (temporary):

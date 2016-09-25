@@ -29,11 +29,13 @@ def main():
     args = parser.parse_args()
     logging.basicConfig(level = logging.INFO if args.verbose else logging.WARNING, stream = sys.stdout)
     log.info('Start cleaning data in {}'.format(raw_directory_path))
+
+    chunksize = args.chunksize if args.debug else None
     raw_data_cleaner.main(
         raw_directory_path = args.source,
         clean_directory_path = args.target,
         debug = args.debug,
-        chunksize = args.chunksize,
+        chunksize = chunksize,
         )
 
 
