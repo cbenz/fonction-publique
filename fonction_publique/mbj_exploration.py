@@ -16,10 +16,10 @@ from fonction_publique.base import cnracl_path, output_directory_path, clean_dir
 from fonction_publique.merge_careers_and_legislation import fix_dtypes
 
 # output = carrières matchées avec grilles
-hdf5_file_path = os.path.join(output_directory_path, '1950_1959.hdf5')
+hdf5_file_path = os.path.join(output_directory_path, '1950_1959.h5')
 
 # carrièrs brutes
-careers_hdf_path = os.path.join(clean_directory_path, '1950_1959_carrieres.hdf5')
+careers_hdf_path = os.path.join(clean_directory_path, '1950_1959_carrieres.h5')
 
 
 def get_variables(variables = None, stop = None):
@@ -72,8 +72,14 @@ for grade in ['TTH1', '3001', '2154', 'TAJ1', '3256', 'TTH3', 'TAJ2']:
 
 
 carrieres = get_careers(variable = 'c_netneh')
+carrieres.tail(20)
 tmp4 = carrieres.groupby(['ident'])['c_netneh'].unique()
-
-# tmp5 = tmp4.reset_index()
+tmp4.tail()
+tmp5 = tmp4.reset_index()
 # tmp4.memory_usage()
-# tmp6 = tmp5.groupby('c_netneh').size() doesn't work because c_netneht sequences are numpy array which are not hashable
+tmp5['sequence'] = tmp5.c_netneh.apply(lambda x: '-'.join(x))
+
+tmp6 = tmp5.groupby('sequence').size().sort_values(ascending = False)
+
+
+doesn't work because c_netneht sequences are numpy array which are not hashable
