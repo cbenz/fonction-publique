@@ -5,7 +5,7 @@ from __future__ import division
 
 
 import pandas as pd
-from fonction_publique.cleaner_base_carriere import timing
+from fonction_publique.base import timing
 
 
 @timing

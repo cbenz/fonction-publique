@@ -13,7 +13,7 @@ import seaborn as sns
 import time
 
 
-from fonction_publique.base import cnracl_path, output_directory_path
+from fonction_publique.base import cnracl_path, output_directory_path, timing
 
 
 """ Ce fichier permet d'effectuer des statistiques descriptives sur les bases carrières de la CNRACL
@@ -32,17 +32,7 @@ III. Graphiques :
 - nombre d'actes de mobilité (nb d'ib, de codes grades et de libemploi de 2010 à 2014)
 """
 
-hdf5_file_path = os.path.join(output_directory_path, '1950_1959.hdf5')
-
-
-def timing(f):
-    def wrap(*args):
-        time1 = time.time()
-        ret = f(*args)
-        time2 = time.time()
-        print '%s function took %0.3f ms' % (f.func_name, (time2 - time1) * 1000.0)
-        return ret
-    return wrap
+hdf5_file_path = os.path.join(output_directory_path, '1950_1959.h5')
 
 
 variables_value_count = ['qualite', 'statut', 'etat']

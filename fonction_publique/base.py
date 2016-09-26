@@ -4,13 +4,16 @@
 from __future__ import division
 
 
+import time
 import os
-import pandas as pd
+
+import logging
 import pkg_resources
 
+app_name = os.path.splitext(os.path.basename(__file__))[0]
+log = logging.getLogger(app_name)
 
 # Paths to legislation
-
 asset_path = os.path.join(
     pkg_resources.get_distribution('fonction_publique').location,
     'fonction_publique',
@@ -24,7 +27,7 @@ law_xls_path = os.path.join(
 
 law_hdf_path = os.path.join(
     asset_path,
-    "grilles.hdf5")
+    "grilles.h5")
 
 
 # linux_cnracl_path = os.path.join("/run/user/1000/gvfs", "smb-share:server=192.168.1.2,share=data", "CNRACL")
@@ -47,40 +50,29 @@ output_directory_path = os.path.join(cnracl_path, "output")
 
 
 # Options:
-
+DEFAULT_CHUNKSIZE = 30000
 DEBUG_CLEAN_CARRIERES = True
-DEBUG = True
-debug_chunk_size = 50000 if DEBUG else None
+debug_chunk_size = 30000
 
 
 # HDF5 files paths (temporary):
-# Store des variables liées aux carrières nettoyées et stockées dans des tables du fichier donnees_de_carrieres.hdf5
+# Store des variables liées aux carrières nettoyées et stockées dans des tables du fichier donnees_de_carrieres.h5
 def get_careers_hdf_path(clean_directory_path = None, stata_file_path = None, debug = None):
-    assert clean_directory_path is not None
-    assert stata_file_path is not None
-    assert (debug is False) or (debug is True), 'debug should be True or False'
-    careers_hdf_path = os.path.join(
-        clean_directory_path,
-        "debug",
-        "{}_{}_carrieres.hdf5".format(stata_file_path[-14:-10], stata_file_path[-8:-4]),
-        ) if debug else os.path.join(
-            clean_directory_path,
-            "{}_{}_carrieres.hdf5".format(stata_file_path[-14:-10], stata_file_path[-8:-4])
-            )
-    return careers_hdf_path
+    return create_file_path(
+        directory = clean_directory_path,
+        extension = 'carrieres',
+        stata_file_path = stata_file_path,
+        debug = debug,
+        )
 
 
 def get_tmp_hdf_path(stata_file_path, debug = None):
-    assert debug is not None, 'debug should be True or False'
-    tmp_hdf_path = os.path.join(
-        tmp_directory_path,
-        "debug",
-        "{}_{}_tmp.hdf5".format(stata_file_path[-14:-10], stata_file_path[-8:-4]),
-        ) if debug else os.path.join(
-            tmp_directory_path,
-            "{}_{}_tmp.hdf5".format(stata_file_path[-14:-10], stata_file_path[-8:-4]),
-            )
-    return tmp_hdf_path
+    return create_file_path(
+        directory = tmp_directory_path,
+        extension = 'tmp',
+        stata_file_path = stata_file_path,
+        debug = debug,
+        )
 
 
 def get_output_hdf_path(stata_file_path, debug = None):
@@ -88,9 +80,37 @@ def get_output_hdf_path(stata_file_path, debug = None):
     output_hdf_path = os.path.join(
         output_directory_path,
         "debug",
-        "{}_{}.hdf5".format(stata_file_path[-14:-10], stata_file_path[-8:-4]),
+        "{}_{}".format(stata_file_path[-14:-10], stata_file_path[-8:-4]),
         ) if debug else os.path.join(
             output_directory_path,
-            "{}_{}.hdf5".format(stata_file_path[-14:-10], stata_file_path[-8:-4]),
+            "{}_{}.h5".format(stata_file_path[-14:-10], stata_file_path[-8:-4]),
             )
     return output_hdf_path
+
+
+# Helpers
+def create_file_path(directory = None, extension = None, stata_file_path = None, debug = None):
+    assert directory is not None
+    assert extension is not None
+    assert (debug is False) or (debug is True), 'debug should be True or False'
+    assert stata_file_path is not None
+    filename = "{}_{}_{}.h5".format(
+        stata_file_path[-14:-10],
+        stata_file_path[-8:-4],
+        extension,
+        )
+    if debug:
+        return os.path.join(directory, "debug", filename)
+    else:
+        return os.path.join(directory, filename)
+
+
+# Timer
+def timing(f):
+    def wrap(*args, **kwargs):
+        time1 = time.time()
+        ret = f(*args, **kwargs)
+        time2 = time.time()
+        log.info('{} function took {:.3f} s'.format(f.func_name, (time2 - time1)))
+        return ret
+    return wrap
