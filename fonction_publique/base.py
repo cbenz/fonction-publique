@@ -30,9 +30,12 @@ law_hdf_path = os.path.join(
 # linux_cnracl_path = os.path.join("/run/user/1000/gvfs", "smb-share:server=192.168.1.2,share=data", "CNRACL")
 linux_cnracl_path = os.path.join("/home/benjello/data", "CNRACL")
 windows_cnracl_path = os.path.join("M:/CNRACL/")
+simon_cnracl_path = os.path.join("/Users/simonrabate/Desktop/data/CNRACL/")
 
 if os.path.exists(linux_cnracl_path):
     cnracl_path = linux_cnracl_path
+elif os.path.exists(simon_cnracl_path):
+    cnracl_path = simon_cnracl_path
 else:
     cnracl_path = windows_cnracl_path
 
