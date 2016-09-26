@@ -16,21 +16,38 @@ from fonction_publique.career_simulation_vectorized import _set_dates_effet
 log = logging.getLogger(__name__)
 
 
+def get_grilles(force_rebuild = False):
+    law_to_hdf(force_rebuild = force_rebuild)
+    return pd.read_hdf(law_hdf_path)
+
+
 def law_to_hdf(force_rebuild = False):
     """ Extract relevant data from grille and change to convenient dtype then save to HDFStore."""
     if os.path.exists(law_hdf_path):
         if force_rebuild is False:
             log.info('Using existing {}'.format(law_hdf_path))
             return
-
     law = pd.read_table(law_xls_path)
-    law = law[['date_effet_grille', 'ib', 'code_grade_NETNEH', 'echelon', 'max_mois', 'min_mois', 'moy_mois']].copy()
+    law = law[['date_effet_grille', 'ib', 'code_grade_NETNEH', 'echelon', 'max_mois', 'min_mois', 'moy_mois', 'libelle_FP', 'libelle_grade_NEG']].copy()
     law['date_effet_grille'] = pd.to_datetime(law.date_effet_grille)
     for variable in ['ib', 'max_mois', 'min_mois', 'moy_mois']:
         law[variable] = law[variable].fillna(-1).astype('int32')
     law['code_grade'] = law['code_grade_NETNEH'].astype('str')
     law = law[~law['ib'].isin([-1, 0])].copy()
     law.to_hdf(law_hdf_path, 'grilles', format = 'table', data_columns = True, mode = 'w')
+
+
+def get_libelles(code_grade_neg = None, code_grade_netneh = None, force_rebuild = False):
+    # assert (code_grade_neg is not None) or (code_grade_netneh is not None)
+    assert code_grade_netneh is not None
+    grilles = get_grilles(force_rebuild = False)
+    if code_grade_netneh is not None:
+        return grilles.loc[
+            grilles.code_grade.str.contains(code_grade_netneh),
+            ['code_grade', 'libelle_FP', 'libelle_grade_NEG']
+            ].drop_duplicates()
+    # elif code_grade_neg is not None:
+    #     return grilles[grilles.code_grade_neg.contains(code_grade_neg))
 
 
 def get_careers_for_which_we_have_law(start_year = 2009, stata_file_path = None, debug = DEBUG_CLEAN_CARRIERES):

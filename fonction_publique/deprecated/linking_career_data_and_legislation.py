@@ -9,7 +9,7 @@ import os
 import pandas as pd
 
 
-from fonction_publique.base import asset_path, hdf_directory_path, hdf5_file_path, DEBUG, debug_chunk_size
+from fonction_publique.base import asset_path, hdf_directory_path, hdf5_file_path, DEBUG, debug_chunk_size, law_xls_path
 
 
 log = logging.getLogger(__name__)
@@ -34,9 +34,6 @@ etats_uniques_file_path = os.path.join(
 def clean_law():
     """ Extract relevant data from grille and change to convenient dtype then save to HDFStore."""
 
-    law_xls_path = os.path.join(
-        asset_path,
-        "neg_pour_ipp.txt")
     law = pd.read_table(law_xls_path)
     law = law[['date_effet_grille', 'ib', 'code_grade_NETNEH', 'echelon', 'max_mois', 'min_mois', 'moy_mois']].copy()
 
