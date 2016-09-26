@@ -54,10 +54,8 @@ aggregations = {
     'moy_mois': 'sum',
     }
 
-
 duree_carriere_by_grade = grilles.groupby(['code_grade', 'date_effet_grille']).agg(
     aggregations)
-
 
 max_mois = duree_carriere_by_grade.max_mois.sort_values(ascending = False) / 12
 max_mois.hist()
@@ -67,7 +65,7 @@ tmp3 = duree_carriere_by_grade.reset_index()
 # Pour les 5 grilles les plus fréquentes
 for grade in ['TTH1', '3001', '2154', 'TAJ1', '3256', 'TTH3', 'TAJ2']:
     print get_libelles(code_grade_netneh = grade)
-    print tmp3.query("code_grade == @grade")[['max_mois', 'min_mois', 'moy_mois']] / 12
+    print tmp3.query("code_grade == @grade")[['date_effet_grille', 'max_mois', 'min_mois', 'moy_mois']] / 12
 
 
 carrieres = get_careers(variable = 'c_netneh')
@@ -82,11 +80,24 @@ carrieres.groupby(['ident'])['c_netneh'].apply(
 tmp4 = carrieres.groupby(['ident'])['c_netneh'].unique()
 tmp4.tail()
 tmp5 = tmp4.reset_index()
-# tmp4.memory_usage()
 tmp5['sequence'] = tmp5.c_netneh.apply(lambda x: '-'.join(x))
-
 tmp6 = tmp5.groupby('sequence').size().sort_values(ascending = False)
 
+idents = carrieres.query("(c_netneh == '3001') & (annee == 2011)")['ident'].unique()
+len(idents)
+filtered = carrieres[carrieres.ident.isin(idents)]
+len(filtered)
+x = (filtered
+    .groupby(['ident'])['c_netneh']
+    .apply(lambda x: '-'.join(x))
+    .value_counts()
+    )
+
+x
+
+
+toto1 = carrieres.groupby(['ident'])['c_netneh'].apply(lambda x: '-'.join(x))
+toto1.value_counts()
 
 clean_carrieres = (carrieres
     .fillna({'c_netneh': ''})
@@ -111,3 +122,6 @@ tmp9.head()
 tmp9['sequence'] = tmp9.libemploi.apply(lambda x: '-'.join(x))
 tmp9.sequence.value_counts(ascending = False)
 tmp9.count()
+
+
+ib = get_careers(variable = 'ib')
