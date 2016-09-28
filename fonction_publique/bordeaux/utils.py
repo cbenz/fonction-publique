@@ -4,28 +4,9 @@
 from __future__ import division
 
 
-import os
 import pandas as pd
 
-
-from fonction_publique.base import output_directory_path, clean_directory_path
-from fonction_publique.merge_careers_and_legislation import fix_dtypes, get_grilles, get_libelles
-
-
-def get_variables(variables = None, stop = None, decennie = None):
-    """Recupere certaines variables de la table des carrières matchées avec grilles"""
-    hdf5_file_path = os.path.join(output_directory_path, '{}_{}_carrieres.h5'.format(decennie, decennie + 9))
-    return pd.read_hdf(hdf5_file_path, 'output', columns = variables, stop = stop)
-
-
-def get_careers(variable = None, stop = None, decennie = None):
-    """Recupere certaines variables de la table des carrières bruts"""
-
-    careers_hdf_path = os.path.join(
-        clean_directory_path,
-        '{}_{}_carrieres.h5'.format(decennie, decennie + 9)
-        )
-    return pd.read_hdf(careers_hdf_path, variable, stop = stop)
+from fonction_publique.base import get_careers
 
 
 def build_transitions_pct_by_echantillon(decennie = 1970):

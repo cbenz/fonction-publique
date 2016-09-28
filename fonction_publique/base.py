@@ -3,12 +3,13 @@
 
 from __future__ import division
 
-
-import time
-import os
-
 import logging
+import os
+import time
+
 import pkg_resources
+
+import pandas as pd
 
 app_name = os.path.splitext(os.path.basename(__file__))[0]
 log = logging.getLogger(app_name)
@@ -103,6 +104,22 @@ def create_file_path(directory = None, extension = None, stata_file_path = None,
         return os.path.join(directory, "debug", filename)
     else:
         return os.path.join(directory, filename)
+
+
+def get_variables(variables = None, stop = None, decennie = None):
+    """Recupere certaines variables de la table des carrières matchées avec grilles"""
+    hdf5_file_path = os.path.join(output_directory_path, '{}_{}_carrieres.h5'.format(decennie, decennie + 9))
+    return pd.read_hdf(hdf5_file_path, 'output', columns = variables, stop = stop)
+
+
+def get_careers(variable = None, stop = None, decennie = None):
+    """Recupere certaines variables de la table des carrières bruts"""
+
+    careers_hdf_path = os.path.join(
+        clean_directory_path,
+        '{}_{}_carrieres.h5'.format(decennie, decennie + 9)
+        )
+    return pd.read_hdf(careers_hdf_path, variable, stop = stop)
 
 
 # Timer
