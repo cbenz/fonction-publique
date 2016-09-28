@@ -4,28 +4,14 @@
 from __future__ import division
 
 
-import os
 import pandas as pd
 
 
-from fonction_publique.base import output_directory_path, clean_directory_path
+from fonction_publique.base import get_careers, get_variables
+from fonction_publique.bordeaux.utils import build_transitions_dataframe, clean_empty_netneh
+
 from fonction_publique.merge_careers_and_legislation import fix_dtypes, get_grilles, get_libelles
 
-
-def get_variables(variables = None, stop = None, decennie = None):
-    """Recupere certaines variables de la table des carrières matchées avec grilles"""
-    hdf5_file_path = os.path.join(output_directory_path, '{}_{}_carrieres.h5'.format(decennie, decennie + 9))
-    return pd.read_hdf(hdf5_file_path, 'output', columns = variables, stop = stop)
-
-
-def get_careers(variable = None, stop = None, decennie = None):
-    """Recupere certaines variables de la table des carrières bruts"""
-
-    careers_hdf_path = os.path.join(
-        clean_directory_path,
-        '{}_{}_carrieres.h5'.format(decennie, decennie + 9)
-        )
-    return pd.read_hdf(careers_hdf_path, variable, stop = stop)
 
 
 def trimestres_par_generation():
@@ -122,6 +108,37 @@ def analyse_carriere():
     ib = get_careers(variable = 'ib')
 
 
+if __name__ == '__main__':
+    decennie = 1970
+    carrieres = get_careers(variable = 'c_netneh', decennie = decennie).sort_values(['ident', 'annee'])
+
+    transitions = build_transitions_dataframe(
+        clean_empty_netneh(carrieres.query('annee > 2010')))
+    real_transitions = transitions.query('transition')
+    destinations = real_transitions.groupby('initial')['final'].value_counts()
+    destinations.name = 'population'
+    destinations = destinations.reset_index()
+
+    destinations_by_grade = pd.DataFrame(dict(
+        population = destinations.groupby('initial')['population'].agg(sum),
+        population_pct = destinations.groupby('initial')['population'].agg(sum) / destinations.population.sum(),
+        nombre = destinations.groupby('initial')['population'].count(),
+        largest_1_pct = destinations.groupby('initial')['population'].apply(
+            lambda x: (x.nlargest(1) / x.sum()).squeeze()
+            ),
+        largest_2_pct = destinations.groupby('initial')['population'].apply(
+            lambda x: (x.nlargest(2) / x.sum()).sum()
+            ),
+        largest_3_pct = destinations.groupby('initial')['population'].apply(
+            lambda x: (x.nlargest(3) / x.sum()).sum()
+            ),
+        largest_5_pct = destinations.groupby('initial')['population'].apply(
+            lambda x: (x.nlargest(5) / x.sum()).sum()
+            ),
+        )).sort_values('population', ascending = False).reset_index()
+
+    destinations_by_grade['cdf'] = destinations_by_grade.population_pct.cumsum()
 
 
-
+    matrix = destinations.unstack('final')
+    grades = ['TTH1', '3001', '2154', 'TAJ1', '3256', 'TTH3', 'TAJ2']
