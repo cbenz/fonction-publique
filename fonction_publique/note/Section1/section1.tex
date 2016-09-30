@@ -42,7 +42,7 @@
 \usepackage{array}
 
 \begin{document}
-
+\selectlanguage{frenchb}
 \else \fi
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -51,7 +51,65 @@
 \section{L'objectif: modéliser les rémunérations à partir des grilles}
 
 
-blabl
+\subsection*{Retour sur la classification des emplois}
+
+L'organisation de la carrière d'un fonctionnaire est basée sur une grille de classements des emploi, avec différents niveaux:
+ 
+\begin{enumerate}[leftmargin=2cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
+\item Les cadres ou corps d'emploi
+\item Les filières: regroupement informels des corps d'emploi (10 dans la FPT, 6 dans la FPH). 
+\item Les catégories hiérarchiques: les fonctionnaires peuvent être de catégorie A, B et C. 
+\item Les grades: chaque corps d'emploi est segmenté en un ou plusieurs grades, régulés par un statut particulier. 
+\item Les échelons définissant le niveau de l'indice brut au sein du grade. 
+\end{enumerate}
+
+\vspace{0.5cm}
+
+La grille de rémunération est défini pour chaque grade: elle donne le niveau de l'indice brut pour un échelon donné. 
+
+
+Points à préciser: 
+\begin{itemize}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
+\item Y-a-t-il bien une délimitation nette entre cadres/filières et catégories hiérarchiques? (la filière X n'est composée que de fonctionnaires de catégorie A). 
+\item Quelles conditions de passage d'un grade à l'autre au sein d'un corps? Passage automatique comme pour les échelons ou plus discrétionnaire? 
+\end{itemize}
+
+
+\subsection*{Les phénomènes à modéliser}
+
+Si on met de côté pour l'instant le taux de prime, la modélisation du salaire des fonctionnaires dépend de l'évolution de la rémunération, elle-même définie directement par l'évolution de l'indice brut. 
+
+Modéliser l'évolution de l'indice revient donc à modéliser deux phénomènes principaux de la carrière d'un individu: 
+\begin{itemize}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
+\item La progression au sein d'un grade, c'est-à-dire la vitesse à laquelle les échelons sont franchis. 
+\item Les changements de grade, qui regroupent en fait deux questions: (i) à quelle fréquence les individus changent-il de grade et (ii) vers où vont-ils? 
+\end{itemize} 
+
+\vspace{0.2cm}
+
+
+
+La question centrale de la modélisation de l'évolution est donc la suivante: pour quel type de phénomène a-t-on de la variabilité inter-individuelle? Plus les grilles sont rigides, plus la modélisation choisie peut-être simple. A l'extrême, si la durée dans chaque échelon est fixe et que le changement de grade suit une règle fixe (par exemple, "tous les individus arrivés au bout du grade G1 passent au grade G2"), l'évolution de la rémunération dépend directement de l'évolution des grilles et ne nécessite pas de travail de modélisation. La modélisation est nécessaire car, en réalité, la carrière des individus ne suit pas un chemin prédéfini. L'enjeu principal est donc la modélisation de la déviation par rapport à ce "tapis roulant". Cette déviation peut intervenir au niveau de la durée passée dans chaque échelon, au niveau du moment où intervient le changement de grade (avant la fin de la grille ou en fin de grille), et au niveau du grade de destination après le changement. 
+
+Il s'agit d'une question en partie législative: dans quelle mesure est fixe la durée passée dans l'échelon (durée minimale, durée maximale, ou durée fixe), et dans quelle mesure le passage d'un grade à l'autre est automatique au sein d'un corps (condition de promotions: concours, ou simplement age ou durée dans le grade?). A rigidité législative donnée, il s'agit d'une question empirique: quelle variance observe-t-on dans la durée passée dans chaque échelon au sein d'un grade? quelle proportion d'individus est promue au sein de son corps dans le grade supérieur? à quel moment ces promotions se produisent? quelle proportion d'individu change de grade sans passer dans le grade immédiatement supérieur (changement de corps, de catégorie, de fonction publique). 
+
+Dans la partie suivante, nous tentons de documenter ces questions à partir des données disponibles à ce stade. 
+
+
+
+\vspace{0.5cm}
+Points à préciser: 
+\begin{itemize}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
+\item Quelle interaction entre le module rémunération et le module carrière et affiliation?  
+\item Comment différencier un changement de grade d'une sortie de la FP ou d'une dispo, sachant que ces deux phénomènes ne sont pas forcément décorrélés (un individus peut démissionner plus facilement de la FPT-FPH si il ne peut pas accéder à un grade supérieur?) 
+\end{itemize}
+
+
+
+
+
+
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
