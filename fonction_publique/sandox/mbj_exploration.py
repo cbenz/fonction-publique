@@ -8,7 +8,7 @@ import pandas as pd
 
 
 from fonction_publique.base import get_careers, get_variables
-from fonction_publique.bordeaux.utils import build_transitions_dataframe, clean_empty_netneh
+from fonction_publique.bordeaux.utils import get_transitions_dataframe, clean_empty_netneh
 
 from fonction_publique.merge_careers_and_legislation import fix_dtypes, get_grilles, get_libelles
 
@@ -111,34 +111,87 @@ def analyse_carriere():
 if __name__ == '__main__':
     decennie = 1970
     carrieres = get_careers(variable = 'c_netneh', decennie = decennie).sort_values(['ident', 'annee'])
+    carrieres = carrieres.query('annee > 2010')
+    # carrieres.c_netneh = 'x' + carrieres.c_netneh
+    transitions = get_transitions_dataframe(carrieres)
+    destinations = transitions.groupby('initial')['final'].value_counts()
+    transition_matrix = destinations.unstack().fillna(0)
 
-    transitions = build_transitions_dataframe(
-        clean_empty_netneh(carrieres.query('annee > 2010')))
-    real_transitions = transitions.query('transition')
-    destinations = real_transitions.groupby('initial')['final'].value_counts()
-    destinations.name = 'population'
-    destinations = destinations.reset_index()
+    keep = set(transition_matrix.columns).intersection(set(transition_matrix.index))
+    extended = transition_matrix.loc[keep, keep]
+    extended['order'] = extended.T.sum()
+    extended = extended.sort_values('order', ascending = False).drop('order', axis = 1)
 
-    destinations_by_grade = pd.DataFrame(dict(
-        population = destinations.groupby('initial')['population'].agg(sum),
-        population_pct = destinations.groupby('initial')['population'].agg(sum) / destinations.population.sum(),
-        nombre = destinations.groupby('initial')['population'].count(),
-        largest_1_pct = destinations.groupby('initial')['population'].apply(
-            lambda x: (x.nlargest(1) / x.sum()).squeeze()
-            ),
-        largest_2_pct = destinations.groupby('initial')['population'].apply(
-            lambda x: (x.nlargest(2) / x.sum()).sum()
-            ),
-        largest_3_pct = destinations.groupby('initial')['population'].apply(
-            lambda x: (x.nlargest(3) / x.sum()).sum()
-            ),
-        largest_5_pct = destinations.groupby('initial')['population'].apply(
-            lambda x: (x.nlargest(5) / x.sum()).sum()
-            ),
-        )).sort_values('population', ascending = False).reset_index()
+    n_grades = 4
+    n_destinations = 4
 
-    destinations_by_grade['cdf'] = destinations_by_grade.population_pct.cumsum()
+    initial_grades = extended.index[:n_grades].tolist()
+    result = dict(root = initial_grades)
+
+    for child in result.itervalues():
+        initial_grade = child
+        value_by_destination_grades = extended.loc[initial_grade].nlargest(n_destinations).to_dict()
 
 
-    matrix = destinations.unstack('final')
-    grades = ['TTH1', '3001', '2154', 'TAJ1', '3256', 'TTH3', 'TAJ2']
+    initial_grade = [1]
+
+    def run(result, iteration = 0, stop = 3):
+        if iteration == stop:
+            print iteration
+            return
+
+        for parent, children in result.iteritems():
+            destination_by_child = dict()
+            for child in children:
+                initial_grade = child
+                print initial_grade
+                value_by_destination_grades = (extended.loc[initial_grade].nlargest(n_destinations)).to_dict()
+                destination_by_child[child] = value_by_destination_grades.keys()
+
+            run(iter_result, iteration = iteration + 1, stop = stop)
+
+    run(result)
+
+    def get_nlargest_destination(initial_grades):
+        destinations_by_intial_grades = (extended.loc[initial_grades]
+            .T
+            )
+        destinations_by_intial_grades = destinations_by_intial_grades.stack()
+        destinations_by_intial_grades.to_dict()
+
+    initial_grades
+
+    new_initial_grades = set(initial_grades + destination_grades)
+
+    destinations_by_new_intial_grades = extended.loc[new_initial_grades].copy().T.apply(lambda x: x.nlargest(n_destinations)).T
+    destination_grades = destinations_by_new_intial_grades.columns.tolist()
+
+    all_grades = set(list(new_initial_grades) + destination_grades)
+
+    shrinked = extended.loc[all_grades, all_grades]
+    shrinked = shrinked.reindex_axis(shrinked.index, axis = 1)
+    # shrinked = shrinked.rename(columns = dict(zip(shrinked.columns, 'y' + shrinked.columns.str[1:])))
+
+    nodes = pd.DataFrame()
+    nodes['ID'] = list(all_grades)
+    nodes.set_index('ID', inplace = True)
+    nodes['x'] = 3
+    nodes.loc[new_initial_grades, 'x'] = 2
+    nodes.loc[initial_grades, 'x'] = 1
+    nodes['ID'] = nodes.index
+    nodes
+
+    proto_edges = shrinked.copy()
+    proto_edges['N1'] = shrinked.index
+    edges = pd.melt(proto_edges, id_vars = 'N1', var_name = 'N2', value_name = 'Value').reset_index(drop = True)
+    new_edges = edges.loc[
+        edges.N1.isin(new_initial_grades) &
+        edges.N2.isin(destination_grades)
+        ].copy()
+
+    shrinked.to_csv('transition_matrix.csv')
+    nodes.to_csv('nodes.csv')
+
+    # TODO rajouter les autres
+
+    get_libelles(code_grade_netneh = 'TAJ1')
