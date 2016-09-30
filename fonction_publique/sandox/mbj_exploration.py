@@ -126,6 +126,20 @@ if __name__ == '__main__':
     n_destinations = 4
 
     initial_grades = extended.index[:n_grades].tolist()
+
+    total = extended.loc[initial_grades].T.sum()
+    destinations = (extended.loc[initial_grades]
+        .T.apply(lambda x: x.nlargest(n_destinations))
+        .T
+        .stack()
+        )
+    for index in total.index:
+        destinations.loc[(index, 'total')] =  total.loc[index]
+    destinations.sort_index(inplace = True)
+
+    destinations.merge(total)
+    extended.loc[initial_grades].nlargest(n_destinations)
+
     result = dict(root = initial_grades)
 
     for child in result.itervalues():
@@ -147,6 +161,8 @@ if __name__ == '__main__':
                 print initial_grade
                 value_by_destination_grades = (extended.loc[initial_grade].nlargest(n_destinations)).to_dict()
                 destination_by_child[child] = value_by_destination_grades.keys()
+            children = destination_by_child
+
 
             run(iter_result, iteration = iteration + 1, stop = stop)
 
