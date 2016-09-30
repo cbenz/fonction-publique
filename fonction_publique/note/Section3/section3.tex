@@ -52,13 +52,34 @@
 
 \subsection{Les changements de grade: logit multinomial}
 
+Nous avons vu %à vérifier :)
+que le classement hiérarchique des agents de la fonction publique n'est pas exactement un \og tapis roulant \fg, et qu'entre autres, lorsqu'un agent arrive en fin de grade, 
+le grade de \og destination \fg\ varie. Pour pouvoir projeter les carrières des agents, il faut donc estimer la probabilité de passer dans tel ou tel grade après avoir fait
+une carrière dans tel autre grade.
 
-\subsection{Le parcours dans le grade}
+Cette problématique évoque une modélisation du phénomène comme \og choix discrets \fg\ : il s'agirait d'estimer la probabilité d'un ensemble de choix, non ordonnés.
+C'est une modélisation répandue notamment en économie du travail, lorsqu'on cherche à estimer la probabilité d'être en emploi à temps plein, en emploi à temps partiel,
+en recherche d'emploi, actif inoccupé, \textit{etc.} L'estimation se fait par logit multinomial.
+
+Une limite importante de ce type de modélisation est que, le logit multinomial étant une généralisation du modèle binaire, on suppose que le choix entre deux alternatives
+(par exemple, passer dans le grade X ou Y après avoir été dans le grade V) est indépendant des autres alternatives (le passage au grade Z après avoir été dans le grade V).
+Cette hypothèse ne semble pas problématique dans le cas de l'exemple donné, mais si on souhaite aussi modéliser le congé maladie, la mise en disponibilité ou le détachement,
+l'hypothèse est moins crédible.% : ce qui rend la mise en disponibilité plus attractive rend probablement moins souhaitable de passer dans le grade X, Y ou Z.
+% Non c'est pas ça. Expliquer pourquoi
+
+-> Logits emboîtés
+
++ Mixed logit : pour intégrer des coefficients pour certains choix mais pas pour d'autres. (cf. cours de Luc)
+
+
+\subsection{Le parcours dans le grade: un modèle dynamique ?}
 
 
 
-Question: quelle degré de finesse dans le choix des sous-catégories? 
-Pas FP, par corps? par catégorie hiérarchique? 
+
+
+Question: quel degré de finesse dans le choix des sous-catégories? 
+Par FP, par corps? par catégorie hiérarchique? 
 
 
 
