@@ -16,6 +16,14 @@
 /dist
 /tags
 
+fonction_publique/note/main.aux
+fonction_publique/note/main.bbl
+fonction_publique/note/main.blg
+fonction_publique/note/main.log
+fonction_publique/note/main.out
+fonction_publique/note/main.pdf
+fonction_publique/note/main.synctex.gz
+
 
 # Windows image file caches
 Thumbs.db
