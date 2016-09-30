@@ -1,0 +1,88 @@
+\ifx\isEmbedded\undefined
+
+
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}		% LaTeX, comprend les accents !
+\usepackage[T1]{fontenc}
+\usepackage{natbib}	
+%\usepackage[square,sort&compress,sectionbib]{natbib}		% Doit être chargé avant babel      
+\usepackage[frenchb,english]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb, amsthm}
+\usepackage{a4wide}
+\usepackage[capposition=top]{floatrow}
+\usepackage{verbatim}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{flafter}
+\usepackage{longtable}
+\usepackage{pdflscape}
+\usepackage{rotating}
+\usepackage{hhline}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage[pdftex,pdfborder={0 0 0},colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue,bookmarksopen=true]{hyperref}
+\usepackage{eurosym}
+\usepackage{breakcites}
+\usepackage[autostyle]{csquotes}
+%\usepackage{datetime}
+\usepackage{natbib}
+\usepackage{setspace}
+\usepackage{lscape}
+\usepackage[usenames]{color}
+\usepackage{indentfirst}
+
+\usepackage{url}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{subcaption}
+\usepackage[justification=centering]{caption}
+\bibliographystyle{agsm}
+
+\usepackage{array}
+
+\begin{document}
+
+\else \fi
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\section{Microsimulation}
+
+
+Afin de valider la performance modélisation retenue et les résultats de l'estimation économétrique, il nous semble utile de pouvoir réaliser une simulation rétrospective. En partant d'un état initial plus ou moins ancien et en faisant évoluer individuellement les agents, nous espérons être en mesure de détecter les limites des différentes modélisations pour les améliorer itérativement. A cette fin, il nous faut pouvoir microsimuler de façon efficace (temps de calcul, gestion de la mémoire) l'évolution de la population initiale.  
+
+
+\subsection{Le parcours dans le grade}
+
+Nous avons réalisé un prototype de parcours dans le grade à une vitesse de passage d'échelon donnée tout en respectant la législation et notamment les changements de grilles au cours du temps. Nous avons tenté de vectoriser au maximum le programme pour que l'exécution soit la plus rapide possible.
+Les boucles se font donc sur les grades représentés et si nécessaires les échelons représentés. L'algorithme consiste à appliquer successivement les opérations suivantes:
+\begin{itemize}
+	\item Renseigner l'état initial des individus (date de l'observation, grade, échelon)
+	\item Déterminer la date d'effet de la grille en cours et de la suivante
+	\item Calcul de la durée dans l'échelon selon la grille en effet à l'état initial (et la vitesse de parcours de l'échelon le cas échéant)
+	\item Calcul de la date d'effet d'une éventuelle grille réformée avant la fin de l'échelon
+	\item Calcul de la durée dans l'échelon avec cette nouvelle grille
+	\item Calcul de la durée effective dans l'échelon
+	\item Calcul de la date de fin dans l'échelon
+\end{itemize}
+ 
+
+\subsection{Les changements de grade}
+
+Si le modèle économétrique permets d'identifier les dates de changements de grade en cours de grade ou les modalités de promotion au grade supérieur, il devrait être possible de le coupler à l'algorithme précédent pour obtenir un algorithme permettant de simuler une carrière complète.
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ifx\isEmbedded\undefined
+\newpage
+\bibliographystyle{../../Divers/myagsm} 
+\bibliography{../../Divers/biblio_these}
+\end{document}
+\else \fi
+
