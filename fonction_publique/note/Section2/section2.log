@@ -1,7 +1,7 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (MiKTeX 2.9 64-bit) (preloaded format=pdflatex 2014.10.20)  2 OCT 2016 18:05
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (MiKTeX 2.9 64-bit) (preloaded format=pdflatex 2014.10.20)  2 OCT 2016 19:52
 entering extended mode
-**section1.tex
-(C:\Users\s.rabate\Desktop\CNRACL\fonction_publique\note\Section1\section1.tex
+**section2.tex
+(C:\Users\s.rabate\Desktop\CNRACL\fonction_publique\note\Section2\section2.tex
 LaTeX2e <2014/05/01>
 Babel <3.9l> and hyphenation patterns for 68 languages loaded.
 ("C:\Program Files\MiKTeX 2.9\tex\latex\base\article.cls"
@@ -783,7 +783,7 @@ Package: array 2008/09/09 v2.4c Tabular extension package (FMi)
 Package csquotes Info: Checking for multilingual support...
 Package csquotes Info: ... found 'babel' package.
 
-(C:\Users\s.rabate\Desktop\CNRACL\fonction_publique\note\Section1\section1.aux)
+(C:\Users\s.rabate\Desktop\CNRACL\fonction_publique\note\Section2\section2.aux)
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 44.
 LaTeX Font Info:    ... okay on input line 44.
 LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 44.
@@ -848,57 +848,118 @@ LaTeX Info: Redefining \ref on input line 44.
 LaTeX Info: Redefining \pageref on input line 44.
 LaTeX Info: Redefining \nameref on input line 44.
 
-(C:\Users\s.rabate\Desktop\CNRACL\fonction_publique\note\Section1\section1.out)
-(C:\Users\s.rabate\Desktop\CNRACL\fonction_publique\note\Section1\section1.out)
+(C:\Users\s.rabate\Desktop\CNRACL\fonction_publique\note\Section2\section2.out)
+(C:\Users\s.rabate\Desktop\CNRACL\fonction_publique\note\Section2\section2.out)
 \@outlinefile=\write3
-LaTeX Font Info:    Try loading font information for OMS+lmr on input line 75.
-("C:\Program Files\MiKTeX 2.9\tex\latex\lm\omslmr.fd"
-File: omslmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
+LaTeX Font Info:    Try loading font information for OT1+lmr on input line 64.
+("C:\Program Files\MiKTeX 2.9\tex\latex\lm\ot1lmr.fd"
+File: ot1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
-LaTeX Font Info:    Try loading font information for OMS+lmsy on input line 75.
+LaTeX Font Info:    Try loading font information for OML+lmm on input line 64.
+
+("C:\Program Files\MiKTeX 2.9\tex\latex\lm\omllmm.fd"
+File: omllmm.fd 2009/10/30 v1.6 Font defs for Latin Modern
+)
+LaTeX Font Info:    Try loading font information for OMS+lmsy on input line 64.
 
 
 ("C:\Program Files\MiKTeX 2.9\tex\latex\lm\omslmsy.fd"
 File: omslmsy.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
+LaTeX Font Info:    Try loading font information for OMX+lmex on input line 64.
+
+
+("C:\Program Files\MiKTeX 2.9\tex\latex\lm\omxlmex.fd"
+File: omxlmex.fd 2009/10/30 v1.6 Font defs for Latin Modern
+)
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <10.95> on input line 64.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <8> on input line 64.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <6> on input line 64.
+LaTeX Font Info:    Try loading font information for U+msa on input line 64.
+
+("C:\Program Files\MiKTeX 2.9\tex\latex\amsfonts\umsa.fd"
+File: umsa.fd 2013/01/14 v3.01 AMS symbols A
+)
+LaTeX Font Info:    Try loading font information for U+msb on input line 64.
+
+("C:\Program Files\MiKTeX 2.9\tex\latex\amsfonts\umsb.fd"
+File: umsb.fd 2013/01/14 v3.01 AMS symbols B
+)
+LaTeX Font Info:    Try loading font information for OMS+lmr on input line 68.
+
+("C:\Program Files\MiKTeX 2.9\tex\latex\lm\omslmr.fd"
+File: omslmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
+)
 LaTeX Font Info:    Font shape `OMS/lmr/m/n' in size <10.95> not available
-(Font)              Font shape `OMS/lmsy/m/n' tried instead on input line 75.
+(Font)              Font shape `OMS/lmsy/m/n' tried instead on input line 68.
+
+
+Package caption Warning: \label without proper \caption on input line 75.
+See the caption package documentation for explanation.
+
+
+LaTeX Warning: Reference `means' on page 1 undefined on input line 72.
+
+
+Package caption Warning: \label without proper \caption on input line 94.
+See the caption package documentation for explanation.
+
+
+LaTeX Warning: Reference `pct' on page 1 undefined on input line 72.
+
+<../../bordeaux/results/pct.pdf, id=17, 505.89pt x 505.89pt>
+File: ../../bordeaux/results/pct.pdf Graphic file (type pdf)
+
+<use ../../bordeaux/results/pct.pdf>
+Package pdftex.def Info: ../../bordeaux/results/pct.pdf used on input line 98.
+(pdftex.def)             Requested size: 309.85626pt x 309.8584pt.
  [1
 
-{C:/Users/s.rabate/AppData/Local/MiKTeX/2.9/pdftex/config/pdftex.map}] [2]
-(C:\Users\s.rabate\Desktop\CNRACL\fonction_publique\note\Section1\section1.bbl
+{C:/Users/s.rabate/AppData/Local/MiKTeX/2.9/pdftex/config/pdftex.map}] [2 <C:/U
+sers/s.rabate/Desktop/CNRACL/fonction_publique/bordeaux/results/pct.pdf>]
+(C:\Users\s.rabate\Desktop\CNRACL\fonction_publique\note\Section2\section2.bbl
 
 Package natbib Warning: Empty `thebibliography' environment on input line 3.
 
 )
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 123.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 119.
  [3]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 123.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 119.
 
-(C:\Users\s.rabate\Desktop\CNRACL\fonction_publique\note\Section1\section1.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 123.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 123.
-Package rerunfilecheck Info: File `section1.out' has not changed.
-(rerunfilecheck)             Checksum: AD60E2CB94AF165236FAB62381202B57;107.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 123.
+(C:\Users\s.rabate\Desktop\CNRACL\fonction_publique\note\Section2\section2.aux)
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 119.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 119.
+Package rerunfilecheck Info: File `section2.out' has not changed.
+(rerunfilecheck)             Checksum: 90479AEF8DAC711B3B225BB9FCA7185E;322.
+
+LaTeX Warning: There were undefined references.
+
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 119.
  )
-(\end occurred when \ifx on line 119 was incomplete) 
+(\end occurred when \ifx on line 115 was incomplete) 
 Here is how much of TeX's memory you used:
- 11011 strings out of 493705
- 161596 string characters out of 3144560
- 275069 words of memory out of 3000000
- 14121 multiletter control sequences out of 15000+200000
- 19996 words of font info for 22 fonts, out of 3000000 for 9000
+ 11080 strings out of 493705
+ 163466 string characters out of 3144560
+ 276069 words of memory out of 3000000
+ 14160 multiletter control sequences out of 15000+200000
+ 40729 words of font info for 40 fonts, out of 3000000 for 9000
  1025 hyphenation exceptions out of 8191
- 37i,5n,38p,1054b,439s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 37i,8n,39p,932b,568s stack positions out of 5000i,500n,10000p,200000b,50000s
 {C:/Program Files/MiKTeX 2.
-9/fonts/enc/dvips/lm/lm-mathsy.enc}{C:/Program Files/MiKTeX 2.9/fonts/enc/dvips
-/lm/lm-ec.enc}<C:/Program Files/MiKTeX 2.9/fonts/type1/public/lm/lmbx12.pfb><C:
-/Program Files/MiKTeX 2.9/fonts/type1/public/lm/lmr10.pfb><C:/Program Files/MiK
-TeX 2.9/fonts/type1/public/lm/lmsy10.pfb>
-Output written on section1.pdf (3 pages, 72013 bytes).
+9/fonts/enc/dvips/lm/lm-ec.enc}{C:/Program Files/MiKTeX 2.9/fonts/enc/dvips/lm/
+lm-mathsy.enc}{C:/Program Files/MiKTeX 2.9/fonts/enc/dvips/lm/lm-rm.enc}{C:/Pro
+gram Files/MiKTeX 2.9/fonts/enc/dvips/lm/lm-mathit.enc}<C:/Program Files/MiKTeX
+ 2.9/fonts/type1/public/lm/lmbx10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/
+public/lm/lmbx12.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/lm/lmcsc10
+.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/lm/lmmi10.pfb><C:/Program 
+Files/MiKTeX 2.9/fonts/type1/public/lm/lmr10.pfb><C:/Program Files/MiKTeX 2.9/f
+onts/type1/public/lm/lmsy10.pfb>
+Output written on section2.pdf (3 pages, 122808 bytes).
 PDF statistics:
- 49 PDF objects out of 1000 (max. 8388607)
- 13 named destinations out of 1000 (max. 500000)
- 9 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 76 PDF objects out of 1000 (max. 8388607)
+ 11 named destinations out of 1000 (max. 500000)
+ 30 words of extra memory for PDF output out of 10000 (max. 10000000)
 

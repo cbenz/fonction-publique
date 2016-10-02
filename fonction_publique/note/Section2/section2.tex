@@ -48,10 +48,66 @@
 
 
 
-\section{Analyse des données}
+\section{L'analyse des données: résultats préliminaires}
+
+En amont du choix de modélisation, il est nécessaire de documenter la variabilité individuelle dans les différents phénomènes que l'on souhaite modéliser. Par rapport à des trajectoires totalement déterministes, l'aléa peut venir (i) de la durée passée dans l'échelon (ii) de la possibilité de changement de grade en milieu de grille et (iii) le grade de destination quand on observe un changement de grade. 
+
+\subsection{Analyser la vitesse de progression: un travail de complétion nécessaire}
+
+Nous regroupons les points (i) et (ii) autour de la notion de vitesse de progression de carrière: vitesse de progression dans l'échelon et d'un grade à l'autre. Nous voudrions comparer la durée passée dans un échelon ou un grade donné pour un individu donné, à la vitesse prévue par la grille d'une part, et à la durée observé pour le reste de la population d'autre part. Cela nécessite d'être en mesure de connaitre la durée passée dans le grade ou l'échelon à chaque date donnée, et donc un certain recul historique. 
+
+Comme mentionné plus haut, la reconstitution de la trajectoire statutaire -- c'est-à-dire de l'échelon et du grade -- sur le passé (avant 2011) reste à affiner. Dès lors nous n'avons pu à ce stade documenter de manière précise ces éléments, pourtant centraux pour la modélisation de l'évolution de la rémunération. 
 
 
-blabl
+\subsection{Analyser les grades de destination: premiers résultats}
+
+L'analyse des données sur les années 2011-2014 permet de documenter une autre question importante par rapport aux choix de modélisation: le grade de destination quand on observe un changement de grade pour un individu donné. L'approche adoptée est la suivante: pour chaque grade, nous considérons les années pour laquelle nous observons un changement de grade entre l'année $n$ et l'année $n+1$, et calculons les outputs suivants: 
+
+
+\begin{itemize}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
+\item Le nombre de grades possibles en $n+1$
+\item La proportion d'individus passant dans le grade le plus représenté en $n+1$, les deux plus représentés, les trois plus représentés, et les 5 plus représentés. 
+\end{itemize}
+
+Les moyennes sur l'ensemble de la population, pondérée ou non en fonction du nombre de transitions observées pour le grade considérée, sont présentées à la table \ref{means}. Même s'il existe un nombre élevé de transitions possibles en moyenne, la grande majorité des transitions se fait vers un petit nombres de grade possible. Ainsi par exemple 94\% des transitions observés se font vers les 3 destinations principales (propres à chaque grade). Ce constat est confirmé au graphique \ref{pct},
+
+\begin{table}[ht]
+\label{means}
+\centering
+\caption{Destinations en cas de changement de grade} 
+\begin{tabular}{l|cc}
+  \hline
+ & Moyenne simple & Moyenne pondérée \\ 
+  \hline
+Nombre de destinations & 11.4 & 45.5 \\ 
+  \% pour la destination majoritaire & 66.1 & 58.8 \\ 
+  \% pour les 2 destinations majoritaires & 87.4 & 87.0 \\ 
+  \% pour les 3 destinations majoritaires & 93.6 & 92.8 \\ 
+  \% pour les 5 destinations majoritaires & 97.5 & 96.1 \\ 
+   \hline
+\end{tabular}
+\end{table}
+
+
+
+\begin{figure}[t]
+  \label{pct}
+\caption{Distribution de la proportion de transitions vers les destinations principales}
+\vspace{-0.1cm}
+\centering
+  \includegraphics[width=0.7\linewidth]{../../bordeaux/results/pct.pdf}
+\vspace{0.1cm}  
+\begin{minipage}{12cm}%
+\small \textsc{Lecture:} Pour environ 50 \% des grades, les 5 destinations les plus fréquentes représentent 100 \% des transitions observées.  
+ \end{minipage}%
+\end{figure}
+
+
+Questions à discuter
+\begin{enumerate}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
+\item Quel statut des transitions vers une missing value? Problème de donnée ou disponibilité ou sortie de la FP? Module rémunération, carrière ou affiliation? 
+\end{enumerate}
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
