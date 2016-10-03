@@ -57,15 +57,11 @@
 
 \section{L'analyse des données: résultats préliminaires}
 
-En amont du choix de modélisation, il est nécessaire de documenter la variabilité individuelle dans les différents phénomènes que l'on souhaite modéliser. Par rapport à des trajectoires totalement déterministes, l'aléa peut venir (i) de la durée passée dans l'échelon (ii) de la possibilité de changement de grade en milieu de grille et (iii) du choix du changement de grade en fin de grille. 
-
-\subsection{Les données disponibles à ce stade}
-
-TODO
+En amont du choix de modélisation, il est nécessaire de documenter la variabilité individuelle dans les différents phénomènes que l'on souhaite modéliser. Par rapport à des trajectoires totalement déterministes, l'aléa peut venir (i) de la durée passée dans un échelon donné (ii) du choix du changement de grade en fin de grille et (iii) de la possibilité de changement de grade (de corps) en milieu de grille 
 
 \subsection{Vitesse et typologie des changements de grade: besoin de recul temporel}
 
-Documenter les différents phénomènes de manière précise suppose de pouvoir retracer la trajectoire individuelle complète, avec ses changements de grades et d'échelon sur une durée assez longue. La profondeur temporelle est nécessaire pour pouvoir dire combien de temps un individu donné reste dans son échelon (vitesse, phénomène 1) et pour savoir si l'individu change de grade en milieu de grille (phénomène 2) ou en fin de grille (phénomène 3). 
+Documenter les différents phénomènes de manière précise suppose de pouvoir retracer la trajectoire individuelle complète, avec ses changements de grades et d'échelon sur une durée assez longue. La profondeur temporelle est nécessaire pour pouvoir dire combien de temps un individu donné reste dans son échelon (vitesse, phénomène i) et pour savoir si l'individu change de grade en milieu de grille (phénomène iii) ou en fin de grille (phénomène ii). 
 
 A ce stade il y a donc un travail de complétion à faire, sur la base de la note transmise par P. Joubert, pour retracer l'évolution du couple (grade, échelon) sur une période plus longue que les 4 ans (2011-2015) actuellement disponibles. 
 
@@ -89,9 +85,9 @@ nous considérons les années pour laquelle nous observons un changement de grad
 \item La proportion d'individus passant dans le grade le plus représenté en $n+1$, les deux plus représentés, les trois plus représentés, et les 5 plus représentés. 
 \end{itemize}
 
-Les moyennes sur l'ensemble de la population, pondérée ou non en fonction du nombre de transitions observées pour le grade considérée, sont présentées à la table \ref{means}. Même s'il existe un nombre élevé de transitions possibles en moyenne, la grande majorité des transitions se fait vers un petit nombres de grade possible. Ainsi par exemple 94\% des transitions observés se font vers les 3 destinations principales (propres à chaque grade). Ce constat est confirmé au graphique \ref{pct},
+Les moyennes sur l'ensemble de la population, pondérée ou non en fonction du nombre de transitions observées pour le grade considérée, sont présentées à la table 1. Même s'il existe un nombre élevé de transitions possibles en moyenne, la grande majorité des transitions se fait vers un petit nombres de grade possible. Ainsi par exemple 94\% des transitions observés se font vers les 3 destinations principales (propres à chaque grade). Ce constat est confirmé au graphique 1, qui représente les percentiles de la distribution des variables précédentes (la proportions de transitions observés dans les états les plus fréquents). Il apparait que les transitions sont assez fortement concentrés dans les 3 à 5 états majoritaires. 
 
-\begin{table}[ht]
+\begin{table}[h!]
 \label{means}
 \centering
 \caption{Destinations en cas de changement de grade} 
@@ -108,12 +104,12 @@ Nombre de destinations & 11.4 & 45.5 \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
+\begin{figure}[h!]
   \label{pct}
 \caption{Distribution de la proportion de transitions vers les destinations principales}
 \vspace{-0.1cm}
 \centering
- \includegraphics[width=0.7\linewidth]{pct.pdf}
+ \includegraphics[width=0.5\linewidth]{pct.pdf}
 \vspace{0.1cm}  
 \begin{minipage}{12cm}%
 \small \textsc{Lecture:} Pour environ 50 \% des grades, les 5 destinations les plus fréquentes représentent 100 \% des transitions observées.  
@@ -122,7 +118,7 @@ Nombre de destinations & 11.4 & 45.5 \\
 
 En se concentrant sur les grades les plus représentés\footnote{TTH1 adjoint technique de 2eme classe, TAJ1 adjoint administratif de 2ème classe, 3001 aide soignant classe normale, 2432 infirmier de classe normale.}
 pour les générations 1970-1979, il apparaît (voir la table \ref{tab:destination}) que l'écrasante majorité des transitions se fait dans le garde immédiatement supérieur quand elles ne se font pas vers un non-grade.
-\begin{table}[htbp]
+\begin{table}[h!]
     \label{tab:destination}
     \centering
     \caption{Destinations en cas de changement de grade (avec grade vide)} 
@@ -131,7 +127,7 @@ pour les générations 1970-1979, il apparaît (voir la table \ref{tab:destinati
 
 En se limitant aux carrières ne présentant pas d'épisode ou la grade n'est pas renseigné, il apparaît que la destination est dans près de 80 \% des cas le grade immédiatement supérieur (passage à la classe supérieure) dans le corps ou le cadre d'emploi (voir la table \ref{tab:destination}).       
 
-\begin{table}[htbp]
+\begin{table}[h!]
     \label{tab:purged_destination}
     \centering
     \caption{Destinations en cas de changement de grade (carrières sans grade vide)} 
@@ -147,9 +143,9 @@ L'examen des transitions vers des grades plus élevés révèle une dynamique si
 \end{table}
 
 Questions à discuter:
-\begin{enumerate}[leftmargin=1cm, parsep=0cm, itemsep=0cm, topsep=0cm] 
+\begin{itemize}[leftmargin=1cm, parsep=0cm, itemsep=0cm, topsep=0cm] 
     \item Quel est le statut des transitions vers les états sans grade ? Est-ce un problème de données ou des mises en disponibilités et/ou des sorties de la FP? Doit-on gérer cela au niveau du module rémunération, carrière ou affiliation? 
-\end{enumerate}
+\end{itemize}
 
 
 

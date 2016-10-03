@@ -63,7 +63,7 @@ Dans cette section nous mentionnons les pistes envisagées pour la modélisation
 
 \subsection{Modéliser la vitesse dans le grade avec des effets fixes?}
 
-Par vitesse dans le grade nous entendons la durée passée dans les échelon successifs d'un grade donné. Nous n'avons pas d'idée \textit{a priori} sur l'ampleur du phénomène. La dimension législative est sans doute importante: la progression dans l'échelon est parfois contrainte par une durée minimale et une durée maximale, voire une durée fixe pour certains grades. 
+Par vitesse dans le grade nous entendons la durée passée dans les échelons successifs d'un grade donné. Nous n'avons pas d'idée \textit{a priori} sur l'ampleur du phénomène. La dimension législative est sans doute importante: la progression dans l'échelon est parfois contrainte par une durée minimale et une durée maximale, voire une durée fixe pour certains grades. 
 
 Un première question sera donc de savoir si cette dimension doit être modélisée (dans quelle mesure observe-t-on de la dispersion interindividuelle sur ce point?), et comment peut-on prendre en compte les législations spécifiques à chaque grade. 
 
@@ -75,7 +75,7 @@ Certains tests rapides pourront être mis en \oe uvre pour attester de la pertin
 
 \subsection{Modéliser le \og choix \fg{} en fin de grille par un modèle de choix discret?}
 
-Quand l'individu arrive en fin de grille (par hypothèse, ce qui peut se discuter\footnote{Étant donné que l'on observe des chevauchement dans les indices bruts des grilles d'un même corps, nous pouvons envisager que la décision du changement de grille peut intervenir avant l'arrivée au dernier échelon. Le choix du moment où l'on modélise la décision du passage au grade supérieur est conditionné par l'analyse de la temporalité des changement de grade, devant être menée en amont. }), il peut faire face à différents \og choix \fg{}: (i) passer dans le (ou les) grades supérieurs dans leur corps, (ii) rester à l'échelon maximal du grade ou (iii) quitter le corps, voire la fonction publique. 
+Quand l'individu arrive en fin de grille (par hypothèse, ce qui peut se discuter\footnote{Étant donné que l'on observe des chevauchement dans les indices bruts des grilles d'un même corps, nous pouvons envisager que la décision du changement de grade pour le grade immédiatement supérieur peut intervenir avant l'arrivée au dernier échelon. Le choix du moment où l'on modélise la décision du passage au grade supérieur est conditionné par l'analyse de la temporalité des changement de grade, devant être menée en amont. }), il peut faire face à différents \og choix \fg{}: (i) passer dans le (ou les) grades supérieurs dans leur corps, (ii) rester à l'échelon maximal du grade ou (iii) quitter le corps, voire la fonction publique. 
 
 Cette problématique suggère une modélisation du phénomène comme \og choix discrets \fg\ : il s'agirait d'estimer la probabilité d'un ensemble de choix, non ordonnés.
 C'est une modélisation répandue notamment en économie du travail, lorsqu'on cherche à estimer la probabilité d'être en emploi à temps plein, en emploi à temps partiel,
@@ -83,7 +83,7 @@ en recherche d'emploi, actif inoccupé, \textit{etc.} L'estimation se fait par l
 
 
 
-\paragraph{L'hypothèse d'indépendance des hypothèses non pertinentes}\footnote{\textit{IIA: Independance from Irrelevant alternatives}} Une limite importante de ce type de modélisation est que, le logit multinomial étant une généralisation du modèle binaire, on suppose que le choix entre deux alternatives est indépendant des autres alternatives. Plus précisément, la probabilité de choisir une alternative par rapport à une deuxième n'est pas conditionné par le contenu d'une troisième alternative. 
+\paragraph{L'hypothèse d'indépendance des hypothèses non pertinentes} Une limite importante de ce type de modélisation est que, le logit multinomial étant une généralisation du modèle binaire, on suppose que le choix entre deux alternatives est indépendant des autres alternatives\footnote{\textit{L'hypothèse IIA: Independance from Irrelevant Alternatives}}. Plus précisément, la probabilité de choisir une alternative par rapport à une deuxième n'est pas conditionné par le contenu d'une troisième alternative. 
 
 L'exemple classique est le choix d'un mode de transport, entre le vélo, le bus et la voiture. La probabilité de choisir la voiture plutôt que le vélo n'est pas indépendante de la qualité du service de bus: une amélioration de la qualité conduit à augmenter la probabilité de choisir le vélo par rapport à la probabilité de choisir la voiture, car la première n'est \textit{a priori} pas affecté par la qualité du bus mais la deuxième l'est. Une solution usuelle est d'utiliser des logits emboités, regroupant les choix potentiellement corrélés. On décomposera le choix vélo, voiture et bus en un choix entre vélo et véhicule motorisé, choix lui même décomposé entre un choix entre voiture et bus. 
 
@@ -119,7 +119,7 @@ for tree={
   grow=east,
   draw=cyan,
   circle,
-  line width=0.2pt,
+  line width=0.4pt,
   parent anchor=east,
   child anchor=west,
   edge={draw=cyan},
@@ -160,7 +160,7 @@ A tout moment, les fonctionnaires peuvent changer de statut (de grade, de catég
 
 Ce type de processus est potentiellement complexe à modéliser, car les destinations possible quand un individu quitte son grade sont nombreuses: changement de grade au sein d'un corps, changement de catégorie, changement de fonction publique, sortie de la fonction publique. C'est d'ailleurs sur ce type de processus que les interactions avec les modules affiliations et carrières sont les plus difficiles à gérer. 
 
-La complexité de la modélisation doit être comparée à l'importance du phénomène: si le processus représente une part faible des évolutions observées, une modélisation relativement sommaire est envisageable. Ainsi par exemple à chaque pas temporelle une certaines proportion d'individus peut être tirés puis envoyé vers un grade différent (avec pour seule contrainte un indice brut supérieur). Cette modélisation peut-être affiné dans le cadre d'un modèle binaire (logit ou probit) faisant dépendre la probabilité de changer de grade de certaines caractéristiques observables. 
+La complexité de la modélisation doit être comparée à l'importance du phénomène: si le processus représente une part faible des évolutions observées, une modélisation relativement sommaire est envisageable. Ainsi par exemple à chaque pas temporel une certaines proportion d'individus peut être tirés puis envoyé vers un grade différent (avec pour seule contrainte un indice brut supérieur). Cette modélisation peut-être affinée dans le cadre d'un modèle binaire (logit ou probit) faisant dépendre la probabilité de changer de grade de certaines caractéristiques observables. 
 
 Si ce processus est plus important qu'envisagé \textit{a priori}, une modélisation plus fine devra être adoptée. Deux grands type d'approche sont considérés à ce stade. Premièrement, des modèles à choix discret peuvent être testés A chaque date, un fonctionnaire fait face à un ensemble de choix: rester sur son \og tapis roulant \fg{}, passer un concours, partir dans le privé, etc. Un tel modèle peut en théorie être estimé sur les données passées, éventuellement après regroupement des alternatives proches. Nous envisageons également un modèle de durée, avec différents états concurrents, modélisant la survie dans le grade. A chaque date, l'individu a une probabilité de quitter le grade dans lequel il est, selon certaines caractéristiques observables (niveau dans le grade), et éventuellement inobservables en prenant en compte les durées passées observée dans les grades ou échelons précédents (\textit{multispell duration models}). 
 
