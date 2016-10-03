@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2015.1.23)  3 OCT 2016 18:07
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2015.1.23)  3 OCT 2016 18:46
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -863,19 +863,19 @@ LaTeX Info: Redefining \nameref on input line 44.
 \@outlinefile=\write3
 \openout3 = `section1.out'.
 
-LaTeX Font Info:    Try loading font information for OMS+lmr on input line 75.
+LaTeX Font Info:    Try loading font information for OMS+lmr on input line 77.
 
 (/usr/local/texlive/2014/texmf-dist/tex/latex/lm/omslmr.fd
 File: omslmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
-LaTeX Font Info:    Try loading font information for OMS+lmsy on input line 75.
+LaTeX Font Info:    Try loading font information for OMS+lmsy on input line 77.
 
 
 (/usr/local/texlive/2014/texmf-dist/tex/latex/lm/omslmsy.fd
 File: omslmsy.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 LaTeX Font Info:    Font shape `OMS/lmr/m/n' in size <10.95> not available
-(Font)              Font shape `OMS/lmsy/m/n' tried instead on input line 75.
+(Font)              Font shape `OMS/lmsy/m/n' tried instead on input line 77.
  [1
 
 {/usr/local/texlive/2014/texmf-var/fonts/map/pdftex/updmap/pdftex.map}] [2] (./
@@ -884,17 +884,17 @@ section1.bbl
 Package natbib Warning: Empty `thebibliography' environment on input line 3.
 
 )
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 125.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 127.
  [3]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 125.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 127.
  (./section1.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 125.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 125.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 127.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 127.
 Package rerunfilecheck Info: File `section1.out' has not changed.
 (rerunfilecheck)             Checksum: D3F3FC67828AECEB7A61F2B51ED34A66;106.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 125.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 127.
  )
-(\end occurred when \ifx on line 121 was incomplete) 
+(\end occurred when \ifx on line 123 was incomplete) 
 Here is how much of TeX's memory you used:
  11088 strings out of 493117
  163417 string characters out of 6135433
@@ -902,7 +902,7 @@ Here is how much of TeX's memory you used:
  14330 multiletter control sequences out of 15000+600000
  27254 words of font info for 24 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 37i,6n,38p,1054b,439s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 37i,5n,38p,1054b,439s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/local/texlive/2014/te
 xmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{/usr/local/texlive/2014/texmf-dist/fonts
 /enc/dvips/lm/lm-mathsy.enc}</usr/local/texlive/2014/texmf-dist/fonts/type1/pub
@@ -910,7 +910,7 @@ lic/lm/lmbx10.pfb></usr/local/texlive/2014/texmf-dist/fonts/type1/public/lm/lmb
 x12.pfb></usr/local/texlive/2014/texmf-dist/fonts/type1/public/lm/lmr10.pfb></u
 sr/local/texlive/2014/texmf-dist/fonts/type1/public/lm/lmri10.pfb></usr/local/t
 exlive/2014/texmf-dist/fonts/type1/public/lm/lmsy10.pfb>
-Output written on section1.pdf (3 pages, 84420 bytes).
+Output written on section1.pdf (3 pages, 84426 bytes).
 PDF statistics:
  59 PDF objects out of 1000 (max. 8388607)
  48 compressed objects within 1 object stream
