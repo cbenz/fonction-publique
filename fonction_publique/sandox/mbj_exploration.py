@@ -109,7 +109,7 @@ def analyse_carriere():
 
 
 if __name__ == '__main__':
-    decennie = 1970
+    decennie = 1980
     carrieres = get_careers(variable = 'c_netneh', decennie = decennie).sort_values(['ident', 'annee'])
     carrieres = carrieres.query('annee > 2010')
     # carrieres.c_netneh = 'x' + carrieres.c_netneh
@@ -133,9 +133,37 @@ if __name__ == '__main__':
         .T
         .stack()
         )
+
     for index in total.index:
         destinations.loc[(index, 'total')] =  total.loc[index]
+    destinations = destinations.reset_index()
+    destinations.rename(
+        columns = {
+            'level_1': 'destination',
+            0: 'nombre'
+            },
+        inplace = True,
+        )
+
+    autres = destinations.groupby('initial').apply(
+        lambda df:
+            df.nombre.loc[df.destination == 'total']
+                - df.nombre.loc[
+                df.destination.isin(
+                    [destination for destination in df.destination.unique() if destination != 'total']
+                    )
+                ].sum()
+        ).reset_index()
+    del autres['level_1']
+    autres['destination'] = 'autres'
+    autres
+
+    for index in total.index:
+        destinations
+
     destinations.sort_index(inplace = True)
+
+
 
     destinations.merge(total)
     extended.loc[initial_grades].nlargest(n_destinations)
