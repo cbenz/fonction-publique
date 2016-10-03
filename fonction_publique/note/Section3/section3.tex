@@ -55,7 +55,7 @@ Comme précisé précédemment, trois processus distincts doivent être modélis
 \begin{enumerate}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm]
 \item La vitesse de franchissement des échelons au sein d'un grade
 \item Le passage au grade supérieur dans le corps (\textit{a priori}, quand l'individu arrive en fin de grille)
-\item Les mouvements plus importants: changement de corps, de catégorie, de FP (\textit{a priori}, pouvant intervenir n'important quand)
+\item Les mouvements plus importants: changement de corps, de catégorie hiérarchique, de FP (\textit{a priori}, pouvant intervenir n'important quand)
 \end{enumerate}
 
 Dans cette section nous mentionnons les pistes envisagées pour la modélisation de ces différents processus. Il s'agit de pistes de réflexions engagées avant une étude approfondie des données, et ne sont donc pas définitives. 
@@ -67,7 +67,7 @@ Par vitesse dans le grade nous entendons la durée passée dans les échelon suc
 
 Un première question sera donc de savoir si cette dimension doit être modélisée (dans quelle mesure observe-t-on de la dispersion interindividuelle sur ce point?), et comment peut-on prendre en compte les législations spécifiques à chaque grade. 
 
-La modélisation envisagée est la suivante: chaque individu possède une vitesse relative propre (un effet fixe), qui détermine la durée passée dans l'échelon relativement aux autre individus du grade. L'approche par effets fixes se justifient car, \textit{a priori}, la modélisation de la vitesse dans l'échelon est nécessaire uniquement si ce sont les mêmes individus qui franchissent plus rapidement les échelons au cours de leur carrière. L'idée est donc d'identifier des individus plus ou moins \og productifs \fg{}. Ces effets fixes se rapprochent des effets fixes dans les équations de salaires usuellement utilisées dans les modèles de microsimulation.  
+La modélisation envisagée est la suivante: chaque individu possède une vitesse relative propre (un effet fixe), qui détermine la durée passée dans l'échelon relativement aux autre individus du grade. L'approche par effets fixes se justifient car, \textit{a priori}, la modélisation de la vitesse dans l'échelon est nécessaire uniquement si ce sont les mêmes individus qui franchissent plus rapidement les échelons au cours de leur carrière. L'idée est donc d'identifier des individus plus ou moins \og rapides \fg{} dans leur progression. Ces effets fixes se rapprochent des effets fixes dans les équations de salaires usuellement utilisées dans les modèles de microsimulation.  
 A chaque date $t$, l'individu franchit ou non l'échelon en fonction de (i) sa durée passée dans l'échelon (ii) la durée \og normale \fg{} dans l'échelon et (iii) sa vitesse relative de franchissement des échelons. 
 
 Certains tests rapides pourront être mis en \oe uvre pour attester de la pertinence d'une telle approche. Une fois reconstituée une trajectoire professionnelle de long terme, nous pourrons vérifier que les individus qui franchissent relativement plus rapidement un échelon donné, le font également sur l'ensemble de la grille considérée d'une part, et sur les autres grilles sur lesquelles on l'observe d'autre part. L'idée étant de vérifier que l'on peut modéliser la vitesse relative par un terme fixe au cours de la carrière. 
@@ -89,8 +89,8 @@ L'exemple classique est le choix d'un mode de transport, entre le vélo, le bus 
 
 %Cette hypothèse ne semble pas problématique dans le cas de l'exemple donné, mais si on souhaite aussi modéliser le congé maladie, la mise en disponibilité ou le détachement, l'hypothèse est moins crédible.
 
-Comment cela se transpose-t-il au cas étudié? Supposons qu'il y a 4 alternatives possibles pour un individu se trouvant au dernier échelon du grade 1 d'un corps donné: (i) aller dans le grade 2, (ii) aller dans le grade 3, (iii) rester dans le grade 1, et (iv) quitter le corps. \textit{A priori}, l'hypothèse IIA n'est pas respectée pour les alternatives (i) et (iii). Si le grade 3 devient relativement moins attractif, on peut supposer que la probabilité de (iv) n'est pas affecté alors que la probabilité de (i) pourrait l'être car le contenu du grade 1 est sans doute plus proche du contenu du grade 2. Une première étape évidente serait donc d'utiliser un logit emboité rassemblant les différentes alternatives de grade au sein du corps dans lequel l'individu se trouve. Nous nous ramenons donc à trois alternatives (i) être promus au sein du corps, (ii) ne pas être promus et rester (iii) ne pas être promus et quitter le grade, le (i) pouvant être redécomposé en différents grades possibles. 
-L'hypothèse IIA est-elle vérifiée dans ce cas? Dans le choix entre (i) et (ii), une modification des perspectives extérieures au corps (par exemple un concours de changement de catégorie) devrait plus affecter les individus qui seraient restés dans le grade que les individus qui sont promus quoiqu'il arrive. Il semble donc également pertinent de regrouper les alternatives (ii) et (iii) dans le cadre d'un logit emboité. 
+Comment cela se transpose-t-il au cas étudié? Supposons qu'il y a 4 alternatives possibles pour un individu se trouvant au dernier échelon du grade 1 d'une fonction publique donnée: (i) aller dans le grade 2, (ii) aller dans le grade 3, (iii) rester dans le grade 1, et (iv) quitter la fonction publique (ou changer de fonction publique). \textit{A priori}, l'hypothèse IIA n'est pas respectée pour les alternatives (i) et (iii). Si le grade 3 devient relativement moins attractif, on peut supposer que la probabilité de (iv) n'est pas affectée alors que la probabilité de (i) pourrait l'être car le contenu du grade 1 est sans doute plus proche du contenu du grade 2. Une première étape évidente serait donc d'utiliser un logit emboîté rassemblant les différents  grades potentiels au sein de la FP dans lequel l'individu se trouve. Nous nous ramenons donc à trois issues potentielles (i) être promu au sein de la FP considérée, (ii) ne pas être promus et rester (iii) ne pas être promu et quitter le grade, le (i) pouvant être redécomposé en différents grades possibles. 
+L'hypothèse IIA est-elle vérifiée dans ce cas ? Dans le choix entre (i) et (ii), une modification des perspectives extérieures à la FP considérée (par exemple un concours de changement de FP) devrait plus affecter les individus qui seraient restés dans le grade que les individus qui sont promus quoiqu'il arrive. Il semble donc également pertinent de regrouper les alternatives (ii) et (iii) dans le cadre d'un logit emboité. 
 
 Nous sommes donc ramenés à un double logit emboité. 
 
@@ -133,12 +133,12 @@ for tree={
 } 
 [,rectangle, s sep=35pt,
   [,edge label={node[Below]{Pas de promotion}}
-    [,edge label={node[Below]{Quitter le corps}}
+    [,edge label={node[Below]{Quitter la FP considérée}}
     ]
     [,edge label={node[Above]{Rester dans grade 1}}
     ]
   ]
-  [,edge label={node[Above]{Promotion dans le grade}}
+  [,edge label={node[Above]{Promotion dans la FP considérée}}
     [,edge label={node[Below]{Grade 3}}
     ]
     [,edge label={node[Above]{Grade 2}}
@@ -162,14 +162,20 @@ Ce type de processus est potentiellement complexe à modéliser, car les destina
 
 La complexité de la modélisation doit être comparée à l'importance du phénomène: si le processus représente une part faible des évolutions observées, une modélisation relativement sommaire est envisageable. Ainsi par exemple à chaque pas temporelle une certaines proportion d'individus peut être tirés puis envoyé vers un grade différent (avec pour seule contrainte un indice brut supérieur). Cette modélisation peut-être affiné dans le cadre d'un modèle binaire (logit ou probit) faisant dépendre la probabilité de changer de grade de certaines caractéristiques observables. 
 
-Si ce processus est plus important qu'envisagé \textit{a priori}, une modélisation plus fine devra être adoptée. Deux grands type d'approche sont considérés à ce stade. Premièrement, des modèles à choix discret peuvent être testés A chaque date, un fonctionnaire fait face à un ensemble de choix: rester sur son \og tapis roulant \fg{}, passer un concours, partir dans le privé, etc. Un tel modèle peut en théorie être estimé sur les données passées, éventuellement après regroupement des alternatives proches. Nous envisageons également un modèle de durée, avec différents états concurrents, modélisant la survie dans le grade. A chaque date, l'individu a une probabilité de quitter le grade dans lequel il est, selon certaines caractéristiques observables (niveau dans le grade), et éventuellement inobservables en prenant en compte l'évolution observée dans les grades précédents (\textit{multispell duration models}). 
+Si ce processus est plus important qu'envisagé \textit{a priori}, une modélisation plus fine devra être adoptée. Deux grands type d'approche sont considérés à ce stade. Premièrement, des modèles à choix discret peuvent être testés A chaque date, un fonctionnaire fait face à un ensemble de choix: rester sur son \og tapis roulant \fg{}, passer un concours, partir dans le privé, etc. Un tel modèle peut en théorie être estimé sur les données passées, éventuellement après regroupement des alternatives proches. Nous envisageons également un modèle de durée, avec différents états concurrents, modélisant la survie dans le grade. A chaque date, l'individu a une probabilité de quitter le grade dans lequel il est, selon certaines caractéristiques observables (niveau dans le grade), et éventuellement inobservables en prenant en compte les durées passées observée dans les grades ou échelons précédents (\textit{multispell duration models}). 
 
 
 \bigskip
 
-L'analyse de la temporalité des changements de grade est donc un préalable indispensable à la poursuite de la réflexion sur la modélisation de la rémunération. Les modélisations proposées reposent sur des représentations \textit{a priori} des trajectoires indiciaires qui doivent être confrontées aux données. En particulier, notre analyse est structurée autour de la distinction entre les changements de grade \og naturels \fg{} (en fin de grille, au sein du corps, vers les grades supérieurs normaux) et plus imprévisibles (à tout moment et a priori plus importants: changement de corps, de catégorie).  
+L'analyse de la temporalité des changements de grade est donc un préalable indispensable à la poursuite de la réflexion sur la modélisation de la rémunération. Les modélisations proposées reposent sur des représentations \textit{a priori} des trajectoires indiciaires qui doivent être confrontées aux données. En particulier, notre analyse est structurée autour de la distinction entre les changements de grade \og naturels \fg{} (en fin de grille, au sein du corps, vers les grades supérieurs normaux) et plus imprévisibles (à tout moment et a priori plus importants: changement de corps, de catégorie, de fonction publique).  
 
-Les questions à traiter en priorité sont les suivantes: comment les changements de grades sont-ils repartis dans la grille? Sont-ils concentrés sur les derniers échelons? Les changements de fin d'échelon sont-ils bien plus prévisibles que les autres changements observés? Des réponses à ces questions dépendent la pertinence des choix de modélisations envisagés. 
+Les questions à traiter en priorité sont les suivantes: 
+\begin{itemize}
+    \item Comment les changements de grades sont-ils repartis dans la grille? Sont-ils concentrés sur les derniers échelons ?
+    \item Les changements de fin d'échelon sont-ils bien plus prévisibles que les autres changements observés ?     
+\end{itemize}
+
+Des réponses à ces questions dépendent la pertinence des choix de modélisations envisagés.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

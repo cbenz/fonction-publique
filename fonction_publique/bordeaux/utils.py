@@ -187,7 +187,7 @@ def get_destinations_dataframe(carrieres = None, n_grades = 4, n_destinations = 
         rename(columns = {'nombre': 'total_transition'})
         )
     destinations = destinations.merge(total_transition, how = 'outer')
-    destinations['part'] = destinations.nombre / destinations.total_transition
+    destinations['part'] = (100 * destinations.nombre / destinations.total_transition).round().astype(int)
     del destinations['total_transition']
     destinations = destinations.query("destination != 'total_transition'").copy()
     destinations.nombre = destinations.nombre.astype(int)

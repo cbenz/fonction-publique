@@ -9,7 +9,10 @@ from fonction_publique.bordeaux.utils import (
     build_destinations_by_grade,
     build_transitions_pct_by_echantillon,
     build_transitions_pct_by_grade_initial,
-    build_destinations_dataframes
+    build_destinations_dataframes,
+    get_careers,
+    clean_empty_netneh,
+    get_destinations_dataframe
     )
 
 results_path = os.path.join(
@@ -38,7 +41,6 @@ def build_destinations():
 def build_destinations_tables():
     decennie = 1970
     destinations, purged_destinations = build_destinations_dataframes(decennie)
-    print destinations
 
     destinations.to_latex(
         os.path.join(
@@ -49,7 +51,7 @@ def build_destinations_tables():
             'destination.tex',
             ),
         formatters = {
-            'part': '{:,.2f} %'.format,
+            'part': '{:,d} %'.format,
             },
         index = False,
         )
@@ -63,10 +65,29 @@ def build_destinations_tables():
             'purged_destination.tex',
             ),
         formatters = {
-            'part': '{:,.2f} %'.format,
+            'part': '{:,d} %'.format,
             },
         index = False,
         )
+
+    decennie = 1970
+    carrieres = get_careers(variable = 'c_netneh', decennie = decennie).sort_values(['ident', 'annee'])
+    carrieres = clean_empty_netneh(carrieres.query('annee > 2010'))
+
+    get_destinations_dataframe(carrieres=carrieres, initial_grades = ['TAJ2', 'TTH2']).to_latex(
+        os.path.join(
+            pkg_resources.get_distribution('fonction_publique').location,
+            'fonction_publique',
+            'note',
+            'Section2',
+            'purged_second_destination.tex',
+            ),
+        formatters = {
+            'part': '{:,d} %'.format,
+            },
+        index = False,
+        )
+
 
 if __name__ == '__main__':
     # build_destinations()
