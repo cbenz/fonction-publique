@@ -5,6 +5,10 @@ library(ggplot2)
 ### CVS des distributions 
 
 path <- "C:/Users/s.rabate/Desktop/CNRACL/fonction_publique/bordeaux/results/"
+path <- "/Users/simonrabate/Desktop/IPP/CNRACL/fonction_publique/bordeaux/results/"
+
+
+# Table annees_2011_2014
 
 table <- read.table(paste0(path,"destinations.csv"),sep=",", header=T)
 table <- table[which(table[,1]=="annees_2011_2014"),]
@@ -30,7 +34,7 @@ desc <- t(mean_var)
 
 rownames(desc) <- c("Nombre de destinations","\% pour la destination majoritaire",
                     "\% pour les 2 destinations majoritaires","\% pour les 3 destinations majoritaires","\% pour les 5 destinations majoritaires")
-colnames(desc) <- c("Moyenne simple","Moyenne pondérée")
+colnames(desc) <- c("Moyenne simple","Moyenne pond?r?e")
 
 print(xtable(desc,align="l|cc",
              caption="Destinations en cas de changement de grade",
@@ -97,3 +101,38 @@ dev.off()
 
 
 
+
+# Table annees_2011_2014
+
+table <- read.table(paste0(path,"destinations.csv"),sep=",", header=T)
+table <- table[which(table[,1]=="annees_2011_2014"),]
+
+# -NA
+var = c("nombre","largest_1_pct","largest_2_pct","largest_3_pct","largest_5_pct")
+table <- table[-1,]
+table[,var[2:5]] <- table[,var[2:5]]*100
+
+# Plot percentiles
+percentile[1,]<- quantile(table$largest_1_pct,probs = seq(0, 1, 0.01))
+percentile[2,]<- quantile(table$largest_2_pct,probs = seq(0, 1, 0.01))
+percentile[3,]<- quantile(table$largest_3_pct,probs = seq(0, 1, 0.01))
+percentile[4,]<- quantile(table$largest_5_pct,probs = seq(0, 1, 0.01))
+
+
+pct <- seq(0,100,1)
+
+pdf(paste0(path,"pct.pdf"))
+x <- df$pct
+n_col <- rev(c("black","grey30","grey60","grey80"))
+par(ask=F)
+layout(matrix(c(1,1), nrow=1,ncol=1, byrow=TRUE), heights=c(6))
+par(mar=c(4.1,4.1,0.2,0.2))
+plot  (x,rep(NA,length(x)),ylim=c(0,100),ylab="% des destinations en n+1",xlab="Percentile")
+# lines(x,exit_rate_nomro[1,]       ,col=n_col[3],lwd=3, lty=2)
+lines(x,percentile[1,],col=n_col[1],lwd=3)
+lines(x,percentile[2,],col=n_col[2],lwd=3)
+lines(x,percentile[3,],col=n_col[3],lwd=3)
+lines(x,percentile[4,],col=n_col[4],lwd=3)
+legend("bottomright",legend=c("1 destination principale","2 destinations principales","3 destinations principales","5 destinations principales"),
+       col=n_col,ncol=1,lty=1,lwd=3)
+dev.off()

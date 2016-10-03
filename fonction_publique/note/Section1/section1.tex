@@ -53,7 +53,7 @@
 
 \subsection*{Retour sur la classification des emplois}
 
-L'organisation de la carrière d'un fonctionnaire est fondée sur une grille de classements des emplois, avec différents niveaux:
+L'organisation de la carrière d'un fonctionnaire est fondée sur une grille de classement des emplois, avec différents niveaux:
  
 \begin{enumerate}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
 \item Les cadres ou corps d'emploi,
@@ -74,6 +74,7 @@ Points à préciser:
 \begin{itemize}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
 \item Y a-t-il bien une délimitation nette entre cadres/filières et catégories hiérarchiques? (la filière X n'est composée que de fonctionnaires de catégorie A). 
 \item Quelles conditions de passage d'un grade à l'autre au sein d'un corps? Passage automatique comme pour les échelons ou plus discrétionnaire? %Question à supprimer, cf. mail Sophie
+\item Dans quelle mesure la carrière au sein d'un corps est linéaire (grade 1 -> grade 2 -> grade 3 vs. grade 1 -> grade 2 ou 3)? 
 \end{itemize}
 
 
@@ -84,34 +85,35 @@ Si on met de côté pour l'instant le taux de prime, la modélisation du salaire
 Modéliser l'évolution de l'indice revient donc à modéliser deux phénomènes principaux de la carrière d'un individu: 
 \begin{itemize}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
 \item La progression au sein d'un grade, c'est-à-dire la vitesse à laquelle les échelons sont franchis,
-\item Les changements de grade, qui regroupent en fait deux questions: (i) à quelle fréquence les individus changent-il de grade et (ii) vers où vont-ils? 
+\item Les changements de grade, qui regroupent en fait deux phénomènes potentiellement très différents: 
+	\begin{itemize}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
+	\item Les changements de grades en fin de grille
+	\item Les changements de grades avant la fin de la grille
+	\end{itemize}
 \end{itemize} 
 
 \vspace{0.2cm}
-
 
 
 La question centrale de la modélisation de l'évolution est donc la suivante: pour quel type de phénomène a-t-on de la variabilité inter-individuelle? Plus les grilles sont rigides, plus la modélisation choisie peut-être simple. A l'extrême, si la durée dans chaque échelon est fixe et que le changement de grade suit une règle fixe (par exemple, "tous les individus arrivés au bout du grade G1 passent au grade G2"), l'évolution de la rémunération dépend directement de l'évolution des grilles et ne nécessite pas de travail de modélisation. La modélisation est nécessaire car, en réalité, la carrière des individus ne suit pas un chemin prédéfini. L'enjeu principal est donc la modélisation de la déviation par rapport à ce "tapis roulant". Cette déviation peut intervenir au niveau de la durée passée dans chaque échelon, au niveau du moment où intervient le changement de grade (avant la fin de la grille ou en fin de grille), et au niveau du grade de destination après le changement. 
 
 Il s'agit d'une question en partie législative: dans quelle mesure est fixe la durée passée dans l'échelon (durée minimale, durée maximale, ou durée fixe), et dans quelle mesure le passage d'un grade à l'autre est automatique au sein d'un corps (condition de promotions: concours, ou simplement âge ou durée dans le grade ?). A rigidité législative donnée, il s'agit d'une question empirique: quelle variance observe-t-on dans la durée passée dans chaque échelon au sein d'un grade ? Quelle proportion d'individus est promue au sein de son corps dans le grade supérieur? A quel moment ces promotions se produisent? Quelle proportion d'individu change de grade sans passer dans le grade immédiatement supérieur (changement de corps, de catégorie, de fonction publique) ?
 
-Dans la partie suivante, nous tentons de documenter ces questions à partir des données disponibles à ce stade. 
+Le schéma implicite que nous avons en tête, et qui doit être confronté aux données, est le suivant: les individus suivent globalement l'évolution dans leur corps de rattachement, avec des passages d'un échelon à l'autre et d'un grade à l'autre. L'évolution n'est pas totalement déterministe: la vitesse d'évolution dans la grille du corps peut varier, certains individus peuvent ne pas satisfaire les critères de passage de grade, et pour certains grades il peut y avoir plusieurs trajectoires possibles à l'intérieur du corps. A côté de cette évolution globalement linéaire, il peut y avoir également des changements de grade qui ne suivent pas directement la trajectoire dans le corps, avec des changements de corps ou de catégorie par concours. Ces types de mouvement peuvent être concentrés sur des individus spécifiques (les \textit{movers}, par opposition aux \textit{stayers} qui suivent la grille), ou répartis de manière globalement aléatoire entre les individus. 
 
+La frontière entre les changements de grade \og normaux \fg{}  et les changement de grade plus importants n'est pas forcément très nette pour l'instant: si un individu change de grade de manière précoce par un concours qui lui permet d'accéder au grade immédiatement supérieur, doit-on considérer cela comme un saut de grille ou comme une progression rapide dans le corps? Notre \textit{a priori} est que, dans le cas général, le changement de grade au sein du corps se fait quand l'ensemble du grade courant a été parcouru. Si en pratique, les changements interviennent à tout moment, la distinction envisagée n'est pas forcément pertinente.  
+
+
+Dans la partie suivante, nous tentons de documenter ces questions à partir des données disponibles à ce stade. 
 
 
 \vspace{0.5cm}
 Points à préciser: 
 \begin{itemize}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
-\item Quelle interaction entre le module \og rémunération \fg\ et les modules \og carrière \fg\ et \og affiliation \fg ?  
-\item Comment différencier un changement de grade d'une sortie de la FP ou d'une disponibilité, sachant que ces deux phénomènes ne sont pas forcément décorrélés (un individus peut démissionner plus facilement de la FPT-FPH s'il ne peut pas accéder à un grade supérieur) ? 
+\item Quelle interaction entre le module \og rémunération \fg\ et les modules \og carrière \fg\ et \og affiliation \fg ?   
+\item[] Par exemple, doit-on traiter différemment un mouvement de la FPT vers la FPE et un changement important de corps au sein de la FPE? 
+% Comment différencier un changement de grade d'une sortie de la FP ou d'une disponibilité, sachant que ces deux phénomènes ne sont pas forcément décorrélés (un individus peut démissionner plus facilement de la FPT-FPH s'il ne peut pas accéder à un grade supérieur) ? 
 \end{itemize}
-
-
-
-
-
-
-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
