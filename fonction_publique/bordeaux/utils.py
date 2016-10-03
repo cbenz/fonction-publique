@@ -3,9 +3,7 @@
 
 from __future__ import division
 
-
 import pandas as pd
-
 
 from fonction_publique.base import get_careers
 
@@ -129,3 +127,87 @@ def build_destinations_by_grade(decennie = None):
         annees_2010_2014_purgees = get_destinations_by_grade(clean_empty_netneh(carrieres)),
         annees_2011_2014_purgees = get_destinations_by_grade(clean_empty_netneh(carrieres.query('annee != 2010'))),
         ))
+
+
+def get_destinations_dataframe(carrieres = None, n_grades = 4, n_destinations = 4, initial_grades = None):
+    transitions = get_transitions_dataframe(carrieres)
+    destinations = transitions.groupby('initial')['final'].value_counts()
+    transition_matrix = destinations.unstack().fillna(0)
+    keep = set(transition_matrix.columns).intersection(set(transition_matrix.index))
+    extended = transition_matrix.loc[keep, keep]
+    extended['order'] = extended.T.sum()
+    extended = extended.sort_values('order', ascending = False).drop('order', axis = 1)
+
+    if initial_grades is None:
+        initial_grades = extended.index[:n_grades].tolist()
+
+    total = extended.loc[initial_grades].T.sum()
+    categories = total.sort_values(ascending = False).index.tolist()
+    destinations = (extended.loc[initial_grades]
+        .T
+        .apply(lambda x: x.nlargest(n_destinations))
+        .T
+        .stack()
+        )
+
+    destinations = destinations.reset_index().rename(
+        columns = {
+            'level_1': 'destination',
+            0: 'nombre'
+            },
+        )
+    destinations = destinations.set_index(['initial', 'destination'])
+
+    for index in total.index:
+        destinations.loc[
+            (index, 'total_transition'), 'nombre'
+            ] = total.loc[index] - destinations.loc[
+                (index, index), 'nombre'
+                ].squeeze()
+
+    destinations = destinations.reset_index()
+    destinations = destinations.loc[destinations.initial != destinations.destination]
+
+    autres = destinations.groupby('initial').apply(
+        lambda df:
+            df.nombre.loc[df.destination == 'total_transition']
+                - df.nombre.loc[
+                df.destination.isin(
+                    [destination for destination in df.destination.unique() if (
+                        destination != 'total_transition'
+                        )]
+                    )
+                ].sum()
+        ).reset_index()
+    del autres['level_1']
+    autres['destination'] = 'autres'
+    destinations = destinations.merge(autres, how = 'outer').sort_values('initial')
+    total_transition = (destinations[destinations.destination == 'total_transition']
+        .drop(['destination'], axis = 1).
+        rename(columns = {'nombre': 'total_transition'})
+        )
+    destinations = destinations.merge(total_transition, how = 'outer')
+    destinations['part'] = destinations.nombre / destinations.total_transition
+    del destinations['total_transition']
+    destinations = destinations.query("destination != 'total_transition'").copy()
+    destinations.nombre = destinations.nombre.astype(int)
+
+    destinations['initial'] = (destinations.initial
+        .astype('category', ordered = True)
+        .cat.reorder_categories(categories)
+        )
+
+    return destinations.sort_values(['initial', 'nombre'], ascending = [True, False])
+
+
+def build_destinations_dataframes(decennie = None):
+    carrieres = get_careers(variable = 'c_netneh', decennie = decennie).sort_values(['ident', 'annee'])
+    carrieres = carrieres.query('annee > 2010')
+    destinations = get_destinations_dataframe(carrieres)
+    purged_carrieres = clean_empty_netneh(get_careers(variable = 'c_netneh', decennie = decennie)
+        .query('annee > 2010')
+        .sort_values(['ident', 'annee'])
+        )
+    purged_destinations = get_destinations_dataframe(purged_carrieres)
+
+    return destinations, purged_destinations

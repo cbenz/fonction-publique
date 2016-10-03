@@ -61,7 +61,7 @@ Comme mentionné plus haut, la reconstitution de la trajectoire statutaire -- c'
 
 \subsection{Analyser les grades de destination: premiers résultats}
 
-L'analyse des données sur les années 2011-2014 permet de documenter une autre question importante par rapport aux choix de modélisation: le grade de destination quand on observe un changement de grade pour un individu donné. L'approche adoptée est la suivante: pour chaque grade, nous considérons les années pour laquelle nous observons un changement de grade entre l'année $n$ et l'année $n+1$, et calculons les outputs suivants: 
+L'analyse des données sur les années 2011-2014 permet de documenter une autre question importante par rapport aux choix de modélisation: le grade de destination quand on observe un changement de grade pour un individu donné. L'approche adoptée est la suivante: pour chaque grade, nous considérons les années pour laquelle nous observons un changement de grade entre l'année $n$ et l'année $n+1$, et calculons les agrégats suivantes: 
 
 
 \begin{itemize}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
@@ -80,28 +80,43 @@ Les moyennes sur l'ensemble de la population, pondérée ou non en fonction du n
  & Moyenne simple & Moyenne pondérée \\ 
   \hline
 Nombre de destinations & 11.4 & 45.5 \\ 
-  \% pour la destination majoritaire & 66.1 & 58.8 \\ 
-  \% pour les 2 destinations majoritaires & 87.4 & 87.0 \\ 
-  \% pour les 3 destinations majoritaires & 93.6 & 92.8 \\ 
-  \% pour les 5 destinations majoritaires & 97.5 & 96.1 \\ 
+  Part de la destination majoritaire   & 66.1 \% & 58.8 \%  \\ 
+  Part des 2 destinations majoritaires & 87.4 \% & 87.0 \% \\ 
+  Part des 3 destinations majoritaires & 93.6 \% & 92.8 \% \\ 
+  Part des 5 destinations majoritaires & 97.5 \% & 96.1 \% \\ 
    \hline
 \end{tabular}
 \end{table}
-
-
 
 \begin{figure}[t]
   \label{pct}
 \caption{Distribution de la proportion de transitions vers les destinations principales}
 \vspace{-0.1cm}
 \centering
-  \includegraphics[width=0.7\linewidth]{../../bordeaux/results/pct.pdf}
+  \includegraphics[width=0.7\linewidth]{../../../fonction-publique/fonction_publique/bordeaux/results/pct.pdf}
 \vspace{0.1cm}  
 \begin{minipage}{12cm}%
 \small \textsc{Lecture:} Pour environ 50 \% des grades, les 5 destinations les plus fréquentes représentent 100 \% des transitions observées.  
  \end{minipage}%
 \end{figure}
 
+En se concentrant sur les grades les plus représentés\footnote{TTH1 adjoint technique de 2eme classe, TAJ1 adjoint administratif de 2ème classe, 3001 aide soignant classe normale, 2432 infirmier de classe normale}
+pour les générations 1970-1979, il apparaît (voir la table \ref{tab:destination}) que l'écrasante majorité des transitions se fait dans le garde immédiatement supérieur quand elles ne se font pas vers un non-grade.
+\begin{table}[htbp]
+    \label{tab:destination}
+    \centering
+    \caption{Destinations en cas de changement de grade (avec grade vide)} 
+    \input{./Section2/destination.tex}
+\end{table}
+
+En se limitant aux carrières ne présentant pas d'épisode ou la grade n'est pas renseigné, il apparaît que la destination est dans près de 80 \% des cas le grade immédiatement supérieur (passage à la classe supérieure) dans le corps ou le cadre d'emploi (voir la table \ref{tab:destination}).       
+
+\begin{table}[htbp]
+    \label{tab:purged_destination}
+    \centering
+    \caption{Destinations en cas de changement de grade (carrières sans grade vide)} 
+    \input{./Section2/purged_destination.tex}
+\end{table}
 
 Questions à discuter
 \begin{enumerate}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 

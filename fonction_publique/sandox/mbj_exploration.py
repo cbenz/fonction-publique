@@ -8,9 +8,10 @@ import pandas as pd
 
 
 from fonction_publique.base import get_careers, get_variables
-from fonction_publique.bordeaux.utils import get_transitions_dataframe, clean_empty_netneh
+from fonction_publique.bordeaux.utils import get_transitions_dataframe, clean_empty_netneh, get_destinations_dataframe
 
 from fonction_publique.merge_careers_and_legislation import fix_dtypes, get_grilles, get_libelles
+
 
 
 
@@ -109,61 +110,17 @@ def analyse_carriere():
 
 
 if __name__ == '__main__':
-    decennie = 1980
+    decennie = 1970
     carrieres = get_careers(variable = 'c_netneh', decennie = decennie).sort_values(['ident', 'annee'])
-    carrieres = carrieres.query('annee > 2010')
-    # carrieres.c_netneh = 'x' + carrieres.c_netneh
-    transitions = get_transitions_dataframe(carrieres)
-    destinations = transitions.groupby('initial')['final'].value_counts()
-    transition_matrix = destinations.unstack().fillna(0)
-
-    keep = set(transition_matrix.columns).intersection(set(transition_matrix.index))
-    extended = transition_matrix.loc[keep, keep]
-    extended['order'] = extended.T.sum()
-    extended = extended.sort_values('order', ascending = False).drop('order', axis = 1)
-
-    n_grades = 4
-    n_destinations = 4
-
-    initial_grades = extended.index[:n_grades].tolist()
-
-    total = extended.loc[initial_grades].T.sum()
-    destinations = (extended.loc[initial_grades]
-        .T.apply(lambda x: x.nlargest(n_destinations))
-        .T
-        .stack()
-        )
-
-    for index in total.index:
-        destinations.loc[(index, 'total')] =  total.loc[index]
-    destinations = destinations.reset_index()
-    destinations.rename(
-        columns = {
-            'level_1': 'destination',
-            0: 'nombre'
-            },
-        inplace = True,
-        )
-
-    autres = destinations.groupby('initial').apply(
-        lambda df:
-            df.nombre.loc[df.destination == 'total']
-                - df.nombre.loc[
-                df.destination.isin(
-                    [destination for destination in df.destination.unique() if destination != 'total']
-                    )
-                ].sum()
-        ).reset_index()
-    del autres['level_1']
-    autres['destination'] = 'autres'
-    autres
-
-    for index in total.index:
-        destinations
-
-    destinations.sort_index(inplace = True)
+    carrieres = clean_empty_netneh(carrieres.query('annee > 2010'))
 
 
+    get_destinations_dataframe(carrieres=carrieres, initial_grades = ['TAJ2', 'TTH2'])
+
+
+    codes = set(destinations.initial.unique()).union(set(destinations.destination.unique()))
+    for code in codes:
+        print code , get_libelles(code_grade_netneh = code)[ 'libelle_grade_NEG'].squeeze()
 
     destinations.merge(total)
     extended.loc[initial_grades].nlargest(n_destinations)
@@ -238,4 +195,4 @@ if __name__ == '__main__':
 
     # TODO rajouter les autres
 
-    get_libelles(code_grade_netneh = 'TAJ1')
+    get_libelles(code_grade_netneh = '2753')
