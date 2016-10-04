@@ -109,7 +109,7 @@ def analyse_carriere():
     ib = get_careers(variable = 'ib')
 
 
-if __name__ == '__main__':
+def toto():
     decennie = 1970
     carrieres = get_careers(variable = 'c_netneh', decennie = decennie).sort_values(['ident', 'annee'])
     carrieres = clean_empty_netneh(carrieres.query('annee > 2010'))
@@ -196,3 +196,7 @@ if __name__ == '__main__':
     # TODO rajouter les autres
 
     get_libelles(code_grade_netneh = '2753')
+
+
+if __name__ == '__main__':
+    pass
