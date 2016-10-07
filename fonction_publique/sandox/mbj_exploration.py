@@ -13,8 +13,6 @@ from fonction_publique.bordeaux.utils import get_transitions_dataframe, clean_em
 from fonction_publique.merge_careers_and_legislation import fix_dtypes, get_grilles, get_libelles
 
 
-
-
 def trimestres_par_generation():
     # distribution du nombres de trimestres par generation
     df = get_variables()
@@ -22,7 +20,6 @@ def trimestres_par_generation():
 
     tmp = df.groupby(['generation', 'ident'])['trimestre'].count().reset_index()
     tmp2 = tmp.groupby(['generation', 'trimestre']).count()
-
 
 
 def analyse_grilles():
@@ -105,7 +102,6 @@ def analyse_carriere():
     tmp9.sequence.value_counts(ascending = False)
     tmp9.count()
 
-
     ib = get_careers(variable = 'ib')
 
 
@@ -114,9 +110,7 @@ def toto():
     carrieres = get_careers(variable = 'c_netneh', decennie = decennie).sort_values(['ident', 'annee'])
     carrieres = clean_empty_netneh(carrieres.query('annee > 2010'))
 
-
     get_destinations_dataframe(carrieres=carrieres, initial_grades = ['TAJ2', 'TTH2'])
-
 
     codes = set(destinations.initial.unique()).union(set(destinations.destination.unique()))
     for code in codes:
