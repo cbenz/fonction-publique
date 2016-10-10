@@ -163,6 +163,7 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_neg = None
     except:
         pass
 
+
 def load_libelles_emploi_data(decennie = None):
     assert decennie is not None
     libemploi_h5 = 'libemploi_{}.h5'.format(decennie)
@@ -188,7 +189,7 @@ def initialize(libemplois = None, annee = None, libelles_emploi_by_grade_neg = N
     total_count = libemplois.loc[annee].sum()
     if libelles_emploi_deja_renseignes:
         log.info(
-            "{0} libellés emplois soit sont déjà renseignés soit {1} / {2} = {3:.2f} de l'année".format(
+            "{0} libellés emplois sont déjà renseignés soit {1} / {2} = {3:.2f} %   de l'année".format(
                 len(libelles_emploi_deja_renseignes),
                 renseignes_count,
                 total_count,
@@ -207,7 +208,8 @@ def initialize(libemplois = None, annee = None, libelles_emploi_by_grade_neg = N
             )
 
 
-def run(decennie = None):
+def main(decennie = None):
+    assert decennie is not None
     libemplois = load_libelles_emploi_data(decennie = 1970)
 
     grilles = get_grilles()
@@ -259,7 +261,7 @@ def run(decennie = None):
                 libelles_emploi = [libelle_emploi],
                 annee = annee,
                 grade_neg = grade_neg,
-                libemplois = libemplois.loc[annee],
+                libemplois = libemplois.loc[annee],  # FIXME libelle_emploi
                 libelles_emploi_by_grade_neg = libelles_emploi_by_grade_neg,
                 correspondances_h5 = correspondances_h5,
                 )
@@ -290,6 +292,5 @@ selection: """)
 
 
 if __name__ == '__main__':
-
     logging.basicConfig(level = logging.INFO, stream = sys.stdout)
-    run(decennie = 1970)
+    main(decennie = 1970)

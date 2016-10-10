@@ -16,9 +16,10 @@ from fonction_publique.career_simulation_vectorized import _set_dates_effet
 log = logging.getLogger(__name__)
 
 
-def get_grilles(force_rebuild = False):
+def get_grilles(force_rebuild = False, date = None, date_effet_min = None, date_effet_max = None):
     law_to_hdf(force_rebuild = force_rebuild)
-    return pd.read_hdf(law_hdf_path)
+    grilles = pd.read_hdf(law_hdf_path)
+    return grilles
 
 
 def law_to_hdf(force_rebuild = False):
