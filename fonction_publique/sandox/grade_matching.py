@@ -89,7 +89,7 @@ def select_libelles_emploi(grade_neg = None, libemplois = None):
             )
         print "Autres libellés emploi possibles:\n{}".format(libelles_emploi_additionnels)
         selection = raw_input("""
-NOMBRE_DEBUT:NOMBRE_FIN, o (tous), n (aucun), q (quitter/fin du choix)
+NOMBRE_DEBUT:NOMBRE_FIN, o (tous), n (aucun), q (quitter/grade suivant)
 selection: """)  # TODO: add a default value to n when enter is hit
 
         if ":" in selection:  # TODO improve with regexp
@@ -116,7 +116,6 @@ selection: """)  # TODO: add a default value to n when enter is hit
             continue
 
         elif selection == 'q':
-            print "Sortie"
             break
 
         else:
@@ -126,14 +125,13 @@ selection: """)  # TODO: add a default value to n when enter is hit
     return libelles_emploi_selectionnes
 
 
-libelles_emploi_by_grade_neg = dict()
-
-
-def store_libelles_emploi(libelles_emploi = None, grade_neg = None, libemplois = None, correspondace_h5 = None):
+def store_libelles_emploi(libelles_emploi = None, grade_neg = None, libemplois = None, 
+    libelles_emploi_by_grade_neg = None, correspondace_h5 = None):
     assert libelles_emploi is not None
     assert isinstance(libelles_emploi, list)
     assert grade_neg is not None
     assert libemplois is not None
+    assert libelles_emploi_by_grade_neg is not None
     if grade_neg in libelles_emploi_by_grade_neg:
         libelles_emploi_by_grade_neg[grade_neg] += libelles_emploi  # FIXME if needed: use set union ?
     else:
@@ -143,8 +141,11 @@ def store_libelles_emploi(libelles_emploi = None, grade_neg = None, libemplois =
     # Sum over list to concatenate
     selectionnes_count = libemplois.loc[sum(libelles_emploi_by_grade_neg.values(), [])].sum()
     total_count = libemplois.sum()
-    print "{0:.2f} % des libellés emplois non vides (vides = {1:.2f} %) sont attribués".format(
+    print "{0} / {1} = {2:.2f} % des libellés emplois non vides ({3} vides soit {4:.2f} %) sont attribués".format(
+        selectionnes_count,
+        total_count,
         100 * selectionnes_count / total_count,
+        vides_count,vides_count
         100 * vides_count / total_count,
         )
     if correspondace_h5:
@@ -153,7 +154,7 @@ def store_libelles_emploi(libelles_emploi = None, grade_neg = None, libemplois =
 if __name__ == '__main__':
 
     logging.basicConfig(level = logging.INFO, stream = sys.stdout)
-    decennie = 1970
+    decennie = 1980
 
     libemploi_h5 = 'libemploi_{}.h5'.format(decennie)
     force = False
@@ -175,6 +176,14 @@ if __name__ == '__main__':
 
     print "Il y a {} libellés emploi différents".format(len(libemplois))
     print "Il y a {} libellés grade NEG différents".format(len(libelles_grade_NEG))
+
+    def load_libelles_emploi(correspondace_h5 = None):
+        if correspondace_h5 is None or not os.path.exists(correspondace_h5):
+            return dict()
+        else:
+            return pd.DataFrame.read_hdf(correspondace_h5, 'correspondance')
+
+    libelles_emploi_by_grade_neg = load_libelles_emploi(correspondace_h5 = correspondace_h5)
 
     annees = sorted(
         libemplois.index.get_level_values('annee').unique().tolist(),
@@ -199,6 +208,7 @@ if __name__ == '__main__':
                 libelles_emploi = [libelle_emploi],
                 grade_neg = grade_neg,
                 libemplois = libemplois.loc[annee],
+                libelles_emploi_by_grade_neg = libelles_emploi_by_grade_neg,
                 )
             libelles_emploi_selectionnes = select_libelles_emploi(
                 grade_neg = grade_neg,
@@ -208,5 +218,6 @@ if __name__ == '__main__':
                 libelles_emploi = libelles_emploi_selectionnes,
                 grade_neg = grade_neg,
                 libemplois = libemplois.loc[annee],
+                libelles_emploi_by_grade_neg = libelles_emploi_by_grade_neg,
                 )
         break
