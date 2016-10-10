@@ -1,0 +1,61 @@
+durée moyenne: 
+ - durée de base
+ - avancement possible sur durée moyenne mais ce sera plutôt fixe
+
+ Mis en place en 2016
+
+ On peut sauter de grade par concours interne
+
+ Passage au grade suivant:
+  - dès que c'est possible (condition propre au grade)
+  - plus tard
+
+Part des promus/promouvables fixée par arrété: quelle fréquence ?
+Quota d'avancement de grade 
+
+Au choix: plutôt de la file d'attente ou ancienneté
+
+Condition d'ancienneté: dans le grade ou dans le corps.
+
+Rôle des tailles de collectivités dans les choix individuels
+
+75% de catégorie C
+
+Si changement de corps mais on reste dans C peu de changement de la carrière effective (en termes d'IB)
+donc peu de changement dans les pensions.
+
+Grandes réformes des grilles:
+ - Regroupement sur les échelles de la catégorie C
+
+Pour l'effet fixe, il est possible d'utiliser une information résumée en utilisant la date d'affiliation
+
+
+Pour la démographie: Infos que sur les 5 dernières années sur les enfants dans données CNRACL. 
+Vérifier que les estimations sur EDP-DADS conviendront.
+Il est important de connaître le nombre d'enfant à l'entrée dans la FPH/FPT.
+
+Recul d'âge et départ en invalidité.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
