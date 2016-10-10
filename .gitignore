@@ -6,6 +6,7 @@
 *.pyo
 .pydevproject
 .spyderproject
+.spyproject
 .vscode
 /.coverage
 /.noseids

@@ -19,7 +19,18 @@ log = logging.getLogger(__name__)
 def get_grilles(force_rebuild = False, date = None, date_effet_min = None, date_effet_max = None):
     law_to_hdf(force_rebuild = force_rebuild)
     grilles = pd.read_hdf(law_hdf_path)
-    return grilles
+    if date is not None:
+        return (
+            grilles
+            .set_index('date_effet_grille')
+            .asof(date)
+            )
+    else:
+        return (
+            grilles
+            .set_index('date_effet_grille')
+            .loc[date_effet_min:date_effet_max]
+            )
 
 
 def law_to_hdf(force_rebuild = False):
