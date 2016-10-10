@@ -20,6 +20,15 @@ pd.options.display.max_rows = 999
 log = logging.getLogger(__name__)
 
 
+def load_libelles_emploi(correspondances_h5 = None):
+    if correspondances_h5 is None or not os.path.exists(correspondances_h5):
+        log.info("Il n'existe pas de fichier de correspondances à compléter")
+        return dict()
+    else:
+        log.info("Le fichier de correspondances {} est utiliser comme point de départ".format(correspondances_h5))
+        return pd.read_hdf(correspondances_h5, 'correspondance')
+
+
 def query_grade_neg(query = None, choices = None, score_cutoff = 95):
     assert query is not None
     assert choices is not None
@@ -125,11 +134,11 @@ selection: """)  # TODO: add a default value to n when enter is hit
     return libelles_emploi_selectionnes
 
 
-def store_libelles_emploi(libelles_emploi = None, grade_neg = None, libemplois = None, 
-    libelles_emploi_by_grade_neg = None, correspondace_h5 = None):
+def store_libelles_emploi(libelles_emploi = None, annee = None, grade_neg = None, libemplois = None,
+        libelles_emploi_by_grade_neg = None, correspondances_h5 = None):
     assert libelles_emploi is not None
     assert isinstance(libelles_emploi, list)
-    assert grade_neg is not None
+    assert grade_neg is not None and annee is not None
     assert libemplois is not None
     assert libelles_emploi_by_grade_neg is not None
     if grade_neg in libelles_emploi_by_grade_neg:
@@ -145,19 +154,20 @@ def store_libelles_emploi(libelles_emploi = None, grade_neg = None, libemplois =
         selectionnes_count,
         total_count,
         100 * selectionnes_count / total_count,
-        vides_count,vides_count
+        vides_count,
         100 * vides_count / total_count,
         )
-    if correspondace_h5:
-        pd.DataFrame.from_dict(libelles_emploi_by_grade_neg).to_hdf(correspondace_h5, 'correspondance')
+    try:
+        if correspondances_h5:
+            pd.DataFrame.from_dict(libelles_emploi_by_grade_neg).to_hdf(correspondances_h5, 'correspondance')
+    except:
+        pass
 
-if __name__ == '__main__':
-
-    logging.basicConfig(level = logging.INFO, stream = sys.stdout)
-    decennie = 1980
-
+def load_libelles_emploi_data(decennie = None):
+    assert decennie is not None
     libemploi_h5 = 'libemploi_{}.h5'.format(decennie)
     force = False
+
     if os.path.exists(libemploi_h5) and not force:
         libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
         log.info("Libellés emploi read from {}".format(libemploi_h5))
@@ -166,6 +176,39 @@ if __name__ == '__main__':
         libemplois = libemploi.groupby(u'annee')['libemploi'].value_counts()
         log.info("Generating and saving libellés emploi to {}".format(libemploi_h5))
         libemplois.to_hdf(libemploi_h5, 'libemploi')
+
+    return libemplois
+
+
+def initialize(libemplois = None, annee = None, libelles_emploi_by_grade_neg = None, correspondances_h5 = None):
+    assert libemplois is not None and annee is not None
+    assert libelles_emploi_by_grade_neg is not None
+    libelles_emploi_deja_renseignes = sum(libelles_emploi_by_grade_neg.values(), [])
+    renseignes_count = libemplois.loc[annee].loc[libelles_emploi_deja_renseignes].sum()
+    total_count = libemplois.loc[annee].sum()
+    if libelles_emploi_deja_renseignes:
+        log.info(
+            "{0} libellés emplois soit sont déjà renseignés soit {1} / {2} = {3:.2f} de l'année".format(
+                len(libelles_emploi_deja_renseignes),
+                renseignes_count,
+                total_count,
+                100 * renseignes_count / total_count
+                )
+            )
+        #
+    #
+    return (libemplois
+            .loc[annee]
+            .loc[
+                ~libemplois.loc[annee].index.isin(libelles_emploi_deja_renseignes)
+                ]
+            .index
+            .tolist()
+            )
+
+
+def run(decennie = None):
+    libemplois = load_libelles_emploi_data(decennie = 1970)
 
     grilles = get_grilles()
     libelles_grade_NEG = sorted(grilles
@@ -177,21 +220,25 @@ if __name__ == '__main__':
     print "Il y a {} libellés emploi différents".format(len(libemplois))
     print "Il y a {} libellés grade NEG différents".format(len(libelles_grade_NEG))
 
-    def load_libelles_emploi(correspondace_h5 = None):
-        if correspondace_h5 is None or not os.path.exists(correspondace_h5):
-            return dict()
-        else:
-            return pd.DataFrame.read_hdf(correspondace_h5, 'correspondance')
-
-    libelles_emploi_by_grade_neg = load_libelles_emploi(correspondace_h5 = correspondace_h5)
+    correspondances_h5 = 'correspondances.h5'
+    libelles_emploi_by_grade_neg = load_libelles_emploi(
+        correspondances_h5 = correspondances_h5).to_dict(orient = 'list')
 
     annees = sorted(
         libemplois.index.get_level_values('annee').unique().tolist(),
         reverse = True,
         )
+
     for annee in annees:
+        #
         log.info("On considère les libellés emplois de l'année {}".format(annee))
-        libemplois_annee = libemplois.loc[annee].index.tolist()
+        libemplois_annee = initialize(
+            libemplois = libemplois,
+            annee = annee,
+            libelles_emploi_by_grade_neg = libelles_emploi_by_grade_neg,
+            correspondances_h5 = correspondances_h5,
+            )
+
         for libelle_emploi in libemplois_annee:
             if libelle_emploi == "":
                 log.info("On ignore les libelle_emploi vides")
@@ -204,11 +251,17 @@ if __name__ == '__main__':
                 libelles_grade_NEG = libelles_grade_NEG,
                 libemplois = libemplois_annee,
                 )
+
+            if grade_neg is None:
+                break
+
             store_libelles_emploi(
                 libelles_emploi = [libelle_emploi],
+                annee = annee,
                 grade_neg = grade_neg,
                 libemplois = libemplois.loc[annee],
                 libelles_emploi_by_grade_neg = libelles_emploi_by_grade_neg,
+                correspondances_h5 = correspondances_h5,
                 )
             libelles_emploi_selectionnes = select_libelles_emploi(
                 grade_neg = grade_neg,
@@ -216,8 +269,27 @@ if __name__ == '__main__':
                 )
             store_libelles_emploi(
                 libelles_emploi = libelles_emploi_selectionnes,
+                annee = annee,
                 grade_neg = grade_neg,
                 libemplois = libemplois.loc[annee],
                 libelles_emploi_by_grade_neg = libelles_emploi_by_grade_neg,
+                correspondances_h5 = correspondances_h5,
                 )
-        break
+            #
+        #
+        while True:
+            selection = raw_input("""
+o: passage à l'année suivante. q : quitter
+selection: """)
+            if selection == "o":
+                break
+            if selection == "q":
+                return
+            else:
+                continue
+
+
+if __name__ == '__main__':
+
+    logging.basicConfig(level = logging.INFO, stream = sys.stdout)
+    run(decennie = 1970)
