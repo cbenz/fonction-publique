@@ -10,15 +10,20 @@ from fonction_publique.career_simulation_vectorized import compute_echelon_max
 grilles = get_grilles('grilles')
 
 
-
 def test_compute_echelon_max():
+    grilles = get_grilles()
     compute_echelon_max(grilles = grilles, start_date = None)
 
 
-def test_time_span_grilles():
+def test_grilles_subset():
+    grilles = get_grilles(subset = ['libelle_FP', 'libelle_grade_NEG'])
+    assert set(grilles.columns) == set(['libelle_FP', 'libelle_grade_NEG', 'date_effet_grille'])
+
+
+def test_grilles_dates():
+    grilles = get_grilles()
     code_grade = 'TTH1'
     tth1 = grilles.loc[
-    #    (grilles.date_effet_grille > datetime.date(2000, 1, 1)) &
         (grilles.code_grade == code_grade) &
         (grilles.echelon == "01")
         ]
@@ -28,5 +33,6 @@ def test_time_span_grilles():
 
     date_effet_min = pd.Timestamp(2007, 2, 1)
     date_effet_max = pd.Timestamp(2014, 3, 2)
-    assert tth1_extract.loc[date_effet_min:date_effet_max][0] == 297
-    assert tth1_extract.loc[date_effet_min:date_effet_max][1] == 330
+    assert tth1_extract.loc[date_effet_min:date_effet_max].ib[0] == 297
+    assert tth1_extract.loc[date_effet_min:date_effet_max].ib[1] == 330
+

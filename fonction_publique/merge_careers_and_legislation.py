@@ -5,32 +5,41 @@ from __future__ import division
 
 import logging
 import os
+
 import pandas as pd
 
-
-from fonction_publique.base import (law_xls_path, law_hdf_path, get_careers_hdf_path, get_tmp_hdf_path,
-    debug_chunk_size, DEBUG_CLEAN_CARRIERES, get_output_hdf_path, clean_directory_path)
+from fonction_publique.base import (DEBUG_CLEAN_CARRIERES, clean_directory_path, debug_chunk_size,
+    get_careers_hdf_path, get_output_hdf_path, get_tmp_hdf_path, law_hdf_path, law_xls_path)
 from fonction_publique.career_simulation_vectorized import _set_dates_effet
-
 
 log = logging.getLogger(__name__)
 
 
-def get_grilles(force_rebuild = False, date = None, date_effet_min = None, date_effet_max = None):
+def get_grilles(force_rebuild = False, date = None, date_effet_max = None, date_effet_min = None,
+        subset = None, use_date_effet_index = False):
     law_to_hdf(force_rebuild = force_rebuild)
     grilles = pd.read_hdf(law_hdf_path)
+    if subset is not None:
+        if 'date_effet_grille' not in subset:
+            subset.append('date_effet_grille')
+        grilles = grilles[subset].drop_duplicates()
+
     if date is not None:
-        return (
+        grilles = (
             grilles
             .set_index('date_effet_grille')
             .asof(date)
             )
     else:
-        return (
+        grilles = (
             grilles
             .set_index('date_effet_grille')
             .loc[date_effet_min:date_effet_max]
             )
+    if use_date_effet_index:
+        return grilles
+    else:
+        return grilles.reset_index()
 
 
 def law_to_hdf(force_rebuild = False):
@@ -40,7 +49,10 @@ def law_to_hdf(force_rebuild = False):
             log.info('Using existing {}'.format(law_hdf_path))
             return
     law = pd.read_table(law_xls_path)
-    law = law[['date_effet_grille', 'ib', 'code_grade_NETNEH', 'echelon', 'max_mois', 'min_mois', 'moy_mois', 'libelle_FP', 'libelle_grade_NEG']].copy()
+    law = law[[
+        'date_effet_grille', 'ib', 'code_grade_NETNEH', 'echelon', 'max_mois', 'min_mois',
+        'moy_mois', 'libelle_FP', 'libelle_grade_NEG',
+        ]].copy()
     law['date_effet_grille'] = pd.to_datetime(law.date_effet_grille)
     for variable in ['ib', 'max_mois', 'min_mois', 'moy_mois']:
         law[variable] = law[variable].fillna(-1).astype('int32')
