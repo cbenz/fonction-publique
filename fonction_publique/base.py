@@ -11,6 +11,12 @@ import pkg_resources
 
 import pandas as pd
 
+from fonction_publique.config import Config
+
+parser = Config(
+    config_files_directory = os.path.join(pkg_resources.get_distribution('fonction_publique').location)
+    )
+
 app_name = os.path.splitext(os.path.basename(__file__))[0]
 log = logging.getLogger(app_name)
 
@@ -30,24 +36,11 @@ law_hdf_path = os.path.join(
     asset_path,
     "grilles.h5")
 
-
-# linux_cnracl_path = os.path.join("/run/user/1000/gvfs", "smb-share:server=192.168.1.2,share=data", "CNRACL")
-linux_cnracl_path = os.path.join("/home/benjello/data", "CNRACL")
-windows_cnracl_path = os.path.join("M:/CNRACL/")
-simon_cnracl_path = os.path.join("/Users/simonrabate/Desktop/data/CNRACL/")
-
-if os.path.exists(linux_cnracl_path):
-    cnracl_path = linux_cnracl_path
-elif os.path.exists(simon_cnracl_path):
-    cnracl_path = simon_cnracl_path
-else:
-    cnracl_path = windows_cnracl_path
-
 # Directories paths:
-raw_directory_path = os.path.join(cnracl_path, "raw")
-tmp_directory_path = os.path.join(cnracl_path, "tmp")
-clean_directory_path = os.path.join(cnracl_path, "clean")
-output_directory_path = os.path.join(cnracl_path, "output")
+raw_directory_path = parser.get('data', 'raw')
+tmp_directory_path = parser.get('data', 'tmp')
+clean_directory_path = parser.get('data', 'clean')
+output_directory_path = parser.get('data', 'output')
 
 
 # Options:
