@@ -11,7 +11,7 @@ setup(
     name = 'Fonction-Publique',
     version = '0.1',
     author = 'IPP Team',
-    author_email = 'lisa.degalle@gmail.com',
+    author_email = 'mahdi.benjelloul@ipp.eu',
     classifiers = [
         "Development Status :: 2 - Pre-Alpha",
         "License :: OSI Approved :: GNU Affero General Public License v3",
@@ -30,11 +30,11 @@ setup(
 
     include_package_data = True,  # Will read MANIFEST.in
     install_requires = [
+        'fuzzywuzzy >= 0.11.1',
         'numpy >= 1.6',
-        #  'OpenFisca-France >= 0.5.3',
+        # 'OpenFisca-France >= 0.5.3',
         'pandas >= 0.18.1',
         ],
-
     packages = find_packages(exclude=['fonction_publique.tests*']),
     test_suite = 'nose.collector',
     )
