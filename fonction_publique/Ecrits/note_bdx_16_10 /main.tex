@@ -1,0 +1,82 @@
+ 
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}		% LaTeX, comprend les accents !
+\usepackage[T1]{fontenc}
+\usepackage{natbib}	
+%\usepackage[square,sort&compress,sectionbib]{natbib}		% Doit être chargé avant babel      
+\usepackage[frenchb,english]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb, amsthm}
+\usepackage{a4wide}
+\usepackage[capposition=top]{floatrow}
+\usepackage{verbatim}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{flafter}
+\usepackage{longtable}
+\usepackage{import}
+\usepackage{pdflscape}
+\usepackage{rotating}
+\usepackage{hhline}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage[pdftex,pdfborder={0 0 0},colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue,bookmarksopen=true]{hyperref}
+\usepackage{eurosym}
+%\usepackage{breakcites}
+\usepackage[autostyle]{csquotes}
+%\usepackage{datetime}
+\usepackage{natbib}
+\usepackage{setspace}
+\usepackage{lscape}
+\usepackage[usenames]{color}
+\usepackage{indentfirst}
+\usepackage{forest}
+\usepackage{url}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{subcaption}
+\usepackage[justification=centering]{caption}
+\bibliographystyle{agsm}
+
+\usepackage{array}
+
+\newcommand{\isEmbedded}{true}
+
+\graphicspath{{../bordeaux/results/}}
+
+
+\begin{document}
+
+\selectlanguage{frenchb}
+\title{Document préparatoire \\ Séance de travail des 5 et 6 octobre 2016}
+
+
+\author{Sophie Cottet, Mahdi Ben Jelloul et Simon Rabat\'e}
+
+
+\maketitle
+
+% Introduction
+Cette note propose des premières pistes d'estimation pour la modélisation de l'évolution des rémunérations à partir des grilles indiciaires dans les fonctions publiques territoriales et hospitalières. 
+Dans un premier temps, nous revenons sur les processus que l'on souhaite modéliser. L'évolution de la rémunération des fonctionnaires dépend des changements de grades et des changements d'échelon au sein des grades. Nous cherchons ensuite à documenter ces processus dans les données transmises par la CDC. Le manque de profondeur temporel dans les données limite pour l'instant l'analyse des données. En conséquence, les suggestions de modélisation qui en découlent restent globalement spéculatives; les approches envisagées à ce stade sont toutefois décrites dans la troisième partie de ce document. Enfin, dans une dernière partie nous décrivons des méthodes de simulation à partir des estimations, pouvant servir de base aux tests d'adéquation des modèles économétriques voire à la simulations des trajectoires dans le modèle de microsimulation. 
+
+% Section I: principe général 
+\input{Section1/section1.tex}
+
+
+% Section II: data
+\input{Section2/section2}
+
+
+
+% Section III: Modélisation
+\input{Section3/section3.tex}
+
+
+
+% Section IV: Simulation
+\input{Section4/section4.tex}
+
+\end{document}
+
+
