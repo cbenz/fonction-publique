@@ -2,13 +2,10 @@
 # -*- coding:utf-8 -*-
 
 
-name=raw_input('Enter your name : ')
-print ("Hi %s, Let us be friends!" % name);
-
 from __future__ import division
 
 
-from biryani.strings import slugify
+#from biryani.strings import slugify
 try:
    import cPickle as pickle
 except:
@@ -34,7 +31,12 @@ VERSANTS = ['FONCTION PUBLIQUE HOSPITALIERE', 'FONCTION PUBLIQUE TERRITORIALE']
 
 
 def load_correpondances(correspondances_path = None):
-    if correspondances_path is None or not os.path.exists(correspondances_path):
+    correspondance_non_available = (
+        correspondances_path is None or 
+        correspondances_path is' None' or  # None is parsed as string in config.ini
+        not os.path.exists(correspondances_path)
+        )
+    if correspondance_non_available:
         log.info("Il n'existe pas de fichier de correspondances à compléter")
         return dict(zip(VERSANTS, [dict(), dict()]))
     else:
@@ -131,32 +133,28 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None):
             )
         print "\nAutres libellés emploi possibles:\n{}".format(libelles_emploi_additionnels)
         selection = raw_input("""
-LISTE(ex:1:3,5,8,10:12), o (tous), n (aucun), q (quitter/grade suivant), s (sauvegarde et stats)
+Liste de nombre (ex: 1:4,6,8,10:11), o (tous), n (aucun), q (quitter/grade suivant), s (sauvegarde et stats)
 selection: """)  # TODO: add a default value to n when enter is hit
-        sel = list()
-        for  s in selection.split(","):
-            if ":" in s:
-                start = int(selection.split(":")[0])
-                stop = int(selection.split(":")[1])
-                if not (libelles_emploi_additionnels.index[0] <= start <= stop <= libelles_emploi_additionnels.index[-1:]):
-                    print 'Plage de valeurs incorrecte.'
-                    continue
-            else:
-                sel += range(start,stop+1)
-                    continue
 
-        else: 
-            sel += s
-
-        if ":" in selection:  # TODO improve with regexp
-            start = int(selection.split(":")[0])
-            stop = int(selection.split(":")[1])
-            if not (libelles_emploi_additionnels.index[0] <= start <= stop <= libelles_emploi_additionnels.index[-1:]):
+            
+        if any((c in [str(i) for i in range(0, 10)]) for c in selection):
+            if any((c not in [str(i) for i in '0123456789,:']) for c in selection):    
                 print 'Plage de valeurs incorrecte.'
                 continue
-            else:
-                libelles_emploi_selectionnes += libelles_emploi_additionnels.loc[start:stop].libelle_emploi.tolist()
-                continue
+            for  s in selection.split(","):
+                if ":" in s:
+                    start = int(s.split(":")[0])
+                    stop = int(s.split(":")[1])
+                    if not (libelles_emploi_additionnels.index[0] <= start <= stop <= libelles_emploi_additionnels.index[-1:]):
+                        print 'Plage de valeurs incorrecte.'
+                        continue
+                    else:
+                        libelles_emploi_selectionnes += libelles_emploi_additionnels.loc[start:stop].libelle_emploi.tolist()
+                        continue
+        
+                else: 
+                    libelles_emploi_selectionnes += [libelles_emploi_additionnels.loc[int(s)].libelle_emploi]
+            
 
         elif selection == 'o':
             libelles_emploi_selectionnes += libelles_emploi_additionnels.libelle_emploi.tolist()
@@ -178,6 +176,7 @@ selection: """)  # TODO: add a default value to n when enter is hit
             continue
 
     return libelles_emploi_selectionnes, next_grade
+
 
 
 def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = None, libemplois = None,
@@ -297,7 +296,7 @@ def main(decennie = None):
         )
 
     for annee in annees:
-        # annee = annees[0]
+        #
         log.info("On considère les libellés emplois de l'année {}".format(annee))
         libemplois_annee = initialize(
             libemplois = libemplois,
@@ -307,7 +306,6 @@ def main(decennie = None):
             )
 
         for libelle_emploi in libemplois_annee:
-            # libelle_emploi=libemplois_annee[1]
             if libelle_emploi == "":
                 log.info("On ignore les libelle_emploi vides")
                 continue
