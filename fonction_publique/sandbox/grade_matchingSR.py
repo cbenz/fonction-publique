@@ -31,7 +31,12 @@ VERSANTS = ['FONCTION PUBLIQUE HOSPITALIERE', 'FONCTION PUBLIQUE TERRITORIALE']
 
 
 def load_correpondances(correspondances_path = None):
-    if correspondances_path is None or not os.path.exists(correspondances_path):
+    correspondance_non_available = (
+        correspondances_path is None or 
+        correspondances_path is' None' or  # None is parsed as string in config.ini
+        not os.path.exists(correspondances_path)
+        )
+    if correspondance_non_available:
         log.info("Il n'existe pas de fichier de correspondances à compléter")
         return dict(zip(VERSANTS, [dict(), dict()]))
     else:
@@ -132,8 +137,10 @@ Liste de nombre (ex: 1:4,6,8,10:11), o (tous), n (aucun), q (quitter/grade suiva
 selection: """)  # TODO: add a default value to n when enter is hit
 
             
-        if (":" in selection) or ("," in selection):
-            sel = list()
+        if any((c in [str(i) for i in range(0, 10)]) for c in selection):
+            if any((c not in [str(i) for i in '0123456789,:']) for c in selection):    
+                print 'Plage de valeurs incorrecte.'
+                continue
             for  s in selection.split(","):
                 if ":" in s:
                     start = int(s.split(":")[0])
@@ -142,13 +149,11 @@ selection: """)  # TODO: add a default value to n when enter is hit
                         print 'Plage de valeurs incorrecte.'
                         continue
                     else:
-                        sel += range(start,stop+1)
+                        libelles_emploi_selectionnes += libelles_emploi_additionnels.loc[start:stop].libelle_emploi.tolist()
                         continue
+        
                 else: 
-                    sel += s
-
-            libelles_emploi_selectionnes += libelles_emploi_additionnels.iloc[sel].libelle_emploi.tolist()
-            continue   
+                    libelles_emploi_selectionnes += [libelles_emploi_additionnels.loc[int(s)].libelle_emploi]
             
 
         elif selection == 'o':
