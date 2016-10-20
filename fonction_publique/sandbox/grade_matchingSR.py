@@ -33,7 +33,7 @@ VERSANTS = ['FONCTION PUBLIQUE HOSPITALIERE', 'FONCTION PUBLIQUE TERRITORIALE']
 def load_correpondances(correspondances_path = None):
     correspondance_non_available = (
         correspondances_path is None or 
-        correspondances_path is' None' or  # None is parsed as string in config.ini
+        correspondances_path == 'None' or  # None is parsed as string in config.ini
         not os.path.exists(correspondances_path)
         )
     if correspondance_non_available:
@@ -219,7 +219,8 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
         vides_count,
         100 * vides_count / total_count,
         )
-    if correspondances_path:
+    correspondance_available = (correspondances_path is not None and correspondances_path != 'None')
+    if correspondance_available:
         pickle.dump(libelles_emploi_by_grade_triplet, open(correspondances_path, "wb"))
 
 
