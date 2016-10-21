@@ -31,6 +31,16 @@ VERSANTS = ['FONCTION PUBLIQUE HOSPITALIERE', 'FONCTION PUBLIQUE TERRITORIALE']
 
 
 def load_correpondances(correspondances_path = None):
+    ''' 
+    Charge la table avec les libellés déjà classés précédemment. 
+    En l'absence de chemin déclaré pour la table, génère un nouveau dictionnaire dans lequel les grades 
+    seront renseignés, en recommençant au début. 
+    
+    Arguments: 
+        - Chemin pour la table de correspondance
+    Sortie: 
+        - Table de correspondance (chargée, ou nouvelle générée)
+    '''
     correspondance_non_available = (
         correspondances_path is None or 
         correspondances_path == 'None' or  # None is parsed as string in config.ini
@@ -40,11 +50,49 @@ def load_correpondances(correspondances_path = None):
         log.info("Il n'existe pas de fichier de correspondances à compléter")
         return dict(zip(VERSANTS, [dict(), dict()]))
     else:
-        log.info("Le fichier de correspondances {} est utiliser comme point de départ".format(correspondances_path))
+        log.info("Le fichier de correspondances {} est utilisé comme point de départ".format(correspondances_path))
         return pickle.load(open(correspondances_path, "rb"))
 
+        
+def load_libelles_emploi_data(decennie = None):
+    ''' 
+    Charge l'ensemble des libellés rentrés à la main que l'on observe dans les données 
+    pour les années 2000 à 2014 (pour une décennie donnée). 
+    
+    Arguments: 
+        - Décennie considérée
+    Sortie: 
+        - Base (?) avec l'ensemble des libellés par années et le nombre d'occurence pour chaque années
+    '''
+    assert decennie is not None
+    libemploi_h5 = 'libemploi_{}.h5'.format(decennie)
+    force = False
 
+    if os.path.exists(libemploi_h5) and not force:
+        libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
+        log.info("Libellés emploi read from {}".format(libemploi_h5))
+    else:
+        libemploi = get_careers(variable = 'libemploi', decennie = decennie)
+        libemplois = libemploi.groupby(u'annee')['libemploi'].value_counts()
+        log.info("Generating and saving libellés emploi to {}".format(libemploi_h5))
+        libemplois.to_hdf(libemploi_h5, 'libemploi')
+        
+    return libemplois        
+
+    
+    
 def query_grade_neg(query = None, choices = None, score_cutoff = 95):
+    ''' 
+    A partir de libelés observés, va chercher les 50 libellés les plus proches dans
+    la liste des libellés officiels des grades. En l'absence de résultats, on abaisse le seuil.
+    
+    Arguments: 
+        - Libéllé à classer
+        - Liste possible des libellés de grade "officiels" 
+        - Score
+    Sortie: 
+        - Liste de grade correspondants avec les score de matching associés. 
+    '''
     assert query is not None
     assert choices is not None
     results = process.extractBests(query, choices, score_cutoff = score_cutoff, limit = 50)
@@ -55,6 +103,17 @@ def query_grade_neg(query = None, choices = None, score_cutoff = 95):
 
 
 def query_libelles_emploi(query = None, choices = None, score_cutoff = 95):
+    ''' 
+    A partir du grade attribué à un libellé rentré à la main, cherche parmi autres
+    libellés rentrés à la main des correspondances pour le grade choisi. 
+    
+    Arguments: 
+        - libellé de grade officiel à rapprocher des libellés 
+        - Liste possible des libellés rentrés à la main
+        - Score
+    Sortie: 
+        - Liste de libellés correspondants avec les score de matching associés. 
+    '''
     assert query is not None
     assert choices is not None
     if score_cutoff < 0:
@@ -71,10 +130,22 @@ def query_libelles_emploi(query = None, choices = None, score_cutoff = 95):
         return query_libelles_emploi(query, choices = choices, score_cutoff = score_cutoff - 5)
 
 
-def select_grade_neg(libelle_saisi = None, annee = None, libemplois = None):
+def select_grade_neg(libelle_saisi = None, annee = None):
+    ''' 
+    Fonction de sélection par l'utilisateur du grade adéquat parmi les choix possibles.
+    On charge les grades officiels de l'année courante, puis
+    générés par la fonction query_grade_neg. L'utilisateur saisi un unique grade correspondant. 
+    Si aucun grade ne correspond au libellé considéré, l'utilisateur peut soit abaisser le
+    seuil soit décider de ne pas classer le grade. 
+    
+    Arguments: 
+        - Libellé à classer
+        - Année courante
+    Sortie: 
+        - Triplet (versant, grade, date d'effet) correspondant pour le libellé considéré.
+    '''
     assert libelle_saisi is not None
     assert annee is not None
-    assert libemplois is not None
     score_cutoff = 95
 
     grilles = get_grilles(
@@ -114,6 +185,16 @@ selection: """)
 
 
 def select_libelles_emploi(grade_triplet = None, libemplois = None):
+    ''' 
+    Fonction de sélection par l'utilisateur des libellés pouvant être rattaché au grade 
+    choisi par la fonction select_grade_neg. 
+    
+    Arguments: 
+        - Grade choisi à l'étape précédente (select_grade_neg), sous forme de triplet (versant, annee, grade)
+        - Liste des libellés non classés
+    Sortie: 
+        - Liste des libellés additionnels pouvant être rattachés au triplet précédent
+    '''
     assert grade_triplet is not None  # (versant, libelle_grade, date_effet_grille)
     assert libemplois is not None
     score_cutoff = 95
@@ -181,6 +262,19 @@ selection: """)  # TODO: add a default value to n when enter is hit
 
 def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = None, libemplois = None,
         libelles_emploi_by_grade_triplet = None, correspondances_path = None):
+    ''' 
+    Enregistrement des libellés attribués à un triplet (grade, versant, date d'effet) dans la table de correspondance. 
+    
+    Arguments: 
+        - Liste des libellés classés à enregistrer
+        - Triplet (versant, grade, date) assigné aux libellés à enregistrer
+        - Année
+        - Dictionnaire de correspondance entre triplet et liste de libellé
+        - Chemin de sauvegarde pour la table de correspondance
+        - Liste de tous les libellés de l'année (pour le count de la proportion de libellés classés)
+    Sortie: 
+        - Sauvegarde de la nouvelle table de correspondance avec ajout des nouveaux libellés classés. 
+    '''    
     assert libelles_emploi, 'libemplois is None or empty'
     assert isinstance(libelles_emploi, list)
     assert grade_triplet is not None and annee is not None
@@ -224,24 +318,15 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
         pickle.dump(libelles_emploi_by_grade_triplet, open(correspondances_path, "wb"))
 
 
-def load_libelles_emploi_data(decennie = None):
-    assert decennie is not None
-    libemploi_h5 = 'libemploi_{}.h5'.format(decennie)
-    force = False
-
-    if os.path.exists(libemploi_h5) and not force:
-        libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
-        log.info("Libellés emploi read from {}".format(libemploi_h5))
-    else:
-        libemploi = get_careers(variable = 'libemploi', decennie = decennie)
-        libemplois = libemploi.groupby(u'annee')['libemploi'].value_counts()
-        log.info("Generating and saving libellés emploi to {}".format(libemploi_h5))
-        libemplois.to_hdf(libemploi_h5, 'libemploi')
-
-    return libemplois
-
-
 def get_libelles_emploi_deja_renseignes(libelles_emploi_by_grade_triplet = None):
+    ''' 
+    Compte des libellés déjà enregistrés dans la table de correspondance
+    
+    Arguments: 
+        - Dictionnaire de correspondance entre triplet et liste de libellés.
+    Sortie: 
+        - Compte des libellés renseignés
+    '''  
     assert libelles_emploi_by_grade_triplet is not None
     result = []
     for grade in libelles_emploi_by_grade_triplet.values():
@@ -250,7 +335,17 @@ def get_libelles_emploi_deja_renseignes(libelles_emploi_by_grade_triplet = None)
     return result
 
 
-def initialize(libemplois = None, annee = None, libelles_emploi_by_grade_triplet = None, correspondances_path = None):
+def initialize(libemplois = None, annee = None, libelles_emploi_by_grade_triplet = None):
+    ''' 
+    Fonction d'initialisation des libellés à classer, à partir de la
+    
+    Arguments: 
+        - Liste de l'ensemble des libellé
+        - Année
+        - Dictionnaire de correspondance
+    Sortie: 
+        - Liste ordonnée (selon le nombre d'occurence) des libellés restant à classer pour une année donnée
+    '''  
     assert libemplois is not None and annee is not None
     assert libelles_emploi_by_grade_triplet is not None
     libelles_emploi_deja_renseignes = get_libelles_emploi_deja_renseignes(libelles_emploi_by_grade_triplet)
@@ -302,8 +397,7 @@ def main(decennie = None):
         libemplois_annee = initialize(
             libemplois = libemplois,
             annee = annee,
-            libelles_emploi_by_grade_triplet = libelles_emploi_by_grade_triplet,
-            correspondances_path = correspondances_path,
+            libelles_emploi_by_grade_triplet = libelles_emploi_by_grade_triplet
             )
 
         for libelle_emploi in libemplois_annee:
@@ -314,8 +408,7 @@ def main(decennie = None):
 
             grade_triplet = select_grade_neg(
                 libelle_saisi = libelle_emploi,
-                annee = annee,
-                libemplois = libemplois_annee,
+                annee = annee
                 )
 
             if grade_triplet is None:
