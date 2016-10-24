@@ -21,6 +21,7 @@ import sys
 from fonction_publique.base import get_careers, parser
 from fonction_publique.merge_careers_and_legislation import get_grilles
 
+
 pd.options.display.max_colwidth = 0
 pd.options.display.max_rows = 999
 
@@ -261,7 +262,7 @@ selection: """)  # TODO: add a default value to n when enter is hit
 
 
 def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = None, libemplois = None,
-        libelles_emploi_by_grade_triplet = None, correspondances_path = None):
+        libelles_emploi_by_grade_triplet = None, correspondances_path = None, new=None):
     ''' 
     Enregistrement des libellés attribués à un triplet (grade, versant, date d'effet) dans la table de correspondance. 
     
@@ -274,6 +275,7 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
         - Liste de tous les libellés de l'année (pour le count de la proportion de libellés classés)
     Sortie: 
         - Sauvegarde de la nouvelle table de correspondance avec ajout des nouveaux libellés classés. 
+        Format: dictionnaires imbriquées {versant:{grade:{date d'effet:list de duplets(annee,libellés)}}}
     '''    
     assert libelles_emploi, 'libemplois is None or empty'
     assert isinstance(libelles_emploi, list)
@@ -296,8 +298,9 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
     if date not in libelles_emploi_by_date:
         libelles_emploi_by_date[date] = libelles_emploi
     else:
-        libelles_emploi_by_date[date] += libelles_emploi
-        libelles_emploi_by_date[date] = list(set(libelles_emploi_by_date[date]))
+        new_lib = list(set(libelles_emploi))
+        new_lib = zip([annee]*len(new_lib),new_lib)  
+        libelles_emploi_by_date[date] += new_lib
 
     pprint.pprint(libelles_emploi_by_grade_triplet)
 
@@ -313,24 +316,29 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
         vides_count,
         100 * vides_count / total_count,
         )
-    correspondance_available = (correspondances_path is not None and correspondances_path != 'None')
-    if correspondance_available:
+
+    if new :
+        newpath = correspondances_load_path[:-16] + new
         pickle.dump(libelles_emploi_by_grade_triplet, open(correspondances_path, "wb"))
-
-
+    else :    
+        pickle.dump(libelles_emploi_by_grade_triplet, open(correspondances_path, "wb"))
+        
+        
 def get_libelles_emploi_deja_renseignes(libelles_emploi_by_grade_triplet = None):
     ''' 
     Compte des libellés déjà enregistrés dans la table de correspondance
     
     Arguments: 
-        - Dictionnaire de correspondance entre triplet et liste de libellés.
+        - Base de correspondance déjà remplie.
     Sortie: 
         - Compte des libellés renseignés
     '''  
     assert libelles_emploi_by_grade_triplet is not None
     result = []
     for grade in libelles_emploi_by_grade_triplet.values():
+        print(grade)
         for date in grade.values():
+            print(date)
             result += sum(date.values(), [])
     return result
 
@@ -382,7 +390,7 @@ def main(decennie = None):
     print "Il y a {} libellés emploi différents".format(len(libemplois))
     print "Il y a {} libellés grade NEG différents".format(len(libelles_grade_NEG))
 
-    correspondances_path = parser.get('correspondances', 'dat')
+    correspondances_path = parser.get('correspondances', 'load')
     libelles_emploi_by_grade_triplet = load_correpondances(
         correspondances_path = correspondances_path)
 

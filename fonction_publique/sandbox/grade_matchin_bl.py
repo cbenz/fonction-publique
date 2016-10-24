@@ -8,80 +8,175 @@ Grade_matching BL (black list):
 En complément du programme de classification des libélés les plus courants, 
 liste des libélés ayant des scores très faibles, avec possibilité de 
 remplir le libélé à la main. 
+
+Fonctionnement du programme: 
+- Liste des libellés à classer à la main (libellés (1) non classés (2) avec un score bas)
+- Remplissage du libellés à la main (selon la date d'effet)
+- Enregistrement dans la table de correspondance
+
 """
 
 
 
-#! /usr/bin/env python
-# SR: Commentaires sur programme MBJ + test sur les plus bas scores #
-# -*- coding:utf-8 -*-
-
-
-
-# Packages + fonctions
 
 from __future__ import division
 
+
+#from biryani.strings import slugify
+try:
+   import cPickle as pickle
+except:
+   import pickle
+from fuzzywuzzy import process
 import logging
 import os
+import pandas as pd
+import pprint
 import sys
 
-import pandas as pd
-from fuzzywuzzy import process
+os.chdir("U:/CNRACL/fonction-publique/fonction_publique/sandbox")
 
-from fonction_publique.base import get_careers
+from fonction_publique.base import get_careers, parser
 from fonction_publique.merge_careers_and_legislation import get_grilles
+
+from grade_matchingSR import get_libelles_emploi_deja_renseignes, load_libelles_emploi_data, store_libelles_emploi, query_grade_neg
 
 pd.options.display.max_colwidth = 0
 pd.options.display.max_rows = 999
 
 log = logging.getLogger(__name__)
 
-''' 
-A partir de libelés observés, va chercher les 50 libélés les plus proche dans
-la liste des libélés officiels des grades. En l'absence de résultats, on abaisse le seuil.
-Questions: query, choice? 
-'''
-def query_grade_neg(query = None, choices = None, score_cutoff = 95):
-    assert query is not None
-    assert choices is not None
-    results = process.extractBests(query, choices, score_cutoff = score_cutoff, limit = 50)
-    if results:
-        return pd.DataFrame.from_records(results, columns = ['libelle_grade_neg', 'score'])
-    else:
-        return query_grade_neg(query, choices = choices, score_cutoff = score_cutoff - 5)
 
-''' 
-A partir du grade obtenu, va chercher les libélés les plus proches de ce libélé
-dans la liste des libélés observés. 
-'''
-def query_libelles_emploi(query = None, choices = None, score_cutoff = 95):
-    assert query is not None
-    assert choices is not None
-    if score_cutoff < 0:
-        log.info("Aucun libellé emploi ne correspondant à {}.".format(query))
-        return None
+VERSANTS = ['FONCTION PUBLIQUE HOSPITALIERE', 'FONCTION PUBLIQUE TERRITORIALE']
 
-    log.info("Recherche de libellé emplois correspondant à {} pour un score >= {}".format(
-        query, score_cutoff))
-    results = process.extractBests(query, choices, score_cutoff = score_cutoff, limit = 50)
 
-    if results:
-        return pd.DataFrame.from_records(results, columns = ['libelle_emploi', 'score'])
-    else:
-        return query_libelles_emploi(query, choices = choices, score_cutoff = score_cutoff - 5)
-
-'''
-Sélection des grades et libélés 
-'''
-def select_grade_neg(libelle_saisi = None, libelles_grade_NEG = None, libemplois = None):
-    assert libelle_saisi is not None
-    assert libelles_grade_NEG is not None
+def load_libelles_restant(correspondances_path = None, annee=None, libemplois=None ):
+    ''' 
+    Liste des libellés devant être classés à la main. 
+    Correspond à l'ensemble des libellés observés, auxquels on retranche les libellés
+    déjà renseignés si l'on donne la table de correspondance en input
+    
+    Arguments: 
+        - Chemin pour la table de correspondance
+        - Liste de l'ensemble des libellés à classer pour 
+    Sortie: 
+        - Liste de libellés non classés à renseigner à la main 
+    '''
+    assert annee is not None
     assert libemplois is not None
+    correspondance_non_available = (
+        correspondances_path is None or 
+        correspondances_path == 'None' or  # None is parsed as string in config.ini
+        not os.path.exists(correspondances_path)
+        )
+    if correspondance_non_available:
+        log.info("Pas de fichier de correspondances en input")
+        return libemplois
+    else:
+        log.info("Le fichier de correspondances {} est utilisé comme input".format(correspondances_path))
+        correspondance_table =  pickle.load(open(correspondances_path, "rb"))
+        classified_libelles = get_libelles_emploi_deja_renseignes(correspondance_table)
+        unclassified_libemp = libemplois.loc[annee].loc[~libemplois.loc[annee].index.isin(classified_libelles)].index.tolist()
+        return unclassified_libemp
+        
+        
+               
+
+def select_low_score(liste_lib = None, liste_grade = None, score_min = 60):
+    ''' 
+    Pour la liste de libellés non classés, on calcule le score max de matching 
+    avec le liste des grades. On conserve uniquement les libellés avec faible score. 
+    Arguments: 
+        - Libéllé à classer
+        - Liste possible des libellés de grade "officiels" 
+        - Score minimal pour être conservé
+    Sortie: 
+        - Liste de libelles à classer à la main. 
+    '''   
+    list_max = list()    
+    for lib in liste_lib[1:100]:
+        list_max += process.extractBests(lib, liste_grade, score_cutoff = 0, limit = 1)
+    low_score =   pd.DataFrame(list_max,columns=('lib','score_max'))
+    return (low_score[low_score.score_max<=score_min].lib.tolist())
+ 
+
+def select_grade_neg_byhand(libelle_a_saisir = None, annee = None):
+    ''' 
+    Fonction de sélection par l'utilisateur du grade adéquat pour le libellé donné. 
+    L'utilisateur saisi à la main un grade, et on cherche dans la liste officielle 
+    le grade qui s'en rapproche le plus pour confirmation.     
+        
+    Arguments: 
+        - Libellé à classer
+        - Année courante
+    Sortie: 
+        - Triplet (versant, grade, date d'effet) correspondant pour le libellé considéré.
+    '''
+    assert libelle_a_saisir is not None
+    assert annee is not None
     score_cutoff = 95
+
+    grilles = get_grilles(
+        date_effet_max = "{}-12-31".format(annee),
+        subset = ['libelle_FP', 'libelle_grade_NEG'],
+        )
+    libelles_grade_NEG = grilles['libelle_grade_NEG'].unique()
+
+    while True:
+        print "Saisir un libellé à la main pour {}:".format(libelle_a_saisir)
+        libelle_saisi = raw_input("""
+SAISIR UN LIBELLE, grade suivant (q)
+selection: """)
+        if libelle_saisi == "q":
+            return
+        else:
+            print "Libellé saisi: {}".format(libelle_saisi)
+            selection = raw_input("""
+LIBELLE OK (o), RECOMMENCER LA SAISIE (r),  grade suivant (q)
+selection: """)
+            if selection not in ["o","q","r"]:    
+                print 'Plage de valeurs incorrecte (choisir o, r ou q)' 
+            elif selection == "q":
+                return
+            elif selection == "r":
+                continue
+            elif selection == "o":
+                 grade_correspondant = check_grade_neg(libelle=libelle_saisi,annee=annee)
+                 if grade_correspondant is not None:
+                    print """Le grade NEG suivant a été selectionné:
+                        - versant: {}
+                         - libellé du grade: {}
+                         - date d'effet la plus ancienne: {}""".format(
+                           grade_correspondant[0],
+                           grade_correspondant[1],
+                           grade_correspondant[2],
+                           )
+                    return grade_correspondant
+                 else:
+                     print "\nPas de grade officiel trouvé pour {}".format(selection)   
+                     selection = raw_input("""
+                     Saisir un nouveau libellé (r), Passer au grade suivant (q)
+                     selection: """)
+                     if selection not in ["r","q"]:    
+                         print 'Réponse incorrecte (r ou q)' 
+                     elif selection == "q":
+                         return
+                     elif selection == "r":
+                         continue                   
+                    
+
+def check_grade_neg(libelle = None, annee = None):
+    ''' 
+    (= select_grade_neg dans grade_matching)
+    Attribution d'un grade sur la base du libellé saisi.
+    '''
+    assert libelle_saisi is not None
+    assert annee is not None
+    score_cutoff = 95
+
     while True:
         grades_neg = query_grade_neg(query = libelle_saisi, choices = libelles_grade_NEG, score_cutoff = score_cutoff)
-        print "Grade NEG possibles:\n{}".format(grades_neg)
+        print "\nGrade NEG possibles pour {} (score_cutoff = {}):\n{}".format(libelle_saisi, score_cutoff, grades_neg)
         selection = raw_input("""
 NOMBRE, non présent -> plus de choix (n), quitter (q)
 selection: """)
@@ -89,173 +184,216 @@ selection: """)
             return
         elif selection == "n":
             score_cutoff -= 5
+            continue
         elif selection.isdigit() and int(selection) in grades_neg.index:
             grade_neg = grades_neg.loc[int(selection), "libelle_grade_neg"]
             break
 
-    print "Le grade NEG suivant a été selectionné: {}".format(grade_neg)
-    return grade_neg
+    date_effet_grille = grilles.loc[grilles.libelle_grade_NEG == grade_neg].date_effet_grille.min().strftime('%Y-%m-%d')
+    versant = grilles.loc[grilles.libelle_grade_NEG == grade_neg].libelle_FP.unique().squeeze().tolist()
+    assert versant in VERSANTS
+
+    return (versant, grade_neg, date_effet_grille)
 
 
-def select_libelles_emploi(grade_neg = None, libemplois = None):
-    assert grade_neg is not None
-    assert libemplois is not None
-    score_cutoff = 95
-    libelles_emploi_selectionnes = list()
 
-    while True:
-        if libelles_emploi_selectionnes:
-            print "libellés emploi sélectionnés:"
-            print libelles_emploi_selectionnes
-            libemplois = [libemploi for libemploi in libemplois if libemploi not in libelles_emploi_selectionnes]
-
-        libelles_emploi_additionnels = query_libelles_emploi(
-            query = grade_neg,
-            choices = libemplois,
-            score_cutoff = score_cutoff
-            )
-        print "Autres libellés emploi possibles:\n{}".format(libelles_emploi_additionnels)
-        selection = raw_input("""
-NOMBRE_DEBUT:NOMBRE_FIN, o (tous), n (aucun), q (quitter/fin du choix)
-selection: """)  # TODO: add a default value to n when enter is hit
-
-        if ":" in selection:  # TODO improve with regexp
-            start = int(selection.split(":")[0])
-            stop = int(selection.split(":")[1])
-            if not (libelles_emploi_additionnels.index[0] <= start <= stop <= libelles_emploi_additionnels.index[-1:]):
-                print 'Plage de valeurs incorrecte.'
-                continue
-            else:
-                libelles_emploi_selectionnes += libelles_emploi_additionnels.loc[start:stop].libelle_emploi.tolist()
-                continue
-
-        elif selection == 'o':
-            #                 more = raw_input("""
-            # Voir plus de libellés oui (o) ou non (n)
-            # selection (n): """)
-            #                 if more == 'o':
-            libelles_emploi_selectionnes += libelles_emploi_additionnels.libelle_emploi.tolist()
-            #                     score_cutoff -= 5
-            continue
-
-        elif selection == 'n':
-            libelles_emploi_selectionnes = []
-            continue
-
-        elif selection == 'q':
-            print "Sortie"
-            break
-
-        else:
-            print 'Non valide'
-            continue
-
-    return libelles_emploi_selectionnes
-
-
-libelles_emploi_by_grade_neg = dict()
-
-
-def store_libelles_emploi(libelles_emploi = None, grade_neg = None, libemplois = None, correspondace_h5 = None):
-    assert libelles_emploi is not None
+def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = None, libemplois = None,
+        libelles_emploi_by_grade_triplet = None, correspondances_path = None):
+    ''' 
+    Enregistrement des libellés attribués à un triplet (grade, versant, date d'effet) dans la table de correspondance. 
+    
+    Arguments: 
+        - Liste des libellés classés à enregistrer
+        - Triplet (versant, grade, date) assigné aux libellés à enregistrer
+        - Année
+        - Dictionnaire de correspondance entre triplet et liste de libellé
+        - Chemin de sauvegarde pour la table de correspondance
+        - Liste de tous les libellés de l'année (pour le count de la proportion de libellés classés)
+    Sortie: 
+        - Sauvegarde de la nouvelle table de correspondance avec ajout des nouveaux libellés classés. 
+    '''    
+    assert libelles_emploi, 'libemplois is None or empty'
     assert isinstance(libelles_emploi, list)
-    assert grade_neg is not None
+    assert grade_triplet is not None and annee is not None
     assert libemplois is not None
-    if grade_neg in libelles_emploi_by_grade_neg:
-        libelles_emploi_by_grade_neg[grade_neg] += libelles_emploi  # FIXME if needed: use set union ?
+    assert libelles_emploi_by_grade_triplet is not None
+
+    versant, grade, date = grade_triplet
+
+    if versant not in libelles_emploi_by_grade_triplet:
+        libelles_emploi_by_grade_triplet[versant] = libelles_emploi_by_date_by_grade = dict()
     else:
-        libelles_emploi_by_grade_neg[grade_neg] = libelles_emploi
+        libelles_emploi_by_date_by_grade = libelles_emploi_by_grade_triplet[versant]
+
+    if grade not in libelles_emploi_by_date_by_grade:
+        libelles_emploi_by_date_by_grade[grade] = libelles_emploi_by_date = dict()
+    else:
+        libelles_emploi_by_date = libelles_emploi_by_date_by_grade[grade]
+
+    if date not in libelles_emploi_by_date:
+        libelles_emploi_by_date[date] = libelles_emploi
+    else:
+        libelles_emploi_by_date[date] += libelles_emploi
+        libelles_emploi_by_date[date] = list(set(libelles_emploi_by_date[date]))
+
+    pprint.pprint(libelles_emploi_by_grade_triplet)
 
     vides_count = 0 if "" not in libemplois.index else libemplois.loc[""]
-    # Sum over list to concatenate
-    selectionnes_count = libemplois.loc[sum(libelles_emploi_by_grade_neg.values(), [])].sum()
+    libelles_emploi_deja_renseignes = get_libelles_emploi_deja_renseignes(
+        libelles_emploi_by_grade_triplet = libelles_emploi_by_grade_triplet)
+    selectionnes_count = libemplois.loc[libelles_emploi_deja_renseignes].sum()
     total_count = libemplois.sum()
-    print "{0:.2f} % des libellés emplois non vides (vides = {1:.2f} %) sont attribués".format(
+    print "\n{0} / {1} = {2:.2f} % des libellés emplois non vides ({3} vides soit {4:.2f} %) sont attribués\n".format(
+        selectionnes_count,
+        total_count,
         100 * selectionnes_count / total_count,
+        vides_count,
         100 * vides_count / total_count,
         )
-    if correspondace_h5:
-        pd.DataFrame.from_dict(libelles_emploi_by_grade_neg).to_hdf(correspondace_h5, 'correspondance')
+    correspondance_available = (correspondances_path is not None and correspondances_path != 'None')
+    if correspondance_available:
+        pickle.dump(libelles_emploi_by_grade_triplet, open(correspondances_path, "wb"))
 
-if __name__ == '__main__':
 
-    logging.basicConfig(level = logging.INFO, stream = sys.stdout)
-    decennie = 1970
+def get_libelles_emploi_deja_renseignes(libelles_emploi_by_grade_triplet = None):
+    ''' 
+    Compte des libellés déjà enregistrés dans la table de correspondance
+    
+    Arguments: 
+        - Dictionnaire de correspondance entre triplet et liste de libellés.
+    Sortie: 
+        - Compte des libellés renseignés
+    '''  
+    assert libelles_emploi_by_grade_triplet is not None
+    result = []
+    for grade in libelles_emploi_by_grade_triplet.values():
+        for date in grade.values():
+            result += sum(date.values(), [])
+    return result
 
-    libemploi_h5 = 'libemploi_{}.h5'.format(decennie)
-    force = False
-    if os.path.exists(libemploi_h5) and not force:
-        libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
-        log.info("Libellés emploi read from {}".format(libemploi_h5))
-    else:
-        libemploi = get_careers(variable = 'libemploi', decennie = decennie)
-        libemplois = libemploi.groupby(u'annee')['libemploi'].value_counts()
-        log.info("Generating and saving libellés emploi to {}".format(libemploi_h5))
-        libemplois.to_hdf(libemploi_h5, 'libemploi')
 
-    grilles = get_grilles()
-    libelles_grade_NEG = sorted(grilles
-        .libelle_grade_NEG
-        .unique()
-        .tolist()
-        )
+def initialize(libemplois = None, annee = None, libelles_emploi_by_grade_triplet = None):
+    ''' 
+    Fonction d'initialisation des libellés à classer, à partir de la
+    
+    Arguments: 
+        - Liste de l'ensemble des libellé
+        - Année
+        - Dictionnaire de correspondance
+    Sortie: 
+        - Liste ordonnée (selon le nombre d'occurence) des libellés restant à classer pour une année donnée
+    '''  
+    assert libemplois is not None and annee is not None
+    assert libelles_emploi_by_grade_triplet is not None
+    libelles_emploi_deja_renseignes = get_libelles_emploi_deja_renseignes(libelles_emploi_by_grade_triplet)
+    print libelles_emploi_deja_renseignes
+    renseignes_count = libemplois.loc[annee].loc[libelles_emploi_deja_renseignes].sum()
+    total_count = libemplois.loc[annee].sum()
+    if libelles_emploi_deja_renseignes:
+        log.info(
+            "{0} libellés emplois sont déjà renseignés soit {1} / {2} = {3:.2f} %   de l'année".format(
+                len(libelles_emploi_deja_renseignes),
+                renseignes_count,
+                total_count,
+                100 * renseignes_count / total_count
+                )
+            )
+        #
+    #
+    return (libemplois
+            .loc[annee]
+            .loc[
+                ~libemplois.loc[annee].index.isin(libelles_emploi_deja_renseignes)
+                ]
+            .index
+            .tolist()
+            )
 
+def main(decennie = None):
+    assert decennie is not None
+    libemplois = load_libelles_emploi_data(decennie = 1970)
+
+    grilles = get_grilles(subset = ['libelle_FP', 'libelle_grade_NEG'])
+    libelles_grade_NEG = sorted(grilles.libelle_grade_NEG.unique().tolist())
     print "Il y a {} libellés emploi différents".format(len(libemplois))
     print "Il y a {} libellés grade NEG différents".format(len(libelles_grade_NEG))
 
+    correspondances_path = parser.get('correspondances', 'dat')
+      
     annees = sorted(
         libemplois.index.get_level_values('annee').unique().tolist(),
         reverse = True,
         )
+
     for annee in annees:
+        #
         log.info("On considère les libellés emplois de l'année {}".format(annee))
-        libemplois_annee = libemplois.loc[annee].index.tolist()
-        for libelle_emploi in libemplois_annee:
+        
+    
+        unregistered_libelles = load_libelles_restant(
+                                correspondances_path = correspondances_path,
+                                annee=annee,
+                                libemplois=libemplois
+                                )
+        
+        lib_to_match_by_hand = select_low_score(liste_lib=unregistered_libelles, liste_grade=libelles_grade_NEG)    
+
+    
+        for libelle_emploi in lib_to_match_by_hand:
             if libelle_emploi == "":
                 log.info("On ignore les libelle_emploi vides")
                 continue
-            print ""
-            print "libelle emploi: {}".format(libelle_emploi)
+            print "\nlibelle emploi: {}\n".format(libelle_emploi)
 
-            grade_neg = select_grade_neg(
+            grade_triplet = select_grade_neg(
                 libelle_saisi = libelle_emploi,
-                libelles_grade_NEG = libelles_grade_NEG,
-                libemplois = libemplois_annee,
+                annee = annee
                 )
+
+            if grade_triplet is None:
+                break
+
             store_libelles_emploi(
                 libelles_emploi = [libelle_emploi],
-                grade_neg = grade_neg,
-                libemplois = libemplois.loc[annee],
+                annee = annee,
+                grade_triplet = grade_triplet,
+                libemplois = libemplois.loc[annee],  # FIXME libelle_emploi
+                libelles_emploi_by_grade_triplet = libelles_emploi_by_grade_triplet,
+                correspondances_path = correspondances_path,
                 )
-            libelles_emploi_selectionnes = select_libelles_emploi(
-                grade_neg = grade_neg,
-                libemplois = libemplois_annee
-                )
-            store_libelles_emploi(
-                libelles_emploi = libelles_emploi_selectionnes,
-                grade_neg = grade_neg,
-                libemplois = libemplois.loc[annee],
-                )
-        break
+
+            while True:
+                libelles_emploi_selectionnes, next_grade = select_libelles_emploi(
+                    grade_triplet = grade_triplet,
+                    libemplois = libemplois_annee
+                    )
+                if libelles_emploi_selectionnes:
+                    store_libelles_emploi(
+                        libelles_emploi = libelles_emploi_selectionnes,
+                        annee = annee,
+                        grade_triplet = grade_triplet,
+                        libemplois = libemplois.loc[annee],
+                        libelles_emploi_by_grade_triplet = libelles_emploi_by_grade_triplet,
+                        correspondances_path = correspondances_path,
+                        )
+                if next_grade:
+                    break
+                    #
+        #
+        while True:
+            selection = raw_input("""
+o: passage à l'année suivante. q : quitter
+selection: """)
+            if selection == "o":
+                break
+            if selection == "q":
+                return
+            else:
+                continue
 
 
-''' FIN PG MBJ '''
-
-''' Store liste des libélés avec un match dans la liste des grade
-inférieur à score_min (50 par ex) '''
-
-list_score_max = list()
-def bestscore(query, choices, processor=None, scorer=None, score_cutoff=0,limit=1):
-    best_list = process.extractBests(query, choices, processor, scorer, score_cutoff,limit)
-    return(best_list)
-    
-if __name__ == '__main__':    
-    for libelle_emploi in libemplois_annee:
-             m = bestscore(
-             query = libelle_emploi,
-             choices = libelles_grade_NEG
-             )
-             list_score_max = list_score_max+m
-        
+if __name__ == '__main__':
+    logging.basicConfig(level = logging.INFO, stream = sys.stdout)
+    main(decennie = 1970)
 
     
