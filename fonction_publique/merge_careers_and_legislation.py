@@ -74,7 +74,7 @@ def get_libelles(code_grade_neg = None, code_grade_netneh = None, force_rebuild 
     #     return grilles[grilles.code_grade_neg.contains(code_grade_neg))
 
 
-def get_careers_for_which_we_have_law(start_year = 2009, stata_file_path = None, debug = DEBUG_CLEAN_CARRIERES):
+def get_careers_for_which_we_have_law(start_year = 2009, file_path = None, debug = DEBUG_CLEAN_CARRIERES):
     """Get carrer data (id, annee, grade, ib) of ids which:
       - grade is present in legislation data at least for one year (freq of grade)
       - year > 2009
@@ -84,7 +84,7 @@ def get_careers_for_which_we_have_law(start_year = 2009, stata_file_path = None,
      """
     law = pd.read_hdf(law_hdf_path, 'grilles')
     careers_hdf_path = get_careers_hdf_path(clean_directory_path = clean_directory_path,
-        stata_file_path = stata_file_path, debug = debug)
+        file_path = file_path, debug = debug)
     careers_hdf = pd.HDFStore(careers_hdf_path)
     # Keeping only valid grades
     grades_in_law = law.code_grade.unique()  # analysis:ignore
@@ -110,7 +110,7 @@ def get_careers_for_which_we_have_law(start_year = 2009, stata_file_path = None,
     careers['annee'] = careers['annee'].astype('str').map(lambda x: str(x)[:4])
     careers['annee'] = pd.to_datetime(careers['annee'])
     assert not careers.empty, 'careers is an empty DataFrame'
-    tmp_hdf_path = get_tmp_hdf_path(stata_file_path, debug = debug)
+    tmp_hdf_path = get_tmp_hdf_path(file_path, debug = debug)
     assert os.path.exists(os.path.dirname(tmp_hdf_path)), 'Invalid path {}'.format(os.path.dirname(tmp_hdf_path))
     careers.to_hdf(
         tmp_hdf_path,
@@ -120,9 +120,9 @@ def get_careers_for_which_we_have_law(start_year = 2009, stata_file_path = None,
         )
 
 
-def get_unique_career_states(stata_file_path = None, debug = DEBUG_CLEAN_CARRIERES):
+def get_unique_career_states(file_path = None, debug = DEBUG_CLEAN_CARRIERES):
     """ identifier les etats de carrieres uniques, cad les triplets uniques codes grades NETNEH, annee, ib"""
-    tmp_hdf_path = get_tmp_hdf_path(stata_file_path, debug = debug)
+    tmp_hdf_path = get_tmp_hdf_path(file_path, debug = debug)
     tmp_hdf = pd.HDFStore(tmp_hdf_path)
     careers = tmp_hdf.select('tmp_1')
     careers = careers[['annee', 'trimestre', 'c_netneh']]
@@ -135,8 +135,8 @@ def get_unique_career_states(stata_file_path = None, debug = DEBUG_CLEAN_CARRIER
     unique_career_states.to_hdf(tmp_hdf_path, 'tmp_2', format = 'table', data_columns = True)
 
 
-def append_date_effet_to_unique_career_states(stata_file_path = None, debug = DEBUG_CLEAN_CARRIERES):
-    tmp_hdf_path = get_tmp_hdf_path(stata_file_path, debug = debug)
+def append_date_effet_to_unique_career_states(file_path = None, debug = DEBUG_CLEAN_CARRIERES):
+    tmp_hdf_path = get_tmp_hdf_path(file_path, debug = debug)
     tmp_hdf = pd.HDFStore(tmp_hdf_path)
     law = pd.HDFStore(law_hdf_path)
     with tmp_hdf as store:
@@ -173,9 +173,9 @@ def append_date_effet_to_unique_career_states(stata_file_path = None, debug = DE
             data_columns = True)
 
 
-def merge_date_effet_grille_with_careers(stata_file_path = None, debug = DEBUG_CLEAN_CARRIERES):
+def merge_date_effet_grille_with_careers(file_path = None, debug = DEBUG_CLEAN_CARRIERES):
     """ ajouter les dates d'effets de grilles aux carrieres """
-    tmp_hdf_path = get_tmp_hdf_path(stata_file_path, debug = debug)
+    tmp_hdf_path = get_tmp_hdf_path(file_path, debug = debug)
     tmp_hdf = pd.HDFStore(tmp_hdf_path)
     unique_career_states = tmp_hdf.select('tmp_3')
 
@@ -205,9 +205,9 @@ def merge_date_effet_grille_with_careers(stata_file_path = None, debug = DEBUG_C
         )
 
 
-def merge_careers_with_legislation(stata_file_path = None, debug = DEBUG_CLEAN_CARRIERES):
+def merge_careers_with_legislation(file_path = None, debug = DEBUG_CLEAN_CARRIERES):
     """ ajouter les echelons aux carrieres """
-    tmp_hdf_path = get_tmp_hdf_path(stata_file_path, debug = debug)
+    tmp_hdf_path = get_tmp_hdf_path(file_path, debug = debug)
     tmp_hdf = pd.HDFStore(tmp_hdf_path)
     law = pd.HDFStore(law_hdf_path)
     grilles = law.select('grilles')
@@ -240,12 +240,12 @@ def merge_careers_with_legislation(stata_file_path = None, debug = DEBUG_CLEAN_C
         )
 
 
-def merge_with_additional_variables(variables = None, stata_file_path = None, debug = DEBUG_CLEAN_CARRIERES):
+def merge_with_additional_variables(variables = None, file_path = None, debug = DEBUG_CLEAN_CARRIERES):
     assert variables is not None
-    tmp_hdf_path = get_tmp_hdf_path(stata_file_path, debug = debug)
+    tmp_hdf_path = get_tmp_hdf_path(file_path, debug = debug)
     tmp_hdf = pd.HDFStore(tmp_hdf_path)
     clean_hdf_path = get_careers_hdf_path(clean_directory_path = clean_directory_path,
-        stata_file_path = stata_file_path, debug = debug)
+        file_path = file_path, debug = debug)
     clean_hdf = pd.HDFStore(clean_hdf_path)
 
     variables_dataframe = None
@@ -283,7 +283,7 @@ def merge_with_additional_variables(variables = None, stata_file_path = None, de
     careers['annee'] = careers.period.dt.year
     careers = careers.merge(variables_dataframe, on = ['ident', 'annee', 'trimestre'], how = 'outer')
     careers = careers[~careers['echelon'].isnull()]
-    output_hdf_path = get_output_hdf_path(stata_file_path, debug = debug)
+    output_hdf_path = get_output_hdf_path(file_path, debug = debug)
     assert os.path.exists(os.path.dirname(output_hdf_path)), '{} is not a valid path'.format(
         os.path.dirname(output_hdf_path))
     assert not careers.duplicated().any(), 'There are duplicated row in careers'
@@ -323,10 +323,10 @@ def main(source = None, force_rebuild = False, debug = DEBUG_CLEAN_CARRIERES):
             log.info('{} is not a valid stata file. Skipping.'.format(stata_file))
             continue
         log.info('Processing {}'.format(stata_file))
-        get_careers_for_which_we_have_law(start_year = 2009, stata_file_path = stata_file, debug = debug)
-        get_unique_career_states(stata_file_path = stata_file, debug = debug)
-        append_date_effet_to_unique_career_states(stata_file_path = stata_file, debug = debug)
-        merge_date_effet_grille_with_careers(stata_file_path = stata_file, debug = debug)
-        merge_careers_with_legislation(stata_file_path = stata_file, debug = debug)
-        merge_with_additional_variables(variables = ['etat', 'generation'], stata_file_path = stata_file, debug = debug)
+        get_careers_for_which_we_have_law(start_year = 2009, file_path = stata_file, debug = debug)
+        get_unique_career_states(file_path = stata_file, debug = debug)
+        append_date_effet_to_unique_career_states(file_path = stata_file, debug = debug)
+        merge_date_effet_grille_with_careers(file_path = stata_file, debug = debug)
+        merge_careers_with_legislation(file_path = stata_file, debug = debug)
+        merge_with_additional_variables(variables = ['etat', 'generation'], file_path = stata_file, debug = debug)
         break
