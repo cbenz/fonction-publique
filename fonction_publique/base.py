@@ -5,6 +5,7 @@ from __future__ import division
 
 import logging
 import os
+import re
 import time
 
 import pkg_resources
@@ -76,10 +77,11 @@ def get_output_hdf_path(file_path, debug = None):
     output_hdf_path = os.path.join(
         output_directory_path,
         "debug",
-        "{}_{}".format(years[0], years[1]) if debug else os.path.join(
-            output_directory_path,
-            "{}_{}.h5".format(years[0], years[1],
-            )
+        "{}_{}".format(years[0], years[1])
+        ) if debug else os.path.join(
+        output_directory_path,
+        "{}_{}.h5".format(years[0], years[1]),
+        )
     return output_hdf_path
 
 
@@ -108,11 +110,17 @@ def get_variables(variables = None, stop = None, decennie = None):
     return pd.read_hdf(hdf5_file_path, 'output', columns = variables, stop = stop)
 
 
-def get_careers(variable = None, stop = None, decennie = None):
+def get_careers(variable = None, stop = None, decennie = None, debug = False):
     """Recupere certaines variables de la table des carrières bruts"""
-
+    if debug:
+        actual_clean_directory_path = os.path.join(
+            clean_directory_path,
+            'debug',
+            )
+    else:
+        actual_clean_directory_path = clean_directory_path
     careers_hdf_path = os.path.join(
-        clean_directory_path,
+        actual_clean_directory_path,
         '{}_{}_carrieres.h5'.format(decennie, decennie + 9)
         )
     return pd.read_hdf(careers_hdf_path, variable, stop = stop)
