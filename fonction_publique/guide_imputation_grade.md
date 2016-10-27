@@ -19,3 +19,12 @@ I. Installation
 II. Travail sur les données
 
 Le programme d'imputation des libélés se base sur des données en format h5. Une première étape consiste donc à transformer les données initiales qui sont au format SAS. 
+
+III. Programme d'imputation des grade pour les libellés observés entre 2000 et 2014. 
+    input: liste des libellés observés chaque année pour chaque versant de la fonction publique
+    output: table de correspondance entre:
+        1. Grades officiels, sous la forme de triplets (versant, grade, date d'effet) pour gérer l'historique des Grades
+        2. Liste de libellés, sous la forme de duplets (libellés, année) pour gérer le fait qu'un même libellé peut renvoyer à des grades différents en fonction de l'année.
+
+
+Par défaut, la nouvelle table sauvegarde l'ancienne. Pour sauvegarder une nouvelle table il faut préciser un nouveau nom dans la fonction "store_libelle".  

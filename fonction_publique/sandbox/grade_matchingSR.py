@@ -296,7 +296,7 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
         libelles_emploi_by_date = libelles_emploi_by_date_by_grade[grade]
 
     if date not in libelles_emploi_by_date:
-        libelles_emploi_by_date[date] = libelles_emploi
+        libelles_emploi_by_date[date] = [(annee,libelles_emploi[0])]
     else:
         new_lib = list(set(libelles_emploi))
         new_lib = zip([annee]*len(new_lib),new_lib)  
@@ -319,7 +319,7 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
 
     if new :
         newpath = correspondances_load_path[:-16] + new
-        pickle.dump(libelles_emploi_by_grade_triplet, open(correspondances_path, "wb"))
+        pickle.dump(libelles_emploi_by_grade_triplet, open(newpath, "wb"))
     else :    
         pickle.dump(libelles_emploi_by_grade_triplet, open(correspondances_path, "wb"))
         
@@ -339,7 +339,8 @@ def get_libelles_emploi_deja_renseignes(libelles_emploi_by_grade_triplet = None)
         print(grade)
         for date in grade.values():
             print(date)
-            result += sum(date.values(), [])
+            liste_libelles = [ couple[1] for couple in date.values()[0]]
+            result += liste_libelles
     return result
 
 
