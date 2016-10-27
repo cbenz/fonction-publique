@@ -89,6 +89,13 @@ def clean_subset(variable = None, years_range = None, quarterly = False, file_pa
 @timing
 def format_columns(variable = None, years_range = None, quarterly = False, clean_directory_path = None,
         file_path = None, debug = False, chunksize = None):
+    """
+    Format columns by setting appropriate dtype and NA value.
+
+    annee: int16
+    ident, ib_: int32
+    etat_, qualite, statut: category
+    """
     log.info('formatting column {}'.format(variable))
     subset_to_format = clean_subset(variable, years_range, quarterly, file_path, debug = debug,
         chunksize = chunksize)
