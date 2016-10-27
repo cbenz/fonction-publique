@@ -18,6 +18,8 @@ config.ini
 /dist
 /tags
 
+.DS_Store
+
 fonction_publique/note/main.aux
 fonction_publique/note/main.bbl
 fonction_publique/note/main.blg
