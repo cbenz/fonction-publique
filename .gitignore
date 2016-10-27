@@ -5,6 +5,15 @@ config.ini
 *.mo
 *.pyc
 *.pyo
+
+# tex files
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.gz
+
 .pydevproject
 .spyderproject
 .spyproject
@@ -18,14 +27,7 @@ config.ini
 /dist
 /tags
 
-fonction_publique/note/main.aux
-fonction_publique/note/main.bbl
-fonction_publique/note/main.blg
-fonction_publique/note/main.log
-fonction_publique/note/main.out
-fonction_publique/note/main.pdf
-fonction_publique/note/main.synctex.gz
-
+.DS_Store
 
 # Windows image file caches
 Thumbs.db
