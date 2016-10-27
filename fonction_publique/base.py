@@ -5,6 +5,7 @@ from __future__ import division
 
 import logging
 import os
+import re
 import time
 
 import pkg_resources
@@ -51,46 +52,50 @@ debug_chunk_size = 30000
 
 # HDF5 files paths (temporary):
 # Store des variables liées aux carrières nettoyées et stockées dans des tables du fichier donnees_de_carrieres.h5
-def get_careers_hdf_path(clean_directory_path = None, stata_file_path = None, debug = None):
+def get_careers_hdf_path(clean_directory_path = None, file_path = None, debug = None):
     return create_file_path(
         directory = clean_directory_path,
         extension = 'carrieres',
-        stata_file_path = stata_file_path,
+        file_path = file_path,
         debug = debug,
         )
 
 
-def get_tmp_hdf_path(stata_file_path, debug = None):
+def get_tmp_hdf_path(file_path, debug = None):
     return create_file_path(
         directory = tmp_directory_path,
         extension = 'tmp',
-        stata_file_path = stata_file_path,
+        file_path = file_path,
         debug = debug,
         )
 
 
-def get_output_hdf_path(stata_file_path, debug = None):
+def get_output_hdf_path(file_path, debug = None):
+    years = re.findall(r'\d+', file_path)
+    assert int(years[0]) < int(years[1]) 
     assert debug is not None, 'debug should be True or False'
     output_hdf_path = os.path.join(
         output_directory_path,
         "debug",
-        "{}_{}".format(stata_file_path[-14:-10], stata_file_path[-8:-4]),
+        "{}_{}".format(years[0], years[1])
         ) if debug else os.path.join(
-            output_directory_path,
-            "{}_{}.h5".format(stata_file_path[-14:-10], stata_file_path[-8:-4]),
-            )
+        output_directory_path,
+        "{}_{}.h5".format(years[0], years[1]),
+        )
     return output_hdf_path
 
 
 # Helpers
-def create_file_path(directory = None, extension = None, stata_file_path = None, debug = None):
+
+def create_file_path(directory = None, extension = None, file_path = None, debug = None):
     assert directory is not None
     assert extension is not None
     assert (debug is False) or (debug is True), 'debug should be True or False'
-    assert stata_file_path is not None
+    assert file_path is not None
+    years = re.findall(r'\d+', file_path)
     filename = "{}_{}_{}.h5".format(
-        stata_file_path[-14:-10],
-        stata_file_path[-8:-4],
+        years[0],
+        years[1],
         extension,
         )
     if debug:
@@ -105,17 +110,24 @@ def get_variables(variables = None, stop = None, decennie = None):
     return pd.read_hdf(hdf5_file_path, 'output', columns = variables, stop = stop)
 
 
-def get_careers(variable = None, stop = None, decennie = None):
+def get_careers(variable = None, stop = None, decennie = None, debug = False):
     """Recupere certaines variables de la table des carrières bruts"""
-
+    if debug:
+        actual_clean_directory_path = os.path.join(
+            clean_directory_path,
+            'debug',
+            )
+    else:
+        actual_clean_directory_path = clean_directory_path
     careers_hdf_path = os.path.join(
-        clean_directory_path,
+        actual_clean_directory_path,
         '{}_{}_carrieres.h5'.format(decennie, decennie + 9)
         )
     return pd.read_hdf(careers_hdf_path, variable, stop = stop)
 
 
 # Timer
+
 def timing(f):
     def wrap(*args, **kwargs):
         time1 = time.time()

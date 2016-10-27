@@ -21,8 +21,8 @@ def temporary_clean_echelon(dataframe):
     return dataframe
 
 
-def extract_initial(stata_file_path, debug = None):
-    careers_file_path = get_output_hdf_path(stata_file_path = stata_file_path, debug = debug)
+def extract_initial(file_path, debug = None):
+    careers_file_path = get_output_hdf_path(file_path = file_path, debug = debug)
     careers = pd.read_hdf(careers_file_path, 'output')
     careers = careers.dropna(subset = ['echelon'])
     careers = careers.dropna(subset = ['ident'])
@@ -58,6 +58,6 @@ def extract_initial(stata_file_path, debug = None):
 
 if __name__ == '__main__':
     result = extract_initial(
-        stata_file_path = 'c_g1950_g1959.dta',
+        file_path = 'c_g1950_g1959.dta',
         debug = DEBUG,
         ).sort_values(['ident', 'echelon', 'quarter'])
