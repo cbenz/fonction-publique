@@ -147,7 +147,8 @@ selection: """)
             score_cutoff -= 5
             continue
         elif selection == "m":
-            grade_neg = select_grade_by_hand(libelle_a_saisir = libelle_saisi, choices = libelles_grade_NEG, annee=annee)
+            grade_neg = select_grade_by_hand(
+                libelle_a_saisir = libelle_saisi, choices = libelles_grade_NEG, annee = annee)
             break
         elif selection.isdigit() and int(selection) in grades_neg.index:
             grade_neg = grades_neg.loc[int(selection), "libelle_grade_neg"]
@@ -168,7 +169,7 @@ selection: """)
     return (versant, grade_neg, date_effet_grille)
 
 
-def select_grade_by_hand(libelle_a_saisir = None, choices = None , annee = None):
+def select_grade_by_hand(libelle_a_saisir = None, choices = None, annee = None):
     '''
     Fonction de sélection par l'utilisateur du grade adéquat pour le libellé donné.
     L'utilisateur saisi à la main un grade, et on cherche dans la liste officielle
@@ -186,40 +187,35 @@ def select_grade_by_hand(libelle_a_saisir = None, choices = None , annee = None)
     score_cutoff = 95
 
     while True:
-        print "Saisir un libellé à la main pour {}:".format(libelle_a_saisir)
+        print("Saisir un libellé à la main pour {}:".format(libelle_a_saisir))
         libelle_saisi = raw_input("""
 SAISIR UN LIBELLE, quitter (q)
 selection: """)
         if libelle_saisi == "q":
             return
         else:
-            print "Libellé saisi: {}".format(libelle_saisi)
+            print("Libellé saisi: {}".format(libelle_saisi))
             selection = raw_input("""
 LIBELLE OK (o), RECOMMENCER LA SAISIE (r)
 selection: """)
-            if selection not in ["o","q","r"]:
-                print 'Plage de valeurs incorrecte (choisir o ou r)'
+            if selection not in ["o", "q", "r"]:
+                print('Plage de valeurs incorrecte (choisir o ou r)')
             elif selection == "r":
                 continue
             elif selection == "o":
-                 grades_neg = query_grade_neg(query = libelle_saisi, choices = choices, score_cutoff = score_cutoff)
-                 print "\nGrade NEG possibles pour {} (score_cutoff = {}):\n{}".format(libelle_saisi, score_cutoff, grades_neg)
-                 selection2 = raw_input("""
+                grades_neg = query_grade_neg(query = libelle_saisi, choices = choices, score_cutoff = score_cutoff)
+                print("\nGrade NEG possibles pour {} (score_cutoff = {}):\n{}".format(
+                    libelle_saisi, score_cutoff, grades_neg))
+                selection2 = raw_input("""
 NOMBRE, recommencer la saisie(r), quitter (q)
 selection: """)
-                 if selection2 == "q":
-                     return
-                 elif selection2 == "r":
-                     continue
-                 elif selection2.isdigit() and int(selection2) in grades_neg.index:
-                     grade_neg = grades_neg.loc[int(selection2), "libelle_grade_neg"]
-                     return grade_neg
-
-
-
-
-
-
+                if selection2 == "q":
+                    return
+                elif selection2 == "r":
+                    continue
+                elif selection2.isdigit() and int(selection2) in grades_neg.index:
+                    grade_neg = grades_neg.loc[int(selection2), "libelle_grade_neg"]
+                    return grade_neg
 
 
 def select_libelles_emploi(grade_triplet = None, libemplois = None):
@@ -255,25 +251,29 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None):
 Liste de nombre (ex: 1:4,6,8,10:11), o (tous), n (aucun), q (quitter/grade suivant), s (sauvegarde et stats)
 selection: """)  # TODO: add a default value to n when enter is hit
 
-
         if any((c in [str(i) for i in range(0, 10)]) for c in selection):
             if any((c not in [str(i) for i in '0123456789,:']) for c in selection):
                 print('Plage de valeurs incorrecte.')
                 continue
-            for  s in selection.split(","):
+            for s in selection.split(","):
                 if ":" in s:
                     start = int(s.split(":")[0])
                     stop = int(s.split(":")[1])
-                    if not (libelles_emploi_additionnels.index[0] <= start <= stop <= libelles_emploi_additionnels.index[-1:]):
+                    if not (
+                        libelles_emploi_additionnels.index[0] <=
+                        start <=
+                        stop <=
+                        libelles_emploi_additionnels.index[-1:]
+                            ):
                         print('Plage de valeurs incorrecte.')
                         continue
                     else:
-                        libelles_emploi_selectionnes += libelles_emploi_additionnels.loc[start:stop].libelle_emploi.tolist()
+                        libelles_emploi_selectionnes += libelles_emploi_additionnels.loc[
+                            start:stop, 'libelle_emploi'].tolist()
                         continue
 
                 else:
                     libelles_emploi_selectionnes += [libelles_emploi_additionnels.loc[int(s)].libelle_emploi]
-
 
         elif selection == 'o':
             libelles_emploi_selectionnes += libelles_emploi_additionnels.libelle_emploi.tolist()
@@ -332,10 +332,10 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
         libelles_emploi_by_date = libelles_emploi_by_date_by_grade[grade]
 
     if date not in libelles_emploi_by_date:
-        libelles_emploi_by_date[date] = [(annee,libelles_emploi[0])]
+        libelles_emploi_by_date[date] = [(annee, libelles_emploi[0])]
     else:
         new_lib = list(set(libelles_emploi))
-        new_lib = zip([annee]*len(new_lib),new_lib)
+        new_lib = zip([annee] * len(new_lib), new_lib)
         libelles_emploi_by_date[date] += new_lib
 
     pprint.pprint(libelles_emploi_by_grade_triplet)
@@ -353,10 +353,10 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
         100 * vides_count / total_count,
         ))
 
-    if new_table_name :
+    if new_table_name:
         new_table_name = correspondances_load_path[:-16] + new_table_name
         pickle.dump(libelles_emploi_by_grade_triplet, open(newpath, "wb"))
-    else :
+    else:
         pickle.dump(libelles_emploi_by_grade_triplet, open(correspondances_path, "wb"))
 
 
@@ -390,7 +390,7 @@ def get_libelles_emploi_deja_renseignes(libelles_emploi_by_grade_triplet = None)
     result = []
     for grade in libelles_emploi_by_grade_triplet.values():
         for date in grade.values():
-            liste_libelles = [ couple[1] for couple in date.values()[0]]
+            liste_libelles = [couple[1] for couple in date.values()[0]]
             result += liste_libelles
     return result
 
