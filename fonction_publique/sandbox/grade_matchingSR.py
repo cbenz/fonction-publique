@@ -80,12 +80,13 @@ def load_libelles_emploi_data(decennie = None):
         
     return libemplois        
 
-    
+
     
 def query_grade_neg(query = None, choices = None, score_cutoff = 95):
     ''' 
     A partir de libelés observés, va chercher les 50 libellés les plus proches dans
     la liste des libellés officiels des grades. En l'absence de résultats, on abaisse le seuil.
+    
     
     Arguments: 
         - Libéllé à classer
@@ -137,7 +138,7 @@ def select_grade_neg(libelle_saisi = None, annee = None):
     On charge les grades officiels de l'année courante, puis
     générés par la fonction query_grade_neg. L'utilisateur saisi un unique grade correspondant. 
     Si aucun grade ne correspond au libellé considéré, l'utilisateur peut soit abaisser le
-    seuil soit décider de ne pas classer le grade. 
+    seuil, soit rentrer un grade à la main, soit décider de ne pas classer le grade. 
     
     Arguments: 
         - Libellé à classer
@@ -159,13 +160,16 @@ def select_grade_neg(libelle_saisi = None, annee = None):
         grades_neg = query_grade_neg(query = libelle_saisi, choices = libelles_grade_NEG, score_cutoff = score_cutoff)
         print "\nGrade NEG possibles pour {} (score_cutoff = {}):\n{}".format(libelle_saisi, score_cutoff, grades_neg)
         selection = raw_input("""
-NOMBRE, non présent -> plus de choix (n), quitter (q)
+NOMBRE, non present -> plus de choix (n), non present -> saisir à la main (m), quitter (q)
 selection: """)
         if selection == "q":
             return
         elif selection == "n":
             score_cutoff -= 5
             continue
+        elif selection == "m":
+            grade_neg = select_grade_by_hand(libelle_a_saisir = libelle_saisi, choices = libelles_grade_NEG, annee=annee)
+            break
         elif selection.isdigit() and int(selection) in grades_neg.index:
             grade_neg = grades_neg.loc[int(selection), "libelle_grade_neg"]
             break
@@ -183,6 +187,60 @@ selection: """)
         )
 
     return (versant, grade_neg, date_effet_grille)
+
+
+def select_grade_by_hand(libelle_a_saisir = None, choices = None , annee = None):
+    ''' 
+    Fonction de sélection par l'utilisateur du grade adéquat pour le libellé donné. 
+    L'utilisateur saisi à la main un grade, et on cherche dans la liste officielle 
+    le grade qui s'en rapproche le plus pour confirmation.     
+        
+    Arguments: 
+        - Libellé à classer
+        - Libelé 
+        - Année courante
+    Sortie: 
+        - Libellé du grade officiel
+    '''
+    assert libelle_a_saisir is not None
+    assert annee is not None
+    score_cutoff = 95
+
+    while True:
+        print "Saisir un libellé à la main pour {}:".format(libelle_a_saisir)
+        libelle_saisi = raw_input("""
+SAISIR UN LIBELLE, quitter (q)
+selection: """)
+        if libelle_saisi == "q":
+            return
+        else:
+            print "Libellé saisi: {}".format(libelle_saisi)
+            selection = raw_input("""
+LIBELLE OK (o), RECOMMENCER LA SAISIE (r)
+selection: """)
+            if selection not in ["o","q","r"]:    
+                print 'Plage de valeurs incorrecte (choisir o ou r)' 
+            elif selection == "r":
+                continue
+            elif selection == "o":
+                 grades_neg = query_grade_neg(query = libelle_saisi, choices = choices, score_cutoff = score_cutoff)
+                 print "\nGrade NEG possibles pour {} (score_cutoff = {}):\n{}".format(libelle_saisi, score_cutoff, grades_neg)
+                 selection2 = raw_input("""
+NOMBRE, recommencer la saisie(r), quitter (q)
+selection: """)
+                 if selection2 == "q":
+                     return
+                 elif selection2 == "r":
+                     continue
+                 elif selection2.isdigit() and int(selection2) in grades_neg.index:
+                     grade_neg = grades_neg.loc[int(selection2), "libelle_grade_neg"]
+                     return grade_neg
+            
+                
+                    
+
+
+
 
 
 def select_libelles_emploi(grade_triplet = None, libemplois = None):
@@ -262,7 +320,7 @@ selection: """)  # TODO: add a default value to n when enter is hit
 
 
 def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = None, libemplois = None,
-        libelles_emploi_by_grade_triplet = None, correspondances_path = None, new=None):
+        libelles_emploi_by_grade_triplet = None, correspondances_path = None, new_table_name=None):
     ''' 
     Enregistrement des libellés attribués à un triplet (grade, versant, date d'effet) dans la table de correspondance. 
     
@@ -317,8 +375,8 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
         100 * vides_count / total_count,
         )
 
-    if new :
-        newpath = correspondances_load_path[:-16] + new
+    if new_table_name :
+        new_table_name = correspondances_load_path[:-16] + new_table_name
         pickle.dump(libelles_emploi_by_grade_triplet, open(newpath, "wb"))
     else :    
         pickle.dump(libelles_emploi_by_grade_triplet, open(correspondances_path, "wb"))
@@ -342,7 +400,7 @@ def get_libelles_emploi_deja_renseignes(libelles_emploi_by_grade_triplet = None)
             liste_libelles = [ couple[1] for couple in date.values()[0]]
             result += liste_libelles
     return result
-
+    
 
 def initialize(libemplois = None, annee = None, libelles_emploi_by_grade_triplet = None):
     ''' 
