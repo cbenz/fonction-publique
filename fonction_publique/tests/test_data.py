@@ -26,10 +26,9 @@ def get_careers(variables = None, stop = None, decennie = None, debug = False):
         )
 
     with pd.HDFStore(careers_hdf_path) as store:
-        print store
         df = store.select_as_multiple(
-            ['c_cir', 'c_netneh'], 
-            columns = ['c_cir', 'c_netneh'], 
+            ['c_cir', 'c_netneh'],
+            columns = ['c_cir', 'c_netneh'],
             where = ["annee == 2013 & ident > 2000000"],
             selector = 'c_cir'
             )
@@ -39,8 +38,6 @@ def get_careers(variables = None, stop = None, decennie = None, debug = False):
 def test_get():
     variables = 'libemploi'
     print get_careers(variables = variables, decennie = 1970, debug = True)
-
-
 
 
 if __name__ == '__main__':

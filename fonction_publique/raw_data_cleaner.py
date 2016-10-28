@@ -111,8 +111,15 @@ def format_columns(variable = None, years_range = None, quarterly = False, clean
         variable = 'ib'
         del subset_to_format['ib_']
     else:
-        subset_to_format[variable] = subset_to_format[variable].astype('str')
-
+        print("{}: {}".format(
+            variable,
+            pd.lib.infer_dtype(subset_to_format[variable].values),
+            ))
+        subset_to_format[variable].fillna('', inplace = True)
+        subset_to_format[variable] = (subset_to_format[variable].astype('str')
+            .str.decode('iso-8859-1')
+            .str.encode('utf-8')
+            )
     careers_hdf_path = get_careers_hdf_path(clean_directory_path, file_path, debug)
 
     subset_to_format.to_hdf(
@@ -199,4 +206,3 @@ def main(raw_directory_path = None, clean_directory_path = None, debug = None, c
                 chunksize = chunksize,
                 ))
             format_columns(**kwargs)
-
