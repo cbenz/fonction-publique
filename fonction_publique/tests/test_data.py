@@ -37,7 +37,7 @@ def get_careers(variables = None, stop = None, decennie = None, debug = False):
 
 def test_get():
     variables = 'libemploi'
-    print get_careers(variables = variables, decennie = 1970, debug = True)
+    print(get_careers(variables = variables, decennie = 1970, debug = True))
 
 
 if __name__ == '__main__':
