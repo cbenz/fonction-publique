@@ -139,10 +139,14 @@ def select_grade_neg(libelle_saisi = None, annee = None):
         grades_neg = query_grade_neg(query = libelle_saisi, choices = libelles_grade_NEG, score_cutoff = score_cutoff)
         print("\nGrade NEG possibles pour {} (score_cutoff = {}):\n{}".format(libelle_saisi, score_cutoff, grades_neg))
         selection = raw_input("""
-NOMBRE, non présent -> plus de choix (n), quitter (q)
+Present: entrer un NOMBRE
+Non present: plus de choix (n), rentrer a la main (m)
+Autre: classer comme corps (c), grade suivant (g) , quitter(q)
 selection: """)
         if selection == "q":
             return
+        elif selection == "g":
+            return  "next"  
         elif selection == "n":
             score_cutoff -= 5
             continue
@@ -150,12 +154,23 @@ selection: """)
             grade_neg = select_grade_by_hand(
                 libelle_a_saisir = libelle_saisi, choices = libelles_grade_NEG, annee = annee)
             break
+        elif selection == "c":
+            grade_neg = select_corps()
+            break
         elif selection.isdigit() and int(selection) in grades_neg.index:
             grade_neg = grades_neg.loc[int(selection), "libelle_grade_neg"]
             break
+        else:
+            print('Plage de valeurs incorrecte')
+            continue
+        
+    if selection == "c":
+        versant = 'FONCTION PUBLIQUE HOSPITALIERE' # par défaut pour l'instant
+        date_effet_grille = 2000
+    else:    
+        date_effet_grille = grilles.loc[grilles.libelle_grade_NEG == grade_neg].date_effet_grille.min().strftime('%Y-%m-%d')
+        versant = grilles.loc[grilles.libelle_grade_NEG == grade_neg].libelle_FP.unique().squeeze().tolist()
 
-    date_effet_grille = grilles.loc[grilles.libelle_grade_NEG == grade_neg].date_effet_grille.min().strftime('%Y-%m-%d')
-    versant = grilles.loc[grilles.libelle_grade_NEG == grade_neg].libelle_FP.unique().squeeze().tolist()
     assert versant in VERSANTS
     print("""Le grade NEG suivant a été selectionné:
  - versant: {}
@@ -217,6 +232,20 @@ selection: """)
                     grade_neg = grades_neg.loc[int(selection2), "libelle_grade_neg"]
                     return grade_neg
 
+                    
+def select_corps():
+    '''
+    Provisoire: on regroupe les libellés que l'on souhaite classer comme corps dans 
+    un grade ad hoc 'to_match_to_corps' pour chaque versant. 
+    A modifier quand on obtient la liste des corps. 
+    '''
+    grade_neg = 'to_match_to_corps'
+    return grade_neg
+
+
+                    
+                    
+                    
 
 def select_libelles_emploi(grade_triplet = None, libemplois = None):
     '''
@@ -233,6 +262,7 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None):
     assert libemplois is not None
     score_cutoff = 95
     libelles_emploi_selectionnes = list()
+    libemplois_init = libemplois
     next_grade = False
 
     while True:
@@ -248,7 +278,7 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None):
             )
         print("\nAutres libellés emploi possibles:\n{}".format(libelles_emploi_additionnels))
         selection = raw_input("""
-Liste de nombre (ex: 1:4,6,8,10:11), o (tous), n (aucun), q (quitter/grade suivant), s (sauvegarde et stats)
+Liste de nombre (ex: 1:4,6,8,10:11), o (tous), n (aucun), r (recommencer selection), q (quitter/grade suivant), s (sauvegarde et stats)
 selection: """)  # TODO: add a default value to n when enter is hit
 
         if any((c in [str(i) for i in range(0, 10)]) for c in selection):
@@ -285,6 +315,12 @@ selection: """)  # TODO: add a default value to n when enter is hit
 
         elif selection == 's':
             break
+        
+        elif selection == 'r':
+            score_cutoff = 95
+            libemplois = libemplois_init
+            libelles_emploi_selectionnes = list()
+            continue
 
         elif selection == 'q':
             next_grade = True
@@ -338,7 +374,8 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
         new_lib = zip([annee] * len(new_lib), new_lib)
         libelles_emploi_by_date[date] += new_lib
 
-    pprint.pprint(libelles_emploi_by_grade_triplet)
+    print("Libellé renseignés pour le grade {}:".format(grade))
+    pprint.pprint(libelles_emploi_by_grade_triplet[versant][grade])
 
     vides_count = 0 if "" not in libemplois.index else libemplois.loc[""]
     libelles_emploi_deja_renseignes = get_libelles_emploi_deja_renseignes(
@@ -354,8 +391,8 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
         ))
 
     if new_table_name:
-        new_table_name = correspondances_load_path[:-16] + new_table_name
-        pickle.dump(libelles_emploi_by_grade_triplet, open(newpath, "wb"))
+        new_table_name = correspondances_path[:-16] + new_table_name
+        pickle.dump(libelles_emploi_by_grade_triplet, open(new_table_name, "wb"))
     else:
         pickle.dump(libelles_emploi_by_grade_triplet, open(correspondances_path, "wb"))
 
@@ -473,6 +510,8 @@ def main(decennie = None):
 
             if grade_triplet is None:
                 break
+            if grade_triplet == "next":
+                continue
 
             store_libelles_emploi(
                 libelles_emploi = [libelle_emploi],
@@ -483,6 +522,9 @@ def main(decennie = None):
                 correspondances_path = correspondances_path,
                 )
 
+            if grade_triplet[1] == 'to_match_to_corps':
+                continue
+            
             while True:
                 libelles_emploi_selectionnes, next_grade = select_libelles_emploi(
                     grade_triplet = grade_triplet,
