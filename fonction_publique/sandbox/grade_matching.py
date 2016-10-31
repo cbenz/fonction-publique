@@ -380,16 +380,25 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
     vides_count = 0 if "" not in libemplois.index else libemplois.loc[""]
     libelles_emploi_deja_renseignes = get_libelles_emploi_deja_renseignes(
         libelles_emploi_by_grade_triplet = libelles_emploi_by_grade_triplet)
-    selectionnes_count = libemplois.loc[libelles_emploi_deja_renseignes].sum()
-    total_count = libemplois.sum()
-    print("\n{0} / {1} = {2:.2f} % des libellés emplois non vides ({3} vides soit {4:.2f} %) sont attribués\n".format(
+    selectionnes_count_w = libemplois.loc[libelles_emploi_deja_renseignes].sum()
+    total_count_w = libemplois.sum()
+    renseignes_count = len(libelles_emploi_deja_renseignes)
+    total_count = len(libemplois.index)
+    print("\nPondéré:\n{0} / {1} = {2:.2f} % des libellés emplois non vides ({3} vides soit {4:.2f} %) sont attribués\n".format(
+        selectionnes_count_w,
+        total_count_w,
+        100 * selectionnes_count_w / total_count_w,
+        vides_count,
+        100 * vides_count / total_count_w,
+        ))
+    print("\nNon pondéré:\n{0} / {1} = {2:.2f} % des libellés emplois  sont attribués\n".format(
         selectionnes_count,
         total_count,
         100 * selectionnes_count / total_count,
-        vides_count,
-        100 * vides_count / total_count,
         ))
 
+    
+    
     if new_table_name:
         new_table_name = correspondances_path[:-16] + new_table_name
         pickle.dump(libelles_emploi_by_grade_triplet, open(new_table_name, "wb"))
@@ -447,16 +456,26 @@ def initialize(libemplois = None, annee = None, libelles_emploi_by_grade_triplet
     assert libelles_emploi_by_grade_triplet is not None
     libelles_emploi_deja_renseignes = get_libelles_emploi_deja_renseignes(libelles_emploi_by_grade_triplet)
     print(libelles_emploi_deja_renseignes)
-    renseignes_count = libemplois.loc[annee].loc[libelles_emploi_deja_renseignes].sum()
-    total_count = libemplois.loc[annee].sum()
+    renseignes_count_w = libemplois.loc[annee].loc[libelles_emploi_deja_renseignes].sum()
+    total_count_w = libemplois.loc[annee].sum()
+    renseignes_count = len(libelles_emploi_deja_renseignes)
+    total_count = len(libemplois.loc[annee].index)
     if libelles_emploi_deja_renseignes:
         log.info(
-            "{0} libellés emplois sont déjà renseignés soit {1} / {2} = {3:.2f} %   de l'année".format(
+            "Pondére:\n{0} libellés emplois sont déjà renseignés soit {1} / {2} = {3:.2f} %   de l'année".format(
+                len(libelles_emploi_deja_renseignes),
+                renseignes_count_w,
+                total_count_w,
+                100 * renseignes_count_w / total_count_w
+                )
+            )
+        log.info(
+            "Non pondéré: {0} libellés emplois sont déjà renseignés soit {1} / {2} = {3:.2f} %   de l'année".format(
                 len(libelles_emploi_deja_renseignes),
                 renseignes_count,
                 total_count,
                 100 * renseignes_count / total_count
-                )
+                )    
             )
         #
     #

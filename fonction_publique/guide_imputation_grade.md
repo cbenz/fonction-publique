@@ -14,17 +14,30 @@ I. Installation
 2. Gestion des chemins
     Doivent être précisés dans le programme config.ini (à partir du config_template.ini) les chemins suivants: 
     - Données: emplacement des données initiales (raw) et des données retravaillée (clean). 
-    - Correspondance: emplacement du dossier où l'on souhaite conservé la table de correspondance.
+    - Correspondance: emplacement du dossier où l'on souhaite conserver la table de correspondance.
 
 II. Travail sur les données
 
-Le programme d'imputation des libélés se base sur des données en format h5. Une première étape consiste donc à transformer les données initiales qui sont au format SAS. 
+    input: bases carrière par décennie en csv
+    output: bases libemploi par décenie en h5
+    programme: raw_data_cleaner.py
 
-III. Programme d'imputation des grade pour les libellés observés entre 2000 et 2014. 
-    input: liste des libellés observés chaque année pour chaque versant de la fonction publique
-    output: table de correspondance entre:
-        1. Grades officiels, sous la forme de triplets (versant, grade, date d'effet) pour gérer l'historique des Grades
-        2. Liste de libellés, sous la forme de duplets (libellés, année) pour gérer le fait qu'un même libellé peut renvoyer à des grades différents en fonction de l'année.
+Le programme d'imputation des libélés se base sur des données en format h5, avec un travail prélable de mise en forme des donnés pour neutraliser
+les différences entre libellés simplement dus aux différences de majuscule, d'espace, ou d'accent. 
+Une première étape consiste donc à transformer les données initiales qui sont au format csv, en données utilisables pour le matching. 
 
+Ce travail sur les données ne doit être lancé qu'une seul fois, en amont du matching. 
+Les bases finales ont la forme suivante: pour chaque année entre 2014 et 2000, est stockée la liste des libellés (variable libemploi)
+avec le versant de la FP correspondant (varible status), et le nombre d'occurence de chacun des libellés dans la base carrière.
+
+III. Programmes d'imputation des grade pour les libellés observés entre 2000 et 2014. 
+
+    inputs: 
+    - liste des libellés observés chaque année pour chaque versant de la fonction publique (base libemploi)
+    - éventuellement une table de correspondance déjà commencée que l'on complète avec les libellés qui n'ont pas encore été renseignés.
+    output: table de correspondance entre les libellés et les grades officiels. 
+    programmes: 
+    - grade_matching.py
+    - grade_matching_short.py
 
 Par défaut, la nouvelle table sauvegarde l'ancienne. Pour sauvegarder une nouvelle table il faut préciser un nouveau nom dans la fonction "store_libelle".  
