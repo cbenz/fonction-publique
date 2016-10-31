@@ -120,6 +120,7 @@ def format_columns(variable = None, years_range = None, quarterly = False, clean
             .str.decode('iso-8859-1')
             .str.encode('utf-8')
             )
+        
     careers_hdf_path = get_careers_hdf_path(clean_directory_path, file_path, debug)
 
     subset_to_format.to_hdf(
