@@ -29,6 +29,7 @@ pd.options.display.max_rows = 999
 log = logging.getLogger(__name__)
 
 
+DEBUG = True
 VERSANTS = ['T', 'H']
 
 
@@ -289,7 +290,7 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None):
         print("\nAutres libellés emploi possibles:\n{}".format(libelles_emploi_additionnels))
         selection = raw_input("""
 Liste de nombre (ex: 1:4,6,8,10:11), o (tous), n (aucun), r (recommencer selection), q (quitter/grade suivant), s (sauvegarde et stats)
-selection: """)  # TODO: add a default value to n when enter is hit
+selection: """)
 
         if any((c in [str(i) for i in range(0, 10)]) for c in selection):
             if any((c not in [str(i) for i in '0123456789,:']) for c in selection):
@@ -384,24 +385,28 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
         new_lib = zip([annee] * len(new_lib), new_lib)
         libelles_emploi_by_date[date] += new_lib
 
+    if DEBUG:
+        print("Libellé renseignés")
+        pprint.pprint(libelles_emploi_by_grade_triplet)
+
     print("Libellé renseignés pour le grade {}:".format(grade))
     pprint.pprint(libelles_emploi_by_grade_triplet[versant][grade])
 
     libemplois_annee = libemplois.loc[annee, versant]
     vides_count = 0 if "" not in libemplois_annee.index else libemplois_annee.loc[""]
     libelles_emploi_deja_renseignes = get_libelles_emploi_deja_renseignes_by_versant(
-        libelles_emploi_by_grade_triplet = libelles_emploi_by_grade_triplet, 
+        libelles_emploi_by_grade_triplet = libelles_emploi_by_grade_triplet,
         versant = versant)[versant]
-    selectionnes_count_w = libemplois_annee.loc[libelles_emploi_deja_renseignes].sum()
-    total_count_w = libemplois_annee.sum()
-    renseignes_count = len(libelles_emploi_deja_renseignes)
+    selectionnes_weighted_count = libemplois_annee.loc[libelles_emploi_deja_renseignes].sum()
+    total_weighted_count = libemplois_annee.sum()
+    selectionnes_count = len(libelles_emploi_deja_renseignes)
     total_count = len(libemplois_annee.index)
     print("\nPondéré:\n{0} / {1} = {2:.2f} % des libellés emplois non vides ({3} vides soit {4:.2f} %) sont attribués\n".format(
-        selectionnes_count_w,
-        total_count_w,
-        100 * selectionnes_count_w / total_count_w,
+        selectionnes_weighted_count,
+        total_weighted_count,
+        100 * selectionnes_weighted_count / total_weighted_count,
         vides_count,
-        100 * vides_count / total_count_w,
+        100 * vides_count / total_weighted_count,
         ))
     print("\nNon pondéré:\n{0} / {1} = {2:.2f} % des libellés emplois  sont attribués\n".format(
         selectionnes_count,
@@ -409,8 +414,6 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
         100 * selectionnes_count / total_count,
         ))
 
-    
-    
     if new_table_name:
         new_table_name = correspondances_path[:-16] + new_table_name
         pickle.dump(libelles_emploi_by_grade_triplet, open(new_table_name, "wb"))
@@ -476,7 +479,7 @@ def initialize(libemplois = None, annee = None, libelles_emploi_by_grade_triplet
     assert libemplois is not None and annee is not None
     assert libelles_emploi_by_grade_triplet is not None
     libelles_emploi_deja_renseignes = get_libelles_emploi_deja_renseignes_by_versant(
-        libelles_emploi_by_grade_triplet = libelles_emploi_by_grade_triplet, 
+        libelles_emploi_by_grade_triplet = libelles_emploi_by_grade_triplet,
         versant = versant)[versant]
     print(libelles_emploi_deja_renseignes)
 
@@ -499,7 +502,7 @@ def initialize(libemplois = None, annee = None, libelles_emploi_by_grade_triplet
                 renseignes_count,
                 total_count,
                 100 * renseignes_count / total_count
-                )    
+                )
             )
         #
     #
