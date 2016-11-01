@@ -163,11 +163,11 @@ selection: """)
             score_cutoff -= 5
             continue
         elif selection == "m":
-            grade_neg = select_grade_by_hand(
+            grade_neg = hand_select_grade(
                 libelle_a_saisir = libelle_saisi, choices = libelles_grade_NEG, annee = annee)
             break
         elif selection == "c":
-            grade_neg = select_corps()
+            corps = select_corps()
             break
         elif selection.isdigit() and int(selection) in grades_neg.index:
             grade_neg = grades_neg.loc[int(selection), "libelle_grade_neg"]
@@ -177,8 +177,7 @@ selection: """)
             continue
 
     if selection == "c":
-        versant = versant
-        date_effet_grille = 2000
+        return ("corps", versant, corps)  # TODO improve
     else:
         date_effet_grille = grilles.loc[
             grilles.libelle_grade_NEG == grade_neg
@@ -198,7 +197,7 @@ selection: """)
     return (versant, grade_neg, date_effet_grille)
 
 
-def select_grade_by_hand(libelle_a_saisir = None, choices = None, annee = None):
+def hand_select_grade(libelle_a_saisir = None, choices = None, annee = None):
     '''
     Fonction de sélection par l'utilisateur du grade adéquat pour le libellé donné.
     L'utilisateur saisi à la main un grade, et on cherche dans la liste officielle
@@ -247,31 +246,44 @@ selection: """)
                     return grade_neg
 
 
-def select_corps():
+def select_corps(versant = None):
     '''
-    Provisoire: on regroupe les libellés que l'on souhaite classer comme corps dans
-    un grade ad hoc 'to_match_to_corps' pour chaque versant.
-    A modifier quand on obtient la liste des corps.
+    Sélectionne le corps dans la liste des corps dans le versant idoine
+
+    Parameters
+    ----------
+    versant : str, 'H' ou 'T' indispensable
+
+    Return
+    ------
+    corps: str, le coprs
     '''
-    grade_neg = 'to_match_to_corps'
-    return grade_neg
+    # Provisoire: on regroupe les libellés que l'on souhaite classer comme corps dans
+    # un grade ad hoc 'to_match_to_corps' pour chaque versant.
+    # A modifier quand on obtient la liste des corps.
+    corps = 'corps'
+    return corps
 
 
-def select_libelles_emploi(grade_triplet = None, libemplois = None):
+def select_libelles_emploi(grade_triplet = None, libelles = None):
     '''
-    Fonction de sélection par l'utilisateur des libellés pouvant être rattaché au grade
+    Sélectionne par l'utilisateur des libellés pouvant être rattaché au grade
     choisi par la fonction select_grade_neg.
 
-    Arguments:
-        - Grade choisi à l'étape précédente (select_grade_neg), sous forme de triplet (versant, annee, grade)
-        - Liste des libellés non classés
-    Sortie:
-        - Liste des libellés additionnels pouvant être rattachés au triplet précédent
+    Arguments
+    ---------
+    grade_triplet : tuple (versant, annee, grade), grade de la nomenclature choisi à l'étape précédente
+    libelles :  list, libellés non classés
+
+    Return
+    ------
+    libelles_emploi_selectionnes : liste des libellés additionnels pouvant être rattachés au triplet précédent
+    next_grade : bool, passage au grade suivant
     '''
     assert grade_triplet is not None  # (versant, libelle_grade, date_effet_grille)
-    assert libemplois is not None
+    assert libelles is not None
     libelles_emploi_selectionnes = list()
-    libemplois_init = libemplois
+    libelles_init = libelles
     next_grade = False
     last_min_score = 100
 
@@ -279,17 +291,19 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None):
         if libelles_emploi_selectionnes:
             print("libellés emploi sélectionnés:")
             pprint.pprint(libelles_emploi_selectionnes)
-            libemplois = [libemploi for libemploi in libemplois if libemploi not in libelles_emploi_selectionnes]
+            libelles = [libemploi for libemploi in libelles if libemploi not in libelles_emploi_selectionnes]
 
         libelles_emploi_additionnels = query_libelles_emploi(
             query = grade_triplet[1],
-            choices = libemplois,
+            choices = libelles,
             last_min_score = last_min_score,
             )
 
         print("\nAutres libellés emploi possibles:\n{}".format(libelles_emploi_additionnels))
         selection = raw_input("""
-Liste de nombre (ex: 1:4,6,8,10:11), o (tous), n (aucun), r (recommencer selection), q (quitter/grade suivant), s (sauvegarde et stats)
+liste de nombre (ex: 1:4,6,8,10:11), o (tous), n (aucun), r (recommencer selection),
+q (quitter/grade suivant), s (sauvegarde et stats)
+
 selection: """)
 
         if any((c in [str(i) for i in range(0, 10)]) for c in selection):
@@ -329,7 +343,7 @@ selection: """)
 
         elif selection == 'r':
             last_min_score = 100
-            libemplois = libemplois_init
+            libelles = libelles_init
             libelles_emploi_selectionnes = list()
             continue
 
@@ -347,7 +361,7 @@ selection: """)
 def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = None, libemplois = None,
         libelles_emploi_by_grade_triplet = None, correspondances_path = None, new_table_name = None):
     '''
-    Enregistrement des libellés attribués à un triplet (grade, versant, date d'effet) dans la table de correspondance.
+    Enregistre des libellés attribués à un triplet (grade, versant, date d'effet) dans la table de correspondance.
 
     Arguments:
         - Liste des libellés classés à enregistrer
@@ -401,14 +415,19 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
     total_weighted_count = libemplois_annee.sum()
     selectionnes_count = len(libelles_emploi_deja_renseignes)
     total_count = len(libemplois_annee.index)
-    print("\nPondéré:\n{0} / {1} = {2:.2f} % des libellés emplois non vides ({3} vides soit {4:.2f} %) sont attribués\n".format(
+    print("""
+Pondéré:
+{0} / {1} = {2:.2f} % des libellés emplois non vides ({3} vides soit {4:.2f} %) sont attribués
+""".format(
         selectionnes_weighted_count,
         total_weighted_count,
         100 * selectionnes_weighted_count / total_weighted_count,
         vides_count,
         100 * vides_count / total_weighted_count,
         ))
-    print("\nNon pondéré:\n{0} / {1} = {2:.2f} % des libellés emplois  sont attribués\n".format(
+    print("""
+Non pondéré:\n{0} / {1} = {2:.2f} % des libellés emplois  sont attribués
+""".format(
         selectionnes_count,
         total_count,
         100 * selectionnes_count / total_count,
@@ -465,16 +484,20 @@ def get_libelles_emploi_deja_renseignes_by_versant(libelles_emploi_by_grade_trip
     return result
 
 
-def initialize(libemplois = None, annee = None, libelles_emploi_by_grade_triplet = None, versant = None):
+def initialize_libelles(libemplois = None, annee = None, libelles_emploi_by_grade_triplet = None, versant = None):
     '''
     Fonction d'initialisation des libellés à classer, à partir de la
 
-    Arguments:
-        - Liste de l'ensemble des libellé
-        - Année
-        - Dictionnaire de correspondance
-    Sortie:
-        - Liste ordonnée (selon le nombre d'occurence) des libellés restant à classer pour une année donnée
+    Parameters
+    ----------
+    libemplois : Liste de l'ensemble des libellé
+    annee : int, année
+    libelles_emploi_by_grade_triplet ! dict, dictionnaire de correspondances
+    versant : str, 'H' ou 'T', fonction publique territoriale ou hospitalière
+
+    Return
+    ------
+    Liste ordonnée (selon le nombre d'occurence) des libellés restant à classer pour une année donnée
     '''
     assert libemplois is not None and annee is not None
     assert libelles_emploi_by_grade_triplet is not None
@@ -516,6 +539,46 @@ def initialize(libemplois = None, annee = None, libelles_emploi_by_grade_triplet
             )
 
 
+def select_and_store(libelle_emploi = None, annee = None, versant = None, libelles_emploi_by_grade_triplet = None, libemplois = None,
+        libelles = None, correspondances_path = None):
+    grade_triplet = select_grade_neg(
+        libelle_saisi = libelle_emploi,
+        annee = annee,
+        versant = versant,
+        )
+
+    if grade_triplet is None:
+        return 'break'
+    if grade_triplet == "next" or grade_triplet[0] == 'corps':
+        return 'continue'
+
+    store_libelles_emploi(
+        libelles_emploi = [libelle_emploi],
+        annee = annee,
+        grade_triplet = grade_triplet,
+        libemplois = libemplois,
+        libelles_emploi_by_grade_triplet = libelles_emploi_by_grade_triplet,
+        correspondances_path = correspondances_path,
+        )
+
+    while True:
+        libelles_emploi_selectionnes, next_grade = select_libelles_emploi(
+            grade_triplet = grade_triplet,
+            libelles = libelles
+            )
+        if libelles_emploi_selectionnes:
+            store_libelles_emploi(
+                libelles_emploi = libelles_emploi_selectionnes,
+                annee = annee,
+                grade_triplet = grade_triplet,
+                libemplois = libemplois,
+                libelles_emploi_by_grade_triplet = libelles_emploi_by_grade_triplet,
+                correspondances_path = correspondances_path,
+                )
+        if next_grade:
+            return 'continue'
+
+
 def main(decennie = None):
     assert decennie is not None
     libemplois = load_libelles_emploi_data(decennie = 1950)
@@ -537,60 +600,33 @@ def main(decennie = None):
         #
         for versant in ['T', 'H']:
             log.info("On considère les libellés emplois de l'année {} du versant {}".format(annee, versant))
-            libemplois_annee = initialize(
+            libelles = initialize_libelles(
                 libemplois = libemplois,
                 annee = annee,
                 versant = versant,
                 libelles_emploi_by_grade_triplet = libelles_emploi_by_grade_triplet
                 )
 
-            for libelle_emploi in libemplois_annee:
+            for libelle_emploi in libelles:
                 if libelle_emploi == "":
                     log.info("On ignore les libelle_emploi vides")
                     continue
                 print("\nlibelle emploi: {}\n".format(libelle_emploi))
 
-                grade_triplet = select_grade_neg(
-                    libelle_saisi = libelle_emploi,
+                result = select_and_store(
+                    libelle_emploi = libelle_emploi,
                     annee = annee,
                     versant = versant,
-                    )
-
-                if grade_triplet is None:
-                    break
-                if grade_triplet == "next":
-                    continue
-
-                store_libelles_emploi(
-                    libelles_emploi = [libelle_emploi],
-                    annee = annee,
-                    grade_triplet = grade_triplet,
-                    libemplois = libemplois,
                     libelles_emploi_by_grade_triplet = libelles_emploi_by_grade_triplet,
+                    libemplois = libemplois,
+                    libelles = libelles,
                     correspondances_path = correspondances_path,
                     )
-
-                if grade_triplet[1] == 'to_match_to_corps':
+                if result == 'continue':
                     continue
+                elif result == 'break':
+                    break
 
-                while True:
-                    libelles_emploi_selectionnes, next_grade = select_libelles_emploi(
-                        grade_triplet = grade_triplet,
-                        libemplois = libemplois_annee
-                        )
-                    if libelles_emploi_selectionnes:
-                        store_libelles_emploi(
-                            libelles_emploi = libelles_emploi_selectionnes,
-                            annee = annee,
-                            grade_triplet = grade_triplet,
-                            libemplois = libemplois,
-                            libelles_emploi_by_grade_triplet = libelles_emploi_by_grade_triplet,
-                            correspondances_path = correspondances_path,
-                            )
-                    if next_grade:
-                        break
-                        #
-            #
             while True:
                 selection = raw_input("""
     o: passage à l'année suivante. q : quitter
