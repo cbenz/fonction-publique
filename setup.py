@@ -34,6 +34,7 @@ setup(
         'numpy >= 1.6',
         # 'OpenFisca-France >= 0.5.3',
         'pandas >= 0.18.1',
+        'slugify',
         ],
     packages = find_packages(exclude=['fonction_publique.tests*']),
     test_suite = 'nose.collector',
