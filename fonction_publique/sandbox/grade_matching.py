@@ -17,11 +17,6 @@ from fuzzywuzzy import process
 from fonction_publique.base import get_careers, parser, timing
 from fonction_publique.merge_careers_and_legislation import get_grilles
 
-try:
-    import cPickle as pickle
-except:
-    import pickle
-
 
 pd.options.display.max_colwidth = 0
 pd.options.display.max_rows = 999
@@ -521,7 +516,7 @@ def get_libelle_to_classify(libemplois = None):
         result = dict()
         for versant in VERSANTS:
             libelles_emploi_deja_renseignes = libelles_emploi_deja_renseignes_dataframe.query(
-                "(annee >= @annee) &  (versant == @versant)"  # TODO add condition (date_effet <= @annee) &
+                "(annee >= @annee) &  (versant == @versant)"  # TODO add condition (date_effet <= @annee) &
                 ).libelle.tolist()
             result[versant] = (libemplois
                 .loc[annee, versant]
@@ -540,7 +535,6 @@ def get_libelle_to_classify(libemplois = None):
                 libelle = serie.index[0]
                 frequence = max(frequence, serie.max())
 
-        print versant, libelle, frequence
         print_stats(
             libemplois = libemplois,
             annee = annee,
@@ -578,7 +572,7 @@ def select_and_store(libelle_emploi = None, annee = None, versant = None, libemp
             annee = annee,
             versant = versant,
             )
-        print libelles_emploi_selectionnes 
+
         if libelles_emploi_selectionnes:
             store_libelles_emploi(
                 libelles_emploi = libelles_emploi_selectionnes,
@@ -597,11 +591,6 @@ def main(decennie = None):
     libelles_grade_NEG = sorted(grilles.libelle_grade_NEG.unique().tolist())
     print("Il y a {} libellés emploi différents".format(len(libemplois)))
     print("Il y a {} libellés grade NEG différents".format(len(libelles_grade_NEG)))
-
-    annees = sorted(
-        libemplois.index.get_level_values('annee').unique().tolist(),
-        reverse = True,
-        )
 
     while True:
         versant, annee, libelle_emploi = get_libelle_to_classify(
