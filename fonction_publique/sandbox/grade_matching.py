@@ -356,10 +356,8 @@ selection: """)
                 else:
                     start = stop = int(s)
                 libelles_emploi_selectionnes += libelles_emploi_additionnels.loc[
-                start:stop, 'libelle_emploi'].tolist()
+                    start:stop, 'libelle_emploi'].tolist()
             continue
-
-
 
         elif selection == 'o':
             libelles_emploi_selectionnes += libelles_emploi_additionnels.libelle_emploi.tolist()
@@ -401,7 +399,6 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
     annee : année
     grade_triplet : tuple, (versant, grade, date) assigné aux libellés à enregistrer
     libemplois: list, libellés  (pour le count de la proportion de libellés classés)
-
     '''
     assert libelles_emploi, 'libelles_emploi is None or empty'
     assert isinstance(libelles_emploi, list)
@@ -539,14 +536,19 @@ def get_libelle_to_classify(libemplois = None):
     for annee in annees:
         result = dict()
         for versant in VERSANTS:
-            libelles_emploi_deja_renseignes = libelles_emploi_deja_renseignes_dataframe.query(
-                "(annee >= @annee) &  (versant == @versant)"  # TODO add condition (date_effet <= @annee) &
+            libelles_emploi_deja_renseignes = (libelles_emploi_deja_renseignes_dataframe
+                .loc[pd.to_datetime(
+                    libelles_emploi_deja_renseignes_dataframe.date_effet
+                    ).dt.year <= annee]
+                .query("(annee >= @annee) &  (versant == @versant)")
                 ).libelle.tolist()
+            #
             result[versant] = (libemplois
                 .loc[annee, versant]
                 .loc[~libemplois.loc[annee, versant].index.isin(libelles_emploi_deja_renseignes)]
                 ).head(1)
-
+            #
+        #
         if result['T'].empty and result['H'].empty:
             continue
 
