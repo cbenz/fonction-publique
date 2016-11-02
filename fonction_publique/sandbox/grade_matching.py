@@ -317,8 +317,12 @@ selection: """)
             if any((c not in [str(i) for i in '0123456789,:']) for c in selection):
                 print('Plage de valeurs incorrecte.')
                 continue
+            problem = False
             for s in selection.split(","):
                 if ":" in s:
+                    if s.split(":")[0]=="" or s.split(":")[1]=="":
+                        problem = True
+                        break
                     start = int(s.split(":")[0])
                     stop = int(s.split(":")[1])
                 else:
@@ -330,12 +334,24 @@ selection: """)
                     stop <=
                     libelles_emploi_additionnels.index[-1:]
                         ):
-                    print('Plage de valeurs incorrecte.')
-                    continue
+                    problem = True
+                    break
+               
+            if problem:
+                print('Plage de valeurs incorrecte.')
+                continue 
+    
+            for s in selection.split(","):
+                if ":" in s:
+                    start = int(s.split(":")[0])
+                    stop = int(s.split(":")[1])
                 else:
-                    libelles_emploi_selectionnes += libelles_emploi_additionnels.loc[
-                        start:stop, 'libelle_emploi'].tolist()
-                    continue
+                    start = stop = int(s)          
+                libelles_emploi_selectionnes += libelles_emploi_additionnels.loc[
+                start:stop, 'libelle_emploi'].tolist()
+            continue                                                                     
+                                                                                 
+                
 
         elif selection == 'o':
             libelles_emploi_selectionnes += libelles_emploi_additionnels.libelle_emploi.tolist()
