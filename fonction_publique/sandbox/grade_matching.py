@@ -169,7 +169,11 @@ selection: """)
         elif selection == "m":
             grade_neg = hand_select_grade(
                 libelle_a_saisir = libelle_saisi, choices = libelles_grade_NEG, annee = annee)
-            break
+            if grade_neg:
+                break
+            else:
+                continue
+
         elif selection == "c":
             corps = select_corps(versant = versant)
             break
@@ -207,12 +211,15 @@ def hand_select_grade(libelle_a_saisir = None, choices = None, annee = None):
     L'utilisateur saisi à la main un grade, et on cherche dans la liste officielle
     le grade qui s'en rapproche le plus pour confirmation.
 
-    Arguments:
-        - Libellé à classer
-        - Libelé
-        - Année courante
-    Sortie:
-        - Libellé du grade officiel
+    Paremeter
+    ---------
+    libelle_a_saisir : libellé à classer
+    choices : libellé
+    annee : année courante
+
+    Return
+    ------
+    grade_neg : libellé du grade officiel
     '''
     assert libelle_a_saisir is not None
     assert annee is not None
@@ -337,22 +344,22 @@ selection: """)
                         ):
                     problem = True
                     break
-               
+
             if problem:
                 print('Plage de valeurs incorrecte.')
-                continue 
-    
+                continue
+
             for s in selection.split(","):
                 if ":" in s:
                     start = int(s.split(":")[0])
                     stop = int(s.split(":")[1])
                 else:
-                    start = stop = int(s)          
+                    start = stop = int(s)
                 libelles_emploi_selectionnes += libelles_emploi_additionnels.loc[
                 start:stop, 'libelle_emploi'].tolist()
-            continue                                                                     
-                                                                                 
-                
+            continue
+
+
 
         elif selection == 'o':
             libelles_emploi_selectionnes += libelles_emploi_additionnels.libelle_emploi.tolist()
