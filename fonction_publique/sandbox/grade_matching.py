@@ -171,7 +171,7 @@ selection: """)
                 libelle_a_saisir = libelle_saisi, choices = libelles_grade_NEG, annee = annee)
             break
         elif selection == "c":
-            corps = select_corps()
+            corps = select_corps(versant = versant)
             break
         elif selection.isdigit() and int(selection) in grades_neg.index:
             grade_neg = grades_neg.loc[int(selection), "libelle_grade_neg"]
@@ -265,6 +265,7 @@ def select_corps(versant = None):
     # Provisoire: on regroupe les libellés que l'on souhaite classer comme corps dans
     # un grade ad hoc 'to_match_to_corps' pour chaque versant.
     # A modifier quand on obtient la liste des corps.
+    print('Ici je pourrais choisir mon corps')
     corps = 'corps'
     return corps
 
@@ -546,6 +547,13 @@ def get_libelle_to_classify(libemplois = None):
     return None
 
 
+def store_corps(libelles_emploi = None, grade_triplet = None):
+    print('Ici on stocke dans le corps {} le libellé {}'.format(
+        grade_triplet,
+        libelles_emploi,
+        ))
+
+
 def select_and_store(libelle_emploi = None, annee = None, versant = None, libemplois = None):
     grade_triplet = select_grade_neg(
         libelle_saisi = libelle_emploi,
@@ -555,7 +563,14 @@ def select_and_store(libelle_emploi = None, annee = None, versant = None, libemp
 
     if grade_triplet is None:
         return 'break'
-    if (grade_triplet == "next") or (grade_triplet[0] == 'corps'):
+    if grade_triplet == "next":
+        return 'continue'
+
+    if grade_triplet[0] == 'corps':
+        store_corps(
+            libelles_emploi = libelle_emploi,
+            grade_triplet = grade_triplet,
+            )
         return 'continue'
 
     store_libelles_emploi(
