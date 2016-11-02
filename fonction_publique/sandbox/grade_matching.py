@@ -24,7 +24,7 @@ pd.options.display.max_rows = 999
 log = logging.getLogger(__name__)
 
 
-DEBUG = True
+DEBUG = False
 VERSANTS = ['T', 'H']
 
 correspondance_data_frame_path = parser.get('correspondances', 'h5')
@@ -483,39 +483,67 @@ def load_libelles_emploi_data(decennie = None, debug = False, force_recreate = F
 
 
 def print_stats(libemplois = None, annee = None, versant = None):
-    libemplois_annee = libemplois.loc[annee, versant]
-    vides_count = 0 if "" not in libemplois_annee.index else libemplois_annee.loc[""]
+    # libemplois_annee = libemplois.loc[annee, versant]
+    # vides_count = 0 if "" not in libemplois_annee.index else libemplois_annee.loc[""]
 
-    libelles_emploi_deja_renseignes = list()
-    indexed_correspondance_data_frame = get_correspondance_data_frame().set_index(['annee', 'versant'])
-    if annee in indexed_correspondance_data_frame.index.get_level_values('annee'):
-        if versant in indexed_correspondance_data_frame.index.get_level_values('versant'):
-            libelles_emploi_deja_renseignes = (indexed_correspondance_data_frame
-                .loc[annee, versant]
-                .libelle
-                )
+    # libelles_emploi_deja_renseignes = list()
+    correspondance_data_frame = get_correspondance_data_frame()[
+        ['versant', 'annee', 'date_effet', 'libelle']
+        ].rename(
+            columns = dict(annee = 'annee_stop', libelle = 'libemploi_slugified')
+            ).copy()
+    correspondance_data_frame['annee_start'] = pd.to_datetime(
+        correspondance_data_frame.date_effet
+        ).dt.year
+    del correspondance_data_frame['date_effet']
+    print correspondance_data_frame.columns
+    libemplois.name = 'count'
+    merged_libemplois = (libemplois
+        .reset_index()
+        .query("libemploi_slugified != ''")
+        .merge(correspondance_data_frame)
+        )
+    libelles_emploi_deja_renseignes = (merged_libemplois
+        .query('annee_start <= annee <= annee_stop')
+        .drop(['annee_start', 'annee_stop'], axis = 1)
+        .drop_duplicates()
+        )
+    selectionnes = libelles_emploi_deja_renseignes.groupby(['annee', 'versant']).agg({
+        'count': 'sum',
+        'libemploi_slugified': 'count',
+        }).rename(columns = dict(count = 'selectionnes_ponderes', libemploi_slugified = 'selectionnes'))
 
-    selectionnes_weighted_count = libemplois_annee.loc[libelles_emploi_deja_renseignes].sum()
-    total_weighted_count = libemplois_annee.sum()
-    selectionnes_count = len(libelles_emploi_deja_renseignes)
-    total_count = len(libemplois_annee.index)
-    print("""
-Pondéré:
-{0} / {1} = {2:.2f} % des libellés emplois non vides ({3} vides soit {4:.2f} %) sont attribués
-""".format(
-        selectionnes_weighted_count,
-        total_weighted_count,
-        100 * selectionnes_weighted_count / total_weighted_count,
-        vides_count,
-        100 * vides_count / total_weighted_count,
-        ))
-    print("""
-Non pondéré:\n{0} / {1} = {2:.2f} % des libellés emplois  sont attribués
-""".format(
-        selectionnes_count,
-        total_count,
-        100 * selectionnes_count / total_count,
-        ))
+    total = libemplois.reset_index().groupby(['annee', 'versant']).agg({
+        'count': 'sum',
+        'libemploi_slugified': 'count',
+        }).rename(columns = dict(count = 'total_ponderes', libemploi_slugified = 'total'))
+
+    result = total.merge(selectionnes, left_index = True, right_index = True, how = 'outer').fillna(0)
+
+    result.selectionnes_ponderes = result.selectionnes_ponderes.astype(int)
+    result.selectionnes = result.selectionnes.astype(int)
+    result['pct_pondere'] = 100 * result.selectionnes_ponderes / result.total_ponderes
+    result['pct'] = 100 * result.selectionnes / result.total
+
+    print result.sort(ascending = False)
+
+#     print("""
+# Pondéré:
+# {0} / {1} = {2:.2f} % des libellés emplois non vides ({3} vides soit {4:.2f} %) sont attribués
+# """.format(
+#         selectionnes_weighted_count,
+#         total_weighted_count,
+#         100 * selectionnes_weighted_count / total_weighted_count,
+#         vides_count,
+#         100 * vides_count / total_weighted_count,
+#         ))
+#     print("""
+# Non pondéré:\n{0} / {1} = {2:.2f} % des libellés emplois  sont attribués
+# """.format(
+#         selectionnes_count,
+#         total_count,
+#         100 * selectionnes_count / total_count,
+#         ))
 
 
 def get_libelle_to_classify(libemplois = None):
