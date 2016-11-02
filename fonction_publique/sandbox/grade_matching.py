@@ -529,7 +529,6 @@ def get_libelle_to_classify(libemplois = None):
                 ).head(1)
 
         if result['T'].empty and result['H'].empty:
-            bim
             continue
 
         libelle = None
