@@ -32,29 +32,38 @@ log = logging.getLogger(__name__)
 DEBUG = True
 VERSANTS = ['T', 'H']
 
+correspondance_data_frame_path = parser.get('correspondances', 'h5')
 
-def load_correpondances(correspondances_path = None):
-    '''
-    Charge la table avec les libellés déjà classés précédemment.
+
+def get_correspondance_data_frame():
+    """
+    Charge la table avec les libellés déjà classés.
     En l'absence de chemin déclaré pour la table, génère un nouveau dictionnaire dans lequel les grades
     seront renseignés, en recommençant au début.
 
-    Arguments:
-        - Chemin pour la table de correspondance
-    Sortie:
-        - Table de correspondance (chargée, ou nouvelle générée)
-    '''
+    Parameters
+    ----------
+    correspondances_data_frame_path : chemin pour la table de correspondance
+
+    Return
+    ------
+    correspondance_data_frame : table de correspondance (chargée, ou nouvelle générée)
+    """
     correspondance_non_available = (
-        correspondances_path is None or
-        correspondances_path == 'None' or  # None is parsed as string in config.ini
-        not os.path.exists(correspondances_path)
+        correspondance_data_frame_path is None or
+        correspondance_data_frame_path == 'None' or  # None is parsed as string in config.ini
+        not os.path.exists(correspondance_data_frame_path)
         )
     if correspondance_non_available:
         log.info("Il n'existe pas de fichier de correspondances à compléter")
-        return dict(zip(VERSANTS, [dict(), dict()]))
+        correspondance_data_frame = pd.DataFrame(columns = ['versant', 'grade', 'date_effet', 'annee', 'libelle'])
+        correspondance_data_frame.annee = correspondance_data_frame.annee.astype(int)
+        return correspondance_data_frame
     else:
-        log.info("Le fichier de correspondances {} est utilisé comme point de départ".format(correspondances_path))
-        return pickle.load(open(correspondances_path, "rb"))
+        log.info("Laa table de correspondance {} est utilisé comme point de départ".format(
+            correspondance_data_frame_path))
+        correspondance_data_frame = pd.read_hdf(correspondance_data_frame_path, 'correspondance')
+        return correspondance_data_frame
 
 
 def query_grade_neg(query = None, choices = None, score_cutoff = 95):
@@ -265,7 +274,7 @@ def select_corps(versant = None):
     return corps
 
 
-def select_libelles_emploi(grade_triplet = None, libelles = None):
+def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None, versant = None):
     '''
     Sélectionne par l'utilisateur des libellés pouvant être rattaché au grade
     choisi par la fonction select_grade_neg.
@@ -273,7 +282,7 @@ def select_libelles_emploi(grade_triplet = None, libelles = None):
     Arguments
     ---------
     grade_triplet : tuple (versant, annee, grade), grade de la nomenclature choisi à l'étape précédente
-    libelles :  list, libellés non classés
+    libemplois :  list, libellés classés par versant, annee, frequence
 
     Return
     ------
@@ -281,9 +290,12 @@ def select_libelles_emploi(grade_triplet = None, libelles = None):
     next_grade : bool, passage au grade suivant
     '''
     assert grade_triplet is not None  # (versant, libelle_grade, date_effet_grille)
-    assert libelles is not None
+    assert annee is not None
+    assert libemplois is not None
+    assert versant is not None
     libelles_emploi_selectionnes = list()
-    libelles_init = libelles
+    libelles = libemplois.loc[annee, versant].index.tolist()
+    libelles_init = libemplois.loc[annee, versant].index.tolist()
     next_grade = False
     last_min_score = 100
 
@@ -359,85 +371,57 @@ selection: """)
 
 
 def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = None, libemplois = None,
-        libelles_emploi_by_grade_triplet = None, correspondances_path = None, new_table_name = None):
+        new_table_name = None):
     '''
-    Enregistre des libellés attribués à un triplet (grade, versant, date d'effet) dans la table de correspondance.
+    Enregistre des libellés attribués à un triplet (grade, versant, date d'effet)
+    dans la table de correspondance.
 
-    Arguments:
-        - Liste des libellés classés à enregistrer
-        - Triplet (versant, grade, date) assigné aux libellés à enregistrer
-        - Année
-        - Dictionnaire de correspondance entre triplet et liste de libellé
-        - Chemin de sauvegarde pour la table de correspondance
-        - Liste de tous les libellés de l'année (pour le count de la proportion de libellés classés)
-    Sortie:
-        - Sauvegarde de la nouvelle table de correspondance avec ajout des nouveaux libellés classés.
-        Format: dictionnaires imbriquées {versant:{grade:{date d'effet:list de duplets(annee,libellés)}}}
+    Parameters
+    ----------
+    libelles_emploi : list, liste des libellés classés à enregistrer
+    annee : année
+    grade_triplet : tuple, (versant, grade, date) assigné aux libellés à enregistrer
+    libemplois: list, libellés  (pour le count de la proportion de libellés classés)
+
     '''
     assert libelles_emploi, 'libelles_emploi is None or empty'
     assert isinstance(libelles_emploi, list)
     assert grade_triplet is not None and annee is not None
     assert libemplois is not None
-    assert libelles_emploi_by_grade_triplet is not None
 
-    versant, grade, date = grade_triplet
+    versant, grade, date_effet = grade_triplet
 
-    if versant not in libelles_emploi_by_grade_triplet:
-        libelles_emploi_by_grade_triplet[versant] = libelles_emploi_by_date_by_grade = dict()
-    else:
-        libelles_emploi_by_date_by_grade = libelles_emploi_by_grade_triplet[versant]
-
-    if grade not in libelles_emploi_by_date_by_grade:
-        libelles_emploi_by_date_by_grade[grade] = libelles_emploi_by_date = dict()
-    else:
-        libelles_emploi_by_date = libelles_emploi_by_date_by_grade[grade]
-
-    if date not in libelles_emploi_by_date:
-        libelles_emploi_by_date[date] = [(annee, libelles_emploi[0])]
-    else:
-        new_lib = list(set(libelles_emploi))
-        new_lib = zip([annee] * len(new_lib), new_lib)
-        libelles_emploi_by_date[date] += new_lib
+    correspondance_data_frame = get_correspondance_data_frame()
+    for libelle in libelles_emploi:
+        correspondance_data_frame = correspondance_data_frame.append(pd.DataFrame(
+            data = [[versant, grade, date_effet, annee, libelle]],
+            columns = ['versant', 'grade', 'date_effet', 'annee', 'libelle']
+            ))
 
     if DEBUG:
         print("Libellé renseignés")
-        pprint.pprint(libelles_emploi_by_grade_triplet)
+        pprint.pprint(correspondance_data_frame.set_index(
+            ['versant', 'grade', 'date_effet', 'annee']
+            ))
 
     print("Libellé renseignés pour le grade {}:".format(grade))
-    pprint.pprint(libelles_emploi_by_grade_triplet[versant][grade])
+    if not correspondance_data_frame.empty:
+        pprint.pprint(
+            correspondance_data_frame.set_index(
+                ['versant', 'grade', 'date_effet', 'annee']
+                )
+            .loc[versant, grade, date_effet, annee]
+            )
+    log.info('Writing correspondance_data_frame to {}'.format(correspondance_data_frame_path))
+    correspondance_data_frame.to_hdf(
+        correspondance_data_frame_path, 'correspondance', format = 'table', data_columns = True
+        )
 
-    libemplois_annee = libemplois.loc[annee, versant]
-    vides_count = 0 if "" not in libemplois_annee.index else libemplois_annee.loc[""]
-    libelles_emploi_deja_renseignes = get_libelles_emploi_deja_renseignes_by_versant(
-        libelles_emploi_by_grade_triplet = libelles_emploi_by_grade_triplet,
-        versant = versant)[versant]
-    selectionnes_weighted_count = libemplois_annee.loc[libelles_emploi_deja_renseignes].sum()
-    total_weighted_count = libemplois_annee.sum()
-    selectionnes_count = len(libelles_emploi_deja_renseignes)
-    total_count = len(libemplois_annee.index)
-    print("""
-Pondéré:
-{0} / {1} = {2:.2f} % des libellés emplois non vides ({3} vides soit {4:.2f} %) sont attribués
-""".format(
-        selectionnes_weighted_count,
-        total_weighted_count,
-        100 * selectionnes_weighted_count / total_weighted_count,
-        vides_count,
-        100 * vides_count / total_weighted_count,
-        ))
-    print("""
-Non pondéré:\n{0} / {1} = {2:.2f} % des libellés emplois  sont attribués
-""".format(
-        selectionnes_count,
-        total_count,
-        100 * selectionnes_count / total_count,
-        ))
-
-    if new_table_name:
-        new_table_name = correspondances_path[:-16] + new_table_name
-        pickle.dump(libelles_emploi_by_grade_triplet, open(new_table_name, "wb"))
-    else:
-        pickle.dump(libelles_emploi_by_grade_triplet, open(correspondances_path, "wb"))
+    print_stats(
+        libemplois = libemplois,
+        annee = annee,
+        versant = versant
+        )
 
 
 @timing
@@ -463,130 +447,103 @@ def load_libelles_emploi_data(decennie = None, debug = False, force_recreate = F
     return libemplois
 
 
-def get_libelles_emploi_deja_renseignes_dataframe(libelles_emploi_by_grade_triplet = None):
-    assert libelles_emploi_by_grade_triplet is not None
-    versants = ['T', 'H']
-    result = pd.DataFrame(columns = ['versant', 'grade', 'date_effet', 'annee', 'libelle'])
-    for versant in versants:
-        for grade in libelles_emploi_by_grade_triplet[versant].values():
-            for date_effet in grade.values():
-                for couple_annee_libelle in date_effet:
-                    annee = couple_annee_libelle[0]
-                    libelle = couple_annee_libelle[1]
-                    result.append(
-                        pd.DataFrame(
-                            data = [[versant, grade, date_effet, annee, libelle]],
-                            columns = ['versant', 'grade', 'date_effet', 'annee', 'libelle']
-                            )
-                        )
+# def get_libelles_emploi_a_renseigner(libemplois = None, annee = None, versant = None):
+#     '''
+#     Compte des libellés déjà enregistrés dans la table de correspondance
 
-    return result
+#     Parameters
+#     ----------
+#     Base de correspondance déjà remplie.
 
-
-def get_libelles_emploi_deja_renseignes(libelles_emploi_by_grade_triplet = None, annee = None, versant = None):
-    '''
-    Compte des libellés déjà enregistrés dans la table de correspondance
-
-    Arguments:
-        - Base de correspondance déjà remplie.
-    Sortie:
-        - Liste des libellés renseignés
-    '''
-    assert libelles_emploi_by_grade_triplet is not None
-    versants = ['T', 'H'] if versant is None else [versant]
-    result = dict()
-    for versant in versants:
-        result[versant] = []
-        for grade in libelles_emploi_by_grade_triplet[versant].values():
-            # couple_annee_libelle)
-            if annee is None:
-                liste_libelles = [
-                    couple_annee_libelle[1]
-                    for date in grade.values()
-                    for couple_annee_libelle in date.values()[0]
-                    ]
-            else:
-                liste_libelles = [
-                    couple_annee_libelle[1]
-                    for date in grade.values()
-                    for couple_annee_libelle in date.values()[0]
-                    if couple_annee_libelle[0] == annee
-                    ]
-            result[versant] += liste_libelles
-    return result
+#     Return
+#     ------
+#     Liste des libellés renseignés
+#     '''
+#     libelles_emploi_deja_renseignes = set(correspondance_data_frame.query(
+#         "(annee >= @annee) & (date_effet <= @annee) & (versant == @versant)"
+#         ).libelle.tolist())
+#     libelles = set(libemplois.loc[versant, annee].index.tolist())
+#     return list(libelles.difference(libelles_emploi_deja_renseignes))
 
 
-def print_stats(libemplois = None, libelles_emploi_deja_renseignes = None, annee = None, versant = None):
-    renseignes_count_w = libemplois.loc[annee, versant].loc[libelles_emploi_deja_renseignes].sum()
-    total_count_w = libemplois.loc[annee, versant].sum()
-    renseignes_count = len(libelles_emploi_deja_renseignes)
-    total_count = len(libemplois.loc[annee, versant].index)
-    if libelles_emploi_deja_renseignes:
-        log.info(
-            "Pondére:\n{0} libellés emplois sont déjà renseignés soit {1} / {2} = {3:.2f} %   de l'année".format(
-                len(libelles_emploi_deja_renseignes),
-                renseignes_count_w,
-                total_count_w,
-                100 * renseignes_count_w / total_count_w
+def print_stats(libemplois = None, annee = None, versant = None):
+    libemplois_annee = libemplois.loc[annee, versant]
+    vides_count = 0 if "" not in libemplois_annee.index else libemplois_annee.loc[""]
+
+    libelles_emploi_deja_renseignes = list()
+    indexed_correspondance_data_frame = get_correspondance_data_frame().set_index(['annee', 'versant'])
+    if annee in indexed_correspondance_data_frame.index.get_level_values('annee'):
+        if versant in indexed_correspondance_data_frame.index.get_level_values('versant'):
+            libelles_emploi_deja_renseignes = (indexed_correspondance_data_frame
+                .loc[annee, versant]
+                .libelle
                 )
-            )
-        log.info(
-            "Non pondéré: {0} libellés emplois sont déjà renseignés soit {1} / {2} = {3:.2f} %   de l'année".format(
-                len(libelles_emploi_deja_renseignes),
-                renseignes_count,
-                total_count,
-                100 * renseignes_count / total_count
-                )
-            )
+
+    selectionnes_weighted_count = libemplois_annee.loc[libelles_emploi_deja_renseignes].sum()
+    total_weighted_count = libemplois_annee.sum()
+    selectionnes_count = len(libelles_emploi_deja_renseignes)
+    total_count = len(libemplois_annee.index)
+    print("""
+Pondéré:
+{0} / {1} = {2:.2f} % des libellés emplois non vides ({3} vides soit {4:.2f} %) sont attribués
+""".format(
+        selectionnes_weighted_count,
+        total_weighted_count,
+        100 * selectionnes_weighted_count / total_weighted_count,
+        vides_count,
+        100 * vides_count / total_weighted_count,
+        ))
+    print("""
+Non pondéré:\n{0} / {1} = {2:.2f} % des libellés emplois  sont attribués
+""".format(
+        selectionnes_count,
+        total_count,
+        100 * selectionnes_count / total_count,
+        ))
 
 
-def get_libelle_to_classify(libemplois = None, libelles_emploi_by_grade_triplet = None):
+def get_libelle_to_classify(libemplois = None):
     '''
     Fonction d'initialisation des libellés à classer, à partir de la
 
     Parameters
     ----------
     libemplois : Liste de l'ensemble des libellés
-    libelles_emploi_by_grade_triplet ! dict, dictionnaire de correspondances
 
     Return
     ------
     Liste ordonnée (selon le nombre d'occurence) des libellés restant à classer pour une année donnée
     '''
     assert libemplois is not None
-    assert libelles_emploi_by_grade_triplet is not None
-    libelles_emploi_deja_renseignes_dataframe = get_libelles_emploi_deja_renseignes_dataframe(
-        libelles_emploi_by_grade_triplet = libelles_emploi_by_grade_triplet)
-
+    libelles_emploi_deja_renseignes_dataframe = get_correspondance_data_frame()
     annees = libemplois.index.get_level_values('annee').sort_values(ascending = False)
     for annee in annees:
         result = dict()
         for versant in VERSANTS:
             libelles_emploi_deja_renseignes = libelles_emploi_deja_renseignes_dataframe.query(
-                "(annee >= @annee) & (date_effet <= @annee) & (versant == @versant)"
+                "(annee >= @annee) &  (versant == @versant)"  # TODO add condition (date_effet <= @annee) &
                 ).libelle.tolist()
             result[versant] = (libemplois
                 .loc[annee, versant]
                 .loc[~libemplois.loc[annee, versant].index.isin(libelles_emploi_deja_renseignes)]
                 ).head(1)
 
-        print result
-
         if result['T'].empty and result['H'].empty:
+            bim
             continue
 
         libelle = None
         frequence = 0
         for versant_itere, serie in result.iteritems():
             assert len(serie) == 1
-            versant = versant_itere if serie.values[0] > frequence else None
-            libelle = serie.index[0]
-            frequence = max(frequence, serie.max())
+            if serie.values[0] > frequence:
+                versant = versant_itere
+                libelle = serie.index[0]
+                frequence = max(frequence, serie.max())
 
         print versant, libelle, frequence
         print_stats(
             libemplois = libemplois,
-            libelles_emploi_deja_renseignes = libelles_emploi_deja_renseignes,
             annee = annee,
             versant = versant
             )
@@ -595,8 +552,8 @@ def get_libelle_to_classify(libemplois = None, libelles_emploi_by_grade_triplet 
 
     return None
 
-def select_and_store(libelle_emploi = None, annee = None, versant = None, libelles_emploi_by_grade_triplet = None, libemplois = None,
-        libelles = None, correspondances_path = None):
+
+def select_and_store(libelle_emploi = None, annee = None, versant = None, libemplois = None):
     grade_triplet = select_grade_neg(
         libelle_saisi = libelle_emploi,
         annee = annee,
@@ -605,7 +562,7 @@ def select_and_store(libelle_emploi = None, annee = None, versant = None, libell
 
     if grade_triplet is None:
         return 'break'
-    if grade_triplet == "next" or grade_triplet[0] == 'corps':
+    if (grade_triplet == "next") or (grade_triplet[0] == 'corps'):
         return 'continue'
 
     store_libelles_emploi(
@@ -613,23 +570,22 @@ def select_and_store(libelle_emploi = None, annee = None, versant = None, libell
         annee = annee,
         grade_triplet = grade_triplet,
         libemplois = libemplois,
-        libelles_emploi_by_grade_triplet = libelles_emploi_by_grade_triplet,
-        correspondances_path = correspondances_path,
         )
 
     while True:
         libelles_emploi_selectionnes, next_grade = select_libelles_emploi(
             grade_triplet = grade_triplet,
-            libelles = libelles
+            libemplois = libemplois,
+            annee = annee,
+            versant = versant,
             )
+        print libelles_emploi_selectionnes 
         if libelles_emploi_selectionnes:
             store_libelles_emploi(
                 libelles_emploi = libelles_emploi_selectionnes,
                 annee = annee,
                 grade_triplet = grade_triplet,
                 libemplois = libemplois,
-                libelles_emploi_by_grade_triplet = libelles_emploi_by_grade_triplet,
-                correspondances_path = correspondances_path,
                 )
         if next_grade:
             return 'continue'
@@ -637,15 +593,11 @@ def select_and_store(libelle_emploi = None, annee = None, versant = None, libell
 
 def main(decennie = None):
     assert decennie is not None
-    libemplois = load_libelles_emploi_data(decennie = 1950)
-
+    libemplois = load_libelles_emploi_data(decennie = decennie)
     grilles = get_grilles(subset = ['libelle_FP', 'libelle_grade_NEG'])
     libelles_grade_NEG = sorted(grilles.libelle_grade_NEG.unique().tolist())
     print("Il y a {} libellés emploi différents".format(len(libemplois)))
     print("Il y a {} libellés grade NEG différents".format(len(libelles_grade_NEG)))
-    correspondances_path = parser.get('correspondances', 'dat')
-    libelles_emploi_by_grade_triplet = load_correpondances(
-        correspondances_path = correspondances_path)
 
     annees = sorted(
         libemplois.index.get_level_values('annee').unique().tolist(),
@@ -655,7 +607,6 @@ def main(decennie = None):
     while True:
         versant, annee, libelle_emploi = get_libelle_to_classify(
             libemplois = libemplois,
-            libelles_emploi_by_grade_triplet = libelles_emploi_by_grade_triplet,
             )
         if libelle_emploi == "":
             log.info("On ignore les libelle_emploi vides")
@@ -670,10 +621,7 @@ libelle emploi: {}
             libelle_emploi = libelle_emploi,
             annee = annee,
             versant = versant,
-            libelles_emploi_by_grade_triplet = libelles_emploi_by_grade_triplet,
             libemplois = libemplois,
-            libelles = libelles,
-            correspondances_path = correspondances_path,
             )
         if result == 'continue':
             continue
