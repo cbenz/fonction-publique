@@ -111,7 +111,7 @@ def format_columns(variable = None, years_range = None, quarterly = False, clean
         variable = 'ib'
         del subset_to_format['ib_']
     else:
-        print("{}: {}".format(
+        log.info("Pure string (non-categorical) variable {} inferred dtype: {}".format(
             variable,
             pd.lib.infer_dtype(subset_to_format[variable].values),
             ))
