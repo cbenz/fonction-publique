@@ -92,12 +92,15 @@ def query_libelles_emploi(query = None, choices = None, last_min_score = 100):
     A partir du grade attribué à un libellé rentré à la main, cherche parmi autres
     libellés rentrés à la main des correspondances pour le grade choisi.
 
-    Arguments:
-        - libellé de grade officiel à rapprocher des libellés
-        - Liste possible des libellés rentrés à la main
-        - Score
-    Sortie:
-        - Liste de libellés correspondants avec les score de matching associés.
+    Parameters
+    ----------
+    query : libellé de grade officiel à rapprocher des libellés saisis
+    choices : list, liste possible des libellés saisis
+    last_min_score : int, default 100, score
+
+    Returns
+    -------
+    DataFrame de libellés correspondants avec les score de matching associés.
     '''
     assert query is not None
     assert choices is not None
@@ -314,6 +317,22 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None
             last_min_score = last_min_score,
             )
 
+        print libelles_emploi_additionnels.columns
+        print libemplois.reset_index().columns
+
+        libelles_emploi_additionnels = (libelles_emploi_additionnels
+            .merge(
+                libemplois
+                    .reset_index()
+                    .query('versant == @versant')
+                    .drop(['versant'], axis = 1)
+                    .rename(columns = dict(libemploi_slugified = 'libelle_emploi')),
+                how = 'inner').groupby(['libelle_emploi', 'score']).agg(dict(
+                    annee = dict(min = np.min, max = np.max),
+                    count = dict(freq = np.sum),
+                    )
+                )
+            ).reset_index()
         print("\nAutres libellés emploi possibles:\n{}".format(libelles_emploi_additionnels))
         selection = raw_input("""
 liste de nombre (ex: 1:4,6,8,10:11), o (tous), n (aucun), r (recommencer selection),
@@ -328,7 +347,7 @@ selection: """)
             problem = False
             for s in selection.split(","):
                 if ":" in s:
-                    if s.split(":")[0]=="" or s.split(":")[1]=="":
+                    if s.split(":")[0] == "" or s.split(":")[1] == "":
                         problem = True
                         break
                     start = int(s.split(":")[0])
