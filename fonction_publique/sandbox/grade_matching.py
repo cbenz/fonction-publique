@@ -68,6 +68,28 @@ def get_correspondance_data_frame(which = None):
         data_frame = pd.read_hdf(correspondance_data_frame_path, 'correspondance')
         return data_frame
 
+        
+def get_grilles_cleaned(annee=None):
+    '''
+    Correction des doublons dans la grille initiale
+    '''         
+    grilles = get_grilles(
+        date_effet_max = "{}-12-31".format(annee),
+        subset = ['libelle_FP', 'libelle_grade_NEG'],
+        )
+    # Analyse des doublons 
+    #libelles_grade_NEG_1 = sorted(grilles[~grilles.libelle_grade_NEG_slug.duplicated()].libelle_grade_NEG.tolist())
+    #libelles_grade_NEG_2 = sorted(grilles[~grilles.libelle_grade_NEG.duplicated()].libelle_grade_NEG.tolist())  
+    #list(set(libelles_grade_NEG_2) - set(libelles_grade_NEG_1))
+    #doublons1 = ['INFIRMIER DE CLASSE NORMALE (*)', 'INFIRMIER DE CLASSE NORMALE(*)']
+    #doublons2 = ['INFIRMIER DE CLASSE SUPERIEURE (*)', 'INFIRMIER DE CLASSE SUPERIEURE(*)']
+    #grilles[grilles.libelle_grade_NEG.isin(doublons1)]
+   # grilles[grilles.libelle_grade_NEG.isin(doublons2)]
+    # Suppression à la main
+    grilles.loc[grilles.libelle_grade_NEG=='INFIRMIER DE CLASSE NORMALE (*)','libelle_grade_NEG']= 'INFIRMIER DE CLASSE NORMALE(*)'
+    grilles.loc[grilles.libelle_grade_NEG=='INFIRMIER DE CLASSE SUPERIEURE (*)','libelle_grade_NEG']= 'INFIRMIER DE CLASSE SUPERIEURE(*)'
+    return grilles
+    
 
 def query_grade_neg(query = None, choices = None, score_cutoff = 95):
     '''
@@ -161,10 +183,7 @@ def select_grade_neg(libelle_saisi = None, annee = None, versant = None):  # Ren
     assert annee is not None
     score_cutoff = 95
 
-    grilles = get_grilles(
-        date_effet_max = "{}-12-31".format(annee),
-        subset = ['libelle_FP', 'libelle_grade_NEG'],
-        )
+    grilles = get_grilles_cleaned(annee)
     libelles_grade_NEG = grilles['libelle_grade_NEG'].unique()
 
     while True:
@@ -669,10 +688,10 @@ def select_and_store(libelle_emploi = None, annee = None, versant = None, libemp
 def main(decennie = None):
     assert decennie is not None
     libemplois = load_libelles_emploi_data(decennie = decennie)
-    grilles = get_grilles(subset = ['libelle_FP', 'libelle_grade_NEG'])
-    libelles_grade_NEG = sorted(grilles.libelle_grade_NEG.unique().tolist())
-    print("Il y a {} libellés emploi différents".format(len(libemplois)))
-    print("Il y a {} libellés grade NEG différents".format(len(libelles_grade_NEG)))
+#    grilles = get_grilles(subset = ['libelle_FP', 'libelle_grade_NEG'])
+#    libelles_grade_NEG = sorted(grilles.libelle_grade_NEG.unique().tolist())
+#    print("Il y a {} libellés emploi différents".format(len(libemplois)))
+#    print("Il y a {} libellés grade NEG différents".format(len(libelles_grade_NEG)))
 
     while True:
         versant, annee, libelle_emploi = get_libelle_to_classify(
