@@ -532,8 +532,7 @@ def print_stats(libemplois = None, annee = None, versant = None):
     result.selectionnes = result.selectionnes.astype(int)
     result['pct_pondere'] = 100 * result.selectionnes_ponderes / result.total_ponderes
     result['pct'] = 100 * result.selectionnes / result.total
-
-    print result.sort(ascending = False)
+    print(result.sort(ascending = False))
 
     #     print("""
     # Pondéré:
@@ -614,7 +613,7 @@ def store_corps(libelles_emploi = None, grade_triplet = None):
     for libelle in libelles_emploi:
         versant = grade_triplet[1]
         corps = grade_triplet[2]
-        data_frame = data_frame.append(pd.DataFrame(  # Add annee
+        data_frame = data_frame.append(pd.DataFrame(  # Add annee
             data = [[versant, corps, libelle]],
             columns = ['versant', 'corps', 'libelle']
             ))
