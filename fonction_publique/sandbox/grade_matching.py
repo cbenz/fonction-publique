@@ -28,40 +28,45 @@ DEBUG = False
 VERSANTS = ['T', 'H']
 
 correspondance_data_frame_path = parser.get('correspondances', 'h5')
+corps_correspondance_data_frame_path = parser.get('correspondances', 'corps_h5')
 libelles_emploi_tmp_directory = parser.get('correspondances', 'libelles_emploi_tmp_directory')
 if not os.path.exists(os.path.dirname(libelles_emploi_tmp_directory)):
     os.makedirs(libelles_emploi_tmp_directory)
 
 
-def get_correspondance_data_frame():
+def get_correspondance_data_frame(which = None):
     """
     Charge la table avec les libellés déjà classés.
-    En l'absence de chemin déclaré pour la table, génère un nouveau dictionnaire dans lequel les grades
-    seront renseignés, en recommençant au début.
-
-    Parameters
-    ----------
-    correspondances_data_frame_path : chemin pour la table de correspondance
 
     Returns
     -------
-    correspondance_data_frame : table de correspondance (chargée, ou nouvelle générée)
+    data_frame : table de correspondance (chargée, ou nouvelle générée)
     """
+    assert which in ['grade', 'corps'], "Seuls les tables des grades et des corps existent"
+
+    data_frame_path = (
+        correspondance_data_frame_path
+        if which == 'grade'
+        else corps_correspondance_data_frame_path
+        )
     correspondance_non_available = (
-        correspondance_data_frame_path is None or
-        correspondance_data_frame_path == 'None' or  # None is parsed as string in config.ini
-        not os.path.exists(correspondance_data_frame_path)
+        data_frame_path is None or
+        data_frame_path == 'None' or  # None is parsed as string in config.ini
+        not os.path.exists(data_frame_path)
         )
     if correspondance_non_available:
-        log.info("Il n'existe pas de fichier de correspondances à compléter")
-        correspondance_data_frame = pd.DataFrame(columns = ['versant', 'grade', 'date_effet', 'annee', 'libelle'])
-        correspondance_data_frame.annee = correspondance_data_frame.annee.astype(int)
-        return correspondance_data_frame
+        log.info("Il n'existe pas de fichier de correspondances pour le {} à compléter".format(which))
+        if which == 'grade':
+            data_frame = pd.DataFrame(columns = ['versant', 'grade', 'date_effet', 'annee', 'libelle'])
+        if which == 'corps':
+            data_frame = pd.DataFrame(columns = ['versant', 'corps', 'libelle'])  # TODO: Add annee
+        data_frame.annee = data_frame.annee.astype(int)
+        return data_frame
     else:
         log.info("Laa table de correspondance {} est utilisé comme point de départ".format(
-            correspondance_data_frame_path))
-        correspondance_data_frame = pd.read_hdf(correspondance_data_frame_path, 'correspondance')
-        return correspondance_data_frame
+            data_frame_path))
+        data_frame = pd.read_hdf(correspondance_data_frame_path, 'correspondance')
+        return data_frame
 
 
 def query_grade_neg(query = None, choices = None, score_cutoff = 95):
@@ -133,7 +138,7 @@ def query_libelles_emploi(query = None, choices = None, last_min_score = 100):
     return pd.DataFrame.from_records(results, columns = ['libelle_emploi', 'score'])
 
 
-def select_grade_neg(libelle_saisi = None, annee = None, versant = None):
+def select_grade_neg(libelle_saisi = None, annee = None, versant = None):  # Rename select_grade_or_corps
     '''
     Fonction de sélection par l'utilisateur du grade adéquat parmi les choix possibles.
     On charge les grades officiels de l'année courante, puis
@@ -141,11 +146,16 @@ def select_grade_neg(libelle_saisi = None, annee = None, versant = None):
     Si aucun grade ne correspond au libellé considéré, l'utilisateur peut soit abaisser le
     seuil, soit rentrer un grade à la main, soit décider de ne pas classer le grade.
 
-    Arguments:
-        - Libellé à classer
-        - Année courante
-    Sortie:
-        - Triplet (versant, grade, date d'effet) correspondant pour le libellé considéré.
+    Parameters
+    ----------
+    libelle_saisi : str, Libellé à classer
+    annee : int, année courante
+    versant : 'H' or 'T', versant
+
+    Returns
+    -------
+    grade_neg : tuple, (versant, grade, date d'effet) du grade correspondant
+                ou ('corps', versant, corps) pour le libellé considéré.
     '''
     assert libelle_saisi is not None
     assert annee is not None
@@ -181,7 +191,7 @@ selection: """)
                 continue
 
         elif selection == "c":
-            corps = select_corps(versant = versant)
+            corps = select_corps(libelle_saisi = libelle_saisi, annee = annee, versant = versant)
             break
         elif selection.isdigit() and int(selection) in grades_neg.index:
             grade_neg = grades_neg.loc[int(selection), "libelle_grade_neg"]
@@ -263,12 +273,14 @@ selection: """)
                     return grade_neg
 
 
-def select_corps(versant = None):
+def select_corps(libelle_saisi = None, annee = None, versant = None):
     '''
     Sélectionne le corps dans la liste des corps dans le versant idoine
 
     Parameters
     ----------
+    libelle_saisi: str, libellé saisi
+    annee: int, année
     versant : str, 'H' ou 'T' indispensable
 
     Returns
@@ -278,6 +290,7 @@ def select_corps(versant = None):
     # Provisoire: on regroupe les libellés que l'on souhaite classer comme corps dans
     # un grade ad hoc 'to_match_to_corps' pour chaque versant.
     # A modifier quand on obtient la liste des corps.
+
     print('Ici je pourrais choisir mon corps')
     corps = 'corps'
     return corps
@@ -426,7 +439,7 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
 
     versant, grade, date_effet = grade_triplet
 
-    correspondance_data_frame = get_correspondance_data_frame()
+    correspondance_data_frame = get_correspondance_data_frame(which = 'grade')
     for libelle in libelles_emploi:
         correspondance_data_frame = correspondance_data_frame.append(pd.DataFrame(
             data = [[versant, grade, date_effet, annee, libelle]],
@@ -483,7 +496,7 @@ def load_libelles_emploi_data(decennie = None, debug = False, force_recreate = F
 
 
 def print_stats(libemplois = None, annee = None, versant = None):
-    correspondance_data_frame = get_correspondance_data_frame()[
+    correspondance_data_frame = get_correspondance_data_frame(which = 'grade')[
         ['versant', 'annee', 'date_effet', 'libelle']
         ].rename(
             columns = dict(annee = 'annee_stop', libelle = 'libemploi_slugified')
@@ -554,7 +567,7 @@ def get_libelle_to_classify(libemplois = None):
     Liste ordonnée (selon le nombre d'occurence) des libellés restant à classer pour une année donnée
     '''
     assert libemplois is not None
-    libelles_emploi_deja_renseignes_dataframe = get_correspondance_data_frame()
+    libelles_emploi_deja_renseignes_dataframe = get_correspondance_data_frame(which = 'grade')
     annees = libemplois.index.get_level_values('annee').sort_values(ascending = False)
     for annee in annees:
         result = dict()
@@ -596,10 +609,17 @@ def get_libelle_to_classify(libemplois = None):
 
 
 def store_corps(libelles_emploi = None, grade_triplet = None):
-    print('Ici on stocke dans le corps {} le libellé {}'.format(
-        grade_triplet,
-        libelles_emploi,
-        ))
+    # TODO: fix grade_triplet = ('corps', versant, corps)
+    data_frame = get_correspondance_data_frame(which = 'corps')
+    for libelle in libelles_emploi:
+        versant = grade_triplet[1]
+        corps = grade_triplet[2]
+        data_frame = data_frame.append(pd.DataFrame(  # Add annee
+            data = [[versant, corps, libelle]],
+            columns = ['versant', 'corps', 'libelle']
+            ))
+    log.info('Writing corps_correspondance_data_frame to {}'.format(corps_correspondance_data_frame_path))
+    data_frame.to_hdf(corps_correspondance_data_frame_path, 'correspondance', format = 'table', data_columns = True)
 
 
 def select_and_store(libelle_emploi = None, annee = None, versant = None, libemplois = None):
@@ -616,7 +636,7 @@ def select_and_store(libelle_emploi = None, annee = None, versant = None, libemp
 
     if grade_triplet[0] == 'corps':
         store_corps(
-            libelles_emploi = libelle_emploi,
+            libelles_emploi = [libelle_emploi],
             grade_triplet = grade_triplet,
             )
         return 'continue'
