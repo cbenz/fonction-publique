@@ -28,6 +28,9 @@ DEBUG = False
 VERSANTS = ['T', 'H']
 
 correspondance_data_frame_path = parser.get('correspondances', 'h5')
+libelles_emploi_tmp_directory = parser.get('correspondances', 'libelles_emploi_tmp_directory')
+if not os.path.exists(os.path.dirname(libelles_emploi_tmp_directory)):
+    os.makedirs(libelles_emploi_tmp_directory)
 
 
 def get_correspondance_data_frame():
@@ -40,8 +43,8 @@ def get_correspondance_data_frame():
     ----------
     correspondances_data_frame_path : chemin pour la table de correspondance
 
-    Return
-    ------
+    Returns
+    -------
     correspondance_data_frame : table de correspondance (chargée, ou nouvelle générée)
     """
     correspondance_non_available = (
@@ -220,8 +223,8 @@ def hand_select_grade(libelle_a_saisir = None, choices = None, annee = None):
     choices : libellé
     annee : année courante
 
-    Return
-    ------
+    Returns
+    -------
     grade_neg : libellé du grade officiel
     '''
     assert libelle_a_saisir is not None
@@ -268,8 +271,8 @@ def select_corps(versant = None):
     ----------
     versant : str, 'H' ou 'T' indispensable
 
-    Return
-    ------
+    Returns
+    -------
     corps: str, le coprs
     '''
     # Provisoire: on regroupe les libellés que l'on souhaite classer comme corps dans
@@ -290,8 +293,8 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None
     grade_triplet : tuple (versant, annee, grade), grade de la nomenclature choisi à l'étape précédente
     libemplois :  list, libellés classés par versant, annee, frequence
 
-    Return
-    ------
+    Returns
+    -------
     libelles_emploi_selectionnes : liste des libellés additionnels pouvant être rattachés au triplet précédent
     next_grade : bool, passage au grade suivant
     '''
@@ -316,9 +319,6 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None
             choices = libelles,
             last_min_score = last_min_score,
             )
-
-        print libelles_emploi_additionnels.columns
-        print libemplois.reset_index().columns
 
         libelles_emploi_additionnels = (libelles_emploi_additionnels
             .merge(
@@ -462,8 +462,8 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
 @timing
 def load_libelles_emploi_data(decennie = None, debug = False, force_recreate = False):
     assert decennie is not None
-    libemploi_h5 = 'libemploi_{}.h5'.format(decennie)
 
+    libemploi_h5 = os.path.join(libelles_emploi_tmp_directory, 'libemploi_{}.h5'.format(decennie))
     if os.path.exists(libemploi_h5) and not force_recreate:
         libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
         log.info("Libellés emploi read from {}".format(libemploi_h5))
@@ -482,30 +482,7 @@ def load_libelles_emploi_data(decennie = None, debug = False, force_recreate = F
     return libemplois
 
 
-# def get_libelles_emploi_a_renseigner(libemplois = None, annee = None, versant = None):
-#     '''
-#     Compte des libellés déjà enregistrés dans la table de correspondance
-
-#     Parameters
-#     ----------
-#     Base de correspondance déjà remplie.
-
-#     Return
-#     ------
-#     Liste des libellés renseignés
-#     '''
-#     libelles_emploi_deja_renseignes = set(correspondance_data_frame.query(
-#         "(annee >= @annee) & (date_effet <= @annee) & (versant == @versant)"
-#         ).libelle.tolist())
-#     libelles = set(libemplois.loc[versant, annee].index.tolist())
-#     return list(libelles.difference(libelles_emploi_deja_renseignes))
-
-
 def print_stats(libemplois = None, annee = None, versant = None):
-    # libemplois_annee = libemplois.loc[annee, versant]
-    # vides_count = 0 if "" not in libemplois_annee.index else libemplois_annee.loc[""]
-
-    # libelles_emploi_deja_renseignes = list()
     correspondance_data_frame = get_correspondance_data_frame()[
         ['versant', 'annee', 'date_effet', 'libelle']
         ].rename(
@@ -515,11 +492,10 @@ def print_stats(libemplois = None, annee = None, versant = None):
         correspondance_data_frame.date_effet
         ).dt.year
     del correspondance_data_frame['date_effet']
-    print correspondance_data_frame.columns
     libemplois.name = 'count'
     merged_libemplois = (libemplois
         .reset_index()
-        .query("libemploi_slugified != ''")
+        .query("libemploi_slugified != ''")  # On ne garde pas les libellés vides
         .merge(correspondance_data_frame)
         )
     libelles_emploi_deja_renseignes = (merged_libemplois
@@ -546,23 +522,23 @@ def print_stats(libemplois = None, annee = None, versant = None):
 
     print result.sort(ascending = False)
 
-#     print("""
-# Pondéré:
-# {0} / {1} = {2:.2f} % des libellés emplois non vides ({3} vides soit {4:.2f} %) sont attribués
-# """.format(
-#         selectionnes_weighted_count,
-#         total_weighted_count,
-#         100 * selectionnes_weighted_count / total_weighted_count,
-#         vides_count,
-#         100 * vides_count / total_weighted_count,
-#         ))
-#     print("""
-# Non pondéré:\n{0} / {1} = {2:.2f} % des libellés emplois  sont attribués
-# """.format(
-#         selectionnes_count,
-#         total_count,
-#         100 * selectionnes_count / total_count,
-#         ))
+    #     print("""
+    # Pondéré:
+    # {0} / {1} = {2:.2f} % des libellés emplois non vides ({3} vides soit {4:.2f} %) sont attribués
+    # """.format(
+    #         selectionnes_weighted_count,
+    #         total_weighted_count,
+    #         100 * selectionnes_weighted_count / total_weighted_count,
+    #         vides_count,
+    #         100 * vides_count / total_weighted_count,
+    #         ))
+    #     print("""
+    # Non pondéré:\n{0} / {1} = {2:.2f} % des libellés emplois  sont attribués
+    # """.format(
+    #         selectionnes_count,
+    #         total_count,
+    #         100 * selectionnes_count / total_count,
+    #         ))
 
 
 def get_libelle_to_classify(libemplois = None):
@@ -573,8 +549,8 @@ def get_libelle_to_classify(libemplois = None):
     ----------
     libemplois : Liste de l'ensemble des libellés
 
-    Return
-    ------
+    Returns
+    -------
     Liste ordonnée (selon le nombre d'occurence) des libellés restant à classer pour une année donnée
     '''
     assert libemplois is not None
