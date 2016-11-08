@@ -491,27 +491,6 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
         )
 
 
-@timing
-def load_libelles_emploi_data(decennie = None, debug = False, force_recreate = False):
-    assert decennie is not None
-
-    libemploi_h5 = os.path.join(libelles_emploi_tmp_directory, 'libemploi_{}.h5'.format(decennie))
-    if os.path.exists(libemploi_h5) and not force_recreate:
-        libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
-        log.info("Libellés emploi read from {}".format(libemploi_h5))
-    else:
-        libemploi = get_careers(variable = 'libemploi', decennie = decennie, debug = debug)
-        statut = get_careers(variable = 'statut', decennie = decennie, debug = debug)
-        libemploi = (libemploi.merge(
-            statut.query("statut in ['T', 'H']"),
-            how = 'inner',
-            ))
-        libemploi['libemploi_slugified'] = libemploi.libemploi.apply(slugify, separator = "_")
-        libemploi.rename(columns = dict(statut = 'versant'), inplace = True)
-        libemplois = libemploi.groupby([u'annee', u'versant'])['libemploi_slugified'].value_counts()
-        log.info("Generating and saving libellés emploi to {}".format(libemploi_h5))
-        libemplois.to_hdf(libemploi_h5, 'libemploi')
-    return libemplois
 
 
 def print_stats(libemplois = None, annee = None, versant = None):
