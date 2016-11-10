@@ -63,7 +63,7 @@ def get_correspondance_data_frame(which = None):
         data_frame.annee = data_frame.annee.astype(int)
         return data_frame
     else:
-        log.info("Laa table de correspondance {} est utilisé comme point de départ".format(
+        log.info("La table de correspondance {} est utilisé comme point de départ".format(
             data_frame_path))
         data_frame = pd.read_hdf(correspondance_data_frame_path, 'correspondance')
         return data_frame
@@ -277,19 +277,23 @@ selection: """)
             elif selection == "r":
                 continue
             elif selection == "o":
-                grades_neg = query_grade_neg(query = libelle_saisi, choices = choices, score_cutoff = score_cutoff)
-                print("\nGrade NEG possibles pour {} (score_cutoff = {}):\n{}".format(
-                    libelle_saisi, score_cutoff, grades_neg))
-                selection2 = raw_input("""
-NOMBRE, recommencer la saisie(r), quitter (q)
-selection: """)
-                if selection2 == "q":
-                    return
-                elif selection2 == "r":
-                    continue
-                elif selection2.isdigit() and int(selection2) in grades_neg.index:
-                    grade_neg = grades_neg.loc[int(selection2), "libelle_grade_neg"]
-                    return grade_neg
+                while True: 
+                    grades_neg = query_grade_neg(query = libelle_saisi, choices = choices, score_cutoff = score_cutoff)
+                    print("\nGrade NEG possibles pour {} (score_cutoff = {}):\n{}".format(
+                        libelle_saisi, score_cutoff, grades_neg))
+                    selection2 = raw_input("""
+    NOMBRE, plus de choix (n), recommencer la saisie(r), quitter (q)
+    selection: """)
+                    if selection2 == "q":
+                        return
+                    elif selection2 == "r":
+                        break
+                    elif selection2 == "n":
+                        score_cutoff -= 5
+                        continue
+                    elif selection2.isdigit() and int(selection2) in grades_neg.index:
+                        grade_neg = grades_neg.loc[int(selection2), "libelle_grade_neg"]
+                        return grade_neg
 
 
 def select_corps(libelle_saisi = None, annee = None, versant = None):

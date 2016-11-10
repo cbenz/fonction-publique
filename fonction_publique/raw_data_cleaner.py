@@ -151,6 +151,11 @@ def main(raw_directory_path = None, clean_directory_path = None, debug = None, c
             quarterly = False,
             ),
         dict(
+            variable = 'fnetneh',
+            years_range = range(2010, 2015),
+            quarterly = False,
+            ),     
+        dict(
             variable = 'c_cir',
             years_range = range(2010, 2015),
             quarterly = False,
