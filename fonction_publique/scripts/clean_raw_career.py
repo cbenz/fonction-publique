@@ -10,8 +10,10 @@ import logging
 import os
 import sys
 
+
 from fonction_publique import raw_data_cleaner
 from fonction_publique.base import clean_directory_path, raw_directory_path
+
 
 app_name = os.path.splitext(os.path.basename(__file__))[0]
 log = logging.getLogger(app_name)
@@ -21,7 +23,9 @@ def main():
     parser.add_argument('-c', '--chunksize', type=int,  default = 1000, help = 'size of subset when in debug mode')
     parser.add_argument('-y', '--year_min', type=int,   default = 1900, help = 'starting year for time-varying variables')
     parser.add_argument('-sd', '--subset_data', nargs='+', default = None,
-        help = 'subset of datasets to extract in the source directory. Format: -sd data1 data2)
+        help = 'subset of datasets to extract in the source directory. Format: -sd data1 data2')
+    parser.add_argument('-sv', '--subset_var', nargs='+', default = None,
+        help = 'subset of variables to extract in the raw dataset. Format: -sv var1 var2')
     parser.add_argument('-d', '--debug', action = 'store_true', default = False,
         help = 'use smaller subset for debugging purposes')
     parser.add_argument('-s', '--source', default = raw_directory_path,
@@ -32,8 +36,9 @@ def main():
     args = parser.parse_args()
     logging.basicConfig(level = logging.INFO if args.verbose else logging.WARNING, stream = sys.stdout)
     log.info('Start cleaning data in {}'.format(args.source))
-
-    print(args.subset_data)
+    log.info('Cleaned data will be saved in {}'.format(args.target))
+    
+    
     chunksize = args.chunksize if args.debug else None
     raw_data_cleaner.main(
         raw_directory_path = args.source,
@@ -42,6 +47,7 @@ def main():
         chunksize = chunksize,
         year_min = args.year_min,
         name_data = args.subset_data,
+        name_var = args.subset_var,
         )
 
     
