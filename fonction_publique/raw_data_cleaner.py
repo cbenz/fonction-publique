@@ -142,7 +142,7 @@ def format_generation(file_path = None, clean_directory_path = None, debug = Fal
     log.info('generation was added to carriere')
 
 
-def main(raw_directory_path = None, clean_directory_path = None, debug = None, chunksize = None, name_data = None, name_var = None, year_min = None):
+def main(raw_directory_path = None, clean_directory_path = None, debug = None, chunksize = None, subset_data = None, subset_var = None, year_min = None):
     assert raw_directory_path is not None
     
     if year_min is None:
@@ -187,8 +187,8 @@ def main(raw_directory_path = None, clean_directory_path = None, debug = None, c
             ),
         ]
 
-    if name_data is not None:
-        list_data = name_data
+    if subset_data is not None:
+        list_data = subset_data
     else:
        list_data = os.listdir(raw_directory_path)
         
@@ -209,12 +209,11 @@ def main(raw_directory_path = None, clean_directory_path = None, debug = None, c
             chunksize = chunksize,
             )                
         
-        if name_var is not None:
-            arg_columns = []
-            for column in arg_format_columns:
-                if column['variable'] in name_var:
-                    arg_columns.append(column)  
-            arg_format_columns = arg_columns         
+        if subset_var is not None:
+            arg_format_columns = [
+                column for column in arg_format_columns 
+                if column['variable'] in subset_var
+                ]      
         
         for kwargs in arg_format_columns:
             kwargs.update(dict(

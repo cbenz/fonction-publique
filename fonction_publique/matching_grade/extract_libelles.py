@@ -1,13 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Nov 14 15:54:59 2016
-
-@author: s.rabate
-
-
 extract_libelle: save a dataframe with all the libellés of all the decennie, 
 that will be matched in the grade_matching.py script.
-
 """
 
 import logging
