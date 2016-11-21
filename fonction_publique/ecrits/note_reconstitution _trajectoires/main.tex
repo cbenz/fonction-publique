@@ -1,0 +1,137 @@
+ 
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}		% LaTeX, comprend les accents !
+\usepackage[T1]{fontenc}
+\usepackage{natbib}	
+%\usepackage[square,sort&compress,sectionbib]{natbib}		% Doit être chargé avant babel      
+\usepackage[frenchb,english]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb, amsthm}
+\usepackage{a4wide}
+\usepackage[capposition=top]{floatrow}
+\usepackage{verbatim}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{flafter}
+\usepackage{longtable}
+\usepackage{import}
+\usepackage{pdflscape}
+\usepackage{rotating}
+\usepackage{hhline}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage[pdftex,pdfborder={0 0 0},colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue,bookmarksopen=true]{hyperref}
+\usepackage{eurosym}
+%\usepackage{breakcites}
+\usepackage[autostyle]{csquotes}
+%\usepackage{datetime}
+\usepackage{natbib}
+\usepackage{setspace}
+\usepackage{lscape}
+\usepackage[usenames]{color}
+\usepackage{indentfirst}
+\usepackage{url}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{subcaption}
+\usepackage[justification=centering]{caption}
+\bibliographystyle{agsm}
+
+\usepackage{array}
+
+\newcommand{\isEmbedded}{true}
+
+\graphicspath{{../bordeaux/results/}}
+
+
+\begin{document}
+
+\selectlanguage{frenchb}
+\title{Compléter les carrières en rétrospectif}
+
+
+\author{Simon Rabat\'e}
+
+
+\maketitle
+
+% Introduction
+La modélisation des trajectoires indiciaires des agents de la CNRACL nécessite de pouvoir
+observer, sur une durée relativement importante, l’évolution des carrières à la CNRACL.
+Concrètement, cela implique d’être en mesure de connaitre, à chaque date t, la position exacte
+de l’individu dans les grilles indiciaires : le versant, le corps, le grade et in fine l’échelon dans
+ce grade.
+Le problème est que l’échelon n’est jamais directement observé, il faut donc l’imputer à
+partir des informations disponibles dans les données. A partir du grade, de la date, et de
+l’indice correspondant, il est normalement possible d’obtenir l’échelon correspondant. Outre
+le fait que ceci doit encore être vérifié dans les données, la variable de grade n’est disponible
+qu’à partir de l’année 2011. L’étude des trajectoires professionnelles nécessite donc une étape
+de complétion des grades à partir des libellés saisis à la main, disponible dans la base carrière
+à partir de 2000.
+
+% Section I: principe général 
+\section{Données disponibles, données manquantes}
+
+La reconstitution des trajectoires dans les grilles repose sur deux sources de données :
+\begin{itemize}[leftmargin=2cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
+\item Les grilles de la fonction publiques dématérialisées. Pour chaque grille, nous disposons
+des informations suivantes : la date d'effet, l'indice brut correspondant à chaque échelon, et les conditions de durée passée dans le grade (durée min, durée max, ou durée moyenne).
+\item La base carrière, qui comporte des informations sur les trajectoires individuelles dans le régime. Les variables disponibles varient en fonction des années considérées
+(cf. infra).
+
+\end{itemize}
+
+A partir de ces deux sources d'information, l'objectif est d'être en mesure de replacer
+chaque point observé dans la base carrière dans les grilles correspondantes, pour recomposer
+les trajectoire au sein des grilles (ou au sein du corps, du versant, ou de la FP en général).
+Comme mentionné en introduction, l'échelon est en théorie défini de manière unique par
+le grade et l'indice brut. En pratique, des discordances peuvent exister, en cas d'erreur de
+saisie sur l'une des variables ou de l'absence de prise en compte de changement de grille par
+les agents. Par ailleurs la définition du grade donné dans les grilles (grade neg) ne correspond
+pas forcément à la variable de grade que l'on observe dans les données (cf. note de PJ du 24
+juin 2016 et section 2). Une première étape de complétion consiste donc à faire correspondre
+le grade observé dans la base carrière au grade neg permettant de retrouver l'échelon à partir
+des grilles.
+De manière plus problématique, les variables de grades (CIR ou NETNEH) ne sont renseignés
+que pour les années 2011 à 2014. Obtenir des trajectoires indiciaires sur une plage
+temporelle plus importante implique donc une étape de complétion supplémentaire, pour obtenir
+le grade à partir des variables disponibles. En particulier, nous utilisons une variable
+de libellés de grade saisi à la main (variable libemploi, disponible à partir de 2010). Un programme
+de matching du libellé rempli à la main au code grade neg a été développé par l'IPP,
+visant à attribuer à chaque épisode d'emploi dans le régime un grade (section \ref).
+
+
+% Section II: data
+\section{Du libellé grade NETNEH au grade NEG}
+
+
+
+% Section III: Modélisation
+\section{Du libellé au grade : une procédure de matching}
+
+
+
+% Section IV: Simulation
+\section{Du grade à l'échelon}
+
+\subsection{Grade $\bigcap$ indice = échelon}
+
+
+\section*{Liste de questions}
+
+\begin{itemize}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
+\item Qui remplit les libellés saisis à la main dans la base carrière (variable libemploi) ? Cela
+se fait-il au niveau de la fiche de paie ou du calcul des droits à la retraite ? Cela se fait-il
+sur la base du code NEG ou du code NETNEH?
+\item Dans quelle mesure est-ce un problème d'utiliser l'indice pour attribuer le grade à partir
+du libellé puis d'utiliser l'indice pour déterminer l'échelon à partir du grade attribué ?
+\item Pourquoi les variables issues des CIR sont-elles disponibles sur des années différentes
+(code grade et libellé grade).
+\item Faut-il conserver les individus/observation avec libelles ou code manquant
+\end{itemize}
+
+
+
+\end{document}
+
+
