@@ -156,7 +156,7 @@ def main(raw_directory_path = None, clean_directory_path = None, debug = None, c
             ),
         dict(
             variable = 'fnetneh',
-            years_range = range(2010, 2015),
+            years_range = range(max(year_min,2010), 2015),
             quarterly = False,
             ),     
         dict(
