@@ -106,7 +106,10 @@ def create_file_path(directory = None, extension = None, file_path = None, debug
 
 def get_variables(variables = None, stop = None, decennie = None):
     """Recupere certaines variables de la table des carrières matchées avec grilles"""
-    hdf5_file_path = os.path.join(output_directory_path, '{}_{}_carrieres.h5'.format(decennie, decennie + 9))
+    if decennie==1990: 
+        hdf5_file_path = os.path.join(output_directory_path, '{}_{}_carrieres.h5'.format(decennie, decennie + 6))
+    else:     
+        hdf5_file_path = os.path.join(output_directory_path, '{}_{}_carrieres.h5'.format(decennie, decennie + 9))
     return pd.read_hdf(hdf5_file_path, 'output', columns = variables, stop = stop)
 
 
@@ -123,11 +126,17 @@ def get_careers(variable = None, variables = None, stop = None, decennie = None,
             )
     else:
         actual_clean_directory_path = clean_directory_path
-
-    careers_hdf_path = os.path.join(
-        actual_clean_directory_path,
-        '{}_{}_carrieres.h5'.format(decennie, decennie + 9)
-        )
+    
+    if decennie==1990:   
+        careers_hdf_path = os.path.join(
+            actual_clean_directory_path,
+            '{}_{}_carrieres.h5'.format(decennie, decennie + 6)
+            )
+    else:     
+        careers_hdf_path = os.path.join(
+            actual_clean_directory_path,
+            '{}_{}_carrieres.h5'.format(decennie, decennie + 9)
+            )
     if variable:
         return pd.read_hdf(careers_hdf_path, variable, stop = stop, where = where)
     elif variables:
