@@ -47,6 +47,7 @@ def main(clean_data=False,debug=False):
     # Etape 2: extract_libelles and merge
     decennies = [1950, 1970, 1980, 1990]
     for decennie in decennies:
+       log.info("Processing decennie {}".format(decennie))
        libemploi = load_libelles(decennie=decennie, debug = debug)
        if decennie == decennies[0]:
            libemploi_all = libemploi
@@ -61,4 +62,4 @@ def main(clean_data=False,debug=False):
        
     
 if __name__ == "__main__":
-    sys.exit(main(clean_data=False,debug=True))    
+    sys.exit(main(clean_data=False,debug=False))    

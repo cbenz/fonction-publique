@@ -30,10 +30,9 @@ VERSANTS = ['T', 'H']
 correspondance_data_frame_path = parser.get('correspondances', 'h5')
 corps_correspondance_data_frame_path = parser.get('correspondances', 'corps_h5')
 libelles_emploi_directory = parser.get('correspondances', 'libelles_emploi_directory')
-libelles_emploi_tmp_directory = parser.get('correspondances', 'libelles_emploi_tmp_directory')
 
-if not os.path.exists(os.path.dirname(libelles_emploi_tmp_directory)):
-    os.makedirs(libelles_emploi_tmp_directory)
+
+
 
 
 def get_correspondance_data_frame(which = None):
@@ -217,7 +216,7 @@ Non present: plus de choix (n), rentrer a la main (m)
 Autre: classer comme corps (c), grade suivant (g) , quitter(q)
 selection: """)
         if selection == "q":
-            return
+            return "break"
         elif selection == "g":
             return "next"
         elif selection == "n":
@@ -720,6 +719,7 @@ libelle emploi: {}
             continue
         elif result == 'break':
             break
+        
 
         while True:
             selection = raw_input("""
