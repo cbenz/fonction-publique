@@ -33,8 +33,8 @@ libelles_emploi_tmp_directory = parser.get('correspondances', 'libelles_emploi_t
 if not os.path.exists(os.path.dirname(libelles_emploi_tmp_directory)):
     os.makedirs(libelles_emploi_tmp_directory)
 
-    
-    
+
+
 def load_correpondances(correspondances_path = None):
     '''
     Charge la table avec les libellés déjà classés précédemment.
@@ -56,11 +56,11 @@ def load_correpondances(correspondances_path = None):
     else:
         log.info("Le fichier de correspondances {} est utilisé comme point de départ".format(correspondances_path))
         return pickle.load(open(correspondances_path, "rb"))
-        
-        
-    
-    
-    
+
+
+
+
+
 def get_correspondance_data_frame(which = None):
     """
     Charge la table avec les libellés déjà classés.
@@ -95,18 +95,18 @@ def get_correspondance_data_frame(which = None):
         data_frame = pd.read_hdf(correspondance_data_frame_path, 'correspondance')
         return data_frame
 
-        
+
 def get_grilles_cleaned(annee=None):
     '''
     Correction des doublons dans la grille initiale
-    '''         
+    '''
     grilles = get_grilles(
         date_effet_max = "{}-12-31".format(annee),
         subset = ['libelle_FP', 'libelle_grade_NEG'],
         )
-    # Analyse des doublons 
+    # Analyse des doublons
     #libelles_grade_NEG_1 = sorted(grilles[~grilles.libelle_grade_NEG_slug.duplicated()].libelle_grade_NEG.tolist())
-    #libelles_grade_NEG_2 = sorted(grilles[~grilles.libelle_grade_NEG.duplicated()].libelle_grade_NEG.tolist())  
+    #libelles_grade_NEG_2 = sorted(grilles[~grilles.libelle_grade_NEG.duplicated()].libelle_grade_NEG.tolist())
     #list(set(libelles_grade_NEG_2) - set(libelles_grade_NEG_1))
     #doublons1 = ['INFIRMIER DE CLASSE NORMALE (*)', 'INFIRMIER DE CLASSE NORMALE(*)']
     #doublons2 = ['INFIRMIER DE CLASSE SUPERIEURE (*)', 'INFIRMIER DE CLASSE SUPERIEURE(*)']
@@ -116,7 +116,7 @@ def get_grilles_cleaned(annee=None):
     grilles.loc[grilles.libelle_grade_NEG=='INFIRMIER DE CLASSE NORMALE (*)','libelle_grade_NEG']= 'INFIRMIER DE CLASSE NORMALE(*)'
     grilles.loc[grilles.libelle_grade_NEG=='INFIRMIER DE CLASSE SUPERIEURE (*)','libelle_grade_NEG']= 'INFIRMIER DE CLASSE SUPERIEURE(*)'
     return grilles
-    
+
 
 def query_grade_neg(query = None, choices = None, score_cutoff = 95):
     '''
@@ -222,7 +222,7 @@ Non present: plus de choix (n), rentrer a la main (m)
 Autre: classer comme corps (c), grade suivant (g) , quitter(q)
 selection: """)
         if selection == "q":
-            return
+            return 'quit'
         elif selection == "g":
             return "next"
         elif selection == "n":
@@ -318,7 +318,7 @@ selection: """)
                     grade_neg = grades_neg.loc[int(selection2), "libelle_grade_neg"]
                     return grade_neg
 
-                    
+
 def load_libelles_emploi_data(decennie = None, debug = False, force_recreate = False):
     assert decennie is not None
     libemploi_h5 = 'libemploi_{}.h5'.format(decennie)
@@ -338,8 +338,8 @@ def load_libelles_emploi_data(decennie = None, debug = False, force_recreate = F
         log.info("Generating and saving libellés emploi to {}".format(libemploi_h5))
         libemplois.to_hdf(libemploi_h5, 'libemploi')
     return libemplois
-                    
-                    
+
+
 
 def select_corps(libelle_saisi = None, annee = None, versant = None):
     '''
@@ -600,7 +600,7 @@ def print_stats(libemplois = None, annee = None, versant = None):
     #         ))
 
 
-def get_libelle_to_classify(libemplois = None):
+def get_libelle_to_classify(libemplois = None, annee_cible = None):
     '''
     Fonction d'initialisation des libellés à classer, à partir de la
 
@@ -615,43 +615,43 @@ def get_libelle_to_classify(libemplois = None):
     assert libemplois is not None
     libelles_emploi_deja_renseignes_dataframe = get_correspondance_data_frame(which = 'grade')
     annees = libemplois.index.get_level_values('annee').sort_values(ascending = False)
-    for annee in annees:
-        result = dict()
-        for versant in VERSANTS:
-            libelles_emploi_deja_renseignes = (libelles_emploi_deja_renseignes_dataframe
-                .loc[pd.to_datetime(
-                    libelles_emploi_deja_renseignes_dataframe.date_effet
-                    ).dt.year <= annee]
-                .query("(annee >= @annee) &  (versant == @versant)")
-                ).libelle.tolist()
-            #
-            result[versant] = (libemplois
-                .loc[annee, versant]
-                .loc[~libemplois.loc[annee, versant].index.isin(libelles_emploi_deja_renseignes)]
-                ).head(1)
-            #
+    if annee_cible is None:
+        annee_cible = max(annees)
+
+    result = dict()
+    for versant in VERSANTS:
+        libelles_emploi_deja_renseignes = (libelles_emploi_deja_renseignes_dataframe
+            .loc[pd.to_datetime(
+                libelles_emploi_deja_renseignes_dataframe.date_effet
+                ).dt.year <= annee_cible]
+            .query("(annee >= @annee_cible) &  (versant == @versant)")
+            ).libelle.tolist()
         #
-        if result['T'].empty and result['H'].empty:
-            continue
+        result[versant] = (libemplois
+            .loc[annee_cible, versant]
+            .loc[~libemplois.loc[annee_cible, versant].index.isin(libelles_emploi_deja_renseignes)]
+            ).head(1)
+        #
+    #
+    if result['T'].empty and result['H'].empty:
+        return
 
-        libelle = None
-        frequence = 0
-        for versant_itere, serie in result.iteritems():
-            assert len(serie) == 1
-            if serie.values[0] > frequence:
-                versant = versant_itere
-                libelle = serie.index[0]
-                frequence = max(frequence, serie.max())
+    libelle = None
+    frequence = 0
+    for versant_itere, serie in result.iteritems():
+        assert len(serie) == 1
+        if serie.values[0] > frequence:
+            versant = versant_itere
+            libelle = serie.index[0]
+            frequence = max(frequence, serie.max())
 
-        print_stats(
-            libemplois = libemplois,
-            annee = annee,
-            versant = versant
-            )
+    print_stats(
+        libemplois = libemplois,
+        annee = annee_cible,
+        versant = versant
+        )
 
-        return versant, annee, libelle
-
-    return None
+    return versant, annee_cible, libelle
 
 
 def store_corps(libelles_emploi = None, grade_triplet = None):
@@ -675,8 +675,8 @@ def select_and_store(libelle_emploi = None, annee = None, versant = None, libemp
         versant = versant,
         )
 
-    if grade_triplet is None:
-        return 'break'
+    if grade_triplet == 'quit':
+        return 'quit'
     if grade_triplet == "next":
         return 'continue'
 
@@ -716,11 +716,11 @@ def select_and_store(libelle_emploi = None, annee = None, versant = None, libemp
 def main(decennie = None):
     assert decennie is not None
     libemplois = load_libelles_emploi_data(decennie = decennie, debug=True)
-
-
+    annee_cible = None
     while True:
         versant, annee, libelle_emploi = get_libelle_to_classify(
             libemplois = libemplois,
+            annee_cible = annee_cible,
             )
         if libelle_emploi == "":
             log.info("On ignore les libelle_emploi vides")
@@ -739,19 +739,19 @@ libelle emploi: {}
             )
         if result == 'continue':
             continue
-        elif result == 'break':
-            break
-
-        while True:
-            selection = raw_input("""
+        elif result == 'quit':
+            while True:
+                selection = raw_input("""
 o: passage à l'année suivante. q : quitter
 selection: """)
-            if selection == "o":
-                break
-            if selection == "q":
-                return
-            else:
-                continue
+                if selection == "o":
+                    annee_cible = annee - 1
+                    break
+                if selection == "q":
+                    return
+                else:
+                    continue
+
 
 
 if __name__ == '__main__':
