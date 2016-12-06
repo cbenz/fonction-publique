@@ -33,7 +33,34 @@ libelles_emploi_tmp_directory = parser.get('correspondances', 'libelles_emploi_t
 if not os.path.exists(os.path.dirname(libelles_emploi_tmp_directory)):
     os.makedirs(libelles_emploi_tmp_directory)
 
-
+    
+    
+def load_correpondances(correspondances_path = None):
+    '''
+    Charge la table avec les libellés déjà classés précédemment.
+    En l'absence de chemin déclaré pour la table, génère un nouveau dictionnaire dans lequel les grades
+    seront renseignés, en recommençant au début.
+    Arguments:
+        - Chemin pour la table de correspondance
+    Sortie:
+        - Table de correspondance (chargée, ou nouvelle générée)
+    '''
+    correspondance_non_available = (
+        correspondances_path is None or
+        correspondances_path == 'None' or  # None is parsed as string in config.ini
+        not os.path.exists(correspondances_path)
+        )
+    if correspondance_non_available:
+        log.info("Il n'existe pas de fichier de correspondances à compléter")
+        return dict(zip(VERSANTS, [dict(), dict()]))
+    else:
+        log.info("Le fichier de correspondances {} est utilisé comme point de départ".format(correspondances_path))
+        return pickle.load(open(correspondances_path, "rb"))
+        
+        
+    
+    
+    
 def get_correspondance_data_frame(which = None):
     """
     Charge la table avec les libellés déjà classés.
@@ -63,7 +90,7 @@ def get_correspondance_data_frame(which = None):
         data_frame.annee = data_frame.annee.astype(int)
         return data_frame
     else:
-        log.info("La table de correspondance {} est utilisé comme point de départ".format(
+        log.info("Laa table de correspondance {} est utilisé comme point de départ".format(
             data_frame_path))
         data_frame = pd.read_hdf(correspondance_data_frame_path, 'correspondance')
         return data_frame
@@ -277,24 +304,42 @@ selection: """)
             elif selection == "r":
                 continue
             elif selection == "o":
-                while True: 
-                    grades_neg = query_grade_neg(query = libelle_saisi, choices = choices, score_cutoff = score_cutoff)
-                    print("\nGrade NEG possibles pour {} (score_cutoff = {}):\n{}".format(
-                        libelle_saisi, score_cutoff, grades_neg))
-                    selection2 = raw_input("""
-    NOMBRE, plus de choix (n), recommencer la saisie(r), quitter (q)
-    selection: """)
-                    if selection2 == "q":
-                        return
-                    elif selection2 == "r":
-                        break
-                    elif selection2 == "n":
-                        score_cutoff -= 5
-                        continue
-                    elif selection2.isdigit() and int(selection2) in grades_neg.index:
-                        grade_neg = grades_neg.loc[int(selection2), "libelle_grade_neg"]
-                        return grade_neg
+                grades_neg = query_grade_neg(query = libelle_saisi, choices = choices, score_cutoff = score_cutoff)
+                print("\nGrade NEG possibles pour {} (score_cutoff = {}):\n{}".format(
+                    libelle_saisi, score_cutoff, grades_neg))
+                selection2 = raw_input("""
+NOMBRE, recommencer la saisie(r), quitter (q)
+selection: """)
+                if selection2 == "q":
+                    return
+                elif selection2 == "r":
+                    continue
+                elif selection2.isdigit() and int(selection2) in grades_neg.index:
+                    grade_neg = grades_neg.loc[int(selection2), "libelle_grade_neg"]
+                    return grade_neg
 
+                    
+def load_libelles_emploi_data(decennie = None, debug = False, force_recreate = False):
+    assert decennie is not None
+    libemploi_h5 = 'libemploi_{}.h5'.format(decennie)
+    if os.path.exists(libemploi_h5) and not force_recreate:
+        libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
+        log.info("Libellés emploi read from {}".format(libemploi_h5))
+    else:
+        libemploi = get_careers(variable = 'libemploi', decennie = decennie, debug = debug)
+        statut = get_careers(variable = 'statut', decennie = decennie, debug = debug)
+        libemploi = (libemploi.merge(
+            statut.query("statut in ['T', 'H']"),
+            how = 'inner',
+            ))
+        libemploi['libemploi_slugified'] = libemploi.libemploi.apply(slugify, separator = "_")
+        libemploi.rename(columns = dict(statut = 'versant'), inplace = True)
+        libemplois = libemploi.groupby([u'annee', u'versant'])['libemploi_slugified'].value_counts()
+        log.info("Generating and saving libellés emploi to {}".format(libemploi_h5))
+        libemplois.to_hdf(libemploi_h5, 'libemploi')
+    return libemplois
+                    
+                    
 
 def select_corps(libelle_saisi = None, annee = None, versant = None):
     '''
@@ -670,11 +715,8 @@ def select_and_store(libelle_emploi = None, annee = None, versant = None, libemp
 
 def main(decennie = None):
     assert decennie is not None
-    libemplois = load_libelles_emploi_data(decennie = decennie)
-#    grilles = get_grilles(subset = ['libelle_FP', 'libelle_grade_NEG'])
-#    libelles_grade_NEG = sorted(grilles.libelle_grade_NEG.unique().tolist())
-#    print("Il y a {} libellés emploi différents".format(len(libemplois)))
-#    print("Il y a {} libellés grade NEG différents".format(len(libelles_grade_NEG)))
+    libemplois = load_libelles_emploi_data(decennie = decennie, debug=True)
+
 
     while True:
         versant, annee, libelle_emploi = get_libelle_to_classify(
