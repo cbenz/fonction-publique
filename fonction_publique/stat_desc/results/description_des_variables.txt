@@ -1,0 +1,85 @@
+I. Nombre d'observation par valeur des variables qualit, statut et etat. Une observation est un individu-année
+
+valeur_var_qualite compte_valeur_var_qualite
+T 10851299
+ 8464996
+S 560763
+A 424646
+C 137737
+V 21431
+U 8800
+B 5697
+Z 3739
+E 2147
+
+valeur_var_statut compte_valeur_var_statut
+ 8461436
+T 6913743
+H 4484549
+E 611751
+S 8456
+R 1255
+C 61
+Z 4
+
+valeur_var_etat compte_valeur_var_etat
+1.0 42608233
+0.0 34151743
+13.0 2150875
+99.0 741873
+8.0 504460
+10.0 317598
+4.0 225132
+6.0 206599
+5.0 175151
+14.0 167712
+3.0 164780
+7.0 132408
+11.0 130729
+12.0 127393
+2.0 93198
+9.0 27136
+
+
+II. Nombre de valeurs uniques observées des variables ib, c_netneh, c_cir et libemploi
+"Nombre de valeurs pour la variable ib_"
+1129
+
+"Nombre de valeurs pour la variable c_netneh"
+357
+
+"Nombre de valeurs pour la variable c_cir"
+1007
+
+"Nombre de valeurs pour la variable libemploi"
+118935
+
+
+III. Nombre de valeurs à supprimer, peut-être
+qualite_na_count 0
+qualite_zero_count 0
+qualite_empty_count 8464996
+
+statut_na_count 0
+statut_zero_count 0
+statut_empty_count 8461436
+
+etat_na_count 0
+etat_zero_count 34151743 # NB : count '0.0'
+etat_empty_count 0
+
+ib__na_count 23596414
+ib__zero_count 34138377
+ib__empty_count 0
+
+c_netneh_na_count 0
+c_netneh_zero_count 0
+c_netneh_empty_count 924845
+
+c_cir_na_count 0
+c_cir_zero_count 0
+c_cir_empty_count 718063
+
+libemploi_na_count 0
+libemploi_zero_count 0
+libemploi_empty_count 1625661
