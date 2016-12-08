@@ -110,6 +110,7 @@ def load_libelles_emploi_data(decennie = None, debug = False, force_recreate = F
         libemplois = libemploi.groupby([u'annee', u'versant'])['libemploi_slugified'].value_counts()
         log.info("Generating and saving libellés emploi to {}".format(libemploi_h5))
         libemplois.to_hdf(libemploi_h5, 'libemploi')
+    libemplois = libemplois.loc[2006:2014,]
     return libemplois
     
     

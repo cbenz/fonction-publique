@@ -45,9 +45,9 @@ def main(clean_data=False,debug=False):
             year_min = 2000,
             )
     # Etape 2: extract_libelles and merge
-    decennies = [1950, 1970, 1980, 1990]
+    decennies = [1950, 1960 , 1970, 1980, 1990]
     for decennie in decennies:
-       log.info("Processing decennie {}".format(decennie))
+       print("Processing decennie {}".format(decennie))
        libemploi = load_libelles(decennie=decennie, debug = debug)
        if decennie == decennies[0]:
            libemploi_all = libemploi
