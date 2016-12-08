@@ -120,7 +120,7 @@ def format_columns(variable = None, years_range = None, quarterly = False, clean
             .str.decode('iso-8859-1')
             .str.encode('utf-8')
             )
-        
+
     careers_hdf_path = get_careers_hdf_path(clean_directory_path, file_path, debug)
 
     subset_to_format.to_hdf(
@@ -142,52 +142,53 @@ def format_generation(file_path = None, clean_directory_path = None, debug = Fal
     log.info('generation was added to carriere')
 
 
-def main(raw_directory_path = None, clean_directory_path = None, debug = None, chunksize = None, subset_data = None, subset_var = None, year_min = None):
+def main(raw_directory_path = None, clean_directory_path = None, debug = None, chunksize = None, subset_data = None,
+        subset_var = None, year_min = None):
     assert raw_directory_path is not None
-    
+
     if year_min is None:
         year_min = 1900
-    
+
     arg_format_columns = [
         dict(
             variable = 'c_netneh',
-            years_range = range(max(year_min,2010), 2015),
+            years_range = range(max(year_min, 2010), 2015),
             quarterly = False,
             ),
         dict(
             variable = 'fnetneh',
-            years_range = range(max(year_min,2010), 2015),
+            years_range = range(max(year_min, 2010), 2015),
             quarterly = False,
-            ),     
+            ),
         dict(
             variable = 'c_cir',
-            years_range = range(max(year_min,2010), 2015),
+            years_range = range(max(year_min, 2010), 2015),
             quarterly = False,
             ),
         dict(
             variable = 'libemploi',
-            years_range = range(max(year_min,2000), 2015),
+            years_range = range(max(year_min, 2000), 2015),
             quarterly = False,
             ),
         # should contain _ otherwise libemploi which contains 'ib' would also selected
         dict(
             variable = 'ib_',
-            years_range = range(max(year_min,1970), 2015),
+            years_range = range(max(year_min, 1970), 2015),
             quarterly = True,
             ),
         dict(
             variable = 'qualite',
-            years_range = range(max(year_min,1970), 2015),
+            years_range = range(max(year_min, 1970), 2015),
             quarterly = False,
             ),
         dict(
             variable = 'statut',
-            years_range = range(max(year_min,1970), 2015),
+            years_range = range(max(year_min, 1970), 2015),
             quarterly = False,
             ),
         dict(
             variable = 'etat',
-            years_range = range(max(year_min,1970), 2015),
+            years_range = range(max(year_min, 1970), 2015),
             quarterly = True,
             ),
         ]
@@ -195,8 +196,8 @@ def main(raw_directory_path = None, clean_directory_path = None, debug = None, c
     if subset_data is not None:
         list_data = subset_data
     else:
-       list_data = os.listdir(raw_directory_path)
-        
+        list_data = os.listdir(raw_directory_path)
+
     for file_ in list_data:
         admissible_file = (
             file_.endswith('.dta') or
@@ -212,14 +213,14 @@ def main(raw_directory_path = None, clean_directory_path = None, debug = None, c
             clean_directory_path = clean_directory_path,
             debug = debug,
             chunksize = chunksize,
-            )                
-        
+            )
+
         if subset_var is not None:
             arg_format_columns = [
-                column for column in arg_format_columns 
+                column for column in arg_format_columns
                 if column['variable'] in subset_var
-                ]      
-        
+                ]
+
         for kwargs in arg_format_columns:
             kwargs.update(dict(
                 clean_directory_path = clean_directory_path,
