@@ -222,7 +222,7 @@ Non present: plus de choix (n), rentrer a la main (m)
 Autre: classer comme corps (c), grade suivant (g) , quitter(q)
 selection: """)
         if selection == "q":
-            return 'quit'
+            return "quit"
         elif selection == "g":
             return "next"
         elif selection == "n":
@@ -364,7 +364,8 @@ def select_corps(libelle_saisi = None, annee = None, versant = None):
     return corps
 
 
-def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None, versant = None):
+def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None, versant = None,
+        show_annee_range = False, show_count = False):
     '''
     Sélectionne par l'utilisateur des libellés pouvant être rattaché au grade
     choisi par la fonction select_grade_neg.
@@ -414,7 +415,14 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None
                     )
                 )
             ).reset_index()
-        print("\nAutres libellés emploi possibles:\n{}".format(libelles_emploi_additionnels))
+        printed_columns = ['libelle_emploi', 'score']
+
+        if show_count:
+            printed_columns.append('count')
+        if show_annee_range:
+            printed_columns.append('annee')
+
+        print("\nAutres libellés emploi possibles:\n{}".format(libelles_emploi_additionnels[printed_columns]))
         selection = raw_input("""
 liste de nombre (ex: 1:4,6,8,10:11), o (tous), n (aucun), r (recommencer selection),
 q (quitter/grade suivant), s (sauvegarde et stats)
@@ -751,7 +759,6 @@ selection: """)
                     return
                 else:
                     continue
-
 
 
 if __name__ == '__main__':

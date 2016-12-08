@@ -14,7 +14,7 @@ import pandas as pd
 from slugify import slugify
 from fuzzywuzzy import process
 
-from fonction_publique.base import get_careers, parser, timing
+from fonction_publique.base import get_careers, parser
 from fonction_publique.merge_careers_and_legislation import get_grilles
 
 
@@ -30,9 +30,6 @@ VERSANTS = ['T', 'H']
 correspondance_data_frame_path = parser.get('correspondances', 'h5')
 corps_correspondance_data_frame_path = parser.get('correspondances', 'corps_h5')
 libelles_emploi_directory = parser.get('correspondances', 'libelles_emploi_directory')
-
-
-
 
 
 def get_correspondance_data_frame(which = None):
@@ -69,32 +66,36 @@ def get_correspondance_data_frame(which = None):
         data_frame = pd.read_hdf(correspondance_data_frame_path, 'correspondance')
         return data_frame
 
-     
-        
+
 def get_grilles_cleaned(annee=None):
     '''
     Correction des doublons dans la grille initiale
-    '''         
+    '''
     grilles = get_grilles(
         date_effet_max = "{}-12-31".format(annee),
         subset = ['libelle_FP', 'libelle_grade_NEG'],
         )
-    # Analyse des doublons 
-    #libelles_grade_NEG_1 = sorted(grilles[~grilles.libelle_grade_NEG_slug.duplicated()].libelle_grade_NEG.tolist())
-    #libelles_grade_NEG_2 = sorted(grilles[~grilles.libelle_grade_NEG.duplicated()].libelle_grade_NEG.tolist())  
-    #list(set(libelles_grade_NEG_2) - set(libelles_grade_NEG_1))
-    #doublons1 = ['INFIRMIER DE CLASSE NORMALE (*)', 'INFIRMIER DE CLASSE NORMALE(*)']
-    #doublons2 = ['INFIRMIER DE CLASSE SUPERIEURE (*)', 'INFIRMIER DE CLASSE SUPERIEURE(*)']
-    #grilles[grilles.libelle_grade_NEG.isin(doublons1)]
-   # grilles[grilles.libelle_grade_NEG.isin(doublons2)]
+    # Analyse des doublons
+    # libelles_grade_NEG_1 = sorted(grilles[~grilles.libelle_grade_NEG_slug.duplicated()].libelle_grade_NEG.tolist())
+    # libelles_grade_NEG_2 = sorted(grilles[~grilles.libelle_grade_NEG.duplicated()].libelle_grade_NEG.tolist())
+    # list(set(libelles_grade_NEG_2) - set(libelles_grade_NEG_1))
+    # doublons1 = ['INFIRMIER DE CLASSE NORMALE (*)', 'INFIRMIER DE CLASSE NORMALE(*)']
+    # doublons2 = ['INFIRMIER DE CLASSE SUPERIEURE (*)', 'INFIRMIER DE CLASSE SUPERIEURE(*)']
+    # grilles[grilles.libelle_grade_NEG.isin(doublons1)]
+    # grilles[grilles.libelle_grade_NEG.isin(doublons2)]
     # Suppression à la main
-    grilles.loc[grilles.libelle_grade_NEG=='INFIRMIER DE CLASSE NORMALE (*)','libelle_grade_NEG']= 'INFIRMIER DE CLASSE NORMALE(*)'
-    grilles.loc[grilles.libelle_grade_NEG=='INFIRMIER DE CLASSE SUPERIEURE (*)','libelle_grade_NEG']= 'INFIRMIER DE CLASSE SUPERIEURE(*)'
+    grilles.loc[
+        grilles.libelle_grade_NEG == 'INFIRMIER DE CLASSE NORMALE (*)', 'libelle_grade_NEG'
+        ] = 'INFIRMIER DE CLASSE NORMALE(*)'
+    grilles.loc[
+        grilles.libelle_grade_NEG == 'INFIRMIER DE CLASSE SUPERIEURE (*)', 'libelle_grade_NEG'
+        ] = 'INFIRMIER DE CLASSE SUPERIEURE(*)'
     return grilles
-    
+
+
 def load_libelles_emploi_data(decennie = None, debug = False, force_recreate = False):
     assert decennie is not None
-    libemploi_h5 = os.path.join(libelles_emploi_tmp_directory, 'libemploi_{}.h5'.format(decennie))
+    libemploi_h5 = os.path.join(libelles_emploi_directory, 'libemploi_{}.h5'.format(decennie))
     if os.path.exists(libemploi_h5) and not force_recreate:
         libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
         log.info("Libellés emploi read from {}".format(libemploi_h5))
@@ -110,10 +111,10 @@ def load_libelles_emploi_data(decennie = None, debug = False, force_recreate = F
         libemplois = libemploi.groupby([u'annee', u'versant'])['libemploi_slugified'].value_counts()
         log.info("Generating and saving libellés emploi to {}".format(libemploi_h5))
         libemplois.to_hdf(libemploi_h5, 'libemploi')
-    libemplois = libemplois.loc[2006:2014,]
+    libemplois = libemplois.loc[2006:2014, ]
     return libemplois
-    
-    
+
+
 def query_grade_neg(query = None, choices = None, score_cutoff = 95):
     '''
     A partir de libelés observés, va chercher les 50 libellés les plus proches dans
@@ -338,7 +339,8 @@ def select_corps(libelle_saisi = None, annee = None, versant = None):
     return corps
 
 
-def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None, versant = None):
+def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None, versant = None,
+        show_annee_range = False, show_count = False):
     '''
     Sélectionne par l'utilisateur des libellés pouvant être rattaché au grade
     choisi par la fonction select_grade_neg.
@@ -388,7 +390,14 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None
                     )
                 )
             ).reset_index()
-        print("\nAutres libellés emploi possibles:\n{}".format(libelles_emploi_additionnels))
+        printed_columns = ['libelle_emploi', 'score']
+
+        if show_count:
+            printed_columns.append('count')
+        if show_annee_range:
+            printed_columns.append('annee')
+
+        print("\nAutres libellés emploi possibles:\n{}".format(libelles_emploi_additionnels[printed_columns]))
         selection = raw_input("""
 liste de nombre (ex: 1:4,6,8,10:11), o (tous), n (aucun), r (recommencer selection),
 q (quitter/grade suivant), s (sauvegarde et stats)
@@ -512,8 +521,6 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
         annee = annee,
         versant = versant
         )
-
-
 
 
 def print_stats(libemplois = None, annee = None, versant = None):
@@ -688,19 +695,20 @@ def select_and_store(libelle_emploi = None, annee = None, versant = None, libemp
 
 
 def main():
-    
+
     # Loading the dataframe of slugified libelles (from extract_libelle).
     # (replace load_libelles in the previous version)
     libemploi_h5 = os.path.join(libelles_emploi_directory, 'libemploi.h5')
-    libemplois = pd.read_hdf(libemploi_h5, 'libemploi')    
+    libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
 #    grilles = get_grilles(subset = ['libelle_FP', 'libelle_grade_NEG'])
 #    libelles_grade_NEG = sorted(grilles.libelle_grade_NEG.unique().tolist())
 #    print("Il y a {} libellés emploi différents".format(len(libemplois)))
 #    print("Il y a {} libellés grade NEG différents".format(len(libelles_grade_NEG)))
-
+    annee_cible = None
     while True:
         versant, annee, libelle_emploi = get_libelle_to_classify(
             libemplois = libemplois,
+            annee_cible = annee_cible,
             )
         if libelle_emploi == "":
             log.info("On ignore les libelle_emploi vides")
