@@ -164,7 +164,7 @@ def query_libelles_emploi(query = None, choices = None, last_min_score = 100):
     score_cutoff = last_min_score
 
     empty = True
-    extracted_results = process.extractBests(slugified_query, choices, limit = 50)
+    extracted_results = process.extractBests(slugified_query, choices, limit = 100)
 
     while ((min_score >= last_min_score) | empty):
         score_cutoff = score_cutoff - 5
@@ -340,7 +340,7 @@ def select_corps(libelle_saisi = None, annee = None, versant = None):
 
 
 def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None, versant = None,
-        show_annee_range = False, show_count = False):
+        show_annee_range = False, show_count = False,remove_not_chosen = True ):
     '''
     Sélectionne par l'utilisateur des libellés pouvant être rattaché au grade
     choisi par la fonction select_grade_neg.
@@ -360,6 +360,7 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None
     assert libemplois is not None
     assert versant is not None
     libelles_emploi_selectionnes = list()
+    libelles_emploi_non_selectionnes = list()
     libelles = libemplois.loc[annee, versant].index.tolist()
     libelles_init = libemplois.loc[annee, versant].index.tolist()
     next_grade = False
@@ -376,6 +377,11 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None
             choices = libelles,
             last_min_score = last_min_score,
             )
+        libelles_emploi_additionnels = libelles_emploi_additionnels[0:min(51,len(libelles_emploi_additionnels)+1)]
+            
+        if remove_not_chosen:
+            selection = libelles_emploi_additionnels.libelle_emploi.isin(libelles_emploi_non_selectionnes)
+            libelles_emploi_additionnels = libelles_emploi_additionnels[~selection]
 
         libelles_emploi_additionnels = (libelles_emploi_additionnels
             .merge(
@@ -440,6 +446,8 @@ selection: """)
                     start = stop = int(s)
                 libelles_emploi_selectionnes += libelles_emploi_additionnels.loc[
                     start:stop, 'libelle_emploi'].tolist()
+            diff =  set(libelles_emploi_additionnels.libelle_emploi.tolist()) -  set(libelles_emploi_selectionnes)        
+            libelles_emploi_non_selectionnes +=  list(diff)
             continue
 
         elif selection == 'o':
@@ -447,6 +455,7 @@ selection: """)
             continue
 
         elif selection == 'n':
+            libelles_emploi_non_selectionnes +=  libelles_emploi_additionnels.libelle_emploi.tolist()
             last_min_score = libelles_emploi_additionnels.score.min()
             continue
 
