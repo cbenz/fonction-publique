@@ -61,7 +61,7 @@ def get_correspondance_data_frame(which = None):
         data_frame.annee = data_frame.annee.astype(int)
         return data_frame
     else:
-        log.info("Laa table de correspondance {} est utilisé comme point de départ".format(
+        log.info("La table de correspondance {} est utilisé comme point de départ".format(
             data_frame_path))
         data_frame = pd.read_hdf(correspondance_data_frame_path, 'correspondance')
         return data_frame
@@ -141,7 +141,7 @@ def query_grade_neg(query = None, choices = None, score_cutoff = 95):
         return query_grade_neg(query, choices = choices, score_cutoff = score_cutoff - 5)
 
 
-def query_libelles_emploi(query = None, choices = None, last_min_score = 100):
+def query_libelles_emploi(query = None, choices = None, last_min_score = 50):
     '''
     A partir du grade attribué à un libellé rentré à la main, cherche parmi autres
     libellés rentrés à la main des correspondances pour le grade choisi.
@@ -371,18 +371,17 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None
             print("libellés emploi sélectionnés:")
             pprint.pprint(libelles_emploi_selectionnes)
             libelles = [libemploi for libemploi in libelles if libemploi not in libelles_emploi_selectionnes]
-
+        
+        if libelles_emploi_non_selectionnes and remove_not_chosen:
+             libelles = [libemploi for libemploi in libelles if libemploi not in libelles_emploi_non_selectionnes]           
+            
+        
         libelles_emploi_additionnels = query_libelles_emploi(
             query = grade_triplet[1],
             choices = libelles,
             last_min_score = last_min_score,
             )
-        libelles_emploi_additionnels = libelles_emploi_additionnels[0:min(51,len(libelles_emploi_additionnels)+1)]
-            
-        if remove_not_chosen:
-            selection = libelles_emploi_additionnels.libelle_emploi.isin(libelles_emploi_non_selectionnes)
-            libelles_emploi_additionnels = libelles_emploi_additionnels[~selection]
-
+        
         libelles_emploi_additionnels = (libelles_emploi_additionnels
             .merge(
                 libemplois
@@ -709,12 +708,12 @@ def main():
     # (replace load_libelles in the previous version)
     libemploi_h5 = os.path.join(libelles_emploi_directory, 'libemploi.h5')
     libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
-#    grilles = get_grilles(subset = ['libelle_FP', 'libelle_grade_NEG'])
-#    libelles_grade_NEG = sorted(grilles.libelle_grade_NEG.unique().tolist())
-#    print("Il y a {} libellés emploi différents".format(len(libemplois)))
-#    print("Il y a {} libellés grade NEG différents".format(len(libelles_grade_NEG)))
+
     annee_cible = None
     while True:
+        
+        
+        
         versant, annee, libelle_emploi = get_libelle_to_classify(
             libemplois = libemplois,
             annee_cible = annee_cible,
