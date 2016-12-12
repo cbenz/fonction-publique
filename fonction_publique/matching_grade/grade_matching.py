@@ -141,7 +141,7 @@ def query_grade_neg(query = None, choices = None, score_cutoff = 95):
         return query_grade_neg(query, choices = choices, score_cutoff = score_cutoff - 5)
 
 
-def query_libelles_emploi(query = None, choices = None, last_min_score = 50):
+def query_libelles_emploi(query = None, choices = None, last_min_score = 100):
     '''
     A partir du grade attribué à un libellé rentré à la main, cherche parmi autres
     libellés rentrés à la main des correspondances pour le grade choisi.
@@ -164,7 +164,7 @@ def query_libelles_emploi(query = None, choices = None, last_min_score = 50):
     score_cutoff = last_min_score
 
     empty = True
-    extracted_results = process.extractBests(slugified_query, choices, limit = 100)
+    extracted_results = process.extractBests(slugified_query, choices, limit = 50)
 
     while ((min_score >= last_min_score) | empty):
         score_cutoff = score_cutoff - 5
