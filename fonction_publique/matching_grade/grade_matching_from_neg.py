@@ -156,7 +156,7 @@ def query_libelles_emploi(query = None, choices = None, last_min_score = 50):
     empty = True
     extracted_results = process.extractBests(slugified_query, choices, limit = 100)
 
-    while ((min_score >= last_min_score) | empty):
+    while ((min_score > last_min_score) | empty):
         score_cutoff = score_cutoff - 5
         if score_cutoff < 0:
             log.info("Aucun libellé emploi ne correspondant à {}.".format(query))
@@ -183,23 +183,6 @@ def select_grade_neg_by_hand():  # Rename select_grade_or_corps
     -------
     grade_neg : tuple, (versant, grade, date d'effet) du grade correspondant
     '''
-    score_cutoff = 95
-    
-    while True:
-        print("Choix de l'année (date d'effet max)")
-        annee = raw_input("""
-SAISIR UNE ANNEE
-selection: """)
-        if annee in map(str,range(2000, 2015)):
-            print("Annee d'effe de la grille:{}".format(annee))
-            break
-        else:
-            print("Annee saisie incorrect: {}. Choisir une annee entre 2000 et 2014".format(annee))
-            continue
-        
-    grilles = get_grilles_cleaned(annee)
-    libelles_grade_NEG = grilles['libelle_grade_NEG'].unique()
-    
     score_cutoff = 95
 
     while True:
@@ -530,32 +513,9 @@ def print_stats(libemplois = None, annee = None, versant = None):
 
 
 
-def select_and_store(libelle_emploi = None, annee = None, versant = None, libemplois = None):
-    grade_triplet = select_grade_neg(
-        libelle_saisi = libelle_emploi,
-        annee = annee,
-        versant = versant,
-        )
+def select_and_store_libelle(grade_triplet = None, annee = None, versant = None, libemplois = None):
 
-    if grade_triplet == 'quit':
-        return 'quit'
-    if grade_triplet == "next":
-        return 'continue'
-
-    if grade_triplet[0] == 'corps':
-        store_corps(
-            libelles_emploi = [libelle_emploi],
-            grade_triplet = grade_triplet,
-            )
-        return 'continue'
-
-    store_libelles_emploi(
-        libelles_emploi = [libelle_emploi],
-        annee = annee,
-        grade_triplet = grade_triplet,
-        libemplois = libemplois,
-        )
-
+    
     while True:
         libelles_emploi_selectionnes, next_grade = select_libelles_emploi(
             grade_triplet = grade_triplet,
@@ -581,24 +541,37 @@ def main():
     libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
 
     annee_cible = None
+    
+    
     while True:
-        
-    grade_triplet = select_grade_neg_by_hand()
-    
-    
-    
-    
-        if libelle_emploi == "":
-            log.info("Cherchez les libellés correspondant au grade")
+        print("Choix de l'année (date d'effet max)")
+        annee = raw_input("""
+SAISIR UNE ANNEE
+selection: """)
+        if annee in map(str,range(2000, 2015)):
+            print("Annee d'effe de la grille:{}".format(annee))
+            break
+        else:
+            print("Annee saisie incorrect: {}. Choisir une annee entre 2000 et 2014".format(annee))
             continue
+        
+    grilles = get_grilles_cleaned(annee)
+    libelles_grade_NEG = grilles['libelle_grade_NEG'].unique()
+    
+    
+    while True:    
+        grade_triplet = select_grade_neg_by_hand()
+        log.info("Cherchez les libellés correspondant au grade")
         print("""
 date d'effet: {}
 versant: {}
 libelle grade: {}
 """.format(annee, versant, libelle_emploi))
 
+        
+        
         result = select_and_store(
-            libelle_emploi = libelle_emploi,
+            grade_triplet = grade_triplet,
             annee = annee,
             versant = versant,
             libemplois = libemplois,
