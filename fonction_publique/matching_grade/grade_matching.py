@@ -166,11 +166,16 @@ def query_libelles_emploi(query = None, choices = None, last_min_score = 100):
     empty = True
     extracted_results = process.extractBests(slugified_query, choices, limit = 50)
 
-    while ((min_score >= last_min_score) | empty):
+    while ((min_score > last_min_score) | empty):
+        log.info("min_score : {}.".format(min_score))
+        log.info("last_min_score : {}.".format(last_min_score))
+        log.info("score_cutoff : {}.".format(score_cutoff))
         score_cutoff = score_cutoff - 5
         if score_cutoff < 0:
+            log.info("Score cutoff: {}.".format(score_cutoff))
             log.info("Aucun libellé emploi ne correspondant à {}.".format(query))
-            return None
+            break
+            #return None
         results = [result for result in extracted_results if result[1] >= score_cutoff]
         if results:
             min_score = min([result[1] for result in results])
@@ -376,6 +381,7 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None
              libelles = [libemploi for libemploi in libelles if libemploi not in libelles_emploi_non_selectionnes]           
             
         
+
         libelles_emploi_additionnels = query_libelles_emploi(
             query = grade_triplet[1],
             choices = libelles,
@@ -711,9 +717,6 @@ def main():
 
     annee_cible = None
     while True:
-        
-        
-        
         versant, annee, libelle_emploi = get_libelle_to_classify(
             libemplois = libemplois,
             annee_cible = annee_cible,

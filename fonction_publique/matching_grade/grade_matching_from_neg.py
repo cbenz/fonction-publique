@@ -75,15 +75,6 @@ def get_grilles_cleaned(annee=None):
         date_effet_max = "{}-12-31".format(annee),
         subset = ['libelle_FP', 'libelle_grade_NEG'],
         )
-    # Analyse des doublons
-    # libelles_grade_NEG_1 = sorted(grilles[~grilles.libelle_grade_NEG_slug.duplicated()].libelle_grade_NEG.tolist())
-    # libelles_grade_NEG_2 = sorted(grilles[~grilles.libelle_grade_NEG.duplicated()].libelle_grade_NEG.tolist())
-    # list(set(libelles_grade_NEG_2) - set(libelles_grade_NEG_1))
-    # doublons1 = ['INFIRMIER DE CLASSE NORMALE (*)', 'INFIRMIER DE CLASSE NORMALE(*)']
-    # doublons2 = ['INFIRMIER DE CLASSE SUPERIEURE (*)', 'INFIRMIER DE CLASSE SUPERIEURE(*)']
-    # grilles[grilles.libelle_grade_NEG.isin(doublons1)]
-    # grilles[grilles.libelle_grade_NEG.isin(doublons2)]
-    # Suppression à la main
     grilles.loc[
         grilles.libelle_grade_NEG == 'INFIRMIER DE CLASSE NORMALE (*)', 'libelle_grade_NEG'
         ] = 'INFIRMIER DE CLASSE NORMALE(*)'
@@ -119,7 +110,6 @@ def query_grade_neg(query = None, choices = None, score_cutoff = 95):
     '''
     A partir de libelés observés, va chercher les 50 libellés les plus proches dans
     la liste des libellés officiels des grades. En l'absence de résultats, on abaisse le seuil.
-
 
     Arguments:
         - Libéllé à classer
@@ -186,7 +176,6 @@ def query_libelles_emploi(query = None, choices = None, last_min_score = 50):
 
 def select_grade_neg_by_hand():  # Rename select_grade_or_corps
     '''
-
     Parameters
     ----------
 
@@ -201,11 +190,12 @@ def select_grade_neg_by_hand():  # Rename select_grade_or_corps
         annee = raw_input("""
 SAISIR UNE ANNEE
 selection: """)
-        if annee in ["2011","2012"]:
-            continue
-        else:
+        if annee in map(str,range(2000, 2015)):
             print("Annee d'effe de la grille:{}".format(annee))
             break
+        else:
+            print("Annee saisie incorrect: {}. Choisir une annee entre 2000 et 2014".format(annee))
+            continue
         
     grilles = get_grilles_cleaned(annee)
     libelles_grade_NEG = grilles['libelle_grade_NEG'].unique()
@@ -229,25 +219,28 @@ selection: """)
             elif selection == "r":
                 continue
             elif selection == "o":
-                grades_neg = query_grade_neg(query = libelle_saisi, choices = libelles_grade_NEG, score_cutoff = score_cutoff)
-                print("\nGrade NEG possibles pour {} (score_cutoff = {}):\n{}".format(
-                    libelle_saisi, score_cutoff, grades_neg))
-                selection2 = raw_input("""
-NOMBRE, recommencer la saisie(r), quitter (q)
-selection: """)
-                if selection2 == "q":
-                    return
-                elif selection2 == "r":
-                    continue
-                elif selection2.isdigit() and int(selection2) in grades_neg.index:
-                    grade_neg = grades_neg.loc[int(selection2), "libelle_grade_neg"]
-                    break    
+                while True:
+                    grades_neg = query_grade_neg(query = libelle_saisi, choices = libelles_grade_NEG, score_cutoff = score_cutoff)
+                    print("\nGrade NEG possibles pour {} (score_cutoff = {}):\n{}".format(
+                        libelle_saisi, score_cutoff, grades_neg))
+                    selection2 = raw_input("""
+    NOMBRE, plus de choix (n),  quitter (q)
+    selection: """)
+                    if selection2 == "q":
+                        return
+                    elif selection2 == "n":
+                        score_cutoff -= 5
+                        continue
+                    elif selection2.isdigit() and int(selection2) in grades_neg.index:
+                        grade_neg = grades_neg.loc[int(selection2), "libelle_grade_neg"]
+                        break
+                break  
 
-        date_effet_grille = grilles.loc[
-            grilles.libelle_grade_NEG == grade_neg
-            ].date_effet_grille.min().strftime('%Y-%m-%d')
-        versant = grilles.loc[grilles.libelle_grade_NEG == grade_neg].libelle_FP.unique().squeeze().tolist()
-        versant = 'T' if versant == 'FONCTION PUBLIQUE TERRITORIALE' else 'H'  # TODO: clean this mess
+    date_effet_grille = grilles.loc[
+        grilles.libelle_grade_NEG == grade_neg
+        ].date_effet_grille.min().strftime('%Y-%m-%d')
+    versant = grilles.loc[grilles.libelle_grade_NEG == grade_neg].libelle_FP.unique().squeeze().tolist()
+    versant = 'T' if versant == 'FONCTION PUBLIQUE TERRITORIALE' else 'H'  # TODO: clean this mess
 
     assert versant in VERSANTS, "versant {} is not in {}".format(versant, VERSANTS)
     print("""Le grade NEG suivant a été sélectionné:
@@ -260,55 +253,6 @@ selection: """)
         ))
     return (versant, grade_neg, date_effet_grille)
 
-
-def hand_select_grade(libelle_a_saisir = None, choices = None):
-    '''
-    Fonction de sélection par l'utilisateur du grade adéquat pour le libellé donné.
-    L'utilisateur saisi à la main un grade, et on cherche dans la liste officielle
-    le grade qui s'en rapproche le plus pour confirmation.
-
-    Paremeter
-    ---------
-    libelle_a_saisir : libellé à classer
-    choices : libellé
-    annee : année courante
-
-    Returns
-    -------
-    grade_neg : libellé du grade officiel
-    '''
-    score_cutoff = 95
-
-    while True:
-        print("Saisir un libellé à la main pour {}:".format(libelle_a_saisir))
-        libelle_saisi = raw_input("""
-SAISIR UN LIBELLE, quitter (q)
-selection: """)
-        if libelle_saisi == "q":
-            return
-        else:
-            print("Libellé saisi: {}".format(libelle_saisi))
-            selection = raw_input("""
-LIBELLE OK (o), RECOMMENCER LA SAISIE (r)
-selection: """)
-            if selection not in ["o", "q", "r"]:
-                print('Plage de valeurs incorrecte (choisir o ou r)')
-            elif selection == "r":
-                continue
-            elif selection == "o":
-                grades_neg = query_grade_neg(query = libelle_saisi, choices = choices, score_cutoff = score_cutoff)
-                print("\nGrade NEG possibles pour {} (score_cutoff = {}):\n{}".format(
-                    libelle_saisi, score_cutoff, grades_neg))
-                selection2 = raw_input("""
-NOMBRE, recommencer la saisie(r), quitter (q)
-selection: """)
-                if selection2 == "q":
-                    return
-                elif selection2 == "r":
-                    continue
-                elif selection2.isdigit() and int(selection2) in grades_neg.index:
-                    grade_neg = grades_neg.loc[int(selection2), "libelle_grade_neg"]
-                    return grade_neg
 
 
 def select_corps(libelle_saisi = None, annee = None, versant = None):
@@ -584,72 +528,6 @@ def print_stats(libemplois = None, annee = None, versant = None):
     #         ))
 
 
-def get_libelle_to_classify(libemplois = None, annee_cible = None):
-    '''
-    Fonction d'initialisation des libellés à classer, à partir de la
-
-    Parameters
-    ----------
-    libemplois : Liste de l'ensemble des libellés
-
-    Returns
-    -------
-    Liste ordonnée (selon le nombre d'occurence) des libellés restant à classer pour une année donnée
-    '''
-    assert libemplois is not None
-    libelles_emploi_deja_renseignes_dataframe = get_correspondance_data_frame(which = 'grade')
-    annees = libemplois.index.get_level_values('annee').sort_values(ascending = False)
-    if annee_cible is None:
-        annee_cible = max(annees)
-
-    result = dict()
-    for versant in VERSANTS:
-        libelles_emploi_deja_renseignes = (libelles_emploi_deja_renseignes_dataframe
-            .loc[pd.to_datetime(
-                libelles_emploi_deja_renseignes_dataframe.date_effet
-                ).dt.year <= annee_cible]
-            .query("(annee >= @annee_cible) &  (versant == @versant)")
-            ).libelle.tolist()
-        #
-        result[versant] = (libemplois
-            .loc[annee_cible, versant]
-            .loc[~libemplois.loc[annee_cible, versant].index.isin(libelles_emploi_deja_renseignes)]
-            ).head(1)
-        #
-    #
-    if result['T'].empty and result['H'].empty:
-        return
-
-    libelle = None
-    frequence = 0
-    for versant_itere, serie in result.iteritems():
-        assert len(serie) == 1
-        if serie.values[0] > frequence:
-            versant = versant_itere
-            libelle = serie.index[0]
-            frequence = max(frequence, serie.max())
-
-    print_stats(
-        libemplois = libemplois,
-        annee = annee_cible,
-        versant = versant
-        )
-
-    return versant, annee_cible, libelle
-
-
-def store_corps(libelles_emploi = None, grade_triplet = None):
-    # TODO: fix grade_triplet = ('corps', versant, corps)
-    data_frame = get_correspondance_data_frame(which = 'corps')
-    for libelle in libelles_emploi:
-        versant = grade_triplet[1]
-        corps = grade_triplet[2]
-        data_frame = data_frame.append(pd.DataFrame(  # Add annee
-            data = [[versant, corps, libelle]],
-            columns = ['versant', 'corps', 'libelle']
-            ))
-    log.info('Writing corps_correspondance_data_frame to {}'.format(corps_correspondance_data_frame_path))
-    data_frame.to_hdf(corps_correspondance_data_frame_path, 'correspondance', format = 'table', data_columns = True)
 
 
 def select_and_store(libelle_emploi = None, annee = None, versant = None, libemplois = None):
@@ -703,7 +581,7 @@ def main():
     libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
 
     annee_cible = None
-    while True:`:
+    while True:
         
     grade_triplet = select_grade_neg_by_hand()
     
