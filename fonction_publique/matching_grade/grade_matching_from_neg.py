@@ -174,7 +174,7 @@ def query_libelles_emploi(query = None, choices = None, last_min_score = 50):
     return pd.DataFrame.from_records(results, columns = ['libelle_emploi', 'score'])
 
 
-def select_grade_neg_by_hand():  # Rename select_grade_or_corps
+def select_grade_neg_by_hand(libelles_grade_NEG = None, grilles = None):  # Rename select_grade_or_corps
     '''
     Parameters
     ----------
@@ -540,8 +540,6 @@ def main():
     libemploi_h5 = os.path.join(libelles_emploi_directory, 'libemploi.h5')
     libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
 
-    annee_cible = None
-    
     
     while True:
         print("Choix de l'année (date d'effet max)")
@@ -549,47 +547,46 @@ def main():
 SAISIR UNE ANNEE
 selection: """)
         if annee in map(str,range(2000, 2015)):
-            print("Annee d'effe de la grille:{}".format(annee))
-            break
+            print("Annee d'effet de la grille:{}".format(annee))
         else:
             print("Annee saisie incorrect: {}. Choisir une annee entre 2000 et 2014".format(annee))
             continue
         
-    grilles = get_grilles_cleaned(annee)
-    libelles_grade_NEG = grilles['libelle_grade_NEG'].unique()
+        annee = int(annee)
+        grilles = get_grilles_cleaned(annee)
+        libelles_grade_NEG = grilles['libelle_grade_NEG'].unique()
     
     
-    while True:    
-        grade_triplet = select_grade_neg_by_hand()
-        log.info("Cherchez les libellés correspondant au grade")
-        print("""
-date d'effet: {}
-versant: {}
-libelle grade: {}
-""".format(annee, versant, libelle_emploi))
-
-        
-        
-        result = select_and_store(
-            grade_triplet = grade_triplet,
-            annee = annee,
-            versant = versant,
-            libemplois = libemplois,
+        while True:    
+            grade_triplet = select_grade_neg_by_hand(
+            libelles_grade_NEG = libelles_grade_NEG, grilles = grilles
             )
-        if result == 'continue':
-            continue
-        elif result == 'quit':
-            while True:
-                selection = raw_input("""
-o: passage à l'année suivante. q : quitter
-selection: """)
-                if selection == "o":
-                    annee_cible = annee - 1
-                    break
-                if selection == "q":
-                    return
-                else:
-                    continue
+            log.info("Chercher les libellés correspondant au grade")
+            print("""
+    versant: {}
+    libelle grade: {}
+    date d'effet: {}
+    """.format(grade_triplet[0], grade_triplet[1], grade_triplet[2]))
+    
+            result = select_and_store_libelle(
+                grade_triplet = grade_triplet,
+                annee = annee,
+                versant = grade_triplet[0],
+                libemplois = libemplois,
+                )
+            if result == 'continue':
+                continue
+            elif result == 'quit':
+                while True:
+                    selection = raw_input("""
+    o: Rentrer un autre libellé NEG. q : quitter
+    selection: """)
+                    if selection == "o":
+                        break
+                    if selection == "q":
+                        return
+                    else:
+                        continue
 
 
 if __name__ == '__main__':
