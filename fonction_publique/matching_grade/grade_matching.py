@@ -175,7 +175,7 @@ def query_libelles_emploi(query = None, choices = None, last_min_score = 100):
             log.info("Score cutoff: {}.".format(score_cutoff))
             log.info("Aucun libellé emploi ne correspondant à {}.".format(query))
             break
-            #return None
+            # return None
         results = [result for result in extracted_results if result[1] >= score_cutoff]
         if results:
             min_score = min([result[1] for result in results])
@@ -221,7 +221,7 @@ def select_grade_neg(libelle_saisi = None, annee = None, versant = None):  # Ren
         selection = raw_input("""
 Present: entrer un NOMBRE
 Non present: plus de choix (n), rentrer a la main (m)
-Autre: classer comme corps (c), grade suivant (g) , quitter(q)
+Autre: classer comme corps (c), libellé suivant (g) , quitter(q)
 selection: """)
         if selection == "q":
             return "quit"
@@ -345,7 +345,7 @@ def select_corps(libelle_saisi = None, annee = None, versant = None):
 
 
 def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None, versant = None,
-        show_annee_range = False, show_count = False,remove_not_chosen = True ):
+        show_annee_range = False, show_count = False, remove_not_chosen = True):
     '''
     Sélectionne par l'utilisateur des libellés pouvant être rattaché au grade
     choisi par la fonction select_grade_neg.
@@ -368,6 +368,24 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None
     libelles_emploi_non_selectionnes = list()
     libelles = libemplois.loc[annee, versant].index.tolist()
     libelles_init = libemplois.loc[annee, versant].index.tolist()
+    annee_cible = annee
+    libelles_emploi_deja_renseignes_dataframe = get_correspondance_data_frame(which = 'grade')
+    libelles_emploi_deja_renseignes = (libelles_emploi_deja_renseignes_dataframe
+        .loc[pd.to_datetime(
+            libelles_emploi_deja_renseignes_dataframe.date_effet
+            ).dt.year <= annee_cible]
+        .query("(annee >= @annee_cible) &  (versant == @versant)")
+        ).libelle.tolist()
+    #
+    libelles_purges = (libemplois
+        .loc[annee_cible, versant]
+        .loc[~libemplois.loc[annee_cible, versant].index.isin(libelles_emploi_deja_renseignes)]
+        )
+    #
+    print libelles_emploi_deja_renseignes
+    assert set(libelles_purges.index.tolist()) < set(libelles)
+
+    libelles = libelles_purges.index.tolist()
     next_grade = False
     last_min_score = 100
 
@@ -376,18 +394,16 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None
             print("libellés emploi sélectionnés:")
             pprint.pprint(libelles_emploi_selectionnes)
             libelles = [libemploi for libemploi in libelles if libemploi not in libelles_emploi_selectionnes]
-        
+
         if libelles_emploi_non_selectionnes and remove_not_chosen:
-             libelles = [libemploi for libemploi in libelles if libemploi not in libelles_emploi_non_selectionnes]           
-            
-        
+            libelles = [libemploi for libemploi in libelles if libemploi not in libelles_emploi_non_selectionnes]
 
         libelles_emploi_additionnels = query_libelles_emploi(
             query = grade_triplet[1],
             choices = libelles,
             last_min_score = last_min_score,
             )
-        
+
         libelles_emploi_additionnels = (libelles_emploi_additionnels
             .merge(
                 libemplois
@@ -451,8 +467,8 @@ selection: """)
                     start = stop = int(s)
                 libelles_emploi_selectionnes += libelles_emploi_additionnels.loc[
                     start:stop, 'libelle_emploi'].tolist()
-            diff =  set(libelles_emploi_additionnels.libelle_emploi.tolist()) -  set(libelles_emploi_selectionnes)        
-            libelles_emploi_non_selectionnes +=  list(diff)
+            diff = set(libelles_emploi_additionnels.libelle_emploi.tolist()) - set(libelles_emploi_selectionnes)
+            libelles_emploi_non_selectionnes += list(diff)
             continue
 
         elif selection == 'o':
@@ -460,7 +476,7 @@ selection: """)
             continue
 
         elif selection == 'n':
-            libelles_emploi_non_selectionnes +=  libelles_emploi_additionnels.libelle_emploi.tolist()
+            libelles_emploi_non_selectionnes += libelles_emploi_additionnels.libelle_emploi.tolist()
             last_min_score = libelles_emploi_additionnels.score.min()
             continue
 
@@ -709,7 +725,6 @@ def select_and_store(libelle_emploi = None, annee = None, versant = None, libemp
 
 
 def main():
-
     # Loading the dataframe of slugified libelles (from extract_libelle).
     # (replace load_libelles in the previous version)
     libemploi_h5 = os.path.join(libelles_emploi_directory, 'libemploi.h5')
