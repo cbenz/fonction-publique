@@ -206,6 +206,8 @@ def select_grade_neg(libelle_saisi = None, annee = None, versant = None):  # Ren
     '''
     assert libelle_saisi is not None
     assert annee is not None
+    assert versant in VERSANTS, "versant {} is not in {}".format(versant, VERSANTS)
+
     score_cutoff = 95
 
     grilles = get_grilles_cleaned(annee)
@@ -248,10 +250,13 @@ selection: """)
         date_effet_grille = grilles.loc[
             grilles.libelle_grade_NEG == grade_neg
             ].date_effet_grille.min().strftime('%Y-%m-%d')
-        versant = grilles.loc[grilles.libelle_grade_NEG == grade_neg].libelle_FP.unique().squeeze().tolist()
-        versant = 'T' if versant == 'FONCTION PUBLIQUE TERRITORIALE' else 'H'  # TODO: clean this mess
+        libelle_FP = grilles.loc[grilles.libelle_grade_NEG == grade_neg].libelle_FP.unique().squeeze().tolist()
+        # libelle_FP is 'FONCTION PUBLIQUE TERRITORIALE' or 'FONCTION PUBLIQUE HOSPITALIERE' or the list containing both
+        if versant == 'H':
+            assert libelle_FP == 'FONCTION PUBLIQUE HOSPITALIERE' or 'FONCTION PUBLIQUE HOSPITALIERE' in libelle_FP
+        elif versant == 'T':
+            assert libelle_FP == 'FONCTION PUBLIQUE TERRITORIALE' or 'FONCTION PUBLIQUE TERRITORIALE' in libelle_FP
 
-    assert versant in VERSANTS, "versant {} is not in {}".format(versant, VERSANTS)
     print("""Le grade NEG suivant a été sélectionné:
  - versant: {}
  - libellé du grade: {}
