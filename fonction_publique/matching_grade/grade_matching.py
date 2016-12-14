@@ -500,7 +500,7 @@ selection: """)
 
 
 def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = None, libemplois = None,
-        new_table_name = None):
+        new_table_name = None, print_summary = True):
     '''
     Enregistre des libellés attribués à un triplet (grade, versant, date d'effet)
     dans la table de correspondance.
@@ -515,7 +515,7 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
     assert libelles_emploi, 'libelles_emploi is None or empty'
     assert isinstance(libelles_emploi, list)
     assert grade_triplet is not None and annee is not None
-    assert libemplois is not None
+    assert libemplois is not None or not print_summary
 
     versant, grade, date_effet = grade_triplet
 
@@ -545,7 +545,8 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
         correspondance_data_frame_path, 'correspondance', format = 'table', data_columns = True
         )
 
-    print_stats(
+    if print_summary:
+           print_stats(
         libemplois = libemplois,
         annee = annee,
         versant = versant
