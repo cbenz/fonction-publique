@@ -67,7 +67,7 @@ def get_correspondance_data_frame(which = None):
         return data_frame
 
 
-def get_grilles_cleaned(annee=None):
+def get_grilles_cleaned(annee = None):
     '''
     Correction des doublons dans la grille initiale
     '''

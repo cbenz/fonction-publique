@@ -22,14 +22,16 @@ app_name = os.path.splitext(os.path.basename(__file__))[0]
 log = logging.getLogger(app_name)
 
 
-def load_libelles(decennie = None, debug=False):
+def load_libelles(decennie = None, debug = False):
     libemploi = get_careers(variable = 'libemploi', decennie = decennie, debug = debug)
     libemploi['libemploi_slugified'] = libemploi.libemploi.apply(slugify, separator = "_")
     statut = get_careers(variable = 'statut', decennie = decennie, debug = debug)
-    libemploi = (libemploi.merge(
+    libemploi = (libemploi
+        .merge(
             statut.query("statut in ['T', 'H']"),
             how = 'inner',
-            ))
+            )
+        )
     libemploi = libemploi[libemploi.libemploi != '']
     return libemploi
 
@@ -48,7 +50,7 @@ def main(clean_data = False, debug = False):
     decennies = [1950, 1960, 1970, 1980, 1990]
     for decennie in decennies:
         print("Processing decennie {}".format(decennie))
-        libemploi = load_libelles(decennie=decennie, debug = debug)
+        libemploi = load_libelles(decennie = decennie, debug = debug)
         if decennie == decennies[0]:
             libemploi_all = libemploi
         else:
