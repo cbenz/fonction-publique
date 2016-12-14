@@ -167,12 +167,8 @@ def query_libelles_emploi(query = None, choices = None, last_min_score = 100):
     extracted_results = process.extractBests(slugified_query, choices, limit = 50)
 
     while ((min_score > last_min_score) | empty):
-        log.info("min_score : {}.".format(min_score))
-        log.info("last_min_score : {}.".format(last_min_score))
-        log.info("score_cutoff : {}.".format(score_cutoff))
         score_cutoff = score_cutoff - 5
         if score_cutoff < 0:
-            log.info("Score cutoff: {}.".format(score_cutoff))
             log.info("Aucun libellé emploi ne correspondant à {}.".format(query))
             break
             # return None
@@ -221,12 +217,10 @@ def select_grade_neg(libelle_saisi = None, annee = None, versant = None):  # Ren
         selection = raw_input("""
 Present: entrer un NOMBRE
 Non present: plus de choix (n), rentrer a la main (m)
-Autre: classer comme corps (c), libellé suivant (g) , quitter(q)
+Autre: classer comme corps (c), quitter(q)
 selection: """)
         if selection == "q":
             return "quit"
-        elif selection == "g":
-            return "next"
         elif selection == "n":
             score_cutoff -= 5
             continue
@@ -611,7 +605,7 @@ def print_stats(libemplois = None, annee = None, versant = None):
     #         ))
 
 
-def get_libelle_to_classify(libemplois = None, annee_cible = None):
+def get_libelle_to_classify(libemplois = None, annee_cible = None, ignored_libelles = None):
     '''
     Fonction d'initialisation des libellés à classer, à partir de la
 
@@ -637,13 +631,20 @@ def get_libelle_to_classify(libemplois = None, annee_cible = None):
                 ).dt.year <= annee_cible]
             .query("(annee >= @annee_cible) &  (versant == @versant)")
             ).libelle.tolist()
-        #
+
+        libelles_emploi_ignores =  (ignored_libelles
+             .loc[(ignored_libelles.annee == annee_cible) & (ignored_libelles.versant == versant)]
+             ).libelle.tolist()
+
+
+        excluded_libelles = libelles_emploi_deja_renseignes + libelles_emploi_ignores
+
         result[versant] = (libemplois
             .loc[annee_cible, versant]
-            .loc[~libemplois.loc[annee_cible, versant].index.isin(libelles_emploi_deja_renseignes)]
+            .loc[~libemplois.loc[annee_cible, versant].index.isin(excluded_libelles)]
             ).head(1)
-        #
-    #
+
+
     if result['T'].empty and result['H'].empty:
         return
 
@@ -729,12 +730,14 @@ def main():
     # (replace load_libelles in the previous version)
     libemploi_h5 = os.path.join(libelles_emploi_directory, 'libemploi.h5')
     libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
+    ignored_libelles = pd.DataFrame(columns= ['versant','annee','libelle'])
 
     annee_cible = None
     while True:
         versant, annee, libelle_emploi = get_libelle_to_classify(
             libemplois = libemplois,
             annee_cible = annee_cible,
+            ignored_libelles = ignored_libelles,
             )
         if libelle_emploi == "":
             log.info("On ignore les libelle_emploi vides")
@@ -744,6 +747,13 @@ annee: {}
 versant: {}
 libelle emploi: {}
 """.format(annee, versant, libelle_emploi))
+
+        next_libelles = raw_input("""
+Voulez-vous classer ce libelle? o : oui. n : non.
+selection: """)
+        if next_libelles == "n":
+               ignored_libelles = ignored_libelles.append(pd.DataFrame([[versant, annee, libelle_emploi]],columns= ['versant','annee','libelle']))
+               continue
 
         result = select_and_store(
             libelle_emploi = libelle_emploi,
