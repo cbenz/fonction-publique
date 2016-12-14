@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import os
-import pandas as pd
+from __future__ import division
 
-from fonction_publique.base import parser
+
 from fonction_publique.matching_grade.extract_libelles import (
     load_libelles,
     )
