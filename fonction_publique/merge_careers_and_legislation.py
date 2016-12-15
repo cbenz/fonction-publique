@@ -19,6 +19,7 @@ def get_grilles(force_rebuild = False, date = None, date_effet_max = None, date_
         subset = None, use_date_effet_index = False):
     law_to_hdf(force_rebuild = force_rebuild)
     grilles = pd.read_hdf(law_hdf_path)
+    assert set(grilles.libelle_FP.unique()) == set(['FONCTION PUBLIQUE HOSPITALIERE', 'FONCTION PUBLIQUE TERRITORIALE'])
     if subset is not None:
         if 'date_effet_grille' not in subset:
             subset.append('date_effet_grille')
@@ -44,21 +45,25 @@ def get_grilles(force_rebuild = False, date = None, date_effet_max = None, date_
 
 def law_to_hdf(force_rebuild = False):
     """ Extract relevant data from grille and change to convenient dtype then save to HDFStore."""
-    if os.path.exists(law_hdf_path):
-        if force_rebuild is False:
+    if force_rebuild is True:
+        law = pd.read_table(law_xls_path)
+        law = law[[
+            'date_effet_grille', 'ib', 'code_grade_NETNEH', 'echelon', 'max_mois', 'min_mois',
+            'moy_mois', 'libelle_FP', 'libelle_grade_NEG',
+            ]].copy()
+        law['date_effet_grille'] = pd.to_datetime(law.date_effet_grille)
+        for variable in ['ib', 'max_mois', 'min_mois', 'moy_mois']:
+            law[variable] = law[variable].fillna(-1).astype('int32')
+        law['code_grade'] = law['code_grade_NETNEH'].astype('str')
+        law = law[~law['ib'].isin([-1, 0])].copy()
+        law.to_hdf(law_hdf_path, 'grilles', format = 'table', data_columns = True, mode = 'w')
+        return True
+    else:
+        if os.path.exists(law_hdf_path):
             log.info('Using existing {}'.format(law_hdf_path))
-            return
-    law = pd.read_table(law_xls_path)
-    law = law[[
-        'date_effet_grille', 'ib', 'code_grade_NETNEH', 'echelon', 'max_mois', 'min_mois',
-        'moy_mois', 'libelle_FP', 'libelle_grade_NEG',
-        ]].copy()
-    law['date_effet_grille'] = pd.to_datetime(law.date_effet_grille)
-    for variable in ['ib', 'max_mois', 'min_mois', 'moy_mois']:
-        law[variable] = law[variable].fillna(-1).astype('int32')
-    law['code_grade'] = law['code_grade_NETNEH'].astype('str')
-    law = law[~law['ib'].isin([-1, 0])].copy()
-    law.to_hdf(law_hdf_path, 'grilles', format = 'table', data_columns = True, mode = 'w')
+            return True
+        else:
+            law_to_hdf(force_rebuild = True)
 
 
 def get_libelles(code_grade_neg = None, code_grade_netneh = None, force_rebuild = False):

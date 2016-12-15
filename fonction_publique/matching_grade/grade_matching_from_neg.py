@@ -217,7 +217,7 @@ selection: """)
                     elif selection2.isdigit() and int(selection2) in grades_neg.index:
                         grade_neg = grades_neg.loc[int(selection2), "libelle_grade_neg"]
                         break
-                break  
+                break
 
     date_effet_grille = grilles.loc[
         grilles.libelle_grade_NEG == grade_neg
@@ -293,17 +293,17 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None
             print("libellés emploi sélectionnés:")
             pprint.pprint(libelles_emploi_selectionnes)
             libelles = [libemploi for libemploi in libelles if libemploi not in libelles_emploi_selectionnes]
-        
+
         if libelles_emploi_non_selectionnes and remove_not_chosen:
-             libelles = [libemploi for libemploi in libelles if libemploi not in libelles_emploi_non_selectionnes]           
-            
-        
+             libelles = [libemploi for libemploi in libelles if libemploi not in libelles_emploi_non_selectionnes]
+
+
         libelles_emploi_additionnels = query_libelles_emploi(
             query = grade_triplet[1],
             choices = libelles,
             last_min_score = last_min_score,
             )
-        
+
         libelles_emploi_additionnels = (libelles_emploi_additionnels
             .merge(
                 libemplois
@@ -367,7 +367,7 @@ selection: """)
                     start = stop = int(s)
                 libelles_emploi_selectionnes += libelles_emploi_additionnels.loc[
                     start:stop, 'libelle_emploi'].tolist()
-            diff =  set(libelles_emploi_additionnels.libelle_emploi.tolist()) -  set(libelles_emploi_selectionnes)        
+            diff =  set(libelles_emploi_additionnels.libelle_emploi.tolist()) -  set(libelles_emploi_selectionnes)
             libelles_emploi_non_selectionnes +=  list(diff)
             continue
 
@@ -515,7 +515,7 @@ def print_stats(libemplois = None, annee = None, versant = None):
 
 def select_and_store_libelle(grade_triplet = None, annee = None, versant = None, libemplois = None):
 
-    
+
     while True:
         libelles_emploi_selectionnes, next_grade = select_libelles_emploi(
             grade_triplet = grade_triplet,
@@ -540,7 +540,6 @@ def main():
     libemploi_h5 = os.path.join(libelles_emploi_directory, 'libemploi.h5')
     libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
 
-    
     while True:
         print("Choix de l'année (date d'effet max)")
         annee = raw_input("""
@@ -551,13 +550,12 @@ selection: """)
         else:
             print("Annee saisie incorrect: {}. Choisir une annee entre 2000 et 2014".format(annee))
             continue
-        
+
         annee = int(annee)
         grilles = get_grilles_cleaned(annee)
         libelles_grade_NEG = grilles['libelle_grade_NEG'].unique()
-    
-    
-        while True:    
+
+        while True:
             grade_triplet = select_grade_neg_by_hand(
             libelles_grade_NEG = libelles_grade_NEG, grilles = grilles
             )
@@ -567,7 +565,7 @@ selection: """)
     libelle grade: {}
     date d'effet: {}
     """.format(grade_triplet[0], grade_triplet[1], grade_triplet[2]))
-    
+
             result = select_and_store_libelle(
                 grade_triplet = grade_triplet,
                 annee = annee,

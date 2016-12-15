@@ -67,7 +67,7 @@ def get_correspondance_data_frame(which = None):
         return data_frame
 
 
-def get_grilles_cleaned(annee = None):
+def get_grilles_cleaned(annee = None, versant = None):
     '''
     Correction des doublons dans la grille initiale
     '''
@@ -90,7 +90,14 @@ def get_grilles_cleaned(annee = None):
     grilles.loc[
         grilles.libelle_grade_NEG == 'INFIRMIER DE CLASSE SUPERIEURE (*)', 'libelle_grade_NEG'
         ] = 'INFIRMIER DE CLASSE SUPERIEURE(*)'
-    return grilles
+    if versant is None:
+        return grilles
+    elif versant == 'H':
+        return grilles.query("libelle_FP == 'FONCTION PUBLIQUE HOSPITALIERE'").copy()
+    elif versant == 'T':
+        return grilles.query("libelle_FP == 'FONCTION PUBLIQUE TERRITORIALE'").copy()
+    else:
+        raise ValueError("versant should be 'H', 'T'' or None")
 
 
 def load_libelles_emploi_data(decennie = None, debug = False, force_recreate = False):
@@ -120,13 +127,15 @@ def query_grade_neg(query = None, choices = None, score_cutoff = 95):
     A partir de libelés observés, va chercher les 50 libellés les plus proches dans
     la liste des libellés officiels des grades. En l'absence de résultats, on abaisse le seuil.
 
+    Parameters
+    ----------
+    query : libéllé à classer
+    choices : liste possible des libellés de grade "officiels"
+    score_cutoff : score limite
 
-    Arguments:
-        - Libéllé à classer
-        - Liste possible des libellés de grade "officiels"
-        - Score
-    Sortie:
-        - Liste de grade correspondants avec les score de matching associés.
+    Returns
+    -------
+    Liste de grades correspondants avec les scores de matching associés.
     '''
     assert query is not None
     assert choices is not None
@@ -143,8 +152,8 @@ def query_grade_neg(query = None, choices = None, score_cutoff = 95):
 
 def query_libelles_emploi(query = None, choices = None, last_min_score = 100):
     '''
-    A partir du grade attribué à un libellé rentré à la main, cherche parmi autres
-    libellés rentrés à la main des correspondances pour le grade choisi.
+    A partir du grade attribué à un libellé saisi à la main, cherche parmi les autres
+    libellés saisis à la main des correspondances pour le grade choisi.
 
     Parameters
     ----------
@@ -197,7 +206,7 @@ def select_grade_neg(libelle_saisi = None, annee = None, versant = None):  # Ren
     ----------
     libelle_saisi : str, Libellé à classer
     annee : int, année courante
-    versant : 'H' or 'T', versant
+    versant : 'H' or 'T', versant de la fonction publique
 
     Returns
     -------
@@ -210,7 +219,7 @@ def select_grade_neg(libelle_saisi = None, annee = None, versant = None):  # Ren
 
     score_cutoff = 95
 
-    grilles = get_grilles_cleaned(annee)
+    grilles = get_grilles_cleaned(annee, versant = versant)
     libelles_grade_NEG = grilles['libelle_grade_NEG'].unique()
 
     while True:
@@ -642,8 +651,9 @@ def get_libelle_to_classify(libemplois = None, annee_cible = None, ignored_libel
             ).libelle.tolist()
 
         libelles_emploi_ignores = (ignored_libelles
-            .loc[(ignored_libelles.annee == annee_cible) & (ignored_libelles.versant == versant)]
-             ).libelle.tolist()  # TODO use query and simplify
+            .query("(annee == @annee_cible) &  (versant == @versant)")
+            .libelle.tolist()
+            )
 
         excluded_libelles = libelles_emploi_deja_renseignes + libelles_emploi_ignores
 
@@ -741,26 +751,32 @@ def main():
 
     annee_cible = None
     while True:
+        # Affichage du libellé saisi le plus fréquent restant à traiter
         versant, annee, libelle_emploi = get_libelle_to_classify(
             libemplois = libemplois,
             annee_cible = annee_cible,
             ignored_libelles = ignored_libelles,
             )
+
         if libelle_emploi == "":
             log.info("On ignore les libelle_emploi vides")
             continue
+
         print("""
 annee: {}
 versant: {}
 libelle emploi: {}
 """.format(annee, versant, libelle_emploi))
 
-        next_libelles = raw_input("""
+        do_not_skip = raw_input("""
 Voulez-vous classer ce libelle? o : oui. n : non.
 selection: """)
-        if next_libelles == "n":
-            ignored_libelles = ignored_libelles.append(pd.DataFrame(
-                [[versant, annee, libelle_emploi]], columns = ['versant', 'annee', 'libelle'])
+        if do_not_skip == "n":
+            ignored_libelles = ignored_libelles.append(
+                pd.DataFrame(
+                    [[versant, annee, libelle_emploi]],
+                    columns = ['versant', 'annee', 'libelle']
+                    )
                 )
             continue
 
@@ -770,8 +786,10 @@ selection: """)
             versant = versant,
             libemplois = libemplois,
             )
+
         if result == 'continue':
             continue
+
         elif result == 'quit':
             while True:
                 selection = raw_input("""
