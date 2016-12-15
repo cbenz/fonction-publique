@@ -14,7 +14,7 @@ from fonction_publique.merge_careers_and_legislation import get_grilles
 
 def main():
     debug = True
-    decennies = [1950] #, 1960, 1970, 1980, 1990]
+    decennies = [1950]  # , 1960, 1970, 1980, 1990]
     for decennie in decennies:
         print("Processing decennie {}".format(decennie))
         libemploi = load_libelles(decennie = decennie, debug = debug)
@@ -58,4 +58,5 @@ def main():
         )
 
     return final
+
 

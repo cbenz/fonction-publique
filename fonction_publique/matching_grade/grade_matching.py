@@ -381,7 +381,6 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None
         .loc[~libemplois.loc[annee_cible, versant].index.isin(libelles_emploi_deja_renseignes)]
         )
     #
-    print libelles_emploi_deja_renseignes
     assert set(libelles_purges.index.tolist()) < set(libelles)
 
     libelles = libelles_purges.index.tolist()
@@ -410,12 +409,16 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None
                     .query('versant == @versant')
                     .drop(['versant'], axis = 1)
                     .rename(columns = dict(libemploi_slugified = 'libelle_emploi')),
-                how = 'inner').groupby(['libelle_emploi', 'score']).agg(dict(
+                how = 'inner')
+            .groupby(['libelle_emploi', 'score']).agg(
+                dict(
                     annee = dict(min = np.min, max = np.max),
                     count = dict(freq = np.sum),
                     )
                 )
-            ).reset_index()
+            .reset_index()
+            )
+
         printed_columns = ['libelle_emploi', 'score']
 
         if show_count:
@@ -546,11 +549,11 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
         )
 
     if print_summary:
-           print_stats(
-        libemplois = libemplois,
-        annee = annee,
-        versant = versant
-        )
+        print_stats(
+            libemplois = libemplois,
+            annee = annee,
+            versant = versant
+            )
 
 
 def print_stats(libemplois = None, annee = None, versant = None):
@@ -638,10 +641,9 @@ def get_libelle_to_classify(libemplois = None, annee_cible = None, ignored_libel
             .query("(annee >= @annee_cible) &  (versant == @versant)")
             ).libelle.tolist()
 
-        libelles_emploi_ignores =  (ignored_libelles
-             .loc[(ignored_libelles.annee == annee_cible) & (ignored_libelles.versant == versant)]
-             ).libelle.tolist()
-
+        libelles_emploi_ignores = (ignored_libelles
+            .loc[(ignored_libelles.annee == annee_cible) & (ignored_libelles.versant == versant)]
+             ).libelle.tolist()  # TODO use query and simplify
 
         excluded_libelles = libelles_emploi_deja_renseignes + libelles_emploi_ignores
 
@@ -649,7 +651,6 @@ def get_libelle_to_classify(libemplois = None, annee_cible = None, ignored_libel
             .loc[annee_cible, versant]
             .loc[~libemplois.loc[annee_cible, versant].index.isin(excluded_libelles)]
             ).head(1)
-
 
     if result['T'].empty and result['H'].empty:
         return
@@ -736,7 +737,7 @@ def main():
     # (replace load_libelles in the previous version)
     libemploi_h5 = os.path.join(libelles_emploi_directory, 'libemploi.h5')
     libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
-    ignored_libelles = pd.DataFrame(columns= ['versant','annee','libelle'])
+    ignored_libelles = pd.DataFrame(columns= ['versant', 'annee', 'libelle'])
 
     annee_cible = None
     while True:
@@ -758,8 +759,10 @@ libelle emploi: {}
 Voulez-vous classer ce libelle? o : oui. n : non.
 selection: """)
         if next_libelles == "n":
-               ignored_libelles = ignored_libelles.append(pd.DataFrame([[versant, annee, libelle_emploi]],columns= ['versant','annee','libelle']))
-               continue
+            ignored_libelles = ignored_libelles.append(pd.DataFrame(
+                [[versant, annee, libelle_emploi]], columns = ['versant', 'annee', 'libelle'])
+                )
+            continue
 
         result = select_and_store(
             libelle_emploi = libelle_emploi,
