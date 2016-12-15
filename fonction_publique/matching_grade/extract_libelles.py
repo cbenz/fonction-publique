@@ -56,12 +56,19 @@ def main(clean_data = False, debug = False):
         else:
             libemploi_all = libemploi_all.append(libemploi)
 
+    # Etape 3: save slugified libelles as libemplois
     libemploi_h5 = os.path.join(libelles_emploi_directory, "libemploi.h5")
     libemploi_all.rename(columns = dict(statut = 'versant'), inplace = True)
     libemplois = libemploi_all.groupby([u'annee', u'versant'])['libemploi_slugified'].value_counts()
     log.info("Generating and saving libellés emploi to {}".format(libemploi_h5))
     libemplois.to_hdf(libemploi_h5, 'libemploi')
 
+    # Etape 4: save corresponding bw slug and normal libemploi
+    correspondance_libemploi_slug_h5 = os.path.join(libelles_emploi_directory, "correspondance_libemploi_slug.h5")
+    correspondance_libemploi_slug = (libemploi_all[[u'versant', u'libemploi', u'annee', u'libemploi_slugified']]
+        .drop_duplicates()
+        )
+    correspondance_libemploi_slug.to_hdf(correspondance_libemploi_slug_h5, 'correspondance_libemploi_slug')
 
 if __name__ == "__main__":
     sys.exit(main(clean_data = False, debug = False))
