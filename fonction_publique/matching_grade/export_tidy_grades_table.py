@@ -5,6 +5,7 @@ from __future__ import division
 import logging
 import os
 import pandas as pd
+import numpy as np
 import sys
 
 
@@ -59,9 +60,10 @@ def main():
         .drop('libelle', axis = 1)
         )
 
-    #
+    # 3. Expand to add years*libelle lines from the date d'effet
 
-    # 3. Save to csv
+
+    # 4. Save to csv
     save_path = os.path.join(output_directory, 'correspondance_libemploi_grade.csv')
     final_merge.to_csv(save_path, sep = ';', encoding = 'utf-8')
     print("The table of correspondance between libelles and grade is saved at {}".format(save_path))
@@ -70,4 +72,7 @@ def main():
 if __name__ == '__main__':
     logging.basicConfig(level = logging.INFO, stream = sys.stdout)
     final_merge = main()
+
+
+
 
