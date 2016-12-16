@@ -49,12 +49,12 @@ def law_to_hdf(force_rebuild = False):
         law = pd.read_table(law_xls_path)
         law = law[[
             'date_effet_grille', 'ib', 'code_grade_NETNEH', 'echelon', 'max_mois', 'min_mois',
-            'moy_mois', 'libelle_FP', 'libelle_grade_NEG',
+            'moy_mois', 'libelle_FP', 'libelle_grade_NEG', 'code_grade_NEG'
             ]].copy()
         law['date_effet_grille'] = pd.to_datetime(law.date_effet_grille)
         for variable in ['ib', 'max_mois', 'min_mois', 'moy_mois']:
             law[variable] = law[variable].fillna(-1).astype('int32')
-        law['code_grade'] = law['code_grade_NETNEH'].astype('str')
+        law['code_grade'] = law['code_grade_NEG'].astype('str')
         law = law[~law['ib'].isin([-1, 0])].copy()
         law.to_hdf(law_hdf_path, 'grilles', format = 'table', data_columns = True, mode = 'w')
         return True
