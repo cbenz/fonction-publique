@@ -2,28 +2,29 @@
 
 from __future__ import division
 
+import logging
 import os
 import pandas as pd
+import sys
 
-from fonction_publique.matching_grade.grade_matching import (
-    get_correspondance_data_frame,
-    )
+
+from fonction_publique.matching_grade.grade_matching import get_correspondance_data_frame
 from fonction_publique.merge_careers_and_legislation import get_grilles
-
 from fonction_publique.base import parser
+from fonction_publique.matching_grade.grade_matching import validate_correspondance
+
+
+log = logging.getLogger(__name__)
+
 
 libelles_emploi_directory = parser.get('correspondances', 'libelles_emploi_directory')
 output_directory = parser.get('data', 'output')
 
-from fonction_publique.matching_grade.merge_correspondance import validate_correspondance_table
-
-
 
 def main():
-
     correspondance_data_frame = get_correspondance_data_frame(which = 'grade')
-    cleaned_correspondance_data_frame = validate_correspondance_table(correspondance_data_frame)
-    cleaned_correspondance_data_frame = cleaned_correspondance_data_frame.drop('date_effet', axis = 1)
+    valid_data_frame = validate_correspondance(correspondance_data_frame, check_only = True)
+    assert valid_data_frame, 'The correspondace data frame is not valid'
 
     grilles = get_grilles()
 
@@ -36,8 +37,8 @@ def main():
     grilles['versant'] = 'T'
     grilles.loc[grilles.libelle_FP == "FONCTION PUBLIQUE HOSPITALIERE", 'versant'] = 'H'
 
-    # Step 1 : merge correspondance table with grille to recover the code_grade
-    merge_correspondance_grilles = (cleaned_correspondance_data_frame
+    # 1. Merge correspondance data frame with grille to recover the code_grade
+    merge_correspondance_grilles = (correspondance_data_frame
         .merge(
             grilles[['versant', 'libelle_grade_NEG', 'code_grade']].drop_duplicates(),
             how = 'left',
@@ -47,7 +48,7 @@ def main():
         .drop('grade', axis = 1)
         )
 
-    # Step 2 : merge correspondance table with non slugified libemploi to get the full correspondance
+    # 2. Merge correspondance data frame with liebelle saisi (libemploi) to get the full correspondance
     final_merge = (correspondance_libemploi_slug
         .merge(
             merge_correspondance_grilles,
@@ -58,9 +59,15 @@ def main():
         .drop('libelle', axis = 1)
         )
 
-    # Step 3 : Save to csv
+    #
+
+    # 3. Save to csv
     save_path = os.path.join(output_directory, 'correspondance_libemploi_grade.csv')
     final_merge.to_csv(save_path, sep = ';', encoding = 'utf-8')
     print("The table of correspondance between libelles and grade is saved at {}".format(save_path))
+    return final_merge
 
-main()
+if __name__ == '__main__':
+    logging.basicConfig(level = logging.INFO, stream = sys.stdout)
+    final_merge = main()
+

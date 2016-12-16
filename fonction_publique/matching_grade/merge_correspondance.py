@@ -21,41 +21,12 @@ correspondance_data_frame_path = parser.get('correspondances', 'h5')
 #    correspondance_2 = pd.read_hdf('/Users/simonrabate/Downloads/correspondances.h5', 'correspondance')
 
 
-def validate_correspondance_table(correspondance_table):
-    if correspondance_table.duplicated().any():
-        print("The are {} duplicated lines".format(correspondance_table.duplicated().sum()))
-        log.info("Cleaning duplciated data")
-        correspondance_table_cleaned = correspondance_table.drop_duplicates()
-    else:
-        correspondance_table_cleaned = correspondance_table
-
-    counts = correspondance_table_cleaned.groupby(['versant', 'annee', 'libelle']).count()
-    # print correspondance_table_cleaned.groupby(['versant', 'annee', 'libelle']).count()
-    if counts.max().values.tolist() != [1, 1]:
-        erroneous_entry = counts.query('grade > 1 or date_effet > 1').index.tolist()
-        correct_entry = counts.query('grade == 1 and date_effet == 1').index.tolist()
-        print(correspondance_table_cleaned.set_index(['versant', 'annee', 'libelle']).ix[erroneous_entry])
-        correspondance_table_cleaned = (correspondance_table_cleaned
-            .set_index(['versant', 'annee', 'libelle'])
-            .ix[correct_entry]
-            .reset_index()
-            )
-        for libelle in erroneous_entry:
-            grade_triplet = select_grade_neg(
-                versant = libelle[0], annee = libelle[1], libelle_saisi = libelle[2]
-                )
-            correspondance_table_cleaned = correspondance_table_cleaned.append(pd.DataFrame(
-                data = [[grade_triplet[0], grade_triplet[1], grade_triplet[2], libelle[1], libelle[2]]],
-                columns = ['versant', 'grade', 'date_effet', 'annee', 'libelle']
-                ))
-
-    return correspondance_table_cleaned
 
 
-def validate_tables_to_merge(correspondance_table1, correspondance_table2):
+def validate_tables_to_merge(correspondance_data_frame1, correspondance_data_frame2):
     # 1. conflicting_entries
-    df = correspondance_table1.merge(
-        correspondance_table2,
+    df = correspondance_data_frame1.merge(
+        correspondance_data_frame2,
         how = 'inner',
         on = ['versant', 'libelle', 'annee']
         )
@@ -72,8 +43,8 @@ def validate_tables_to_merge(correspondance_table1, correspondance_table2):
     new_grades = pd.DataFrame(columns = ['versant', 'grade', 'date_effet', 'annee', 'libelle'])
 
     for libelle in erroneous_libelles:
-        libelle_triplet = correspondance_table1.loc[
-            correspondance_table1.libelle == libelle,
+        libelle_triplet = correspondance_data_frame1.loc[
+            correspondance_data_frame1.libelle == libelle,
             ['versant', 'annee', 'libelle']
             ]
         libelle_triplet = libelle_triplet.head(1).values.tolist()[0]
@@ -87,15 +58,15 @@ def validate_tables_to_merge(correspondance_table1, correspondance_table2):
             columns = ['versant', 'grade', 'date_effet', 'annee', 'libelle']
             ))
 
-    correspondance_table1_clean = correspondance_table1[
-        [lib not in erroneous_libelles for lib in correspondance_table1.libelle]
+    correspondance_data_frame1_clean = correspondance_data_frame1[
+        [lib not in erroneous_libelles for lib in correspondance_data_frame1.libelle]
         ]
-    correspondance_table2_clean = correspondance_table2[
-        [lib not in erroneous_libelles for lib in correspondance_table2.libelle]
+    correspondance_data_frame2_clean = correspondance_data_frame2[
+        [lib not in erroneous_libelles for lib in correspondance_data_frame2.libelle]
         ]
 
-    df2 = correspondance_table1_clean.merge(
-        correspondance_table2_clean,
+    df2 = correspondance_data_frame1_clean.merge(
+        correspondance_data_frame2_clean,
         how = 'inner',
         on = ['versant', 'libelle', 'annee']
         )
@@ -103,9 +74,9 @@ def validate_tables_to_merge(correspondance_table1, correspondance_table2):
     corre
 
     len(correspondance_2)
-    test = validate_correspondance_table(correspondance_2)
+    test = validate_correspondance_data_frame(correspondance_2)
     print("test that cleaning works")
-    test2 = validate_correspondance_table(test)
+    test2 = validate_correspondance_data_frame(test)
 
     print( len(correspondance_2), len(test), len(test2) )
 
