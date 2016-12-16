@@ -14,11 +14,11 @@ from fonction_publique.matching_grade.grade_matching import select_grade_neg
 log = logging.getLogger(__name__)
 
 correspondance_data_frame_path = parser.get('correspondances', 'h5')
-correspondance_1 = pd.read_hdf(correspondance_data_frame_path, 'correspondance')
-try:
-    correspondance_2 = pd.read_hdf('C:/Users/s.rabate/Downloads/correspondances.h5', 'correspondance')
-except:
-    correspondance_2 = pd.read_hdf('/Users/simonrabate/Downloads/correspondances.h5', 'correspondance')
+#correspondance_1 = pd.read_hdf(correspondance_data_frame_path, 'correspondance')
+#try:
+#    correspondance_2 = pd.read_hdf('C:/Users/s.rabate/Downloads/correspondances.h5', 'correspondance')
+#except:
+#    correspondance_2 = pd.read_hdf('/Users/simonrabate/Downloads/correspondances.h5', 'correspondance')
 
 
 def validate_correspondance_table(correspondance_table):

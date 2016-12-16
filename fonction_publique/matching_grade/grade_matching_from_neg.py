@@ -18,6 +18,9 @@ from fonction_publique.base import get_careers, parser
 from fonction_publique.merge_careers_and_legislation import get_grilles
 
 
+from fonction_publique.matching_grade.grade_matching import get_grilles_cleaned
+
+
 pd.options.display.max_colwidth = 0
 pd.options.display.max_rows = 999
 
@@ -65,24 +68,6 @@ def get_correspondance_data_frame(which = None):
             data_frame_path))
         data_frame = pd.read_hdf(correspondance_data_frame_path, 'correspondance')
         return data_frame
-
-
-def get_grilles_cleaned(annee=None):
-    '''
-    Correction des doublons dans la grille initiale
-    '''
-    grilles = get_grilles(
-        date_effet_max = "{}-12-31".format(annee),
-        subset = ['libelle_FP', 'libelle_grade_NEG'],
-        )
-    grilles.loc[
-        grilles.libelle_grade_NEG == 'INFIRMIER DE CLASSE NORMALE (*)', 'libelle_grade_NEG'
-        ] = 'INFIRMIER DE CLASSE NORMALE(*)'
-    grilles.loc[
-        grilles.libelle_grade_NEG == 'INFIRMIER DE CLASSE SUPERIEURE (*)', 'libelle_grade_NEG'
-        ] = 'INFIRMIER DE CLASSE SUPERIEURE(*)'
-    return grilles
-
 
 def load_libelles_emploi_data(decennie = None, debug = False, force_recreate = False):
     assert decennie is not None
@@ -549,6 +534,17 @@ selection: """)
             print("Annee d'effet de la grille:{}".format(annee))
         else:
             print("Annee saisie incorrect: {}. Choisir une annee entre 2000 et 2014".format(annee))
+            continue
+
+
+        print("Choix du versant")
+        annee = raw_input("""
+SAISIR UN VERSANT (T: territorial, H: hospitaliere)
+selection: """)
+        if annee in ["T","H"]:
+            print("Versant de la grille:{}".format(annee))
+        else:
+            print("Versant saisi incorrect: {}. Choisir T ou H".format(annee))
             continue
 
         annee = int(annee)

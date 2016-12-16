@@ -17,7 +17,6 @@ from fuzzywuzzy import process
 from fonction_publique.base import get_careers, parser
 from fonction_publique.merge_careers_and_legislation import get_grilles
 
-
 pd.options.display.max_colwidth = 0
 pd.options.display.max_rows = 999
 
@@ -536,7 +535,6 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
         correspondance_data_frame = correspondance_data_frame.append(pd.DataFrame(
             data = [[versant, grade, date_effet, annee, libelle]],
             columns = ['versant', 'grade', 'date_effet', 'annee', 'libelle']
-            ))
 
     if DEBUG:
         print("Libellé renseignés")
