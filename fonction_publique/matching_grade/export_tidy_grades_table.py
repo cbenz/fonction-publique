@@ -2,28 +2,28 @@
 
 from __future__ import division
 
+import logging
 import os
 import pandas as pd
+import sys
 
-from fonction_publique.matching_grade.grade_matching import (
-    get_correspondance_data_frame,
-    )
+
+from fonction_publique.matching_grade.grade_matching import get_correspondance_data_frame
 from fonction_publique.merge_careers_and_legislation import get_grilles
-
 from fonction_publique.base import parser
+from fonction_publique.matching_grade.merge_correspondance import validate_correspondance
+
+
+log = logging.getLogger(__name__)
+
 
 libelles_emploi_directory = parser.get('correspondances', 'libelles_emploi_directory')
 output_directory = parser.get('data', 'output')
 
-from fonction_publique.matching_grade.merge_correspondance import validate_correspondance_table
-
-
 
 def main():
-
     correspondance_data_frame = get_correspondance_data_frame(which = 'grade')
-    cleaned_correspondance_data_frame = validate_correspondance_table(correspondance_data_frame)
-    cleaned_correspondance_data_frame = cleaned_correspondance_data_frame.drop('date_effet', axis = 1)
+    cleaned_correspondance_data_frame = validate_correspondance(correspondance_data_frame)
 
     grilles = get_grilles()
 
@@ -47,6 +47,8 @@ def main():
         .drop('grade', axis = 1)
         )
 
+    return merge_correspondance_grilles
+
     # Step 2 : merge correspondance table with non slugified libemploi to get the full correspondance
     final_merge = (correspondance_libemploi_slug
         .merge(
@@ -63,4 +65,8 @@ def main():
     final_merge.to_csv(save_path, sep = ';', encoding = 'utf-8')
     print("The table of correspondance between libelles and grade is saved at {}".format(save_path))
 
-main()
+
+if __name__ == '__main__':
+    logging.basicConfig(level = logging.INFO, stream = sys.stdout)
+    merge_correspondance_grilles = main()
+

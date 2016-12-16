@@ -536,7 +536,7 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
             data = [[versant, grade, date_effet, annee, libelle]],
             columns = ['versant', 'grade', 'date_effet', 'annee', 'libelle']
             ))
-            
+
     if DEBUG:
         print("Libellé renseignés")
         pprint.pprint(correspondance_data_frame.set_index(
@@ -741,6 +741,44 @@ def select_and_store(libelle_emploi = None, annee = None, versant = None, libemp
             return 'continue'
 
 
+def validate_correspondance(correspondance_data_frame, check_only = False):
+    valid_data_frame = True
+    if correspondance_data_frame.duplicated().any():
+        print("The are {} duplicated lines".format(correspondance_data_frame.duplicated().sum()))
+        log.info("Cleaning duplicated data")
+        correspondance_data_frame_cleaned = correspondance_data_frame.drop_duplicates()
+        valid_data_frame = False
+        if check_only:
+            return False
+    else:
+        correspondance_data_frame_cleaned = correspondance_data_frame
+
+    counts = correspondance_data_frame_cleaned.groupby(['versant', 'annee', 'libelle']).count()
+    if counts.max().values.tolist() != [1, 1]:
+        if check_only:
+            return False
+        valid_data_frame = False
+        erroneous_entry = counts.query('grade > 1 or date_effet > 1').index.tolist()
+        correct_entry = counts.query('grade == 1 and date_effet == 1').index.tolist()
+        # print(correspondance_data_frame_cleaned.set_index(['versant', 'annee', 'libelle']).ix[erroneous_entry])
+        correspondance_data_frame_cleaned = (correspondance_data_frame_cleaned
+            .set_index(['versant', 'annee', 'libelle'])
+            .ix[correct_entry]
+            .reset_index()
+            )
+        for libelle in erroneous_entry:
+            grade_triplet = select_grade_neg(
+                versant = libelle[0], annee = libelle[1], libelle_saisi = libelle[2]
+                )
+            correspondance_data_frame_cleaned = correspondance_data_frame_cleaned.append(pd.DataFrame(
+                data = [[grade_triplet[0], grade_triplet[1], grade_triplet[2], libelle[1], libelle[2]]],
+                columns = ['versant', 'grade', 'date_effet', 'annee', 'libelle']
+                ))
+    if check_only:
+        return True
+    return valid_data_frame, correspondance_data_frame_cleaned
+
+
 def main():
     # Loading the dataframe of slugified libelles (from extract_libelle).
     # (replace load_libelles in the previous version)
@@ -798,6 +836,16 @@ selection: """)
                     annee_cible = annee - 1
                     break
                 if selection == "q":
+                    # Validate correspondance table before exiting
+                    correspondance_data_frame = pd.read_hdf(correspondance_data_frame_path, 'correspondance')
+                    valid_data_frame = False
+                    while not valid_data_frame:
+                        log.info('Validating correspondance data frame')
+                        valid_data_frame, correspondance_data_frame = validate_correspondance(correspondance_data_frame)
+                    log.info('Writing correspondance_data_frame to {}'.format(correspondance_data_frame_path))
+                    correspondance_data_frame.to_hdf(
+                        correspondance_data_frame_path, 'correspondance', format = 'table', data_columns = True
+                        )
                     return
                 else:
                     continue
