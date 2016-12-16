@@ -535,7 +535,8 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
         correspondance_data_frame = correspondance_data_frame.append(pd.DataFrame(
             data = [[versant, grade, date_effet, annee, libelle]],
             columns = ['versant', 'grade', 'date_effet', 'annee', 'libelle']
-
+            ))
+            
     if DEBUG:
         print("Libellé renseignés")
         pprint.pprint(correspondance_data_frame.set_index(
