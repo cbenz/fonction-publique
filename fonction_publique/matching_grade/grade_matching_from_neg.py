@@ -573,11 +573,22 @@ selection: """)
             elif result == 'quit':
                 while True:
                     selection = raw_input("""
-    o: Rentrer un autre libellé NEG. q : quitter
-    selection: """)
+        o: passage à l'année suivante. q : quitter
+        selection: """)
                     if selection == "o":
+                        annee_cible = annee - 1
                         break
                     if selection == "q":
+                        # Validate correspondance table before exiting
+                        correspondance_data_frame = pd.read_hdf(correspondance_data_frame_path, 'correspondance')
+                        valid_data_frame = False
+                        while not valid_data_frame:
+                            log.info('Validating correspondance data frame')
+                            valid_data_frame, correspondance_data_frame = validate_correspondance(correspondance_data_frame)
+                        log.info('Writing correspondance_data_frame to {}'.format(correspondance_data_frame_path))
+                        correspondance_data_frame.to_hdf(
+                            correspondance_data_frame_path, 'correspondance', format = 'table', data_columns = True
+                            )
                         return
                     else:
                         continue

@@ -696,7 +696,7 @@ def store_corps(libelles_emploi = None, grade_triplet = None):
     data_frame.to_hdf(corps_correspondance_data_frame_path, 'correspondance', format = 'table', data_columns = True)
 
 
-def select_and_store(libelle_emploi = None, annee = None, versant = None, libemplois = None):
+def libelle_to_grade_neg(libelle_emploi = None, annee = None, versant = None, libemplois = None):
     grade_triplet = select_grade_neg(
         libelle_saisi = libelle_emploi,
         annee = annee,
@@ -722,6 +722,11 @@ def select_and_store(libelle_emploi = None, annee = None, versant = None, libemp
         libemplois = libemplois,
         )
 
+    return grade_triplet
+
+
+def grade_to_libelle(grade_triplet = None, annee = None, versant = None, libemplois = None):
+
     while True:
         libelles_emploi_selectionnes, next_grade = select_libelles_emploi(
             grade_triplet = grade_triplet,
@@ -739,6 +744,7 @@ def select_and_store(libelle_emploi = None, annee = None, versant = None, libemp
                 )
         if next_grade:
             return 'continue'
+
 
 
 def validate_correspondance(correspondance_data_frame, check_only = False):
@@ -788,7 +794,7 @@ def main():
 
     annee_cible = None
     while True:
-        # Affichage du libellé saisi le plus fréquent restant à traiter
+        # 1. Choice of the libelle to be matched
         versant, annee, libelle_emploi = get_libelle_to_classify(
             libemplois = libemplois,
             annee_cible = annee_cible,
@@ -817,7 +823,15 @@ selection: """)
                 )
             continue
 
-        result = select_and_store(
+
+        grade_neg = select_grade_neg(
+            libelle_emploi = libelle_emploi,
+            annee = annee,
+            versant = versant,
+            libemplois = libemplois,
+            )
+
+        grade_to_libelle = select_and_store(
             libelle_emploi = libelle_emploi,
             annee = annee,
             versant = versant,
