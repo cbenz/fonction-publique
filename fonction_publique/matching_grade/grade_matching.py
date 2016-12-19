@@ -538,12 +538,12 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
             ))
 
     if DEBUG:
-        print("Libellé renseignés")
+        print("Libellés renseignés")
         pprint.pprint(correspondance_data_frame.set_index(
             ['versant', 'grade', 'date_effet', 'annee']
             ))
 
-    print("Libellé renseignés pour le grade {}:".format(grade))
+    print("Libellés renseignés pour le grade {}:".format(grade))
     if not correspondance_data_frame.empty:
         pprint.pprint(
             correspondance_data_frame.set_index(
@@ -696,17 +696,14 @@ def store_corps(libelles_emploi = None, grade_triplet = None):
     data_frame.to_hdf(corps_correspondance_data_frame_path, 'correspondance', format = 'table', data_columns = True)
 
 
-def libelle_to_grade_neg(libelle_emploi = None, annee = None, versant = None, libemplois = None):
+def select_grade_neg_from_libelle(libelle_emploi = None, annee = None, versant = None, libemplois = None):
     grade_triplet = select_grade_neg(
         libelle_saisi = libelle_emploi,
         annee = annee,
         versant = versant,
         )
-
     if grade_triplet == 'quit':
         return 'quit'
-    if grade_triplet == "next":
-        return 'continue'
 
     if grade_triplet[0] == 'corps':
         store_corps(
@@ -725,8 +722,7 @@ def libelle_to_grade_neg(libelle_emploi = None, annee = None, versant = None, li
     return grade_triplet
 
 
-def grade_to_libelle(grade_triplet = None, annee = None, versant = None, libemplois = None):
-
+def select_libelle_from_grade_neg(grade_triplet = None, annee = None, versant = None, libemplois = None):
     while True:
         libelles_emploi_selectionnes, next_grade = select_libelles_emploi(
             grade_triplet = grade_triplet,
@@ -743,8 +739,7 @@ def grade_to_libelle(grade_triplet = None, annee = None, versant = None, libempl
                 libemplois = libemplois,
                 )
         if next_grade:
-            return 'continue'
-
+            return 'next_grade'
 
 
 def validate_correspondance(correspondance_data_frame, check_only = False):
@@ -785,14 +780,7 @@ def validate_correspondance(correspondance_data_frame, check_only = False):
     return valid_data_frame, correspondance_data_frame_cleaned
 
 
-def main():
-    # Loading the dataframe of slugified libelles (from extract_libelle).
-    # (replace load_libelles in the previous version)
-    libemploi_h5 = os.path.join(libelles_emploi_directory, 'libemploi.h5')
-    libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
-    ignored_libelles = pd.DataFrame(columns= ['versant', 'annee', 'libelle'])
-
-    annee_cible = None
+def wrap_get_libelle_to_classify(libemplois = None, annee_cible = None, ignored_libelles = None):
     while True:
         # 1. Choice of the libelle to be matched
         versant, annee, libelle_emploi = get_libelle_to_classify(
@@ -810,11 +798,10 @@ annee: {}
 versant: {}
 libelle emploi: {}
 """.format(annee, versant, libelle_emploi))
-
-        do_not_skip = raw_input("""
+        keep = raw_input("""
 Voulez-vous classer ce libelle? o : oui. n : non.
 selection: """)
-        if do_not_skip == "n":
+        if keep == "n":
             ignored_libelles = ignored_libelles.append(
                 pd.DataFrame(
                     [[versant, annee, libelle_emploi]],
@@ -822,44 +809,71 @@ selection: """)
                     )
                 )
             continue
+        else:
+            return versant, annee, libelle_emploi, ignored_libelles
 
 
-        grade_neg = select_grade_neg(
+def validate_and_save(correspondance_data_frame_path):
+    # Validate correspondance table before exiting
+    correspondance_data_frame = pd.read_hdf(correspondance_data_frame_path, 'correspondance')
+    valid_data_frame = False
+    while not valid_data_frame:
+        log.info('Validating correspondance data frame')
+        valid_data_frame, correspondance_data_frame = validate_correspondance(correspondance_data_frame)
+    log.info('Writing correspondance_data_frame to {}'.format(correspondance_data_frame_path))
+    correspondance_data_frame.to_hdf(
+        correspondance_data_frame_path, 'correspondance', format = 'table', data_columns = True
+        )
+
+
+def main():
+    # Loading the dataframe of slugified libelles (from extract_libelle).
+    # (replace load_libelles in the previous version)
+    libemploi_h5 = os.path.join(libelles_emploi_directory, 'libemploi.h5')
+    libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
+    ignored_libelles = pd.DataFrame(columns= ['versant', 'annee', 'libelle'])
+    annee_cible = None
+    while True:
+        versant, annee, libelle_emploi, ignored_libelles = wrap_get_libelle_to_classify(
+            libemplois = libemplois,
+            annee_cible = annee_cible,
+            ignored_libelles = ignored_libelles,
+            )
+
+        grade_triplet = select_grade_neg_from_libelle(
             libelle_emploi = libelle_emploi,
             annee = annee,
             versant = versant,
             libemplois = libemplois,
             )
 
-        grade_to_libelle = select_and_store(
-            libelle_emploi = libelle_emploi,
-            annee = annee,
-            versant = versant,
-            libemplois = libemplois,
-            )
-
-        if result == 'continue':
+        if grade_triplet == 'continue':
             continue
 
-        elif result == 'quit':
+        elif grade_triplet == 'quit':
+            what_next = 'quit'
+
+        else:
+            what_next = select_libelle_from_grade_neg(
+                grade_triplet = grade_triplet,
+                annee = annee,
+                versant = versant,
+                libemplois = libemplois,
+                )
+
+            if what_next == 'next_grade':
+                continue
+
+        if what_next == 'quit':
             while True:
                 selection = raw_input("""
-o: passage à l'année suivante. q : quitter
-selection: """)
+    o: passage à l'année suivante. q : quitter
+    selection: """)
                 if selection == "o":
                     annee_cible = annee - 1
                     break
                 if selection == "q":
-                    # Validate correspondance table before exiting
-                    correspondance_data_frame = pd.read_hdf(correspondance_data_frame_path, 'correspondance')
-                    valid_data_frame = False
-                    while not valid_data_frame:
-                        log.info('Validating correspondance data frame')
-                        valid_data_frame, correspondance_data_frame = validate_correspondance(correspondance_data_frame)
-                    log.info('Writing correspondance_data_frame to {}'.format(correspondance_data_frame_path))
-                    correspondance_data_frame.to_hdf(
-                        correspondance_data_frame_path, 'correspondance', format = 'table', data_columns = True
-                        )
+                    validate_and_save(correspondance_data_frame_path)
                     return
                 else:
                     continue
