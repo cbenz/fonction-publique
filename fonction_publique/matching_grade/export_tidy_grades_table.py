@@ -62,10 +62,27 @@ def main():
 
     # 3. Expand to add years*libelle lines from the date d'effet
 
+    final_merge["beg"] =  pd.to_datetime(final_merge.date_effet).dt.year.astype(str)
+    final_merge["end"] =  final_merge.annee.astype(str)
+    expended_data = pd.DataFrame(columns = final_merge.columns)
+
+    for row_nb in range(0, len(final_merge)):
+        row = final_merge[row_nb:(row_nb + 1)]
+        row.index = pd.DatetimeIndex(pd.to_datetime(row.date_effet))
+        end = row.end.values[0]
+        beg = row.beg.values[0]
+        idx = pd.date_range(beg, end, freq = 'A') # Date au 31 décembre: hyp implicite que la date d'effet est au 1er janvier
+        exp_row= row.reindex(idx, method = 'ffill')
+        expended_data = expended_data.append(exp_row)
+
+    expended_data['annee'] = pd.to_datetime(expended_data.index)
+    expended_data['annee'] = expended_data['annee'].dt.year
+    expended_data.drop(["beg","end"], inplace = True, axis = 1)
+    expended_data = expended_data.reset_index(drop = True)
 
     # 4. Save to csv
     save_path = os.path.join(output_directory, 'correspondance_libemploi_grade.csv')
-    final_merge.to_csv(save_path, sep = ';', encoding = 'utf-8')
+    expended_data.to_csv(save_path, sep = ';', encoding = 'latin1')
     print("The table of correspondance between libelles and grade is saved at {}".format(save_path))
     return final_merge
 
