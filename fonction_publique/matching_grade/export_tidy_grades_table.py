@@ -68,16 +68,16 @@ def main():
 
     for row_nb in range(0, len(final_merge)):
         row = final_merge[row_nb:(row_nb + 1)]
-        row.index = pd.DatetimeIndex(pd.to_datetime(row.date_effet))
+        row.index = pd.DatetimeIndex(pd.to_datetime(row.beg))
         end = row.end.values[0]
         beg = row.beg.values[0]
-        idx = pd.date_range(beg, end, freq = 'A') # Date au 31 décembre: hyp implicite que la date d'effet est au 1er janvier
+        idx = pd.date_range(beg, end, freq = 'AS') # Date au 31 décembre: hyp implicite que la date d'effet est au 1er janvier
         exp_row= row.reindex(idx, method = 'ffill')
         expended_data = expended_data.append(exp_row)
 
     expended_data['annee'] = pd.to_datetime(expended_data.index)
     expended_data['annee'] = expended_data['annee'].dt.year
-    expended_data.drop(["beg","end"], inplace = True, axis = 1)
+    expended_data.drop(["beg","end","libemploi_slugified"], inplace = True, axis = 1)
     expended_data = expended_data.reset_index(drop = True)
 
     # 4. Save to csv
