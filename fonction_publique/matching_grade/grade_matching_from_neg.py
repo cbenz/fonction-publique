@@ -6,20 +6,14 @@ from __future__ import division
 
 import logging
 import os
-import pprint
 import sys
+from fonction_publique.base import parser
 
-import numpy as np
 import pandas as pd
-from slugify import slugify
-from fuzzywuzzy import process
-
-from fonction_publique.base import get_careers, parser
-from fonction_publique.merge_careers_and_legislation import get_grilles
-
-
 from fonction_publique.matching_grade.grade_matching import (
-    get_grilles_cleaned,
+    get_grilles_cleaned, select_libelle_from_grade_neg, validate_and_save,
+    query_grade_neg, print_stats,
+    )
 
 
 pd.options.display.max_colwidth = 0
@@ -53,7 +47,7 @@ def select_grade_neg_by_hand(libelles_grade_NEG = None, grilles = None):  # Rena
 SAISIR UN LIBELLE, quitter (q)
 selection: """)
         if libelle_saisi == "q":
-            return
+            return "quit"
         else:
             print("Libellé saisi: {}".format(libelle_saisi))
             selection = raw_input("""
@@ -72,7 +66,7 @@ selection: """)
     NOMBRE, plus de choix (n),  quitter (q)
     selection: """)
                     if selection2 == "q":
-                        return
+                        return "quit"
                     elif selection2 == "n":
                         score_cutoff -= 5
                         continue
@@ -103,76 +97,70 @@ def main():
 
     libemploi_h5 = os.path.join(libelles_emploi_directory, 'libemploi.h5')
     libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
-
+    new_year_versant = True
+    
     while True:
-        print("Choix de l'année (date d'effet max)")
-        annee = raw_input("""
-SAISIR UNE ANNEE
-selection: """)
-        if annee in map(str,range(2000, 2015)):
-            print("Annee d'effet de la grille:{}".format(annee))
-        else:
-            print("Annee saisie incorrect: {}. Choisir une annee entre 2000 et 2014".format(annee))
-            continue
-
-
-        print("Choix du versant")
-        annee = raw_input("""
-SAISIR UN VERSANT (T: territorial, H: hospitaliere)
-selection: """)
-        if annee in ["T","H"]:
-            print("Versant de la grille:{}".format(annee))
-        else:
-            print("Versant saisi incorrect: {}. Choisir T ou H".format(annee))
-            continue
-
+        if new_year_versant: 
+            print("Choix de l'année (date d'effet max)")
+            annee = raw_input("""
+        SAISIR UNE ANNEE
+        selection: """)
+            if annee in map(str,range(2000, 2015)):
+                print("Annee d'effet de la grille:{}".format(annee))
+            else:
+                print("Annee saisie incorrect: {}. Choisir une annee entre 2000 et 2014".format(annee))
+                continue
+        
+        
+            print("Choix du versant")
+            versant = raw_input("""
+        SAISIR UN VERSANT (T: territorial, H: hospitaliere)
+        selection: """)
+            if versant in ["T","H"]:
+                print("Versant de la grille:{}".format(versant))
+            else:
+                print("Versant saisi incorrect: {}. Choisir T ou H".format(versant))
+                continue
+            
         annee = int(annee)
         grilles = get_grilles_cleaned(annee)
+        
+        print_stats(libemplois = libemplois, annee = annee, versant = versant)       
+        
         libelles_grade_NEG = grilles['libelle_grade_NEG'].unique()
 
-        while True:
-            grade_triplet = select_grade_neg_by_hand(
-            libelles_grade_NEG = libelles_grade_NEG, grilles = grilles
-            )
-            log.info("Chercher les libellés correspondant au grade")
-            print("""
-    versant: {}
-    libelle grade: {}
-    date d'effet: {}
-    """.format(grade_triplet[0], grade_triplet[1], grade_triplet[2]))
+        grade_triplet = select_grade_neg_by_hand(
+        libelles_grade_NEG = libelles_grade_NEG, grilles = grilles
+        )
 
-            result = select_and_store_libelle(
-                grade_triplet = grade_triplet,
-                annee = annee,
-                versant = grade_triplet[0],
-                libemplois = libemplois,
-                )
-            if result == 'continue':
-                continue
-            elif result == 'quit':
-                while True:
-                    selection = raw_input("""
-        o: passage à l'année suivante. q : quitter
+        if grade_triplet == 'quit':
+            validate_and_save(correspondance_data_frame_path)            
+            return 'quit' 
+        
+        what_next = select_libelle_from_grade_neg(
+            grade_triplet = grade_triplet,
+            annee = annee,
+            versant = versant,
+            libemplois = libemplois,
+            )
+
+        if what_next == 'next_libelle':
+            print("Changement de grade. Changer l'année ({}) et/ou le versant({}) ?".format(annee, versant))
+            new_year = raw_input("""
+         o: oui, n: non
         selection: """)
-                    if selection == "o":
-                        annee_cible = annee - 1
-                        break
-                    if selection == "q":
-                        # Validate correspondance table before exiting
-                        correspondance_data_frame = pd.read_hdf(correspondance_data_frame_path, 'correspondance')
-                        valid_data_frame = False
-                        while not valid_data_frame:
-                            log.info('Validating correspondance data frame')
-                            valid_data_frame, correspondance_data_frame = validate_correspondance(correspondance_data_frame)
-                        log.info('Writing correspondance_data_frame to {}'.format(correspondance_data_frame_path))
-                        correspondance_data_frame.to_hdf(
-                            correspondance_data_frame_path, 'correspondance', format = 'table', data_columns = True
-                            )
-                        return
-                    else:
-                        continue
+            if new_year == "n":
+                new_year_versant = False
+            continue
+
+        if what_next == 'quit':
+            validate_and_save(correspondance_data_frame_path)
+            return
 
 
 if __name__ == '__main__':
     logging.basicConfig(level = logging.INFO, stream = sys.stdout)
     main()
+    
+    
+

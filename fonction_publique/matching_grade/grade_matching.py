@@ -365,7 +365,7 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None
     Returns
     -------
     libelles_emploi_selectionnes : liste des libellés additionnels pouvant être rattachés au triplet précédent
-    next_grade : bool, passage au grade suivant
+    next_libelle : bool, passage au libelle suivant
     '''
     assert grade_triplet is not None  # (versant, libelle_grade, date_effet_grille)
     assert annee is not None
@@ -392,7 +392,7 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None
     assert set(libelles_purges.index.tolist()) < set(libelles)
 
     libelles = libelles_purges.index.tolist()
-    next_grade = False
+    next_libelle = False
     last_min_score = 100
 
     while True:
@@ -437,7 +437,7 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None
         print("\nAutres libellés emploi possibles:\n{}".format(libelles_emploi_additionnels[printed_columns]))
         selection = raw_input("""
 liste de nombre (ex: 1:4,6,8,10:11), o (tous), n (aucun), r (recommencer selection),
-q (quitter/grade suivant), s (sauvegarde et stats)
+q (quitter/libelle suivant), s (sauvegarde et stats)
 
 selection: """)
 
@@ -500,14 +500,14 @@ selection: """)
             continue
 
         elif selection == 'q':
-            next_grade = True
+            next_libelle = True
             break
 
         else:
             print('Non valide')
             continue
 
-    return libelles_emploi_selectionnes, next_grade
+    return libelles_emploi_selectionnes, next_libelle
 
 
 def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = None, libemplois = None,
@@ -724,7 +724,7 @@ def select_grade_neg_from_libelle(libelle_emploi = None, annee = None, versant =
 
 def select_libelle_from_grade_neg(grade_triplet = None, annee = None, versant = None, libemplois = None):
     while True:
-        libelles_emploi_selectionnes, next_grade = select_libelles_emploi(
+        libelles_emploi_selectionnes, next_libelle = select_libelles_emploi(
             grade_triplet = grade_triplet,
             libemplois = libemplois,
             annee = annee,
@@ -738,8 +738,8 @@ def select_libelle_from_grade_neg(grade_triplet = None, annee = None, versant = 
                 grade_triplet = grade_triplet,
                 libemplois = libemplois,
                 )
-        if next_grade:
-            return 'next_grade'
+        if next_libelle:
+            return 'next_libelle'
 
 
 def validate_correspondance(correspondance_data_frame, check_only = False):
@@ -861,7 +861,7 @@ def main():
                 libemplois = libemplois,
                 )
 
-            if what_next == 'next_grade':
+            if what_next == 'next_libelle':
                 continue
 
         if what_next == 'quit':
