@@ -7,12 +7,17 @@ from __future__ import division
 import logging
 import os
 import sys
-from fonction_publique.base import parser
 
 import pandas as pd
 from fonction_publique.matching_grade.grade_matching import (
-    get_grilles_cleaned, select_libelle_from_grade_neg, validate_and_save,
-    query_grade_neg, print_stats,
+    correspondance_data_frame_path,
+    get_grilles_cleaned,
+    libelles_emploi_directory,
+    query_grade_neg,
+    print_stats,
+    select_libelle_from_grade_neg,
+    validate_and_save,
+    VERSANTS,
     )
 
 
@@ -22,15 +27,7 @@ pd.options.display.max_rows = 999
 log = logging.getLogger(__name__)
 
 
-DEBUG = False
-VERSANTS = ['T', 'H']
-
-correspondance_data_frame_path = parser.get('correspondances', 'h5')
-corps_correspondance_data_frame_path = parser.get('correspondances', 'corps_h5')
-libelles_emploi_directory = parser.get('correspondances', 'libelles_emploi_directory')
-
-
-def select_grade_neg_by_hand(libelles_grade_NEG = None, grilles = None):  # Rename select_grade_or_corps
+def select_grade_neg_by_hand(versant = None, libelles_grade_NEG = None, grilles = None):  # Rename select_grade_or_corps
     '''
     Parameters
     ----------
@@ -39,6 +36,7 @@ def select_grade_neg_by_hand(libelles_grade_NEG = None, grilles = None):  # Rena
     -------
     grade_neg : tuple, (versant, grade, date d'effet) du grade correspondant
     '''
+    assert versant in VERSANTS
     score_cutoff = 95
 
     while True:
@@ -51,15 +49,16 @@ selection: """)
         else:
             print("Libellé saisi: {}".format(libelle_saisi))
             selection = raw_input("""
-LIBELLE OK (o), RECOMMENCER LA SAISIE (r)
+LE LIBELLE EST-IL CORRECT ? OUI (o), NON ET RECOMMENCER LA SAISIE (r)
 selection: """)
-            if selection not in ["o", "q", "r"]:
+            if selection not in ["o", "r"]:
                 print('Plage de valeurs incorrecte (choisir o ou r)')
             elif selection == "r":
                 continue
             elif selection == "o":
                 while True:
-                    grades_neg = query_grade_neg(query = libelle_saisi, choices = libelles_grade_NEG, score_cutoff = score_cutoff)
+                    grades_neg = query_grade_neg(
+                        query = libelle_saisi, choices = libelles_grade_NEG, score_cutoff = score_cutoff)
                     print("\nGrade NEG possibles pour {} (score_cutoff = {}):\n{}".format(
                         libelle_saisi, score_cutoff, grades_neg))
                     selection2 = raw_input("""
@@ -78,8 +77,12 @@ selection: """)
     date_effet_grille = grilles.loc[
         grilles.libelle_grade_NEG == grade_neg
         ].date_effet_grille.min().strftime('%Y-%m-%d')
-    versant = grilles.loc[grilles.libelle_grade_NEG == grade_neg].libelle_FP.unique().squeeze().tolist()
-    versant = 'T' if versant == 'FONCTION PUBLIQUE TERRITORIALE' else 'H'  # TODO: clean this mess
+    libelle_FP = grilles.loc[grilles.libelle_grade_NEG == grade_neg].libelle_FP.unique().squeeze().tolist()
+    # libelle_FP is 'FONCTION PUBLIQUE TERRITORIALE' or 'FONCTION PUBLIQUE HOSPITALIERE' or the list containing both
+    if versant == 'H':
+        assert libelle_FP == 'FONCTION PUBLIQUE HOSPITALIERE' or 'FONCTION PUBLIQUE HOSPITALIERE' in libelle_FP
+    elif versant == 'T':
+        assert libelle_FP == 'FONCTION PUBLIQUE TERRITORIALE' or 'FONCTION PUBLIQUE TERRITORIALE' in libelle_FP
 
     assert versant in VERSANTS, "versant {} is not in {}".format(versant, VERSANTS)
     print("""Le grade NEG suivant a été sélectionné:
@@ -94,49 +97,47 @@ selection: """)
 
 
 def main():
-
     libemploi_h5 = os.path.join(libelles_emploi_directory, 'libemploi.h5')
     libemplois = pd.read_hdf(libemploi_h5, 'libemploi')
     new_year_versant = True
-    
+
     while True:
-        if new_year_versant: 
+        if new_year_versant:
             print("Choix de l'année (date d'effet max)")
             annee = raw_input("""
         SAISIR UNE ANNEE
         selection: """)
-            if annee in map(str,range(2000, 2015)):
+            if annee in map(str, range(2000, 2015)):
                 print("Annee d'effet de la grille:{}".format(annee))
             else:
                 print("Annee saisie incorrect: {}. Choisir une annee entre 2000 et 2014".format(annee))
                 continue
-        
-        
+
             print("Choix du versant")
-            versant = raw_input("""
-        SAISIR UN VERSANT (T: territorial, H: hospitaliere)
+            versant = raw_input(u"""
+        SAISIR UN VERSANT (T: territoriale, H: hospitaliere)
         selection: """)
-            if versant in ["T","H"]:
+            if versant in VERSANTS:
                 print("Versant de la grille:{}".format(versant))
             else:
                 print("Versant saisi incorrect: {}. Choisir T ou H".format(versant))
                 continue
-            
+
         annee = int(annee)
         grilles = get_grilles_cleaned(annee)
-        
-        print_stats(libemplois = libemplois, annee = annee, versant = versant)       
-        
-        libelles_grade_NEG = grilles['libelle_grade_NEG'].unique()
-
+        print_stats(libemplois = libemplois, annee = annee, versant = versant)
+        libelle_FP = 'FONCTION PUBLIQUE HOSPITALIERE' if versant == 'H' else 'FONCTION PUBLIQUE TERRITORIALE'  # noqa
+        libelles_grade_NEG = grilles.query('libelle_FP == @libelle_FP')['libelle_grade_NEG'].unique()
         grade_triplet = select_grade_neg_by_hand(
-        libelles_grade_NEG = libelles_grade_NEG, grilles = grilles
-        )
+            versant = versant,
+            libelles_grade_NEG = libelles_grade_NEG,
+            grilles = grilles
+            )
 
         if grade_triplet == 'quit':
-            validate_and_save(correspondance_data_frame_path)            
-            return 'quit' 
-        
+            validate_and_save(correspondance_data_frame_path)
+            return 'quit'
+
         what_next = select_libelle_from_grade_neg(
             grade_triplet = grade_triplet,
             annee = annee,
@@ -161,6 +162,3 @@ def main():
 if __name__ == '__main__':
     logging.basicConfig(level = logging.INFO, stream = sys.stdout)
     main()
-    
-    
-
