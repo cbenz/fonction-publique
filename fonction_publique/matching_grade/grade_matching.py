@@ -768,13 +768,18 @@ def validate_correspondance(correspondance_data_frame, check_only = False):
             .reset_index()
             )
         for libelle in erroneous_entry:
+            log.info("CLEANING duplicated neg")
             grade_triplet = select_grade_neg(
                 versant = libelle[0], annee = libelle[1], libelle_saisi = libelle[2]
                 )
-            correspondance_data_frame_cleaned = correspondance_data_frame_cleaned.append(pd.DataFrame(
-                data = [[grade_triplet[0], grade_triplet[1], grade_triplet[2], libelle[1], libelle[2]]],
-                columns = ['versant', 'grade', 'date_effet', 'annee', 'libelle']
-                ))
+            if grade_triplet == "quit":
+                print("Le libelle {} n'est pas reclassé".format(libelle[2]))
+                continue
+            else:
+                correspondance_data_frame_cleaned = correspondance_data_frame_cleaned.append(pd.DataFrame(
+                    data = [[grade_triplet[0], grade_triplet[1], grade_triplet[2], libelle[1], libelle[2]]],
+                    columns = ['versant', 'grade', 'date_effet', 'annee', 'libelle']
+                    ))
     if check_only:
         return True
     return valid_data_frame, correspondance_data_frame_cleaned
