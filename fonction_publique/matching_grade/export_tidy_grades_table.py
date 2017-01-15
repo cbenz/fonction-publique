@@ -28,6 +28,12 @@ def main():
     assert valid_data_frame, 'The correspondace data frame is not valid'
 
     grilles = get_grilles()
+    grilles.loc[
+    grilles.libelle_grade_NEG == 'INFIRMIER DE CLASSE NORMALE (*)', 'libelle_grade_NEG'
+    ] = 'INFIRMIER DE CLASSE NORMALE(*)'
+    grilles.loc[
+    grilles.libelle_grade_NEG == 'INFIRMIER DE CLASSE SUPERIEURE (*)', 'libelle_grade_NEG'
+    ] = 'INFIRMIER DE CLASSE SUPERIEURE(*)'
 
     correspondance_libemploi_slug_h5 = os.path.join(libelles_emploi_directory, 'correspondance_libemploi_slug.h5')
     correspondance_libemploi_slug = pd.read_hdf(correspondance_libemploi_slug_h5, 'correspondance_libemploi_slug')
@@ -49,7 +55,7 @@ def main():
         .drop('grade', axis = 1)
         )
 
-    # 2. Merge correspondance data frame with liebelle saisi (libemploi) to get the full correspondance
+    # 2. Merge correspondance data frame with libelle saisi (libemploi) to get the full correspondance
     final_merge = (correspondance_libemploi_slug
         .merge(
             merge_correspondance_grilles,
@@ -61,7 +67,6 @@ def main():
         )
 
     # 3. Expand to add years*libelle lines from the date d'effet
-
     final_merge["beg"] =  pd.to_datetime(final_merge.date_effet).dt.year.astype(str)
     final_merge["end"] =  final_merge.annee.astype(str)
     expended_data = pd.DataFrame(columns = final_merge.columns)
@@ -84,7 +89,10 @@ def main():
     save_path = os.path.join(output_directory, 'correspondance_libemploi_grade.csv')
     expended_data.to_csv(save_path, sep = ';', encoding = 'latin1')
     print("The table of correspondance between libelles and grade is saved at {}".format(save_path))
-    return final_merge
+    assert len(set(expended_data.libelle_grade_NEG))== len(set(correspondance_data_frame.grade))
+    print("{} libellés différents assignés à {} grades".format(len(set(expended_data.libemploi)),len(set(expended_data.libelle_grade_NEG))))
+
+    return expended_data
 
 if __name__ == '__main__':
     logging.basicConfig(level = logging.INFO, stream = sys.stdout)
