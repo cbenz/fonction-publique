@@ -19,6 +19,7 @@ def get_grilles(force_rebuild = False, date = None, date_effet_max = None, date_
         subset = None, use_date_effet_index = False):
     law_to_hdf(force_rebuild = force_rebuild)
     grilles = pd.read_hdf(law_hdf_path)
+    grilles = grilles.loc[grilles.libelle_FP.isin(['FONCTION PUBLIQUE HOSPITALIERE', 'FONCTION PUBLIQUE TERRITORIALE'])]
     assert set(grilles.libelle_FP.unique()) == set(['FONCTION PUBLIQUE HOSPITALIERE', 'FONCTION PUBLIQUE TERRITORIALE'])
     if subset is not None:
         if 'date_effet_grille' not in subset:
@@ -46,7 +47,14 @@ def get_grilles(force_rebuild = False, date = None, date_effet_max = None, date_
 def law_to_hdf(force_rebuild = False):
     """ Extract relevant data from grille and change to convenient dtype then save to HDFStore."""
     if force_rebuild is True:
-        law = pd.read_table(law_xls_path)
+        law = pd.read_table(law_xls_path,
+                            dtype={"code_grade_NEG": str, "code_FP": int, "libelle_FP": str,
+                                   "code_etat_grade": int, "libelle_grade_NEG": str, "categh": str,
+                                   "code_type_groupe":str, "echelon": str, "echelle": str,
+                                   "date_effet_grille":str, "date_fin": str, "ib": float,
+                                   "min_mois":float, "max_mois": float, "moy_mois": float,
+                                   "code_grade_NETNEH": str, "type_grade": str,
+                                    })
         law = law[[
             'date_effet_grille', 'ib', 'code_grade_NETNEH', 'echelon', 'max_mois', 'min_mois',
             'moy_mois', 'libelle_FP', 'libelle_grade_NEG', 'code_grade_NEG'
