@@ -1,5 +1,10 @@
 # Changelog
 
+
+## 0.3
+
+* Nouvelle version du grade matching (cleaning + separation des fonctions) + grade matching from neg
+
 ## 0.2.4
 
 * Impose que la sélection du grade se fasse dans le versant du libellé saisi

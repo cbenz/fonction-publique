@@ -9,7 +9,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'Fonction-Publique',
-    version = '0.2.4',
+    version = '0.3',
     author = 'IPP Team',
     author_email = 'mahdi.benjelloul@ipp.eu',
     classifiers = [
@@ -23,7 +23,12 @@ setup(
     keywords = 'public servant france microsimulation career earnings',
     license = 'http://www.fsf.org/licensing/licenses/agpl-3.0.html',
     url = 'https://git.framasoft.org/ipp/fonction-publique',
-
+    entry_points = {
+        'console_scripts': [
+            'grade_matching=fonction_publique.matching_grade.grade_matching:main',
+            'grade_matching_from_neg=fonction_publique.matching_grade.grade_matching_from_neg:main',
+            ],
+        },
     data_files = [
         ('share/openfisca/fonction-publique', ['LICENSE', 'README.md']),
         ],
