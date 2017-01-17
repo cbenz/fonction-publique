@@ -14,9 +14,7 @@ import pandas as pd
 
 from fonction_publique.config import Config
 
-parser = Config(
-    config_files_directory = os.path.join(pkg_resources.get_distribution('fonction_publique').location)
-    )
+parser = Config()
 
 app_name = os.path.splitext(os.path.basename(__file__))[0]
 log = logging.getLogger(app_name)
