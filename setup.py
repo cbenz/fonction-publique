@@ -9,7 +9,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'Fonction-Publique',
-    version = '0.3',
+    version = '0.3.1',
     author = 'IPP Team',
     author_email = 'mahdi.benjelloul@ipp.eu',
     classifiers = [
@@ -40,6 +40,7 @@ setup(
         # 'OpenFisca-France >= 0.5.3',
         'pandas >= 0.18.1',
         'python-slugify',
+        'pyxdg >= 0.25',
         ],
     packages = find_packages(exclude=['fonction_publique.tests*']),
     test_suite = 'nose.collector',

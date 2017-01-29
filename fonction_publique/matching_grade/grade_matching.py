@@ -72,7 +72,7 @@ def get_grilles_cleaned(annee = None, versant = None):
     '''
     grilles = get_grilles(
         date_effet_max = "{}-12-31".format(annee),
-        subset = ['libelle_FP', 'libelle_grade_NEG'],
+        subset = ['libelle_FP', 'libelle_grade_NEG','code_grade_NEG'],
         )
     # Analyse des doublons
     # libelles_grade_NEG_1 = sorted(grilles[~grilles.libelle_grade_NEG_slug.duplicated()].libelle_grade_NEG.tolist())
@@ -139,7 +139,8 @@ def query_grade_neg(query = None, choices = None, score_cutoff = 95):
     assert query is not None
     assert choices is not None
     slugified_choices = [slugify(choice, separator = '_') if (choice is not np.nan) else '' for choice in choices]
-    results = process.extractBests(query, slugified_choices, score_cutoff = score_cutoff, limit = 50)
+    slugified_query = slugify(query, separator = '_')
+    results = process.extractBests(slugified_query, slugified_choices, score_cutoff = score_cutoff, limit = 50)
     if results:
         choice_by_slug = dict(zip(slugified_choices, choices))
         data_frame = pd.DataFrame.from_records(results, columns = ['slug_grade_neg', 'score'])
@@ -219,8 +220,12 @@ def select_grade_neg(libelle_saisi = None, annee = None, versant = None):  # Ren
     score_cutoff = 95
 
     grilles = get_grilles_cleaned(annee, versant = versant)
+    
+    unique_grilles = grilles.groupby(['libelle_grade_NEG', 'code_grade_NEG']).count()
+    unique_grilles = unique_grilles.reset_index()
     libelles_grade_NEG = grilles['libelle_grade_NEG'].unique()
-
+            
+    
     while True:
         grades_neg = query_grade_neg(query = libelle_saisi, choices = libelles_grade_NEG, score_cutoff = score_cutoff)
         print("\nGrade NEG possibles pour {} (score_cutoff = {}):\n{}".format(libelle_saisi, score_cutoff, grades_neg))

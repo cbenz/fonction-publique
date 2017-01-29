@@ -1,6 +1,12 @@
 # Changelog
 
 
+## 0.3.1
+
+* Ajout pyxdg dans les dépendances
+* Modif select_neg with slugified
+
+
 ## 0.3
 
 * Nouvelle version du grade matching (cleaning + separation des fonctions) + grade matching from neg
