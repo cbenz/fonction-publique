@@ -1,6 +1,13 @@
 # Changelog
 
 
+
+
+## 0.3.2
+
+* Modif pour intégrer la nouvelle base carrière
+
+
 ## 0.3.1
 
 * Ajout pyxdg dans les dépendances
