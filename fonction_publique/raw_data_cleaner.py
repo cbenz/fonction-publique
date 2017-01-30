@@ -30,7 +30,7 @@ def get_subset(variable = None, file_path = None, debug = False, chunksize = Non
     elif file_path.endswith(".sas7bdat"):
         reader = pd.read_sas(file_path, format = 'sas7bdat', chunksize = chunksize)
     elif file_path.endswith(".csv"):
-        reader = pd.read_csv(file_path, chunksize = chunksize)
+        reader = pd.read_csv(file_path, chunksize = chunksize, dtype = str)
     else:
         raise ValueError('{} is neither a stata nor a sas file'.format(file_path))
     result = pd.DataFrame()
@@ -103,7 +103,7 @@ def format_columns(variable = None, years_range = None, quarterly = False, clean
     # always format ident
     subset_to_format.ident = subset_to_format.ident.astype('int32')
     subset_to_format.annee = subset_to_format.annee.astype('int16')
-    if variable in ['qualite', 'statut', 'etat_']:
+    if variable in ['qualite', 'statut', 'etat_', 'f_coll']:
         subset_to_format[variable] = subset_to_format[variable].astype('category')
     elif variable in ['ib_']:
         subset_to_format['ib_'].fillna(-1, inplace = True)
@@ -145,50 +145,57 @@ def format_generation(file_path = None, clean_directory_path = None, debug = Fal
 def main(raw_directory_path = None, clean_directory_path = None, debug = None, chunksize = None, subset_data = None,
         subset_var = None, year_min = None):
     assert raw_directory_path is not None
-
+    
+    year_data = 2016
+    
     if year_min is None:
         year_min = 1900
 
     arg_format_columns = [
         dict(
             variable = 'c_netneh',
-            years_range = range(max(year_min, 2010), 2015),
+            years_range = range(max(year_min, 2010), year_data),
             quarterly = False,
             ),
         dict(
             variable = 'fnetneh',
-            years_range = range(max(year_min, 2010), 2015),
+            years_range = range(max(year_min, 2010), year_data),
             quarterly = False,
             ),
         dict(
             variable = 'c_cir',
-            years_range = range(max(year_min, 2010), 2015),
+            years_range = range(max(year_min, 2010), year_data),
             quarterly = False,
             ),
         dict(
             variable = 'libemploi',
-            years_range = range(max(year_min, 2000), 2015),
+            years_range = range(max(year_min, 2000), year_data),
             quarterly = False,
             ),
         # should contain _ otherwise libemploi which contains 'ib' would also selected
         dict(
             variable = 'ib_',
-            years_range = range(max(year_min, 1970), 2015),
+            years_range = range(max(year_min, 1970), year_data),
             quarterly = True,
             ),
         dict(
             variable = 'qualite',
-            years_range = range(max(year_min, 1970), 2015),
+            years_range = range(max(year_min, 1970), year_data),
             quarterly = False,
             ),
         dict(
             variable = 'statut',
-            years_range = range(max(year_min, 1970), 2015),
+            years_range = range(max(year_min, 1970), year_data),
             quarterly = False,
             ),
         dict(
+            variable = 'f_coll',
+            years_range = range(max(year_min, 2000), year_data),
+            quarterly = False,
+            ),             
+        dict(
             variable = 'etat',
-            years_range = range(max(year_min, 1970), 2015),
+            years_range = range(max(year_min, 1970), year_data),
             quarterly = True,
             ),
         ]

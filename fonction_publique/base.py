@@ -111,8 +111,9 @@ def get_variables(variables = None, stop = None, decennie = None):
     return pd.read_hdf(hdf5_file_path, 'output', columns = variables, stop = stop)
 
 
-def get_careers(variable = None, variables = None, stop = None, decennie = None, debug = False, where = None):
+def get_careers(variable = None, variables = None, stop = None, data_path = None, debug = False, where = None):
     """Recupere certaines variables de la table des carrières bruts"""
+    assert (data_path is not None)
     assert (variable is not None) or (variables is not None)
     assert not(
         (variable is not None) and (variables is not None)
@@ -125,16 +126,8 @@ def get_careers(variable = None, variables = None, stop = None, decennie = None,
     else:
         actual_clean_directory_path = clean_directory_path
 
-    if decennie == 1990:
-        careers_hdf_path = os.path.join(
-            actual_clean_directory_path,
-            '{}_{}_carrieres.h5'.format(decennie, decennie + 6)
-            )
-    else:
-        careers_hdf_path = os.path.join(
-            actual_clean_directory_path,
-            '{}_{}_carrieres.h5'.format(decennie, decennie + 9)
-            )
+    careers_hdf_path = os.path.join(actual_clean_directory_path,data_path)
+            
     if variable:
         print('Reading variable {} from file {}'.format(variable, careers_hdf_path))
         return pd.read_hdf(careers_hdf_path, variable, stop = stop, where = where)
