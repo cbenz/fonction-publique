@@ -28,7 +28,7 @@ def main():
         help = 'subset of variables to extract in the raw dataset. syntax: --subset_var var1 var2')
     parser.add_argument('-d', '--debug', action = 'store_true', default = False,
         help = 'use smaller subset for debugging purposes')
-    parser.add_argument('-s', '--source', default = raw_directory_path,
+    parser.add_argument('-s', '--source', default = os.path.join(raw_directory_path, "csv"),
         help = 'path of source directory containing the original files (stata or csv)')
     parser.add_argument('-t', '--target', default = clean_directory_path,
         help = 'path of generated hdf5 files through the cleaning operation')
@@ -37,8 +37,8 @@ def main():
     logging.basicConfig(level = logging.INFO if args.verbose else logging.WARNING, stream = sys.stdout)
     log.info('Start cleaning data in {}'.format(args.source))
     log.info('Cleaned data will be saved in {}'.format(args.target))
-    
-    
+
+
     chunksize = args.chunksize if args.debug else None
     raw_data_cleaner.main(
         raw_directory_path = args.source,
@@ -50,8 +50,8 @@ def main():
         subset_var = args.subset_var,
         )
 
-    
+
 if __name__ == "__main__":
     sys.exit(main())
-    
-    
+
+

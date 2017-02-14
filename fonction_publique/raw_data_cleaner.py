@@ -145,21 +145,16 @@ def format_generation(file_path = None, clean_directory_path = None, debug = Fal
 def main(raw_directory_path = None, clean_directory_path = None, debug = None, chunksize = None, subset_data = None,
         subset_var = None, year_min = None):
     assert raw_directory_path is not None
-    
+
     year_data = 2016
-    
+
     if year_min is None:
         year_min = 1900
 
     arg_format_columns = [
         dict(
             variable = 'c_netneh',
-            years_range = range(max(year_min, 2010), year_data),
-            quarterly = False,
-            ),
-        dict(
-            variable = 'fnetneh',
-            years_range = range(max(year_min, 2010), year_data),
+            years_range = range(max(year_min, 2000), min(2010, year_data)),
             quarterly = False,
             ),
         dict(
@@ -172,10 +167,25 @@ def main(raw_directory_path = None, clean_directory_path = None, debug = None, c
             years_range = range(max(year_min, 2000), year_data),
             quarterly = False,
             ),
+        dict(
+            variable = 'c_neg',
+            years_range = range(max(year_min, 2000), year_data),
+            quarterly = False,
+            ),
+        dict(
+            variable = 'lib_netneh',
+            years_range = range(max(year_min, 2000), year_data),
+            quarterly = False,
+            ),
         # should contain _ otherwise libemploi which contains 'ib' would also selected
         dict(
             variable = 'ib_',
             years_range = range(max(year_min, 1970), year_data),
+            quarterly = True,
+            ),
+        dict(
+            variable = 'echelon',
+            years_range = range(max(year_min, 2000), year_data),
             quarterly = True,
             ),
         dict(
@@ -192,7 +202,7 @@ def main(raw_directory_path = None, clean_directory_path = None, debug = None, c
             variable = 'f_coll',
             years_range = range(max(year_min, 2000), year_data),
             quarterly = False,
-            ),             
+            ),
         dict(
             variable = 'etat',
             years_range = range(max(year_min, 1970), year_data),
