@@ -15,8 +15,6 @@ import matplotlib.pyplot as plt
 import ggplot
 from ggplot import *
 
-from fonction_publique.
-
 
 from fonction_publique.base import raw_directory_path, get_careers, parser
 from fonction_publique.merge_careers_and_legislation import get_grilles
@@ -42,13 +40,14 @@ def select_data():
     df['change_neg'] = (df['lagged_neg'] != df['c_neg']).astype(int)
     df.change_neg.loc[df.first_obs == 1] = 0
     df["count_change"] = df.groupby(['ident'])[["change_neg"]].transform(sum)
-    # Count nb of missing echelon    
-    df["missing_echelon"] = [(df.libemploi != "") & (df.echelon == "")]
+    # Count nb of missing echelon
+    df["missing_echelon"] = ((df.libemploi != "") & (df.echelon == "")).astype(int)
     df["count_missing_echelon"] = df.groupby(['ident'])[["missing_echelon"]].transform(sum)
-    
-    # Filters filters: only same corps and 2 or 3 changes + no missing echelons
-    filtered_df = (df.loc[(df.count_dif == 0) & 
-                          (df.count_change < 4) &     
+
+    # Filters filters: at least 3 obs only same corps and 2 or 3 changes + no missing echelons
+    filtered_df = (df.loc[(df.count_dif == 0) &
+                          (df.count_obs > 2) &
+                          (df.count_change < 4) &
                           (df.count_missing_echelon == 0)])
     filtered_df = filtered_df[['ident', 'annee', 'libemploi', 'c_neg', 'change_neg', 'ib', 'echelon']]
 
@@ -67,15 +66,16 @@ for i in range(20):
 
 filtered_df = filtered_df.sort(['ident', 'annee'])
 ident = filtered_df['ident'].unique()
-df_slice = filtered_df.loc[filtered_df['ident']<ident[100]][['ident', 'annee', 'libemploi', 'c_neg', 'change_neg', 'ib', 'echelon']]
+df_slice = filtered_df.loc[filtered_df['ident']<ident[1000]][['ident', 'annee', 'libemploi', 'c_neg', 'change_neg', 'ib', 'echelon']]
 df_slice['name'] = ''
+df_slice = df_slice.sort(['ident', 'annee'])
 p =  ggplot(df_slice, aes('annee', y='ib'))
 p = p +\
 geom_line() +\
 scale_x_discrete(name = 'Annee', labels = (2007, 2015),  breaks = (2007, 2015))   +\
-scale_y_discrete(name = 'Indice', limits = (300, 500), breaks = (300, 500))   +\
+scale_y_discrete(name = 'Indice', limits = (275, 500), breaks = (275, 500))   +\
 theme_bw() +\
-facet_wrap("ident", nrow = 10, ncol = 10, )
+facet_wrap("ident", nrow = 100, ncol = 10, )
 
 p.save(filename = os.path.join(save_path,'facet_indices.pdf'))
 

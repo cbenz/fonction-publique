@@ -38,14 +38,26 @@ def main():
     grille.echelon.loc[grille.echelon == 'ES'] = '08'
     grille['date'] = grille.date_effet_grille.dt.year
     grille['date'] = grille['date'].astype(str)
+    grille['NEG'] = 'AT2'
+    grille['NEG'].loc[grille.code_grade_NEG == 794] = 'AT1'
+    grille['NEG'].loc[grille.code_grade_NEG == 795] = 'ATP2'
+    grille['NEG'].loc[grille.code_grade_NEG == 796] = 'ATP1'
     # 1. Ecgelons by neg
-    list_neg = grille.libelle_grade_NEG.unique()
+    list_neg = grille.NEG.unique()
     for idx, neg in enumerate(list_neg):
-        g_1 = grille.loc[grille.libelle_grade_NEG == neg][["date", "ib" ,"echelon"]].reset_index(drop = True)
+        g_1 = grille.loc[grille.NEG == neg][["date", "ib" ,"echelon"]].reset_index(drop = True)
+
         p = ggplot(aes(x = 'echelon', y = 'ib', color = 'date'), g_1)  +\
-        ggtitle (neg) +\
-        geom_step(size=2) + ylab('Indice') +\
-        theme_bw()
+        geom_step(size=3)
+
+        t =  theme_bw() + theme(axis_title_y = element_text(size=20, text='Indice'), \
+              axis_text_y  = element_text(size=12, face = 'bold'), \
+              axis_text_x  = element_text(size=12, face = 'bold'), \
+              axis_title_x = element_text(size=20, text='Echelon'), \
+              legend_text = element_text(size=12, face = 'bold'))
+        t._rcParams['font.size'] = 30
+
+        p = p + t
 
         name = str(idx) + '_grille_by_neg.pdf'
         p.save(filename = os.path.join(save_path, name))
@@ -59,9 +71,28 @@ def main():
 
     # 2. Echelons by date
     sub_grille = grille.loc[-grille.date.isin(['2012', '2013'])]
+    list_date = sub_grille.date.unique()
+    for idx, y in enumerate(list_date):
+        g_1 = grille.loc[grille.date == y][["NEG", "ib" ,"echelon"]].reset_index(drop = True)
+        p = ggplot(aes(x = 'echelon', y = 'ib', color = 'NEG'), g_1)  +\
+        geom_step(size=3) + ylab('Indice')
+
+        t =  theme_bw() + theme(axis_title_y = element_text(size=20, text='Indice'), \
+              axis_text_y  = element_text(size=12, face = 'bold'), \
+              axis_text_x  = element_text(size=12, face = 'bold'), \
+              axis_title_x = element_text(size=20, text='Echelon'), \
+              legend_text = element_text(size=12, face = 'bold'))
+        t._rcParams['font.size'] = 30
+
+        p = p + t
+
+        name = str(idx) + '_grille_by_date.pdf'
+        p.save(filename = os.path.join(save_path, name))
+
+
     p = ggplot(sub_grille, aes(x = 'echelon', y = 'ib', color = 'libelle_grade_NEG')) +\
         geom_step(size=2)  +\
-        scale_y_discrete(name = 'Indice', limits = (275, 500), breaks = (275, 500)) +\
+         +\
         theme_bw() +\
         facet_wrap("date")
     name = 'grille_by_date.pdf'
