@@ -13,13 +13,13 @@ import pkg_resources
 import pandas as pd
 import numpy as np
 
+
 from fonction_publique.base import raw_directory_path, get_careers, parser
 from fonction_publique.merge_careers_and_legislation import get_grilles
 from slugify import slugify
 
 libelles_emploi_directory = parser.get('correspondances', 'libelles_emploi_directory')
 save_path = 'M:/CNRACL/output'
-save_path = 'U:/Projets/CNRACL/fonction-publique/fonction_publique/ecrits/modelisation_carriere/Figures'
 
 
 def load_career(var, data):
@@ -83,7 +83,6 @@ def cleaning_data(dataset):
 
     # Final selection on year and missing lib
     clean_data = data.loc[data.annee > 2006].copy()
-    clean_data = clean_data.loc[clean_data.libemploi != ""]
 
     return clean_data
 
@@ -100,8 +99,8 @@ def main():
         else:
             data_merge = data_merge.append(clean_data)
 
-    path = os.path.join(save_path, "corps1.h5")
-    data_merge.to_hdf(path, 'corps1')
+    path = os.path.join(save_path, "corpsAT.csv")
+    data_merge.to_csv(path)
 
 if __name__ == '__main__':
     logging.basicConfig(level = logging.INFO, stream = sys.stdout)
