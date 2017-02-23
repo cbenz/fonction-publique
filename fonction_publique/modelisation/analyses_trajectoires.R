@@ -53,7 +53,7 @@ data$change_neg_next <- ifelse(data$c_neg == data$next_neg, 0, 1)
 # Ind libemploi 
 data$ind_lib = ifelse(data$libemploi == '', 0, 1)
 data$lag_ind_lib <-ave(data$ind_lib, data$ident, FUN=shiftm1)
-
+data$next_ind_lib <-ave(data$ind_lib, data$ident, FUN=shift1)
 
 #### II. General statistics on the AT population ####
 
@@ -67,9 +67,18 @@ data$bef <- data$bef_neg
 data$bef[which(data$bef == 0 & data$lag_ind_lib == 1)] = 999
 data$bef[which(data$bef == 0 & data$lag_ind_lib == 0)] = 888
 
+data$aft <- data$next_neg 
+data$aft[which(data$aft == 0 & data$next_ind_lib == 1)] = 999
+data$aft[which(data$aft == 0 & data$next_ind_lib == 0)] = 888
+
 
 for (n in 1:length(list_neg))
 {
+data_entry = data[which(data$change_neg_bef ==1 & data$c_neg == list_neg[n] & data$annee>2007),]
+data_exit = data[which(data$change_neg_next ==1 & data$c_neg == list_neg[n] & data$annee<2015),]
+
+
+
 list = which(data$c_neg == list_neg[n] & data$change_neg==1 & data$annne>2007) 
 table[1,n] = length(list)
 # From no lib
