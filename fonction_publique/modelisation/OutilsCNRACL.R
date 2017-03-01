@@ -34,14 +34,20 @@ shift1<-function(x){
 
 
 
-shiftm1<- function(x)  #adapté de shift  : créer une variable décalée de 1 vers le base. 
+shiftm1<- function(x)  #adapt? de shift  : cr?er une variable d?cal?e de 1 vers le base. 
 {
   out <- shift(x,-1)
   return(out)
 }
 
+shiftm2<- function(x)  #adapt? de shift  : cr?er une variable d?cal?e de 1 vers le base. 
+{
+  out <- shift(x,-2)
+  return(out)
+}
 
-lag1<- function(x)  #adapté de shift  : créer une variable décalée de 1 vers le base. 
+
+lag1<- function(x)  #adapt? de shift  : cr?er une variable d?cal?e de 1 vers le base. 
 {
   out <- shift(x,-1)
   return(out)
