@@ -128,17 +128,24 @@ def format_columns(variable = None, years_range = None, quarterly = False, clean
         )
 
 
-def format_generation(file_path = None, clean_directory_path = None, debug = False, chunksize = None):
+def format_fixed(file_path = None, clean_directory_path = None, debug = False, chunksize = None):
     assert file_path is not None
-    log.info('formatting generation')
+    log.info('formatting fixed variable')
+    # Génération
     generation = get_subset('generation', file_path, debug = debug, chunksize = chunksize)
     generation.ident = generation.ident.astype('int')
     generation.generation = generation.generation.astype('int32')
+    # Anne affilation
+    an_aff = get_subset('an_aff_red2', file_path, debug = debug, chunksize = chunksize)
+    an_aff.ident = an_aff.ident.astype('int')
+    an_aff.an_aff = an_aff.an_aff_red2.astype('int32', coerce)
+    del an_aff['an_aff_red2']
     careers_hdf_path = get_careers_hdf_path(clean_directory_path, file_path, debug)
     if not os.path.exists(os.path.dirname(careers_hdf_path)):
         log.info('{} is not a valid path. Creating it'.format(os.path.dirname(careers_hdf_path)))
         os.makedirs(os.path.dirname(careers_hdf_path))
     generation.to_hdf(careers_hdf_path, 'generation', format = 'table', data_columns = True)
+    an_aff.to_hdf(careers_hdf_path, 'an_aff', format = 'table', data_columns = True)
     log.info('generation was added to carriere')
 
 
@@ -225,7 +232,7 @@ def main(raw_directory_path = None, clean_directory_path = None, debug = None, c
             continue
         file_path = os.path.join(raw_directory_path, '{}'.format(file_))
         log.info('Processing {}'.format(file_path))
-        format_generation(
+        format_fixed(
             file_path = file_path,
             clean_directory_path = clean_directory_path,
             debug = debug,

@@ -164,17 +164,33 @@ Les grilles de ces différents grades ont connu de nombreuses évolutions dans l
 \clearpage
 
 
-Questions et pistes amelioration pour améliorer la base: 
-\begin{itemize}
-\item Correction du neg à partir de l'indice. 
-\item Echelon = - 1?
-\end{itemize}
+
 
 
 % Section II: Travail sur les données
-\section{Travail sur les données}
+\section{Point sur les données}
 
-\subsection{Sélection d'une sous-population}
+
+\section{Sélection de l'échantillon}
+
+Filtres suivants sont appliqués:
+\begin{enumerate}
+\item Garder uniquement individus pour lesquels tous les grades sont renseignés
+\item Garder uniquement les individus pour lesquels l'échelon est renseigné pour les années dans le corps. 
+\item Garder uniquement les individus pour lesquels le libemploi n'est pas manquant quand l'indice ou le statut ne sont pas nuls.
+\end{enumerate}
+
+Questions et pistes amélioration pour augmenter la taille de l'échantillon retenu pour l'analyse: 
+\begin{itemize}
+\item Améliorer le remplissage des neg 
+	\begin{enumerate}
+	\item Poursuivre le matching
+	\item Renseigner des grades à la main 
+	\item Matching sur une sous-population de libellés des individus ayant au moins un NEG dans le corps
+	\end{enumerate}
+\item Correction du grade à partir de l'indice. 
+\item Echelon = - 1?
+\end{itemize}
 
 
 \subsection{Imputation d'une durée initiale dans le grade}

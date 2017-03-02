@@ -24,7 +24,9 @@ save_path = 'M:/CNRACL/output'
 
 def load_career(var, data):
     career = get_careers(variable = var, data_path = data, debug = False)
-    carrer = career.loc[career.annee>1999].copy()
+    career = career.loc[career.annee>1999].copy()
+    # Drop duplicates
+    career = career.drop_duplicates(subset = ['ident', 'annee'], keep = False)
     return career
 
 def select_ident(libemploi):
@@ -51,13 +53,16 @@ def select_grilles():
 
 
 def cleaning_data(dataset):
+    # Fix variables
+    #generation =  get_careers(variable = 'generation', data_path = dataset)
     # Carrière
     libemploi = load_career('libemploi', dataset)
     c_neg = load_career('c_neg', dataset)
+    statut = load_career('statut', dataset)
     ib = load_career('ib', dataset)
-    ib_subset = ib.loc[(ib.trimestre == 1) & (ib.annee > 1999)][['ident', 'annee', 'ib']]
+    ib_subset = ib.loc[(ib.trimestre == 1)][['ident', 'annee', 'ib']]
     echelon = load_career('echelon', dataset)
-    echelon_subset = echelon.loc[(echelon.trimestre == 1) & (echelon.annee > 1999)][['ident', 'annee', 'echelon']]
+    echelon_subset = echelon.loc[(echelon.trimestre == 1)][['ident', 'annee', 'echelon']]
     # Grilles
     grilles = select_grilles()
     # Indiv avec un lib dans le corps
@@ -66,23 +71,21 @@ def cleaning_data(dataset):
     subset_ident = list(set(c_neg.ident[c_neg.c_neg.isin(list_code)]))
     # Merge lib + neg + ib
     c_neg_subset = c_neg.loc[c_neg.ident.isin(subset_ident)].sort(['ident', 'annee'])
+    statut_subset = c_neg.loc[statut.ident.isin(subset_ident)].sort(['ident', 'annee'])
     libemploi_subset = libemploi.loc[libemploi.ident.isin(subset_ident)].sort(['ident', 'annee'])
     ib_subset = ib_subset.loc[ib_subset.ident.isin(subset_ident)].sort(['ident', 'annee'])
     echelon_subset = echelon_subset.loc[echelon_subset.ident.isin(subset_ident)].sort(['ident', 'annee'])
-    # Drop duplicates
-    c_neg_subset = c_neg_subset.drop_duplicates(subset = ['ident', 'annee'], keep = False)
-    libemploi_subset = libemploi_subset.drop_duplicates(subset = ['ident', 'annee'], keep = False)
-    ib_subset = ib_subset.drop_duplicates(subset = ['ident', 'annee'], keep = False)
     # Merge
     data = (libemploi_subset
                 .merge(c_neg_subset, how = "left", on = ['ident', 'annee'])
+                .merge(statut_subset, how = "left", on = ['ident', 'annee'])
                 .merge(ib_subset, how = "left", on = ['ident', 'annee'])
                 .merge(echelon_subset, how = "left", on = ['ident', 'annee'])
                 .sort(['ident', 'annee'])
             )
 
     # Final selection on year and missing lib
-    clean_data = data.loc[data.annee > 2006].copy()
+    clean_data = data.loc[data.annee > 2004].copy()
 
     return clean_data
 
