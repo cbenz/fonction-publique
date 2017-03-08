@@ -14,7 +14,7 @@ import sys
 import pkg_resources
 import pandas as pd
 import numpy as np
-import dateutil.parser as parser
+from fonction_publique.base import raw_directory_path, get_careers, parser
 
 libelles_emploi_directory = parser.get('correspondances', 'libelles_emploi_directory')
 save_path = 'U:/Projets/CNRACL/fonction-publique/fonction_publique/ecrits/modelisation_carriere/Figures'
@@ -42,6 +42,10 @@ def main():
     grille['NEG'].loc[grille.code_grade_NEG == 794] = 'AT1'
     grille['NEG'].loc[grille.code_grade_NEG == 795] = 'ATP2'
     grille['NEG'].loc[grille.code_grade_NEG == 796] = 'ATP1'
+
+   grille2 = grille.loc[grille.date == "2008"]
+   grille2.groupby([u'code_grade_NEG'])['min_mois'].sum()/12
+   grille2.groupby([u'code_grade_NEG'])['max_mois'].sum()/12
     # 1. Ecgelons by neg
     list_neg = grille.NEG.unique()
     for idx, neg in enumerate(list_neg):

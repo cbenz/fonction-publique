@@ -2,6 +2,7 @@
 ##### packages ####
 library(data.table)
 library(xtable)
+library(DataCombine)
 
 
 ##### function ####
@@ -32,6 +33,18 @@ shift1<-function(x){
   out
 }
 
+shift2<-function(x){
+  stopifnot(is.numeric(x))
+  out<-NULL
+  abs_shift_by=2
+  out<-c(tail(x,-abs_shift_by),rep(NA,abs_shift_by))
+  out
+}
+
+lag1<-function(x){
+  out<- lag(x, k = 1)
+  out
+}
 
 
 shiftm1<- function(x)  #adapt? de shift  : cr?er une variable d?cal?e de 1 vers le base. 

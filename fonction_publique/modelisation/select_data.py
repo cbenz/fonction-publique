@@ -25,8 +25,6 @@ save_path = 'M:/CNRACL/output'
 def load_career(var, data):
     career = get_careers(variable = var, data_path = data, debug = False)
     career = career.loc[career.annee>1999].copy()
-    # Drop duplicates
-    career = career.drop_duplicates(subset = ['ident', 'annee'], keep = False)
     return career
 
 def select_ident(libemploi):
@@ -70,19 +68,25 @@ def cleaning_data(dataset):
     list_code = ['0' + s for s in list_code]
     subset_ident = list(set(c_neg.ident[c_neg.c_neg.isin(list_code)]))
     # Merge lib + neg + ib
-    c_neg_subset = c_neg.loc[c_neg.ident.isin(subset_ident)].sort(['ident', 'annee'])
-    statut_subset = c_neg.loc[statut.ident.isin(subset_ident)].sort(['ident', 'annee'])
-    libemploi_subset = libemploi.loc[libemploi.ident.isin(subset_ident)].sort(['ident', 'annee'])
-    ib_subset = ib_subset.loc[ib_subset.ident.isin(subset_ident)].sort(['ident', 'annee'])
-    echelon_subset = echelon_subset.loc[echelon_subset.ident.isin(subset_ident)].sort(['ident', 'annee'])
+    c_neg_subset = c_neg.loc[c_neg.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
+    statut_subset = statut.loc[statut.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
+    libemploi_subset = libemploi.loc[libemploi.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
+    ib_subset = ib_subset.loc[ib_subset.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
+    echelon_subset = echelon_subset.loc[echelon_subset.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
     # Merge
     data = (libemploi_subset
                 .merge(c_neg_subset, how = "left", on = ['ident', 'annee'])
                 .merge(statut_subset, how = "left", on = ['ident', 'annee'])
                 .merge(ib_subset, how = "left", on = ['ident', 'annee'])
                 .merge(echelon_subset, how = "left", on = ['ident', 'annee'])
-                .sort(['ident', 'annee'])
+                .sort_values(['ident', 'annee'])
             )
+    # Drop duplicates
+    a = len(set(data.ident))
+    data = data.drop_duplicates(subset = ['ident', 'annee'], keep = False)
+    b = len(set(data.ident))
+    diff = a - b
+    print("{}: {} individus dupliqués et supprimés".format(dataset, diff))
 
     # Final selection on year and missing lib
     clean_data = data.loc[data.annee > 2004].copy()
