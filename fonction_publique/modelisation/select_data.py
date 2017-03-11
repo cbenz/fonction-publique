@@ -4,6 +4,7 @@
 ## Test sur corps des techniciens de la FPT
 
 # Filters: individuals at least one time in the corps
+from __future__ import division
 
 import logging
 import inspect
@@ -12,6 +13,7 @@ import sys
 import pkg_resources
 import pandas as pd
 import numpy as np
+
 
 
 from fonction_publique.base import raw_directory_path, get_careers, parser
@@ -58,9 +60,39 @@ def cleaning_data(dataset):
     c_neg = load_career('c_neg', dataset)
     statut = load_career('statut', dataset)
     ib = load_career('ib', dataset)
-    ib_subset = ib.loc[(ib.trimestre == 1)][['ident', 'annee', 'ib']]
-    echelon = load_career('echelon', dataset)
-    echelon_subset = echelon.loc[(echelon.trimestre == 1)][['ident', 'annee', 'echelon']]
+    ib_subset1 = ib.loc[(ib.trimestre == 1)][['ident', 'annee', 'ib']].rename(columns={'ib':'ib1'})
+    ib_subset2 = ib.loc[(ib.trimestre == 2)][['ident', 'annee', 'ib']].rename(columns={'ib':'ib2'})
+    ib_subset3 = ib.loc[(ib.trimestre == 3)][['ident', 'annee', 'ib']].rename(columns={'ib':'ib3'})
+    ib_subset4 = ib.loc[(ib.trimestre == 4)][['ident', 'annee', 'ib']].rename(columns={'ib':'ib4'})
+
+    echelon = load_career('echelon', dataset).sort_values(['ident', 'annee','trimestre'])
+    echelon_subset1 = echelon.loc[(echelon.trimestre == 1)][['ident', 'annee', 'echelon']].rename(columns={'echelon':'echelon1'})
+    echelon_subset2 = echelon.loc[(echelon.trimestre == 2)][['ident', 'annee', 'echelon']].rename(columns={'echelon':'echelon2'})
+    echelon_subset3 = echelon.loc[(echelon.trimestre == 3)][['ident', 'annee', 'echelon']].rename(columns={'echelon':'echelon3'})
+    echelon_subset4 = echelon.loc[(echelon.trimestre == 4)][['ident', 'annee', 'echelon']].rename(columns={'echelon':'echelon4'})
+
+    # CHECK NA ECHELON
+#     check = (c_neg
+#                .merge(echelon_subset1, how = "left", on = ['ident', 'annee'])
+#                .merge(echelon_subset4, how = "left", on = ['ident', 'annee'])
+#                .merge(libemploi, how = "left", on = ['ident', 'annee'])
+#                .sort_values(['ident', 'annee'])
+#            )#
+#    a = sum(check.echelon1 == "")/len(check.echelon1)
+#    b = sum((check.echelon1 == "") & (check.c_neg != ""))/ sum(check.c_neg != "")
+#    c = sum((check.echelon1 == "") & (check.c_neg == "0793"))/ sum(check.c_neg == "0793")
+#    c1 = sum((check.echelon1 == "") & (check.c_neg == "0793") & (check.annee == 2015))/ sum((check.c_neg == "0793")  & (check.annee == 2015))
+#    d = sum((check.echelon1 == "") & (check.c_neg == "0796"))/ sum(check.c_neg == "0796")
+#    d1 = sum((check.echelon1 == "") & (check.c_neg == "0796") & (check.annee == 2015))/ sum((check.c_neg == "0796")  & (check.annee == 2015))
+#    print("Premier trim", a, b, c, c1, d, d1)
+#    a = sum(check.echelon4 == "")/len(check.echelon4)
+#    b = sum((check.echelon4 == "") & (check.c_neg != ""))/ sum(check.c_neg != "")
+#    c = sum((check.echelon4 == "") & (check.c_neg == "0793"))/ sum(check.c_neg == "0793")
+#    c1 = sum((check.echelon4 == "") & (check.c_neg == "0793") & (check.annee == 2015))/ sum((check.c_neg == "0793")  & (check.annee == 2015))
+#    d = sum((check.echelon4 == "") & (check.c_neg == "0796"))/ sum(check.c_neg == "0796")
+#    d1 = sum((check.echelon4 == "") & (check.c_neg == "0796") & (check.annee == 2015))/ sum((check.c_neg == "0796")  & (check.annee == 2015))
+#    print("Dernier trim", a, b, c, c1, d, d1)
+
     # Grilles
     grilles = select_grilles()
     # Indiv avec un lib dans le corps
@@ -71,14 +103,26 @@ def cleaning_data(dataset):
     c_neg_subset = c_neg.loc[c_neg.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
     statut_subset = statut.loc[statut.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
     libemploi_subset = libemploi.loc[libemploi.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
-    ib_subset = ib_subset.loc[ib_subset.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
-    echelon_subset = echelon_subset.loc[echelon_subset.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
+    ib_subset1 = ib_subset1.loc[ib_subset1.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
+    ib_subset2 = ib_subset2.loc[ib_subset2.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
+    ib_subset3 = ib_subset3.loc[ib_subset3.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
+    ib_subset4 = ib_subset4.loc[ib_subset4.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
+    echelon_subset1 = echelon_subset1.loc[echelon_subset1.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
+    echelon_subset2 = echelon_subset2.loc[echelon_subset2.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
+    echelon_subset3 = echelon_subset3.loc[echelon_subset3.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
+    echelon_subset4 = echelon_subset4.loc[echelon_subset4.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
     # Merge
     data = (libemploi_subset
                 .merge(c_neg_subset, how = "left", on = ['ident', 'annee'])
                 .merge(statut_subset, how = "left", on = ['ident', 'annee'])
-                .merge(ib_subset, how = "left", on = ['ident', 'annee'])
-                .merge(echelon_subset, how = "left", on = ['ident', 'annee'])
+                .merge(ib_subset1, how = "left", on = ['ident', 'annee'])
+                .merge(ib_subset2, how = "left", on = ['ident', 'annee'])
+                .merge(ib_subset3, how = "left", on = ['ident', 'annee'])
+                .merge(ib_subset4, how = "left", on = ['ident', 'annee'])
+                .merge(echelon_subset1, how = "left", on = ['ident', 'annee'])
+                .merge(echelon_subset2, how = "left", on = ['ident', 'annee'])
+                .merge(echelon_subset3, how = "left", on = ['ident', 'annee'])
+                .merge(echelon_subset4, how = "left", on = ['ident', 'annee'])
                 .sort_values(['ident', 'annee'])
             )
     # Drop duplicates
@@ -95,9 +139,11 @@ def cleaning_data(dataset):
 
 
 def main():
-    list_data = ['1960_1965_carrieres.h5','1966_1969_carrieres.h5',
-                 '1970_1975_carrieres.h5','1976_1979_carrieres.h5',
-                 '1980_1999_carrieres.h5']
+    list_data = ['1980_1999_carrieres.h5',
+                 '1976_1979_carrieres.h5',
+                 '1970_1975_carrieres.h5',
+                # '1960_1965_carrieres.h5','1966_1969_carrieres.h5',
+                 ]
     for data in list_data:
         print("Processing data {}".format(data))
         clean_data = cleaning_data(data)
@@ -106,7 +152,7 @@ def main():
         else:
             data_merge = data_merge.append(clean_data)
 
-    path = os.path.join(save_path, "corpsAT.csv")
+    path = os.path.join(save_path, "corpsAT2.csv")
     data_merge.to_csv(path)
 
 if __name__ == '__main__':

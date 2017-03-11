@@ -18,29 +18,24 @@ if (place == "mac"){
 }
 fig_path = paste0(git_path,"ecrits/modelisation_carriere/Figures/")
 
-
-                  
-  
-  ### Loading packages and functions ###
+### Loading packages and functions ###
 source(paste0(git_path, 'modelisation/OutilsCNRACL.R'))
 
-
-                  
-
 # Read csv
-main = read.csv(paste0(data_path,"corpsAT.csv"))
+main = read.csv(paste0(data_path,"corpsAT2.csv"))
 
 ident = unique(main$ident)
 sub = sample(ident, 10000)
 sub_data = main[which(is.element(main$ident, sub)), ]
 
 data = sub_data
-data = main
+#data = main
 
 #### I. WOD ####
 data$libemploi = as.character(data$libemploi)
 data$c_neg = as.numeric(format(data$c_neg))
 data$c_neg[which(is.na(data$c_neg))] <- 0
+data$echelon = data$echelon1
 
 # List of AT neg
 list_neg = c(793, 794, 795, 796)
@@ -116,7 +111,14 @@ list1 = data_all$ident[which(data_all$statut != "" & data_all$libemploi == ''  &
 list2 = data_all$ident[which(data_all$c_neg == 0 & data_all$libemploi != '' & data_all$annee>= 2007)]
 list3 = data_all$ident[which(is.na(data_all$echelon) & is.element(data_all$c_neg, c(793, 794, 795, 796))  & data_all$annee>= 2007)]
 
-for (d in 1:4)
+
+length(which(is.na(data_all$echelon) & is.element(data_all$c_neg, c(793, 794, 795, 796))))/ length(which(is.element(data_all$c_neg, c(793, 794, 795, 796))))
+length(which(is.na(data_all$echelon) & is.element(data_all$c_neg, c(793))))/ length(which(is.element(data_all$c_neg, c(793))))
+length(which(is.na(data_all$echelon) & is.element(data_all$c_neg, c(794))))/ length(which(is.element(data_all$c_neg, c(794))))
+length(which(is.na(data_all$echelon) & is.element(data_all$c_neg, c(795))))/ length(which(is.element(data_all$c_neg, c(795))))
+length(which(is.na(data_all$echelon) & is.element(data_all$c_neg, c(796))))/ length(which(is.element(data_all$c_neg, c(796))))
+
+for (d in 1:3)
 {
 if (d == 1){dataset = data_all}
 if (d == 2){dataset = dataset[-which(is.element(dataset$ident, list1)),]}
@@ -134,6 +136,7 @@ rownames(size_sample) <- c("Echantillon initial",
                            "F2: Neg manquant quand libemploi renseigné", "F3: Echelon manquant quand neg dans AT")
 print(xtable(size_sample,align="l|cc",nrow = nrow(table), ncol=ncol(table)+1, byrow=T, digits=0),
       hline.after=c(0,1,4), sanitize.text.function=identity,size="\\footnotesize", only.contents=T)
+
 
 
 
@@ -214,18 +217,26 @@ print(xtable(table,align="l|cccc",nrow = nrow(table), ncol=ncol(table)+1, byrow=
 ## Proba de quitter le corps par échelon (survival)
 exit_rate = matrix(ncol = 11, nrow = 4)
 surv_rate = matrix(ncol = 11, nrow = 4)
+exit_rate2 = matrix(ncol = 11, nrow = 4)
+surv_rate2 = matrix(ncol = 11, nrow = 4)
 
 table(data_cleaned$echelon[which(data_cleaned$c_neg == 794)])
 table(data_cleaned$echelon[which(data_cleaned$c_neg == 793)])
+
+View(data_cleaned[, c('ident', 'annee', 'c_neg', 'echelon', 'next_neg', 'next_neg2', 'bef_neg', 'bef_neg2', 'change_neg_next', 'change_neg_next')])
 
 for (e in seq(1,11,1))
 {
 for (n in seq(1,4,1))
 {
-exit_rate[n, e] = length(which(data_cleaned$change_neg_next == 1 & data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e))/ 
-                  length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e))
-surv_rate[n, e] = length(which(data_cleaned$change_neg_bef == 0 & data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e))/ 
-                  length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e))  
+exit_rate[n, e] = length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee<2015 & data_cleaned$change_neg_next == 1 ))/ 
+                  length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee<2015))
+surv_rate[n, e] = length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee>2007 & data_cleaned$change_neg_bef == 1 ))/ 
+                  length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee>2007))  
+exit_rate2[n, e] = length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee>2011 & data_cleaned$annee<2015 & data_cleaned$change_neg_next == 1 ))/ 
+                   length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e  & data_cleaned$annee>2011 & data_cleaned$annee<2015))
+surv_rate2[n, e] = length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee>2007 & data_cleaned$change_neg_bef == 1 ))/ 
+                   length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee>2007))  
 }
 }
 
@@ -245,6 +256,11 @@ data$change_neg_next <- ifelse(data$c_neg == data$next_neg, 0, 1)
 data_all = data[which(data$count_AT == 9 & data$count_lib == 9 & data$count_missing_ech == 0), ]
 
 # Distribution de l'echelon a l'entre dans corps
+
+
+
+
+
 entry_echelon_AT2 = data$echelon[which(data$change_neg_bef2 ==1  & 
                                        data$c_neg == list_neg[1] & 
                                        data$annee > 2008)] 
