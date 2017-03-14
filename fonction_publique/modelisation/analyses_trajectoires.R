@@ -7,7 +7,7 @@
 
 
 # path
-place = "ipp"
+place = "mac"
 if (place == "ipp"){
 data_path = "M:/CNRACL/output/"
 git_path =  'U:/Projets/CNRACL/fonction-publique/fonction_publique/'
@@ -49,11 +49,9 @@ data$count = data$b
 data <- data[, !names(data) %in% c('a', 'b', 'c')]
 # AT variables
 data$ind_AT = ifelse(is.element(data$c_neg, list_neg), 1, 0) 
-
 data$a = ave(data$ind_AT,data$ident,FUN=cumsum)
 data$first_AT <- ifelse(data$a==1,1,0)
 data$count_AT <-  ave(data$ind_AT, data$ident, FUN = sum)
-
 
 ## Correction: si grade[n-1] = grade[n+1] et != grade[n] on modifie grade[n]
 data$bef_neg  <-ave(data$c_neg, data$ident, FUN=shiftm1)
@@ -64,7 +62,6 @@ list = which(data$bef_neg!=0 & !is.na(data$bef_neg) & data$bef_neg == data$next_
 data$c_neg[list] = data$bef_neg[list]
 data$libemploi[list] = data$bef_lib[list]
 
-
 # Changing grades variable
 data$bef_neg  <-ave(data$c_neg, data$ident, FUN=shiftm1)
 data$bef_neg2 <-ave(data$c_neg, data$ident, FUN=shiftm2)
@@ -73,13 +70,15 @@ data$next_neg2 <-ave(data$c_neg, data$ident, FUN=shift2)
 data$change_neg_bef  <- ifelse(data$c_neg == data$bef_neg | data$c_neg == data$bef_neg2, 0, 1)
 data$change_neg_next <- ifelse(data$c_neg == data$next_neg| data$c_neg == data$next_neg2, 0, 1)
 
+data$bef_ech  <-ave(data$echelon4, data$ident, FUN=shiftm1)
+data$next_ech <-ave(data$echelon4, data$ident, FUN=shift1)
 
 # Ind libemploi 
 data$ind_lib = ifelse(data$libemploi == '', 0, 1)
 data$count_lib = ave(data$ind_lib, data$ident, FUN = sum)
-data$bef_ind_lib <-ave(data$ind_lib, data$ident, FUN=shiftm1)
-data$bef2_ind_lib <-ave(data$ind_lib, data$ident, FUN=shiftm2)
-data$next_ind_lib <-ave(data$ind_lib, data$ident, FUN=shift1)
+data$bef_ind_lib  <- ave(data$ind_lib, data$ident, FUN=shiftm1)
+data$bef2_ind_lib <- ave(data$ind_lib, data$ident, FUN=shiftm2)
+data$next_ind_lib <- ave(data$ind_lib, data$ident, FUN=shift1)
 # Lib without AT
 data$diff = data$count_lib - data$count_AT
 # Ind missing echelon 
@@ -100,8 +99,6 @@ data <- data_cleaned
 
 
 #### II. Descriptive statistics ####
-
-
 
 #### II.1 Sample selection ####
 
@@ -133,15 +130,24 @@ size_sample[d,2] = 100*length(unique(dataset$ident))/size_sample[1,1]
 colnames(size_sample) <- c("Nb d'individus", "\\% echantillon initial")
 rownames(size_sample) <- c("Echantillon initial",
                            "F1: Libemploi manquant quand statut non vide",
-                           "F2: Neg manquant quand libemploi renseigné", "F3: Echelon manquant quand neg dans AT")
+                           "F2: Neg manquant quand libemploi renseign?", "F3: Echelon manquant quand neg dans AT")
 print(xtable(size_sample,align="l|cc",nrow = nrow(table), ncol=ncol(table)+1, byrow=T, digits=0),
       hline.after=c(0,1,4), sanitize.text.function=identity,size="\\footnotesize", only.contents=T)
 
 
 
+### Echelon ###
+
+# Baisse Ã©chelon dans meme grade
+list = which(is.element(data$c_neg, list_neg) &
+             data$c_neg == data$next_neg & 
+             !is.na(data$echelon4) & !is.na(data$next_ech) & 
+              data$echelon4>0 & data$next_ech>0 & 
+              data$echelon4>data$next_ech)
+
+View(data_cleaned[list, c('ident', 'annee', 'c_neg', 'echelon', 'next_neg', 'next_neg2', 'bef_neg', 'bef_neg2', 'change_neg_next', 'change_neg_next')])
 
 #### II.2 Entry and exit neg ####
-
 
 # Proportion of each type
 
@@ -214,7 +220,7 @@ print(xtable(table,align="l|cccc",nrow = nrow(table), ncol=ncol(table)+1, byrow=
 #### II.3 Distribution of time spent in corps and echelon ####
 
 
-## Proba de quitter le corps par échelon (survival)
+## Proba de quitter le corps par ?chelon (survival)
 exit_rate = matrix(ncol = 11, nrow = 4)
 surv_rate = matrix(ncol = 11, nrow = 4)
 exit_rate2 = matrix(ncol = 11, nrow = 4)
@@ -223,7 +229,6 @@ surv_rate2 = matrix(ncol = 11, nrow = 4)
 table(data_cleaned$echelon[which(data_cleaned$c_neg == 794)])
 table(data_cleaned$echelon[which(data_cleaned$c_neg == 793)])
 
-View(data_cleaned[, c('ident', 'annee', 'c_neg', 'echelon', 'next_neg', 'next_neg2', 'bef_neg', 'bef_neg2', 'change_neg_next', 'change_neg_next')])
 
 for (e in seq(1,11,1))
 {
@@ -240,7 +245,7 @@ surv_rate2[n, e] = length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned
 }
 }
 
-
+View(data_cleaned[, c('ident', 'annee', 'c_neg', 'echelon1', 'echelon4', 'ib', 'next_neg', 'next_neg2', 'bef_neg', 'bef_neg2', 'change_neg_next', 'change_neg_next')])
 
 
 # Time spent in echelon and grade 
@@ -257,13 +262,18 @@ data_all = data[which(data$count_AT == 9 & data$count_lib == 9 & data$count_miss
 
 # Distribution de l'echelon a l'entre dans corps
 
-
-
-
-
-entry_echelon_AT2 = data$echelon[which(data$change_neg_bef2 ==1  & 
+entry_echelon_AT2 = data$echelon[which(data$change_neg_bef ==1  & 
                                        data$c_neg == list_neg[1] & 
-                                       data$annee > 2008)] 
+                                       data$annee > 2012)] 
+entry_echelon_AT1 = data$echelon[which(data$change_neg_bef ==1  & 
+                                         data$c_neg == list_neg[2] & 
+                                         data$annee > 2012)] 
+entry_echelon_ATP2 = data$echelon[which(data$change_neg_bef ==1  & 
+                                         data$c_neg == list_neg[3] & 
+                                         data$annee > 2012)] 
+entry_echelon_ATP1 = data$echelon[which(data$change_neg_bef ==1  & 
+                                          data$c_neg == list_neg[4] & 
+                                          data$annee > 2012)] 
 
 View(data[which(is.element(data$ident, data$ident[which(data$change_neg_bef ==1  & 
                                                           data$c_neg == list_neg[1] & 
@@ -273,8 +283,16 @@ View(data[which(is.element(data$ident, data$ident[which(data$change_neg_bef2 ==1
                            data$bef_ind_lib == 0 & data$bef2_ind_lib == 0 &                               
                            data$c_neg == list_neg[1] & data$annee > 2008)])),])
                   
-                  
 table(entry_echelon_AT2)
+table(entry_echelon_AT1)
+table(entry_echelon_ATP2)
+table(entry_echelon_ATP1)
+
+
+
+#### III. Survival analysis ####
+
+
 
 #### II.3 Distribution of destination when eligible ####
 
