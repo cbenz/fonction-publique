@@ -7,7 +7,7 @@
 
 
 # path
-place = "mac"
+place = "ipp"
 if (place == "ipp"){
 data_path = "M:/CNRACL/output/"
 git_path =  'U:/Projets/CNRACL/fonction-publique/fonction_publique/'
@@ -18,11 +18,16 @@ if (place == "mac"){
 }
 fig_path = paste0(git_path,"ecrits/modelisation_carriere/Figures/")
 
+
 ### Loading packages and functions ###
 source(paste0(git_path, 'modelisation/OutilsCNRACL.R'))
 
 # Read csv
 main = read.csv(paste0(data_path,"corpsAT2.csv"))
+list_neg_AT = c(793, 794, 795, 796)
+
+main = read.csv(paste0(data_path,"corpsAA.csv"))
+list_neg_AA = c(791, 792, 0014, 0162)
 
 ident = unique(main$ident)
 sub = sample(ident, 10000)
@@ -38,7 +43,7 @@ data$c_neg[which(is.na(data$c_neg))] <- 0
 data$echelon = data$echelon1
 
 # List of AT neg
-list_neg = c(793, 794, 795, 796)
+
 # First/last
 data$a     <- 1
 data$b     <- ave(data$a,data$ident,FUN=cumsum)
@@ -56,6 +61,8 @@ data$count_AT <-  ave(data$ind_AT, data$ident, FUN = sum)
 ## Correction: si grade[n-1] = grade[n+1] et != grade[n] on modifie grade[n]
 data$bef_neg  <-ave(data$c_neg, data$ident, FUN=shiftm1)
 data = slide(data, "libemploi", GroupVar = "ident", NewVar = "bef_lib", slideBy = -1,
+             keepInvalid = FALSE, reminder = TRUE)
+data = slide(data, "libemploi", GroupVar = "ident", NewVar = "bef_lib2", slideBy = -2,
              keepInvalid = FALSE, reminder = TRUE)
 data$next_neg <-ave(data$c_neg, data$ident, FUN=shift1)
 list = which(data$bef_neg!=0 & !is.na(data$bef_neg) & data$bef_neg == data$next_neg & data$c_neg != data$bef_neg)
@@ -292,7 +299,75 @@ table(entry_echelon_ATP1)
 
 #### III. Survival analysis ####
 
+#### III.1 Grade only ####
 
+list_neg = c(793, 794, 795, 796)
+
+list1 = data_all$ident[which(data_all$c_neg == 0 & data_all$libemploi != '')]
+list2 = data_all$ident[which(data_all$ib > 0 & data_all$libemploi == '')]
+list = unique((union(list1,list1)))
+data = data_all[which(!is.element(data_all$ident, list)),]
+
+years = 2008:2015
+surv_1     = matrix(nrow = length(years), ncol = length(years))
+surv_rel_1 = matrix(nrow = length(years), ncol = length(years))
+
+surv = array(dim = c(length(list_neg), length(years), ncol = length(years)))
+surv_rel = array(dim = c(length(list_neg), length(years), ncol = length(years)))
+
+for (n in 1: length(list_neg))
+{
+for (y in 1:length(years))
+{
+list_keep1 = unique(data$ident[which(data$change_neg_bef == 1 & data$c_neg == list_neg[n] & data$annee == years[y])])  
+#list_keep1 = unique(data$ident[which(data$bef_lib == '' & data$bef_lib2 == '' & data$c_neg == list_neg[n] & data$annee == years[y])])  
+sub_data = data[which(is.element(data$ident, list_keep1) & data$annee >= years[y]), c("ident", "annee", "c_neg", "echelon", "libemploi", "change_neg_bef", "change_neg_next")]  
+sub_data$cum_sum_change = ave(sub_data$change_neg_bef, sub_data$ident, FUN= cumsum)
+sub_data = sub_data[which(sub_data$cum_sum_change <= 1),]
+sub_data$cum_sum_change = ave(sub_data$change_neg_bef, sub_data$ident, FUN= cumsum)
+sub_data$a = 1
+sub_data$count_neg     = ave(sub_data$a, list(sub_data$ident, sub_data$c_neg), FUN = sum)
+data_ind  <- sub_data[which(!duplicated(sub_data$ident)),]
+
+count = length(data_ind$ident)
+for (t in y:length(years))
+{
+  surv[n, y, t] = count
+  surv_rel[n, y, t] = 100*count/length(data_ind$ident)
+  count = count - length(which(data_ind$count_neg == t - y + 1))  
+}
+}
+}
+
+# Plot 
+table = surv_rel[1, ,]
+n_col <- colorRampPalette(c("black", "grey80"))(length(years)) 
+type = rep(c(1,2),5)
+plot  (years,rep(NA,length(years)),ylim=c(min(table, na.rm = T),max(table, na.rm = T)),ylab="Nb d'individus",xlab="Annee")
+for (a in 1:length(years))
+{
+lines(years,table[a, ],col=n_col[a],lwd=3, lty = type[a]) 
+}
+
+
+
+## Subpop: individuals entering the AT2 grade in 2008
+
+
+
+
+# Time spent in the grade
+data = data1
+
+time = seq(2007, 2015, 1)
+surv = numeric(length(time))
+count = length(data_ind$ident)
+for (t in 1:length(time))
+{
+surv[t] = count
+count = count - length(which(data_ind$count_neg == t))  
+}
+plot(time, surv, ylim = c(0, length(data_ind$ident)))
 
 #### II.3 Distribution of destination when eligible ####
 
