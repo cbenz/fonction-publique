@@ -38,7 +38,7 @@ def select_ident(libemploi):
     return subset_ident
 
 
-def select_grilles():
+def select_grilles(corps):
     path_grilles = os.path.join(
     pkg_resources.get_distribution('fonction_publique').location,
     'fonction_publique',
@@ -46,72 +46,49 @@ def select_grilles():
     'grilles_fonction_publique',
     )
     grilles = pd.read_hdf(os.path.join(path_grilles,"grilles_old.h5"))
-    libNEG_corps = ['ADJOINT TECHNIQUE DE 2EME CLASSE', 'ADJOINT TECHNIQUE DE 1ERE CLASSE',
-                    'ADJOINT TECHNIQUE PRINCIPAL DE 2EME CLASSE', 'ADJOINT TECHNIQUE PRINCIPAL DE 1ERE CLASSE']
+    if corps == 'AT':
+        libNEG_corps = ['ADJOINT TECHNIQUE DE 2EME CLASSE', 'ADJOINT TECHNIQUE DE 1ERE CLASSE',
+                        'ADJOINT TECHNIQUE PRINCIPAL DE 2EME CLASSE', 'ADJOINT TECHNIQUE PRINCIPAL DE 1ERE CLASSE']
+    if corps == 'AA':
+        libNEG_corps = ['ADJOINT ADMINISTRATIF DE 2EME CLASSE', 'ADJOINT ADMINISTRATIF DE 1ERE CLASSE',
+                    'ADJOINT ADMINISTRATIF PRINCIPAL DE 2EME CLASSE', 'ADJOINT ADMINISTRATIF PRINCIPAL DE 1ERE CLASSE']
+    if corps == 'ES':
+        libNEG_corps = ['AIDE SOIGNANT CL NORMALE (E04)', 'AIDE SOIGNANT CL SUPERIEURE (E05)',
+                        'AIDE SOIGNANT CL EXCEPT (E06)']
     subset_grilles = grilles[grilles.libelle_grade_NEG.isin(libNEG_corps)]
     return (subset_grilles)
 
 
-def cleaning_data(dataset):
-    # Fix variables
-    #generation =  get_careers(variable = 'generation', data_path = dataset)
-    # Carrière
-    libemploi = load_career('libemploi', dataset)
-    c_neg = load_career('c_neg', dataset)
-    statut = load_career('statut', dataset)
-    ib = load_career('ib', dataset)
-    ib_subset1 = ib.loc[(ib.trimestre == 1)][['ident', 'annee', 'ib']].rename(columns={'ib':'ib1'})
-    ib_subset2 = ib.loc[(ib.trimestre == 2)][['ident', 'annee', 'ib']].rename(columns={'ib':'ib2'})
-    ib_subset3 = ib.loc[(ib.trimestre == 3)][['ident', 'annee', 'ib']].rename(columns={'ib':'ib3'})
-    ib_subset4 = ib.loc[(ib.trimestre == 4)][['ident', 'annee', 'ib']].rename(columns={'ib':'ib4'})
-
-    echelon = load_career('echelon', dataset).sort_values(['ident', 'annee','trimestre'])
-    echelon_subset1 = echelon.loc[(echelon.trimestre == 1)][['ident', 'annee', 'echelon']].rename(columns={'echelon':'echelon1'})
-    echelon_subset2 = echelon.loc[(echelon.trimestre == 2)][['ident', 'annee', 'echelon']].rename(columns={'echelon':'echelon2'})
-    echelon_subset3 = echelon.loc[(echelon.trimestre == 3)][['ident', 'annee', 'echelon']].rename(columns={'echelon':'echelon3'})
-    echelon_subset4 = echelon.loc[(echelon.trimestre == 4)][['ident', 'annee', 'echelon']].rename(columns={'echelon':'echelon4'})
-
-    # CHECK NA ECHELON
-#     check = (c_neg
-#                .merge(echelon_subset1, how = "left", on = ['ident', 'annee'])
-#                .merge(echelon_subset4, how = "left", on = ['ident', 'annee'])
-#                .merge(libemploi, how = "left", on = ['ident', 'annee'])
-#                .sort_values(['ident', 'annee'])
-#            )#
-#    a = sum(check.echelon1 == "")/len(check.echelon1)
-#    b = sum((check.echelon1 == "") & (check.c_neg != ""))/ sum(check.c_neg != "")
-#    c = sum((check.echelon1 == "") & (check.c_neg == "0793"))/ sum(check.c_neg == "0793")
-#    c1 = sum((check.echelon1 == "") & (check.c_neg == "0793") & (check.annee == 2015))/ sum((check.c_neg == "0793")  & (check.annee == 2015))
-#    d = sum((check.echelon1 == "") & (check.c_neg == "0796"))/ sum(check.c_neg == "0796")
-#    d1 = sum((check.echelon1 == "") & (check.c_neg == "0796") & (check.annee == 2015))/ sum((check.c_neg == "0796")  & (check.annee == 2015))
-#    print("Premier trim", a, b, c, c1, d, d1)
-#    a = sum(check.echelon4 == "")/len(check.echelon4)
-#    b = sum((check.echelon4 == "") & (check.c_neg != ""))/ sum(check.c_neg != "")
-#    c = sum((check.echelon4 == "") & (check.c_neg == "0793"))/ sum(check.c_neg == "0793")
-#    c1 = sum((check.echelon4 == "") & (check.c_neg == "0793") & (check.annee == 2015))/ sum((check.c_neg == "0793")  & (check.annee == 2015))
-#    d = sum((check.echelon4 == "") & (check.c_neg == "0796"))/ sum(check.c_neg == "0796")
-#    d1 = sum((check.echelon4 == "") & (check.c_neg == "0796") & (check.annee == 2015))/ sum((check.c_neg == "0796")  & (check.annee == 2015))
-#    print("Dernier trim", a, b, c, c1, d, d1)
-
+def cleaning_data(generation, sexe, an_aff, libemploi, statut, c_neg, echelon, ib, corps):
     # Grilles
-    grilles = select_grilles()
+    grilles = select_grilles(corps)
     # Indiv avec un lib dans le corps
     list_code = list(set(grilles.code_grade_NEG.astype(str)))
     list_code = ['0' + s for s in list_code]
     subset_ident = list(set(c_neg.ident[c_neg.c_neg.isin(list_code)]))
-    # Merge lib + neg + ib
+    # Merge individual variables
+    generation_subset = generation.loc[generation.ident.isin(subset_ident)].sort_values(['ident'])
+    an_aff_subset = an_aff.loc[an_aff.ident.isin(subset_ident)].sort_values(['ident'])
+    sexe_subset = sexe.loc[sexe.ident.isin(subset_ident)].sort_values(['ident'])
+    data_i = (generation_subset
+              .merge(sexe_subset, how = "left", on = ['ident'])
+              .merge(an_aff_subset, how = "left", on = ['ident']))
+    # Merge time varying variables
     c_neg_subset = c_neg.loc[c_neg.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
     statut_subset = statut.loc[statut.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
     libemploi_subset = libemploi.loc[libemploi.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
-    ib_subset1 = ib_subset1.loc[ib_subset1.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
-    ib_subset2 = ib_subset2.loc[ib_subset2.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
-    ib_subset3 = ib_subset3.loc[ib_subset3.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
-    ib_subset4 = ib_subset4.loc[ib_subset4.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
-    echelon_subset1 = echelon_subset1.loc[echelon_subset1.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
-    echelon_subset2 = echelon_subset2.loc[echelon_subset2.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
-    echelon_subset3 = echelon_subset3.loc[echelon_subset3.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
-    echelon_subset4 = echelon_subset4.loc[echelon_subset4.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
-    # Merge
+    ib_subset = ib.loc[ib.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
+    echelon_subset = echelon.loc[echelon.ident.isin(subset_ident)].sort_values(['ident', 'annee'])
+
+    ib_subset1 = ib_subset.loc[(ib_subset.trimestre == 1)][['ident', 'annee', 'ib']].rename(columns={'ib':'ib1'})
+    ib_subset2 = ib_subset.loc[(ib_subset.trimestre == 2)][['ident', 'annee', 'ib']].rename(columns={'ib':'ib2'})
+    ib_subset3 = ib_subset.loc[(ib_subset.trimestre == 3)][['ident', 'annee', 'ib']].rename(columns={'ib':'ib3'})
+    ib_subset4 = ib_subset.loc[(ib_subset.trimestre == 4)][['ident', 'annee', 'ib']].rename(columns={'ib':'ib4'})
+    echelon_subset1 = echelon_subset.loc[(echelon_subset.trimestre == 1)][['ident', 'annee', 'echelon']].rename(columns={'echelon':'echelon1'})
+    echelon_subset2 = echelon_subset.loc[(echelon_subset.trimestre == 2)][['ident', 'annee', 'echelon']].rename(columns={'echelon':'echelon2'})
+    echelon_subset3 = echelon_subset.loc[(echelon_subset.trimestre == 3)][['ident', 'annee', 'echelon']].rename(columns={'echelon':'echelon3'})
+    echelon_subset4 = echelon_subset.loc[(echelon_subset.trimestre == 4)][['ident', 'annee', 'echelon']].rename(columns={'echelon':'echelon4'})
+
     data = (libemploi_subset
                 .merge(c_neg_subset, how = "left", on = ['ident', 'annee'])
                 .merge(statut_subset, how = "left", on = ['ident', 'annee'])
@@ -125,6 +102,8 @@ def cleaning_data(dataset):
                 .merge(echelon_subset4, how = "left", on = ['ident', 'annee'])
                 .sort_values(['ident', 'annee'])
             )
+    # Merge two data
+    data = data.merge(data_i, how = "left", on = ['ident'])
     # Drop duplicates
     a = len(set(data.ident))
     data = data.drop_duplicates(subset = ['ident', 'annee'], keep = False)
@@ -142,18 +121,40 @@ def main():
     list_data = ['1980_1999_carrieres.h5',
                  '1976_1979_carrieres.h5',
                  '1970_1975_carrieres.h5',
-                # '1960_1965_carrieres.h5','1966_1969_carrieres.h5',
+                 '1960_1965_carrieres.h5','1966_1969_carrieres.h5',
                  ]
-    for data in list_data:
-        print("Processing data {}".format(data))
-        clean_data = cleaning_data(data)
-        if data == list_data[0]:
-            data_merge = clean_data
-        else:
-            data_merge = data_merge.append(clean_data)
+    for dataset in list_data:
+        print("Processing data {}".format(dataset))
+           # Fix variables
+        generation =  get_careers(variable = 'generation', data_path = dataset)
+        an_aff =  get_careers(variable = 'an_aff', data_path = dataset)
+        sexe =  get_careers(variable = 'sexe', data_path = dataset)
+        # Carrière
+        libemploi = load_career('libemploi', dataset)
+        c_neg = load_career('c_neg', dataset)
+        statut = load_career('statut', dataset)
+        ib = load_career('ib', dataset)
+        echelon = load_career('echelon', dataset).sort_values(['ident', 'annee','trimestre'])
 
-    path = os.path.join(save_path, "corpsAT2.csv")
-    data_merge.to_csv(path)
+        data_AA = cleaning_data(generation, sexe, an_aff, libemploi, statut, c_neg, echelon, ib, 'AA')
+        data_AT = cleaning_data(generation, sexe, an_aff, libemploi, statut, c_neg, echelon, ib, 'AT')
+        data_ES = cleaning_data(generation, sexe, an_aff, libemploi, statut, c_neg, echelon, ib, 'ES')
+
+        if data == list_data[0]:
+            data_merge_AA = data_AA
+            data_merge_AT = data_AT
+            data_merge_ES = data_ES
+        else:
+            data_merge_AA = data_merge_AA.append(data_AA)
+            data_merge_AT = data_merge_AA.append(data_AT)
+            data_merge_ES = data_merge_AA.append(data_ES)
+
+    path = os.path.join(save_path, "corpsAA.csv")
+    data_merge_AA.to_csv(path)
+    path = os.path.join(save_path, "corpsAT.csv")
+    data_merge_AT.to_csv(path)
+    path = os.path.join(save_path, "corpsES.csv")
+    data_merge_ES.to_csv(path)
 
 if __name__ == '__main__':
     logging.basicConfig(level = logging.INFO, stream = sys.stdout)

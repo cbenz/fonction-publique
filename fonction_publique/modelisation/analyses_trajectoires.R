@@ -23,86 +23,95 @@ fig_path = paste0(git_path,"ecrits/modelisation_carriere/Figures/")
 source(paste0(git_path, 'modelisation/OutilsCNRACL.R'))
 
 # Read csv
-main = read.csv(paste0(data_path,"corpsAT2.csv"))
+mainAT = read.csv(paste0(data_path,"corpsAT2.csv"))
 list_neg_AT = c(793, 794, 795, 796)
+sub_data_AT = mainAT[which(is.element(mainAT$ident, sample(unique(mainAT$ident), 10000))), ]
 
-main = read.csv(paste0(data_path,"corpsAA.csv"))
+mainAA = read.csv(paste0(data_path,"corpsAA.csv"))
 list_neg_AA = c(791, 792, 0014, 0162)
+sub_data_AA = mainAA[which(is.element(mainAA$ident, sample(unique(mainAA$ident), 10000))), ]
 
-ident = unique(main$ident)
-sub = sample(ident, 10000)
-sub_data = main[which(is.element(main$ident, sub)), ]
 
-data = sub_data
-#data = main
 
 #### I. WOD ####
-data$libemploi = as.character(data$libemploi)
-data$c_neg = as.numeric(format(data$c_neg))
-data$c_neg[which(is.na(data$c_neg))] <- 0
-data$echelon = data$echelon1
 
-# List of AT neg
+data_wod <- function(data) 
+{
+  data$libemploi = as.character(data$libemploi)
+  data$c_neg = as.numeric(format(data$c_neg))
+  data$c_neg[which(is.na(data$c_neg))] <- 0
+  data$echelon = data$echelon1
+  # First/last
+  data$a     <- 1
+  data$b     <- ave(data$a,data$ident,FUN=cumsum)
+  data$c     <- ave(data$a,data$ident,FUN=sum)
+  data$first <- ifelse(data$b==1,1,0)
+  data$last  <- ifelse(data$b==data$c,1,0)
+  data$count = data$b
+  data <- data[, !names(data) %in% c('a', 'b', 'c')]
+  # AT variables
+  data$ind_AT = ifelse(is.element(data$c_neg, list_neg), 1, 0) 
+  data$a = ave(data$ind_AT,data$ident,FUN=cumsum)
+  data$first_AT <- ifelse(data$a==1,1,0)
+  data$count_AT <-  ave(data$ind_AT, data$ident, FUN = sum)
+  
+  ## Correction: si grade[n-1] = grade[n+1] et != grade[n] on modifie grade[n]
+  data$bef_neg  <-ave(data$c_neg, data$ident, FUN=shiftm1)
+  data = slide(data, "libemploi", GroupVar = "ident", NewVar = "bef_lib", slideBy = -1,
+               keepInvalid = FALSE, reminder = TRUE)
+  data = slide(data, "libemploi", GroupVar = "ident", NewVar = "bef_lib2", slideBy = -2,
+               keepInvalid = FALSE, reminder = TRUE)
+  data$next_neg <-ave(data$c_neg, data$ident, FUN=shift1)
+  list = which(data$bef_neg!=0 & !is.na(data$bef_neg) & data$bef_neg == data$next_neg & data$c_neg != data$bef_neg)
+  data$c_neg[list] = data$bef_neg[list]
+  data$libemploi[list] = data$bef_lib[list]
+  
+  # Changing grades variable
+  data$bef_neg  <-ave(data$c_neg, data$ident, FUN=shiftm1)
+  data$bef_neg2 <-ave(data$c_neg, data$ident, FUN=shiftm2)
+  data$next_neg <-ave(data$c_neg, data$ident, FUN=shift1)
+  data$next_neg2 <-ave(data$c_neg, data$ident, FUN=shift2)
+  data$change_neg_bef  <- ifelse(data$c_neg == data$bef_neg | data$c_neg == data$bef_neg2, 0, 1)
+  data$change_neg_next <- ifelse(data$c_neg == data$next_neg| data$c_neg == data$next_neg2, 0, 1)
+  
+  data$bef_ech  <-ave(data$echelon4, data$ident, FUN=shiftm1)
+  data$next_ech <-ave(data$echelon4, data$ident, FUN=shift1)
+  
+  # Ind libemploi 
+  data$ind_lib = ifelse(data$libemploi == '', 0, 1)
+  data$count_lib = ave(data$ind_lib, data$ident, FUN = sum)
+  data$bef_ind_lib  <- ave(data$ind_lib, data$ident, FUN=shiftm1)
+  data$bef2_ind_lib <- ave(data$ind_lib, data$ident, FUN=shiftm2)
+  data$next_ind_lib <- ave(data$ind_lib, data$ident, FUN=shift1)
+  # Lib without AT
+  data$diff = data$count_lib - data$count_AT
+  # Ind missing echelon 
+  data$missing_ech = ifelse(is.na(data$echelon) & data$libemploi != '', 1, 0)
+  data$count_missing_ech = ave(data$missing_ech, data$ident, FUN = sum)
+  
+  return(data)
+}
 
-# First/last
-data$a     <- 1
-data$b     <- ave(data$a,data$ident,FUN=cumsum)
-data$c     <- ave(data$a,data$ident,FUN=sum)
-data$first <- ifelse(data$b==1,1,0)
-data$last  <- ifelse(data$b==data$c,1,0)
-data$count = data$b
-data <- data[, !names(data) %in% c('a', 'b', 'c')]
-# AT variables
-data$ind_AT = ifelse(is.element(data$c_neg, list_neg), 1, 0) 
-data$a = ave(data$ind_AT,data$ident,FUN=cumsum)
-data$first_AT <- ifelse(data$a==1,1,0)
-data$count_AT <-  ave(data$ind_AT, data$ident, FUN = sum)
-
-## Correction: si grade[n-1] = grade[n+1] et != grade[n] on modifie grade[n]
-data$bef_neg  <-ave(data$c_neg, data$ident, FUN=shiftm1)
-data = slide(data, "libemploi", GroupVar = "ident", NewVar = "bef_lib", slideBy = -1,
-             keepInvalid = FALSE, reminder = TRUE)
-data = slide(data, "libemploi", GroupVar = "ident", NewVar = "bef_lib2", slideBy = -2,
-             keepInvalid = FALSE, reminder = TRUE)
-data$next_neg <-ave(data$c_neg, data$ident, FUN=shift1)
-list = which(data$bef_neg!=0 & !is.na(data$bef_neg) & data$bef_neg == data$next_neg & data$c_neg != data$bef_neg)
-data$c_neg[list] = data$bef_neg[list]
-data$libemploi[list] = data$bef_lib[list]
-
-# Changing grades variable
-data$bef_neg  <-ave(data$c_neg, data$ident, FUN=shiftm1)
-data$bef_neg2 <-ave(data$c_neg, data$ident, FUN=shiftm2)
-data$next_neg <-ave(data$c_neg, data$ident, FUN=shift1)
-data$next_neg2 <-ave(data$c_neg, data$ident, FUN=shift2)
-data$change_neg_bef  <- ifelse(data$c_neg == data$bef_neg | data$c_neg == data$bef_neg2, 0, 1)
-data$change_neg_next <- ifelse(data$c_neg == data$next_neg| data$c_neg == data$next_neg2, 0, 1)
-
-data$bef_ech  <-ave(data$echelon4, data$ident, FUN=shiftm1)
-data$next_ech <-ave(data$echelon4, data$ident, FUN=shift1)
-
-# Ind libemploi 
-data$ind_lib = ifelse(data$libemploi == '', 0, 1)
-data$count_lib = ave(data$ind_lib, data$ident, FUN = sum)
-data$bef_ind_lib  <- ave(data$ind_lib, data$ident, FUN=shiftm1)
-data$bef2_ind_lib <- ave(data$ind_lib, data$ident, FUN=shiftm2)
-data$next_ind_lib <- ave(data$ind_lib, data$ident, FUN=shift1)
-# Lib without AT
-data$diff = data$count_lib - data$count_AT
-# Ind missing echelon 
-data$missing_ech = ifelse(is.na(data$echelon) & data$libemploi != '', 1, 0)
-data$count_missing_ech = ave(data$missing_ech, data$ident, FUN = sum)
+data_clean <- function(data, list_neg)
+{
+  list3 = data$ident[which(data$c_neg == 0 & data$libemploi != '')]
+  list4 = data$ident[which(is.na(data$echelon) & is.element(data$c_neg, list_neg))]
+  list5 = data$ident[which(data$ib > 0 & data$libemploi == '')]
+  list = unique(union(union(list3,list4), list5))
+  data_cleaned = data[which(!is.element(data$ident, list)),]  
+  return(data_cleaned)
+}
+  
+  
 
 
-## Cleaned data
-list3 = data$ident[which(data$c_neg == 0 & data$libemploi != '')]
-list4 = data$ident[which(is.na(data$echelon) & is.element(data$c_neg, c(793, 794, 795, 796)))]
-list5 = data$ident[which(data$ib > 0 & data$libemploi == '')]
-list = unique(union(union(list3,list4), list5))
-data_cleaned = data[which(!is.element(data$ident, list)),]
 
 # Data
-data -> data_all
-data <- data_cleaned
+data_all_AT   <- data_wod(sub_data_AT)
+data_clean_AT <- data_clean(data_all_AT, list_neg_AT)
+
+data_all_AA   <- data_wod(sub_data_AA)
+data_clean_AA <- data_clean(data_all_AA, list_neg_AA)
 
 
 #### II. Descriptive statistics ####
@@ -303,6 +312,13 @@ table(entry_echelon_ATP1)
 
 list_neg = c(793, 794, 795, 796)
 
+for (c in c('AA', 'AT'))
+{
+if (c == 'AT'){data_all = data_all_AT; list_neg = list_neg_AT}
+if (c == 'AA'){data_all = data_all_AA; list_neg = list_neg_AA}
+if (c == 'ES'){data_all = data_all_ES; list_neg = list_neg_ES}  
+  
+
 list1 = data_all$ident[which(data_all$c_neg == 0 & data_all$libemploi != '')]
 list2 = data_all$ident[which(data_all$ib > 0 & data_all$libemploi == '')]
 list = unique((union(list1,list1)))
@@ -340,19 +356,33 @@ for (t in y:length(years))
 }
 
 # Plot 
-table = surv_rel[1, ,]
+pdf(paste0(fig_path,"survival_",c,"_",n,".pdf"))
 n_col <- colorRampPalette(c("black", "grey80"))(length(years)) 
 type = rep(c(1,2),5)
+layout(matrix(c(1, 2, 3), nrow=3,ncol=1, byrow=TRUE), heights=c(3, 3,1))
+par(mar=c(4.1,4.1,0.2,0.2))
+# Nb
+table = surv[1, ,]
 plot  (years,rep(NA,length(years)),ylim=c(min(table, na.rm = T),max(table, na.rm = T)),ylab="Nb d'individus",xlab="Annee")
 for (a in 1:length(years))
 {
 lines(years,table[a, ],col=n_col[a],lwd=3, lty = type[a]) 
 }
+# %
+table = surv_rel[1, ,]
+plot  (years,rep(NA,length(years)),ylim=c(min(table, na.rm = T),max(table, na.rm = T)),ylab="% d'individus",xlab="Annee")
+for (a in 1:length(years))
+{
+  lines(years,table[a, ],col=n_col[a],lwd=3, lty = type[a]) 
+}
 
+par(mar=c(0,0,0,0),font=1.5)
+plot.new()
+legend("center",legend=years, title = "Annee d'entree dans le grade:",
+       col=n_col,lty=type[1:length(years)],lwd=3,cex=1.3, ncol=4, bty = "n")
+dev.off()
 
-
-## Subpop: individuals entering the AT2 grade in 2008
-
+}
 
 
 
