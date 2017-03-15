@@ -353,36 +353,124 @@ for (t in y:length(years))
   count = count - length(which(data_ind$count_neg == t - y + 1))  
 }
 }
+  pdf(paste0(fig_path,"survival_",c,"_",n,".pdf"))
+  n_col <- colorRampPalette(c("black", "grey80"))(length(years)) 
+  type = rep(c(1,2),5)
+  layout(matrix(c(1, 2, 3), nrow=3,ncol=1, byrow=TRUE), heights=c(3, 3,1))
+  par(mar=c(4.1,4.1,0.2,0.2))
+  # Nb
+  table = surv[1, ,]
+  plot  (years,rep(NA,length(years)),ylim=c(min(table, na.rm = T),max(table, na.rm = T)),ylab="Nb d'individus",xlab="Annee")
+  for (a in 1:length(years))
+  {
+    lines(years,table[a, ],col=n_col[a],lwd=3, lty = type[a]) 
+  }
+  # %
+  table = surv_rel[1, ,]
+  plot  (years,rep(NA,length(years)),ylim=c(min(table, na.rm = T),max(table, na.rm = T)),ylab="% d'individus",xlab="Annee")
+  for (a in 1:length(years))
+  {
+    lines(years,table[a, ],col=n_col[a],lwd=3, lty = type[a]) 
+  }
+  
+  par(mar=c(0,0,0,0),font=1.5)
+  plot.new()
+  legend("center",legend=years, title = "Annee d'entree dans le grade:",
+         col=n_col,lty=type[1:length(years)],lwd=3,cex=1.3, ncol=4, bty = "n")
+  dev.off()
+  
+  
+  
+}
 }
 
-# Plot 
-pdf(paste0(fig_path,"survival_",c,"_",n,".pdf"))
-n_col <- colorRampPalette(c("black", "grey80"))(length(years)) 
-type = rep(c(1,2),5)
-layout(matrix(c(1, 2, 3), nrow=3,ncol=1, byrow=TRUE), heights=c(3, 3,1))
-par(mar=c(4.1,4.1,0.2,0.2))
-# Nb
-table = surv[1, ,]
-plot  (years,rep(NA,length(years)),ylim=c(min(table, na.rm = T),max(table, na.rm = T)),ylab="Nb d'individus",xlab="Annee")
-for (a in 1:length(years))
+#### III.1.2 First  ####
+
+
+for (c in c('AA', 'AT'))
 {
-lines(years,table[a, ],col=n_col[a],lwd=3, lty = type[a]) 
-}
-# %
-table = surv_rel[1, ,]
-plot  (years,rep(NA,length(years)),ylim=c(min(table, na.rm = T),max(table, na.rm = T)),ylab="% d'individus",xlab="Annee")
-for (a in 1:length(years))
-{
-  lines(years,table[a, ],col=n_col[a],lwd=3, lty = type[a]) 
+  if (c == 'AT'){data_all = data_all_AT; list_neg = list_neg_AT}
+  if (c == 'AA'){data_all = data_all_AA; list_neg = list_neg_AA}
+  if (c == 'ES'){data_all = data_all_ES; list_neg = list_neg_ES}  
+  
+  
+  list1 = data_all$ident[which(data_all$c_neg == 0 & data_all$libemploi != '')]
+  list2 = data_all$ident[which(data_all$ib > 0 & data_all$libemploi == '')]
+  list = unique((union(list1,list2)))
+  data = data_all[which(!is.element(data_all$ident, list)),]
+  
+  years = c(2008:2015)
+  state =     matrix(nrow = 4, ncol = length(years))
+  state_rel = matrix(nrow = 4, ncol = length(years))
+  
+  list_keep1 = unique(data$ident[which(data$bef_lib == '' & data$bef_lib2 == '' & data$c_neg == list_neg[1] & data$annee == 2007)])  
+  sub_data = data[which(is.element(data$ident, list_keep1) & data$annee >= 2007), c("ident", "annee", "c_neg", "bef_neg", "echelon", "libemploi", "change_neg_bef", "change_neg_next")] 
+
+  for (y in 1:length(years))
+  {
+  stayers =  sub_data$ident[which(sub_data$bef_neg == list_neg[1] & sub_data$annee == years[y])]
+  sub_data  =  sub_data[which(is.element(sub_data$ident, stayers)), ]
+  state[1, y] = length(which(sub_data$c_neg == list_neg[1]& sub_data$annee == years[y]))
+  state[2, y] = length(which(sub_data$c_neg == list_neg[2]& sub_data$annee == years[y]))
+  state[3, y] = length(which(!is.element(sub_data$c_neg, c(0, list_neg[1], list_neg[2])) & sub_data$annee == years[y] ))
+  state[4, y] = length(which(sub_data$c_neg == 0 & sub_data$annee == years[y]))
+  state_rel[, y] = state[, y]/length(stayers)
+  }  
+  
+  
+  pdf(paste0(fig_path,"destination_",c,"_1.pdf"))
+  par(mar=c(4.1,4.1,0.2,0.2))
+  barplot(state_rel, names.arg = years, 
+          legend = c("Meme NEG", "Sortie NEG suivant", "Sortie autre NEG", "Sortie NA"), 
+          args.legend = list(x = "bottomright"))
+  dev.off() 
+  
+
+}  
+  
+  
+      
+      sub_data = sub_data[which(sub_data$cum_sum_change <= 1),]
+      sub_data$cum_sum_change = ave(sub_data$change_neg_bef, sub_data$ident, FUN= cumsum)
+      sub_data$a = 1
+      sub_data$count_neg     = ave(sub_data$a, list(sub_data$ident, sub_data$c_neg), FUN = sum)
+      data_ind  <- sub_data[which(!duplicated(sub_data$ident)),]
+      
+      count = length(data_ind$ident)
+      for (t in y:length(years))
+      {
+        surv[n, y, t] = count
+        surv_rel[n, y, t] = 100*count/length(data_ind$ident)
+        count = count - length(which(data_ind$count_neg == t - y + 1))  
+      }
+    }
+    pdf(paste0(fig_path,"survival_",c,"_",n,".pdf"))
+    n_col <- colorRampPalette(c("black", "grey80"))(length(years)) 
+    type = rep(c(1,2),5)
+    layout(matrix(c(1, 2, 3), nrow=3,ncol=1, byrow=TRUE), heights=c(3, 3,1))
+    par(mar=c(4.1,4.1,0.2,0.2))
+    # Nb
+    table = surv[1, ,]
+    plot  (years,rep(NA,length(years)),ylim=c(min(table, na.rm = T),max(table, na.rm = T)),ylab="Nb d'individus",xlab="Annee")
+    for (a in 1:length(years))
+    {
+      lines(years,table[a, ],col=n_col[a],lwd=3, lty = type[a]) 
+    }
+    # %
+    table = surv_rel[1, ,]
+    plot  (years,rep(NA,length(years)),ylim=c(min(table, na.rm = T),max(table, na.rm = T)),ylab="% d'individus",xlab="Annee")
+    for (a in 1:length(years))
+    {
+      lines(years,table[a, ],col=n_col[a],lwd=3, lty = type[a]) 
+    }
+    
+    par(mar=c(0,0,0,0),font=1.5)
+    plot.new()
+    legend("center",legend=years, title = "Annee d'entree dans le grade:",
+           col=n_col,lty=type[1:length(years)],lwd=3,cex=1.3, ncol=4, bty = "n")
+    dev.off()
 }
 
-par(mar=c(0,0,0,0),font=1.5)
-plot.new()
-legend("center",legend=years, title = "Annee d'entree dans le grade:",
-       col=n_col,lty=type[1:length(years)],lwd=3,cex=1.3, ncol=4, bty = "n")
-dev.off()
-
-}
 
 
 
