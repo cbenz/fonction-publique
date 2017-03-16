@@ -135,18 +135,26 @@ def format_fixed(file_path = None, clean_directory_path = None, debug = False, c
     generation = get_subset('generation', file_path, debug = debug, chunksize = chunksize)
     generation.ident = generation.ident.astype('int')
     generation.generation = generation.generation.astype('int32')
+    # Sexe
+    sexe = get_subset('SEXE', file_path, debug = debug, chunksize = chunksize)
+    sexe.ident = sexe.ident.astype('int')
+    sexe['sexe'] = sexe.SEXE
+    del sexe['SEXE']
     # Anne affilation
     an_aff = get_subset('an_aff_red2', file_path, debug = debug, chunksize = chunksize)
     an_aff.ident = an_aff.ident.astype('int')
-    an_aff.an_aff = an_aff.an_aff_red2.astype('int32', coerce)
+    an_aff['an_aff'] = an_aff.an_aff_red2.astype('int32', coerce)
     del an_aff['an_aff_red2']
     careers_hdf_path = get_careers_hdf_path(clean_directory_path, file_path, debug)
     if not os.path.exists(os.path.dirname(careers_hdf_path)):
         log.info('{} is not a valid path. Creating it'.format(os.path.dirname(careers_hdf_path)))
         os.makedirs(os.path.dirname(careers_hdf_path))
     generation.to_hdf(careers_hdf_path, 'generation', format = 'table', data_columns = True)
-    an_aff.to_hdf(careers_hdf_path, 'an_aff', format = 'table', data_columns = True)
     log.info('generation was added to carriere')
+    an_aff.to_hdf(careers_hdf_path, 'an_aff', format = 'table', data_columns = True)
+    log.info('an_aff was added to carriere')
+    sexe.to_hdf(careers_hdf_path, 'sexe', format = 'table', data_columns = True)
+    log.info('sexe was added to carriere')
 
 
 def main(raw_directory_path = None, clean_directory_path = None, debug = None, chunksize = None, subset_data = None,
