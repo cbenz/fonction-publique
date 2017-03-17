@@ -7,7 +7,7 @@
 
 
 # path
-place = "mac"
+place = "ipp"
 if (place == "ipp"){
 data_path = "M:/CNRACL/output/"
 git_path =  'U:/Projets/CNRACL/fonction-publique/fonction_publique/'
@@ -611,19 +611,20 @@ distrib_next_AT2[1,4] = mean(data$ind_exit3[which(is.na(data$echelon4))])
 n_col = c("black", "grey40", "grey60", "grey80") 
 pdf(paste0(fig_path,"next_AT2.pdf"))
 layout(matrix(c(1, 2), nrow=2,ncol=1, byrow=TRUE), heights=c(5,1))
-par(mar=c(3,3,1,1))
+par(mar=c(4,3,1,1))
 barplot(t(distrib_next_AT2), col = n_col,
+        xlab = "Echelon",
         names.arg = c("NA", seq(1,11,1)), ylim = c(0.5, 1), xpd = FALSE,
         args.legend = list(x = "bottomright"))
 par(mar=c(0,0,0,0),font=1.5)
 plot.new()
-legend("center",legend=c("AT2", "AT1", "Manquant", "Autre"), title = "Grade à l'année suivante :",
+legend("center",legend=c("AT2", "AT1", "Manquant", "Autre"), title = "Grade a l'annee suivante :",
        fill= n_col, cex=1, ncol = 4, bty = "n")
 dev.off() 
 
 
 
-# AT2
+# AT1
 distrib_next_AT1 = matrix(ncol = 4, nrow = 13)
 
 data = data_clean[which(data_clean$c_neg == list_neg_AT[2] & 
@@ -645,13 +646,14 @@ distrib_next_AT1[1,4] = mean(data$ind_exit3[which(is.na(data$echelon4))])
 n_col = c("black", "grey40", "grey60", "grey80") 
 pdf(paste0(fig_path,"next_AT1.pdf"))
 layout(matrix(c(1, 2), nrow=2,ncol=1, byrow=TRUE), heights=c(5,1))
-par(mar=c(3,3,1,1))
+par(mar=c(4,3,1,1))
 barplot(t(distrib_next_AT1), col = n_col,
+        xlab = "Echelon",
         names.arg = c("NA", seq(1,12,1)), ylim = c(0.5, 1), xpd = FALSE,
         args.legend = list(x = "bottomright"))
 par(mar=c(0,0,0,0),font=1.5)
 plot.new()
-legend("center",legend=c("AT1", "ATP2", "Manquant", "Autre"), title = "Grade à l'année suivante :",
+legend("center",legend=c("AT1", "ATP2", "Manquant", "Autre"), title = "Grade a l'annee suivante :",
        fill= n_col, cex=1, ncol = 4, bty = "n")
 dev.off() 
 
@@ -665,27 +667,28 @@ t / length(data_clean[which(data_clean$c_neg == 794 & data_clean$change_neg_next
 ### Grid graphes: ###
 # Sous pop: toute carriere dans AT, 100 individus. 
 
+data_clean_AT$change_neg_bef[which(is.na(data_clean_AT$change_neg_bef))] = 0
+data_clean_AT$tot_change = ave(data_clean_AT$change_neg_bef, data_clean_AT$ident, FUN=sum, na.rm = T)
 
-list_drop = unique(data_cleaned$ident[which(data_cleaned$c_neg != 0 & !is.element(data_cleaned$c_neg, list_neg))])
-list_keep = unique(data_cleaned$ident[which(data_cleaned$count_AT >= 8 & data_cleaned$count == data_cleaned$count_AT )])
+list_drop = unique(data_clean_AT$ident[which(data_clean_AT$c_neg != 0 & !is.element(data_clean_AT$c_neg, list_neg_AT))])
+list_keep = data_clean_AT$ident[which(data_clean_AT$an_aff == 2007 & data_clean_AT$c_neg == 793 & data_clean_AT$annee == 2007 & data_clean_AT$tot_change > 0)]
+sub_ident = setdiff(list_keep, list_drop)
 
-list = setdiff(list_keep, list_drop)
-sub = sample(list , 100)
-sub_data = data_cleaned[which(is.element(data_cleaned$ident, sub) & data_cleaned$annee > 2006), c("ident", "c_neg", "ib", "annee", "count_AT", "first_AT")]
+
+sub = sample(sub_ident , 20)
+sub_data = data_clean_AT[which(is.element(data_clean_AT$ident, sub) & data_clean_AT$annee > 2006),]
 sub_data$bef_neg  <-ave(sub_data$c_neg, sub_data$ident, FUN=shiftm1)
 sub_data$change_neg_bef  <- ifelse(sub_data$c_neg == sub_data$bef_neg, 0, 1)
-sub_data$ib_change <- sub_data$change_neg_bef*sub_data$ib
-sub_data$ib_change[sub_data$first_AT == 1] = 0
+sub_data$ib_change <- sub_data$change_neg_bef*sub_data$ib4
 
 
-data1 = sub_data[, c("ident", 'annee', "ib")]; data1$indice = data1$ib
+data1 = sub_data[, c("ident", 'annee', "ib4")]; data1$indice = data1$ib4
 data2 = sub_data[, c("ident", 'annee', "ib_change")]; data2$indice = data2$ib_change
 lim = range(data1$ib[data1$ib>0])
 
 pdf(paste0(fig_path,"trajectoires.pdf"))
 ggplot(data = data1, aes(x = annee, y = indice)) + geom_line() + geom_point(data=data2, shape = 21, fill = "red")+
   ylim(lim[1], lim[2]) + facet_wrap(~ident) + 
-theme(strip.background = element_blank(), strip.text = element_blank(), axis.text.x=element_blank())
+  theme(strip.background = element_blank(), strip.text = element_blank(), axis.text.x=element_blank())
 dev.off()
-
 
