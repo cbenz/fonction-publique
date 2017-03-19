@@ -7,7 +7,7 @@
 
 
 # path
-place = "ipp"
+place = "mac"
 if (place == "ipp"){
 data_path = "M:/CNRACL/output/"
 git_path =  'U:/Projets/CNRACL/fonction-publique/fonction_publique/'
@@ -127,6 +127,8 @@ data_clean_AA <- data_clean(data_all_AA, list_neg_AA)
 
 #### II.1 Sample selection ####
 
+data_all = data_all_AT
+
 size_sample = matrix(ncol = 2, nrow = 4)
 
 list1 = data_all$ident[which(data_all$statut != "" & data_all$libemploi == ''  & data_all$annee>= 2007)]
@@ -140,7 +142,7 @@ length(which(is.na(data_all$echelon) & is.element(data_all$c_neg, c(794))))/ len
 length(which(is.na(data_all$echelon) & is.element(data_all$c_neg, c(795))))/ length(which(is.element(data_all$c_neg, c(795))))
 length(which(is.na(data_all$echelon) & is.element(data_all$c_neg, c(796))))/ length(which(is.element(data_all$c_neg, c(796))))
 
-for (d in 1:3)
+for (d in 1:4)
 {
 if (d == 1){dataset = data_all}
 if (d == 2){dataset = dataset[-which(is.element(dataset$ident, list1)),]}
@@ -188,10 +190,8 @@ print(xtable(table,align="l|cccccc",nrow = nrow(table), ncol=ncol(table)+1, byro
 
 
 ### II.2.2 Proportion des changements de grade par annee ###
-
+# Sans filtre
 data_all =  data_all_AA
-
-
 years = 2008:2015
 evo = matrix(ncol = length(years), nrow = 4)
 for (y in 1:length(years))
@@ -212,6 +212,54 @@ table = evo
 print(xtable(table,align="ccccccccc",nrow = nrow(table), ncol=ncol(table)+1, byrow=T),
      sanitize.text.function=identity,size="\\footnotesize", only.contents=T)
 
+# Avec filtre F1 et F2
+list1 = data_all_AT$ident[which(data_all_AT$statut != '' & data_all_AT$libemploi == '')]
+list2 = data_all_AT$ident[which(data_all_AT$c_neg == 0 & data_all_AT$libemploi != '')]
+data_all =  data_all_AT[which(!is.element(data_all_AT$ident, union(list1,list2))),]  
+
+years = 2008:2015
+evo = matrix(ncol = length(years), nrow = 4)
+for (y in 1:length(years))
+{
+  data1 = data_all[which(data_all$annee == years[y]), ]
+  data2 = data1[which(data1$bef_neg != 0), ]
+  data3 = data1[which(data1$bef_neg != 0 & data1$c_neg != 0), ]
+  denom = length(data1$change_neg_bef) 
+  evo[1, y] = length(which(data1$change_neg_bef == 1))/denom
+  evo[2, y] = length(which(data1$change_neg_bef == 1 & data1$bef_neg == 0))/denom
+  evo[3, y] = length(which(data1$change_neg_bef == 1 & data1$c_neg == 0))/denom
+  evo[4, y] = length(which(data1$change_neg_bef == 1 & data1$c_neg != 0 & data1$bef_neg  != 0))/denom
+}
+colnames(evo) <- years
+rownames(evo) <- c("% changement de grade", "% chgt avec NA en n-1",
+                   "% chgt avec NA en n", "Chgt de grade a grade")
+table = evo
+print(xtable(table,align="ccccccccc",nrow = nrow(table), ncol=ncol(table)+1, byrow=T),
+      sanitize.text.function=identity,size="\\footnotesize", only.contents=T)
+
+
+# Avec filtre F1 et F2 et F3
+data_all =  data_clean_AT  
+
+years = 2008:2015
+evo = matrix(ncol = length(years), nrow = 4)
+for (y in 1:length(years))
+{
+  data1 = data_all[which(data_all$annee == years[y]), ]
+  data2 = data1[which(data1$bef_neg != 0), ]
+  data3 = data1[which(data1$bef_neg != 0 & data1$c_neg != 0), ]
+  denom = length(data1$change_neg_bef) 
+  evo[1, y] = length(which(data1$change_neg_bef == 1))/denom
+  evo[2, y] = length(which(data1$change_neg_bef == 1 & data1$bef_neg == 0))/denom
+  evo[3, y] = length(which(data1$change_neg_bef == 1 & data1$c_neg == 0))/denom
+  evo[4, y] = length(which(data1$change_neg_bef == 1 & data1$c_neg != 0 & data1$bef_neg  != 0))/denom
+}
+colnames(evo) <- years
+rownames(evo) <- c("% tout type", "% de NA a grade",
+                   "% de grade a NA", "% de grade a grade")
+table = evo
+print(xtable(table,align="ccccccccc",nrow = nrow(table), ncol=ncol(table)+1, byrow=T),
+      sanitize.text.function=identity,size="\\footnotesize", only.contents=T)
 
 
 # Baisse echelon dans meme grade
@@ -226,7 +274,7 @@ View(data_cleaned[list, c('ident', 'annee', 'c_neg', 'echelon', 'next_neg', 'nex
 
 
 
-### II.2.3 Répartition des erreurs entre individus ###
+### II.2.3 R?partition des erreurs entre individus ###
 
 
 
@@ -235,7 +283,7 @@ View(data_cleaned[list, c('ident', 'annee', 'c_neg', 'echelon', 'next_neg', 'nex
 
 #### III.1 Trajectories ####
 
-# Sous pop: toute la carrière dans le corps, pas de missing. 
+# Sous pop: toute la carri?re dans le corps, pas de missing. 
 
 #data_clean_AT$change_neg_bef[which(is.na(data_clean_AT$change_neg_bef))] = 0
 #data_clean_AT$tot_change = ave(data_clean_AT$change_neg_bef, data_clean_AT$ident, FUN=sum, na.rm = T)
@@ -453,7 +501,7 @@ for (t in y:length(years))
   
   data = data_clean_AT
   
-  years = c(2010:2015)
+  years = c(2008:2015)
   state =     matrix(nrow = 4, ncol = length(years))
   state_rel = matrix(nrow = 4, ncol = length(years))
   state_rel_elig = matrix(nrow = 4, ncol = length(years))
@@ -729,7 +777,7 @@ data$cumsum  <- ave(data$change_ech,data$ident,FUN=cumsum)
 data$tot     <- ave(data$change_ech,data$ident,FUN=sum)
 
 
-# Pop: changement d'échelon entre 2011 et 2012: 
+# Pop: changement d'?chelon entre 2011 et 2012: 
 list_keep = data$ident[which(data$annee == 2012 & data$cumsum == 2)]
 data2 = data[which(is.element(data$ident, list_keep)),]
 data2 = data2[which(data2$tot > 2 & data2$cumsum == 2), ]
@@ -747,7 +795,7 @@ hist(datai$tot,
      xlim=c(1,15))
 
 
-# Différenciation par neg et echelon
+# Diff?renciation par neg et echelon
 list_keep = data$ident[which(data$annee == 2012 & data$cumsum == 2 & data$c_neg == 793)]
 data2 = data[which(is.element(data$ident, list_keep)),]
 data2 = data[which(data$tot > 2 & data$cumsum == 2), ]
@@ -802,7 +850,7 @@ dev.off()
 
 
 
-## Vitesse individuelle: distribution durée dans grade 4 pour ceux qui ont été rapide/lent dans grade 3.
+## Vitesse individuelle: distribution dur?e dans grade 4 pour ceux qui ont ?t? rapide/lent dans grade 3.
 list_ident1 = data$ident[which(data$annee == 2012 & data$cumsum == 2 & data$c_neg == 793 & data$ech == 3)]
 list_ident2 = data$ident[which(data$cumsum == 3 & data$c_neg == 793 & data$ech == 4)]
 list_keep = intersect(list_ident1, list_ident2)
@@ -834,7 +882,7 @@ axis(side=1,at=h$breaks[c(2,4,6,8,10,12,14,16)],labels=(h$breaks*3)[c(2,4,6,8,10
 
 
 
-# Distribution nombre d'échelons par individus (vitesse)
+# Distribution nombre d'?chelons par individus (vitesse)
 datai = data[which(data$annee == 2012 & data$trimestre == 4 & data$cumsum ==2), ]
 table(datai$tot)
 
