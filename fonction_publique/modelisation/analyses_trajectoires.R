@@ -41,6 +41,11 @@ sub_data_ES = mainAA[which(is.element(mainES$ident, sample(unique(mainES$ident),
 
 data_wod <- function(data, list_neg) 
 {
+  # Remove duplicates (why not in select_table?)
+  di = data[data$annee == 2015,]
+  dup = di$ident[duplicated(di$ident)]
+  data = data[which(!is.element(data$ident, dup)), ]
+
   data$libemploi = as.character(data$libemploi)
   data$c_neg = as.numeric(format(data$c_neg))
   data$c_neg[which(is.na(data$c_neg))] <- 0
@@ -53,6 +58,10 @@ data_wod <- function(data, list_neg)
   data$last  <- ifelse(data$b==data$c,1,0)
   data$count = data$b
   data <- data[, !names(data) %in% c('a', 'b', 'c')]
+  
+
+  
+  
   # AT variables
   data$ind_AT = ifelse(is.element(data$c_neg, list_neg), 1, 0) 
   data$a = ave(data$ind_AT,data$ident,FUN=cumsum)
@@ -114,9 +123,9 @@ data_all_AA   <- data_wod(data = mainAA, list_neg = list_neg_AA)
 data_clean_AA <- data_clean(data_all_AA, list_neg_AA)
 
 
-#### II. Descriptive statistics ####
+#### II. Data analysis ####
 
-### II.1 Sample selection ###
+#### II.1 Sample selection ####
 
 size_sample = matrix(ncol = 2, nrow = 4)
 
@@ -151,10 +160,12 @@ print(xtable(size_sample,align="l|cc",nrow = nrow(table), ncol=ncol(table)+1, by
       hline.after=c(0,1,4), sanitize.text.function=identity,size="\\footnotesize", only.contents=T)
 
 
-### II.2 Qualite des donness  ###
+#### II.2 Data quality  ####
 
-# Qualite: proportion des missing echelon par annee
+### II.2.1 proportion des missing echelon par annee ###
 list_neg = list_neg_AT
+data_all = data_all_AT
+
 years = 2007:2015
 missing = matrix(ncol = 6, nrow = length(years))
 for (y in 1:length(years))
@@ -175,12 +186,17 @@ table = missing
 print(xtable(table,align="l|cccccc",nrow = nrow(table), ncol=ncol(table)+1, byrow=T),
       sanitize.text.function=identity,size="\\footnotesize", only.contents=T)
 
-# Passage de 2010 Ã  2011
+
+### II.2.2 Proportion des changements de grade par annee ###
+
+data_all =  data_all_AA
+
+
 years = 2008:2015
 evo = matrix(ncol = length(years), nrow = 4)
 for (y in 1:length(years))
 {
-data1 = data_all_AT[which(data_all_AT$annee == years[y]), ]
+data1 = data_all[which(data_all$annee == years[y]), ]
 data2 = data1[which(data1$bef_neg != 0), ]
 data3 = data1[which(data1$bef_neg != 0 & data1$c_neg != 0), ]
 denom = length(data1$change_neg_bef) 
@@ -191,12 +207,14 @@ evo[4, y] = length(which(data1$change_neg_bef == 1 & data1$c_neg != 0 & data1$be
 }
 colnames(evo) <- years
 rownames(evo) <- c("% changement de grade", "% chgt avec NA en n-1",
-                   "% chgt avec NA en n", "Chgt de grade Ã  grade")
+                   "% chgt avec NA en n", "Chgt de grade a grade")
 table = evo
 print(xtable(table,align="ccccccccc",nrow = nrow(table), ncol=ncol(table)+1, byrow=T),
      sanitize.text.function=identity,size="\\footnotesize", only.contents=T)
 
-# Baisse Ã©chelon dans meme grade
+
+
+# Baisse echelon dans meme grade
 list = which(is.element(data$c_neg, list_neg) &
              data$c_neg == data$next_neg & 
              !is.na(data$echelon4) & !is.na(data$next_ech) & 
@@ -205,12 +223,74 @@ list = which(is.element(data$c_neg, list_neg) &
 
 View(data_cleaned[list, c('ident', 'annee', 'c_neg', 'echelon', 'next_neg', 'next_neg2', 'bef_neg', 'bef_neg2', 'change_neg_next', 'change_neg_next')])
 
-# Dispersion des erreurs entre individus
+
+
+
+### II.2.3 Répartition des erreurs entre individus ###
+
+
 
 
 #### III. Statistiques descriptives ####
 
-# Proportion of each type
+#### III.1 Trajectories ####
+
+# Sous pop: toute la carrière dans le corps, pas de missing. 
+
+#data_clean_AT$change_neg_bef[which(is.na(data_clean_AT$change_neg_bef))] = 0
+#data_clean_AT$tot_change = ave(data_clean_AT$change_neg_bef, data_clean_AT$ident, FUN=sum, na.rm = T)
+
+list_drop1 = unique(data_clean_AT$ident[which(!is.element(data_clean_AT$c_neg, list_neg_AT) & data_clean_AT$annee > 2006)])
+list_drop2 = unique(data_clean_AT$ident[which(data_clean_AT$ib4 == 0 & data_clean_AT$annee > 2006)])
+list_keep = data_clean_AT$ident[which(data_clean_AT$an_aff == 2007 & data_clean_AT$c_neg == 793 & data_clean_AT$annee == 2007)]
+sub_ident = setdiff(list_keep, union(list_drop1, list_drop2))
+
+sub = sample(sub_ident , 16)
+sub_data = data_clean_AT[which(is.element(data_clean_AT$ident, sub) & data_clean_AT$annee > 2006),]
+
+# Ind change grade
+sub_data$bef_neg  <-ave(sub_data$c_neg, sub_data$ident, FUN=shiftm1)
+sub_data$change_neg_bef  <- ifelse(sub_data$c_neg == sub_data$bef_neg, 0, 1)
+sub_data$ib_change1 <- sub_data$change_neg_bef*sub_data$ib4
+# Ind change grille 
+sub_data$change_grille  <- ifelse(is.element(sub_data$annee, c(2006, 2008, 2014, 2015)), 1, 0)
+sub_data$ib_change2 <- sub_data$change_grille*sub_data$ib4
+
+
+data1 = sub_data[, c("ident", 'annee', "ib4")]; data1$indice = data1$ib4
+data2 = sub_data[, c("ident", 'annee', "ib_change1")]; data2$indice = data2$ib_change1
+data3 = sub_data[, c("ident", 'annee', "ib_change2")]; data3$indice = data3$ib_change2
+lim = range(data1$ib[data1$ib4>0])
+
+pdf(paste0(fig_path,"trajectoires.pdf"))
+ggplot(data = data1, aes(x = annee, y = indice)) + geom_line() + 
+  geom_point(data=data3, shape = 22, fill = "blue")+
+  geom_point(data=data2, shape = 21, fill = "red")+
+  ylim(lim[1], lim[2]) + 
+  theme(strip.background = element_blank(), strip.text = element_blank(), axis.text.x=element_blank()) + 
+  facet_wrap(~ident,  ncol = 4)
+dev.off()
+
+
+load  ( (paste0("U:/PENSIPP 0.1/Modele/Outils/OutilsBio/BiosDestinie2-old.RData"        )) ) 
+sub_ident = which(anaiss == 90 & salaire[, 120]>0 & salaire[, 121]>0 & salaire[, 122]>0 & salaire[, 124]>0& salaire[, 125] >0 &
+                                 salaire[, 126]>0 & salaire[, 127]>0 & salaire[, 128] >0 & salaire[, 129]>0)
+sub = sample(sub_ident , 4)
+sub_data = as.data.frame(salaire[sub,120:129])
+sub_data$ident = 1:nrow(sub_data)
+colnames(sub_data) = paste0("age_",seq(20,29,1)) 
+sub_data2 = reshape(sub_data, idvar = "ident", varying = list(1:10) , direction = "long", sep = "_",  v.names = "salaire", timevar = "age")
+#lim = range(sub_data[sub_data2>2000])
+pdf(paste0(fig_path,"trajectoires_D.pdf"))
+ggplot(data = sub_data2, aes(x = age, y = salaire)) + geom_line() + 
+  ylim(lim[1], lim[2]) + 
+  theme(strip.background = element_blank(), strip.text = element_blank(), axis.text.x=element_blank()) + 
+  facet_wrap(~ident,  ncol = 4)
+dev.off()
+
+
+
+#### III.2 Grade of entry and exit #### 
 
 list1 = data_all_AT$ident[which(data_all_AT$statut != '' & data_all_AT$libemploi == '')]
 list2 = data_all_AT$ident[which(data_all_AT$c_neg == 0 & data_all_AT$libemploi != '')]
@@ -278,100 +358,11 @@ print(xtable(table,align="l|cccc",nrow = nrow(table), ncol=ncol(table)+1, byrow=
       sanitize.text.function=identity,size="\\footnotesize", only.contents=T)
 
 
-#### II.2 Retrouver graphe PJ (proba de sortir selon echelon pour une ann?e donn?e) ####
-list1 = data_all_AT$ident[which(data_all_AT$statut != '' & data_all_AT$libemploi == '')]
-list2 = data_all_AT$ident[which(data_all_AT$c_neg == 0 & data_all_AT$libemploi != '')]
-data_clean =  data_all_AT[which(!is.element(data_all_AT$ident, union(list1,list2))),]  
-
-data = data_clean[which(data_clean$c_neg == 793 & 
-                        data_clean$annee >= 2011 & data_clean$annee <= 2014),]
-
-table(data$echelon4)/length(data$echelon4)
-table(data$echelon4[which(data$change_neg_next==1)])/length(data$echelon4[which(data$change_neg_next==1)])
-table(data$echelon4[which(data$next_neg == 794)])/length(data$echelon4[which(data$next_neg == 794)])
-
-data = data_clean[which(data_clean$c_neg == 794 & 
-                          data_clean$annee >= 2011 & data_clean$annee <= 2014),]
-
-table(data$echelon4)/length(data$echelon4)
-table(data$echelon4[which(data$change_neg_next==1)])/length(data$echelon4[which(data$change_neg_next==1)])
-table(data$echelon4[which(data$next_neg == 795)])/length(data$echelon4[which(data$next_neg == 794)])
-
-#### II.3 Distribution of time spent in corps and echelon ####
-
-## Proba de quitter le corps par echelon (survival)
-exit_rate  = matrix(ncol = 11, nrow = 4)
-surv_rate  = matrix(ncol = 11, nrow = 4)
-exit_rate2 = matrix(ncol = 11, nrow = 4)
-surv_rate2 = matrix(ncol = 11, nrow = 4)
-
-table(data_cleaned$echelon[which(data_cleaned$c_neg == 794)])
-table(data_cleaned$echelon[which(data_cleaned$c_neg == 793)])
 
 
-for (e in seq(1,11,1))
-{
-for (n in seq(1,4,1))
-{
-exit_rate[n, e] = length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee<2015 & data_cleaned$change_neg_next == 1 ))/ 
-                  length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee<2015))
-surv_rate[n, e] = length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee>2007 & data_cleaned$change_neg_bef == 1 ))/ 
-                  length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee>2007))  
-exit_rate2[n, e] = length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee>2011 & data_cleaned$annee<2015 & data_cleaned$change_neg_next == 1 ))/ 
-                   length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e  & data_cleaned$annee>2011 & data_cleaned$annee<2015))
-surv_rate2[n, e] = length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee>2007 & data_cleaned$change_neg_bef == 1 ))/ 
-                   length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee>2007))  
-}
-}
+#### III.3 Survival analysis ####
 
-View(data_cleaned[, c('ident', 'annee', 'c_neg', 'echelon1', 'echelon4', 'ib', 'next_neg', 'next_neg2', 'bef_neg', 'bef_neg2', 'change_neg_next', 'change_neg_next')])
-
-
-# Time spent in echelon and grade 
-data$a = 1
-data$count_neg     = ave(data$a, list(data$ident, data$c_neg), FUN = sum)
-data$count_echelon = ave(data$a, list(data$ident, data$c_neg, data$echelon), FUN = sum)
-# Change echlon
-data$bef_ech  <-ave(data$echelon, list(data$ident, data$c_neg), FUN=shiftm1)
-data$change_neg_next <- ifelse(data$c_neg == data$next_neg, 0, 1)
-
-
-
-data_all = data[which(data$count_AT == 9 & data$count_lib == 9 & data$count_missing_ech == 0), ]
-
-# Distribution de l'echelon a l'entre dans corps
-
-entry_echelon_AT2 = data$echelon[which(data$change_neg_bef ==1  & 
-                                       data$c_neg == list_neg[1] & 
-                                       data$annee > 2012)] 
-entry_echelon_AT1 = data$echelon[which(data$change_neg_bef ==1  & 
-                                         data$c_neg == list_neg[2] & 
-                                         data$annee > 2012)] 
-entry_echelon_ATP2 = data$echelon[which(data$change_neg_bef ==1  & 
-                                         data$c_neg == list_neg[3] & 
-                                         data$annee > 2012)] 
-entry_echelon_ATP1 = data$echelon[which(data$change_neg_bef ==1  & 
-                                          data$c_neg == list_neg[4] & 
-                                          data$annee > 2012)] 
-
-View(data[which(is.element(data$ident, data$ident[which(data$change_neg_bef ==1  & 
-                                                          data$c_neg == list_neg[1] & 
-                                                          data$annee > 2008)])),])
-
-View(data[which(is.element(data$ident, data$ident[which(data$change_neg_bef2 ==1  &
-                           data$bef_ind_lib == 0 & data$bef2_ind_lib == 0 &                               
-                           data$c_neg == list_neg[1] & data$annee > 2008)])),])
-                  
-table(entry_echelon_AT2)
-table(entry_echelon_AT1)
-table(entry_echelon_ATP2)
-table(entry_echelon_ATP1)
-
-
-
-#### III. Survival analysis ####
-
-#### III.1 Grade only ####
+### III.3.1  Grade survival rate by entry year ###
 
 list_neg = c(793, 794, 795, 796)
 
@@ -443,18 +434,17 @@ for (t in y:length(years))
          col=n_col,lty=type[1:length(years)],lwd=3,cex=1.3, ncol=4, bty = "n")
   dev.off()
   
-  
-  
 }
 }
 
-#### III.1.2 First  ####
 
+### III.3.2  Grade survival rate by entry year ###
 
-
-  data_all = data_all_AT
-  list_neg = list_neg_AT
-  
+  for (c in c('AA', 'AT'))
+  {
+  if (c == 'AT'){data_all = data_all_AT; list_neg = list_neg_AT}
+  if (c == 'AA'){data_all = data_all_AA; list_neg = list_neg_AA}
+  if (c == 'ES'){data_all = data_all_ES; list_neg = list_neg_ES}  
   
   list1 = data_all$ident[which(data_all$c_neg == 0 & data_all$libemploi != '')]
   list2 = data_all$ident[which(data_all$statut != '' & data_all$libemploi == '')]
@@ -469,13 +459,15 @@ for (t in y:length(years))
   state_rel_elig = matrix(nrow = 4, ncol = length(years))
   state_rel_noelig = matrix(nrow = 4, ncol = length(years))
 
-  list_keep1 = unique(data$ident[which(data$c_neg == list_neg[1] & data$annee == 2009 & data$an_aff == 2009)]) 
+  list_keep1 = unique(data$ident[which(data$c_neg == list_neg[1] & data$annee == 2007 & data$an_aff == 2007)]) 
  # list_keep1 = unique(data$ident[which(data$bef_lib == '' & data$bef_lib2 == '' & data$c_neg == list_neg[1] & data$annee == 2007)])  
-  sub_data = data[which(is.element(data$ident, list_keep1) & data$annee >= 2009), c("ident", "annee", "c_neg", "bef_neg", "echelon", "echelon4", "libemploi", "change_neg_bef", "change_neg_next")] 
+  sub_data = data[which(is.element(data$ident, list_keep1) & data$annee >= 2007), c("ident", "annee", "c_neg", "bef_neg", "echelon", "echelon4", "libemploi", "change_neg_bef", "change_neg_next")] 
   sub_data$bef_ech = ave(sub_data$echelon4, sub_data$ident, FUN=shiftm1)
   
   
   table(data$echelon[which(data$annee == 2007)])
+  
+  
   
   for (y in 1:length(years))
   {
@@ -504,22 +496,30 @@ for (t in y:length(years))
   
   
   pdf(paste0(fig_path,"destination_",c,"_1.pdf"))
-  par(mar=c(4.1,4.1,0.2,0.2))
-  barplot(state_rel, names.arg = years, 
-          legend = c("Meme NEG", "Sortie NEG suivant", "Sortie autre NEG", "Sortie NA"), 
+  n_col = c("black", "grey40", "grey60", "grey80") 
+  layout(matrix(c(1, 2), nrow=2,ncol=1, byrow=TRUE), heights=c(5,1))
+  par(mar=c(2,2.5,1,1))
+  barplot(state_rel, names.arg = years, col = n_col,
           args.legend = list(x = "bottomright"))
-  dev.off() 
-  
-
-  barplot(state_rel_elig, names.arg = years, 
-          legend = c("Meme NEG", "Sortie NEG suivant", "Sortie autre NEG", "Sortie NA"), 
-          args.legend = list(x = "bottomright"))
-  barplot(state_rel_noelig, names.arg = years, 
-          legend = c("Meme NEG", "Sortie NEG suivant", "Sortie autre NEG", "Sortie NA"), 
-          args.legend = list(x = "bottomright"))
-  
+  par(mar=c(0,0,0,0),font=1)
+  plot.new()
+  legend("center",legend=c("Meme NEG", "Sortie NEG suivant", "Sortie autre NEG", "Sortie NA"),
+         fill= n_col, cex=1, ncol = 2, bty = "n")
+  dev.off()
 }  
   
+  
+  
+  layout(matrix(c(1, 2), nrow=2,ncol=1, byrow=TRUE), heights=c(5,1))
+  par(mar=c(4,3,1,1))
+  barplot(t(distrib_next_AT2), col = n_col,
+          xlab = "Echelon",
+          names.arg = c("NA", seq(1,11,1)), ylim = c(0.5, 1), xpd = FALSE,
+          args.legend = list(x = "bottomright"))
+  par(mar=c(0,0,0,0),font=1.5)
+  plot.new()
+
+  dev.off() 
   
       
       sub_data = sub_data[which(sub_data$cum_sum_change <= 1),]
@@ -580,10 +580,11 @@ count = count - length(which(data_ind$count_neg == t))
 plot(time, surv, ylim = c(0, length(data_ind$ident)))
 
 
-#### II.3 Distribution of destination when eligible ####
 
 
-# Distribution of next grade by echelon 
+#### III.4  Distribution of next grade by echelon ####
+
+ 
 list1 = data_all_AT$ident[which(data_all_AT$statut != '' & data_all_AT$libemploi == '')]
 list2 = data_all_AT$ident[which(data_all_AT$c_neg == 0 & data_all_AT$libemploi != '')]
 data_clean =  data_all_AT[which(!is.element(data_all_AT$ident, union(list1,list2))),]  
@@ -662,33 +663,239 @@ t = table(data_clean[which(data_clean$c_neg == 794 & data_clean$change_neg_next 
 t / length(data_clean[which(data_clean$c_neg == 794 & data_clean$change_neg_next == 1 & data_clean$echelon4 == 2 & 
                               data_clean$annee >= 2011 & data_clean$annee < 2015),"next_neg"])
 
-# => A 80% ces dÃ©parts vers "autres grades" correspondent Ã  des dÃ©parts vers le AT2 => bizarre!
-
-### Grid graphes: ###
-# Sous pop: toute carriere dans AT, 100 individus. 
-
-data_clean_AT$change_neg_bef[which(is.na(data_clean_AT$change_neg_bef))] = 0
-data_clean_AT$tot_change = ave(data_clean_AT$change_neg_bef, data_clean_AT$ident, FUN=sum, na.rm = T)
-
-list_drop = unique(data_clean_AT$ident[which(data_clean_AT$c_neg != 0 & !is.element(data_clean_AT$c_neg, list_neg_AT))])
-list_keep = data_clean_AT$ident[which(data_clean_AT$an_aff == 2007 & data_clean_AT$c_neg == 793 & data_clean_AT$annee == 2007 & data_clean_AT$tot_change > 0)]
-sub_ident = setdiff(list_keep, list_drop)
+# => A 80% ces departs vers "autres grades" correspondent a des departs vers le AT2 => bizarre!
 
 
-sub = sample(sub_ident , 20)
-sub_data = data_clean_AT[which(is.element(data_clean_AT$ident, sub) & data_clean_AT$annee > 2006),]
-sub_data$bef_neg  <-ave(sub_data$c_neg, sub_data$ident, FUN=shiftm1)
-sub_data$change_neg_bef  <- ifelse(sub_data$c_neg == sub_data$bef_neg, 0, 1)
-sub_data$ib_change <- sub_data$change_neg_bef*sub_data$ib4
+
+## Distribution de l'echelon a l'entre dans corps ##
+
+list1 = data_all_AT$ident[which(data_all_AT$statut != '' & data_all_AT$libemploi == '')]
+list2 = data_all_AT$ident[which(data_all_AT$c_neg == 0 & data_all_AT$libemploi != '')]
+data_clean =  data_all_AT[which(!is.element(data_all_AT$ident, union(list1,list2))),]  
+
+entry_echelon_AT2 = data$echelon[which(data$change_neg_bef ==1  & 
+                                         data$c_neg == list_neg[1] & 
+                                         data$annee > 2012)] 
+entry_echelon_AT1 = data$echelon[which(data$change_neg_bef ==1  & 
+                                         data$c_neg == list_neg[2] & 
+                                         data$annee > 2012)] 
+entry_echelon_ATP2 = data$echelon[which(data$change_neg_bef ==1  & 
+                                          data$c_neg == list_neg[3] & 
+                                          data$annee > 2012)] 
+entry_echelon_ATP1 = data$echelon[which(data$change_neg_bef ==1  & 
+                                          data$c_neg == list_neg[4] & 
+                                          data$annee > 2012)] 
+
+View(data[which(is.element(data$ident, data$ident[which(data$change_neg_bef ==1  & 
+                                                          data$c_neg == list_neg[1] & 
+                                                          data$annee > 2008)])),])
+
+View(data[which(is.element(data$ident, data$ident[which(data$change_neg_bef2 ==1  &
+                                                          data$bef_ind_lib == 0 & data$bef2_ind_lib == 0 &                               
+                                                          data$c_neg == list_neg[1] & data$annee > 2008)])),])
+
+table(entry_echelon_AT2, useNA = c("always"))/length(entry_echelon_AT2)
+table(entry_echelon_AT1, useNA = c("always"))/length(entry_echelon_AT1)
+table(entry_echelon_ATP2, useNA = c("always"))/length(entry_echelon_ATP2)
+table(entry_echelon_ATP1, useNA = c("always"))/length(entry_echelon_ATP1)
 
 
-data1 = sub_data[, c("ident", 'annee', "ib4")]; data1$indice = data1$ib4
-data2 = sub_data[, c("ident", 'annee', "ib_change")]; data2$indice = data2$ib_change
-lim = range(data1$ib[data1$ib>0])
+#### III.5 Distribution of time spent in grade and echelon ####
 
-pdf(paste0(fig_path,"trajectoires.pdf"))
-ggplot(data = data1, aes(x = annee, y = indice)) + geom_line() + geom_point(data=data2, shape = 21, fill = "red")+
-  ylim(lim[1], lim[2]) + facet_wrap(~ident) + 
-  theme(strip.background = element_blank(), strip.text = element_blank(), axis.text.x=element_blank())
+## III.5.1 Time spent in grade ##
+
+list1 = data_all_AT$ident[which(data_all_AT$statut != '' & data_all_AT$libemploi == '')]
+list2 = data_all_AT$ident[which(data_all_AT$c_neg == 0 & data_all_AT$libemploi != '')]
+data_clean =  data_all_AT[which(!is.element(data_all_AT$ident, union(list1,list2))),] 
+
+data = data[which(data$annee)]
+
+## III.5.1 Time spent in echelon (filter: entering new echelon in 2012) ##
+
+data =  data_clean_AT[which(data_clean_AT$annee >= 2011), c("ident", "annee", "c_neg",'bef_neg' , 'an_aff',
+                                                            "echelon1", "echelon2", "echelon3", "echelon4")] 
+data = reshape(data, idvar = c("ident", "annee"), v.names = "ech", timevar = "trimestre",
+                    varying = c("echelon1", "echelon2", "echelon3", "echelon4") , direction = "long")
+data = data[order(data$ident,data$annee,data$trimestre),]
+
+list = data$ident[which(is.na(data$ech))]
+data = data[which(!is.element(data$ident, list)),]
+
+# Change echelon
+data$bef_ech <-ave(data$ech, data$ident, FUN=shiftm1)
+data$change_ech <- ifelse((data$ech != data$bef_ech), 1, 0)
+data$change_ech[is.na(data$change_ech)] = 1
+data$cumsum  <- ave(data$change_ech,data$ident,FUN=cumsum)
+data$tot     <- ave(data$change_ech,data$ident,FUN=sum)
+
+
+# Pop: changement d'échelon entre 2011 et 2012: 
+list_keep = data$ident[which(data$annee == 2012 & data$cumsum == 2)]
+data2 = data[which(is.element(data$ident, list_keep)),]
+data2 = data2[which(data2$tot > 2 & data2$cumsum == 2), ]
+data2$a = 1
+data2$count = ave(data2$a, data2$ident, FUN=cumsum)
+data2$tot   = ave(data2$a, data2$ident, FUN=sum)
+datai = data2[which(data2$count == 1), ]
+
+table(datai$tot)
+par(mar=c(4,4,0.1,1))
+hist(datai$tot, 
+     xlab="Duree (en trimestre)", ylab = "Frequence", main = "",
+     col="grey50",
+     border="black", 
+     xlim=c(1,15))
+
+
+# Différenciation par neg et echelon
+list_keep = data$ident[which(data$annee == 2012 & data$cumsum == 2 & data$c_neg == 793)]
+data2 = data[which(is.element(data$ident, list_keep)),]
+data2 = data[which(data$tot > 2 & data$cumsum == 2), ]
+data2$a = 1
+data2$count = ave(data2$a, data2$ident, FUN=cumsum)
+data2$tot   = ave(data2$a, data2$ident, FUN=sum)
+datai = data2[which(data2$count == 1), ]
+
+
+table(datai$tot)
+
+pdf(paste0(fig_path,"duree_ech_AT2.pdf"))
+
+layout(matrix(c(1,2,3,4), nrow=2,ncol=2, byrow=TRUE), heights=c(3,3))
+par(mar=c(2,2,2,2))
+h = hist(datai$tot, 
+     xlab="Duree (en trimestre)", ylab = "Frequence", main = "(a) Tous",
+     col="grey50",xaxt="n",
+     border="black", 
+     xlim=c(1,15))
+axis(side=1,at=h$breaks[c(2,4,6,8,10,12,14,16)],labels=(h$breaks*3)[c(2,4,6,8,10,12,14,16)], font = 0.8)
+
+
+table(datai$tot[which(datai$ech >= 2 & datai$ech < 4 )])
+h =hist(datai$tot[which(datai$ech >= 2 & datai$ech < 4 )],  
+     xaxt="n", ylab = "Frequence", main = "(b) Echelons 2 et 3",
+     col="grey50",
+     border="black", 
+     xlim=c(1,15))
+axis(side=1,at=h$breaks[c(2,4,6,8,10,12,14,16)],labels=(h$breaks*3)[c(2,4,6,8,10,12,14,16)], font = 0.8)
+
+
+table(datai$tot[which(datai$ech >= 4 & datai$ech < 7 )])
+h =hist(datai$tot[which(datai$ech >= 4 & datai$ech < 7 )],  
+     xaxt="n", ylab = "Frequence", main = "(c) Echelons 4, 5 et 6",
+     col="grey50",
+     border="black", 
+     xlim=c(1,15))
+axis(side=1,at=h$breaks[c(2,4,6,8,10,12,14,16)],labels=(h$breaks*3)[c(2,4,6,8,10,12,14,16)], font = 0.8)
+
+
+
+table(datai$tot[which(datai$ech >= 7 & datai$ech < 11 )])
+h =hist(datai$tot[which(datai$ech >= 7 & datai$ech < 11 )],  
+     xaxt="n", ylab = "Frequence", main = "(d) Echelons 7, 8, 9 et 10",
+     col="grey50",
+     border="black", 
+     xlim=c(1,15))
+axis(side=1,at=h$breaks[c(2,4,6,8,10,12,14,16)],labels=(h$breaks*3)[c(2,4,6,8,10,12,14,16)], font = 0.8)
+
 dev.off()
+
+
+
+## Vitesse individuelle: distribution durée dans grade 4 pour ceux qui ont été rapide/lent dans grade 3.
+list_ident1 = data$ident[which(data$annee == 2012 & data$cumsum == 2 & data$c_neg == 793 & data$ech == 3)]
+list_ident2 = data$ident[which(data$cumsum == 3 & data$c_neg == 793 & data$ech == 4)]
+list_keep = intersect(list_ident1, list_ident2)
+data2 = data[which(is.element(data$ident, list_keep)),]
+data2 = data[which(data$tot > 2 & data$cumsum == 2), ]
+data2$a = 1
+data2$count = ave(data2$a, data2$ident, FUN=cumsum)
+data2$tot   = ave(data2$a, data2$ident, FUN=sum)
+datai = data2[which(data2$count == 1), ]
+
+
+table(datai$tot)
+
+pdf(paste0(fig_path,"duree_ech_AT2.pdf"))
+
+layout(matrix(c(1,2,3,4), nrow=2,ncol=2, byrow=TRUE), heights=c(3,3))
+par(mar=c(2,2,2,2))
+h = hist(datai$tot, 
+         xlab="Duree (en trimestre)", ylab = "Frequence", main = "(a) Tous",
+         col="grey50",xaxt="n",
+         border="black", 
+         xlim=c(1,15))
+axis(side=1,at=h$breaks[c(2,4,6,8,10,12,14,16)],labels=(h$breaks*3)[c(2,4,6,8,10,12,14,16)], font = 0.8)
+
+
+
+# Pop: aff in 2011 et c_neg == 793
+
+
+
+
+# Distribution nombre d'échelons par individus (vitesse)
+datai = data[which(data$annee == 2012 & data$trimestre == 4 & data$cumsum ==2), ]
+table(datai$tot)
+
+data = mainAT
+data$a = 1
+data$count = ave(data$a, data$ident, FUN = sum)
+table(data$count)
+
+## Proba de quitter le corps par echelon (survival)
+exit_rate  = matrix(ncol = 11, nrow = 4)
+surv_rate  = matrix(ncol = 11, nrow = 4)
+exit_rate2 = matrix(ncol = 11, nrow = 4)
+surv_rate2 = matrix(ncol = 11, nrow = 4)
+
+table(data_cleaned$echelon[which(data_cleaned$c_neg == 794)])
+table(data_cleaned$echelon[which(data_cleaned$c_neg == 793)])
+
+
+for (e in seq(1,11,1))
+{
+  for (n in seq(1,4,1))
+  {
+    exit_rate[n, e] = length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee<2015 & data_cleaned$change_neg_next == 1 ))/ 
+      length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee<2015))
+    surv_rate[n, e] = length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee>2007 & data_cleaned$change_neg_bef == 1 ))/ 
+      length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee>2007))  
+    exit_rate2[n, e] = length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee>2011 & data_cleaned$annee<2015 & data_cleaned$change_neg_next == 1 ))/ 
+      length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e  & data_cleaned$annee>2011 & data_cleaned$annee<2015))
+    surv_rate2[n, e] = length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee>2007 & data_cleaned$change_neg_bef == 1 ))/ 
+      length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee>2007))  
+  }
+}
+
+View(data_cleaned[, c('ident', 'annee', 'c_neg', 'echelon1', 'echelon4', 'ib', 'next_neg', 'next_neg2', 'bef_neg', 'bef_neg2', 'change_neg_next', 'change_neg_next')])
+
+
+
+
+
+data_all = data[which(data$count_AT == 9 & data$count_lib == 9 & data$count_missing_ech == 0), ]
+
+
+##### DIVERS ####
+
+
+list1 = data_all_AT$ident[which(data_all_AT$statut != '' & data_all_AT$libemploi == '')]
+list2 = data_all_AT$ident[which(data_all_AT$c_neg == 0 & data_all_AT$libemploi != '')]
+data_clean =  data_all_AT[which(!is.element(data_all_AT$ident, union(list1,list2))),]  
+
+data = data_clean[which(data_clean$c_neg == 793 & 
+                          data_clean$annee >= 2011 & data_clean$annee <= 2014),]
+
+table(data$echelon4)/length(data$echelon4)
+table(data$echelon4[which(data$change_neg_next==1)])/length(data$echelon4[which(data$change_neg_next==1)])
+table(data$echelon4[which(data$next_neg == 794)])/length(data$echelon4[which(data$next_neg == 794)])
+
+data = data_clean[which(data_clean$c_neg == 794 & 
+                          data_clean$annee >= 2011 & data_clean$annee <= 2014),]
+
+table(data$echelon4)/length(data$echelon4)
+table(data$echelon4[which(data$change_neg_next==1)])/length(data$echelon4[which(data$change_neg_next==1)])
+table(data$echelon4[which(data$next_neg == 795)])/length(data$echelon4[which(data$next_neg == 794)])
+
 

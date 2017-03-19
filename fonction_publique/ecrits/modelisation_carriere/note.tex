@@ -209,20 +209,6 @@ F3: Echelon manquant quand neg dans AT & 1193 & 12 \\
 Estimer les modèles sur une si faible part de la population d'intérêt est susceptible de poser des problèmes, peut-être en termes de nombre d'observations mais surtout en termes de validité externe. Plus la population d'estimation est spécifique, moins la modélisation des comportements est susceptible d'être généralisable à l'ensemble de la population. 
 
 
-Questions et pistes amélioration pour augmenter la taille de l'échantillon retenu pour l'analyse: 
-\begin{itemize}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
-\item Améliorer le remplissage des neg 
-	\begin{enumerate}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
-	\item Poursuivre le matching
-	\item Renseigner des grades à la main 
-	\item Matching sur une sous-population de libellés des individus ayant au moins un NEG dans le corps
-	\end{enumerate}
-\item Correction du grade à partir de l'indice. 
-\item Échelon = - 1?
-\item Utilisation de l'information infra
-\end{itemize}
-
-
 
 
 \subsection{Qualité de l'information avant 2011}
@@ -287,6 +273,19 @@ NB: meme type de résultat pour les AAP1 que pour les ATP1.
 
 
 
+Questions et pistes amélioration pour augmenter la taille de l'échantillon retenu pour l'analyse: 
+\begin{itemize}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
+\item Améliorer le remplissage des neg 
+	\begin{enumerate}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
+	\item Poursuivre le matching
+	\item Renseigner des grades à la main 
+	\item Matching sur une sous-population de libellés des individus ayant au moins un NEG dans le corps
+	\end{enumerate}
+\item Correction du grade à partir de l'indice. 
+\item Échelon = - 1?
+\item Utilisation de l'information infra
+\end{itemize}
+
 
 
 
@@ -299,10 +298,47 @@ Notons que nous ne sommes pas dans un cas de censure totale, puisqu'il est possi
 
 
 
-
+\clearpage
 % Section III: Statistiques descriptives
 \section{Analyse des trajectoires: statistiques descriptives}
 
+
+\subsection{Trajectoires indicaires}
+
+
+
+
+\begin{figure}[ht] 
+\caption{Exemples de trajectoires indicaires}
+\label{trajectories} 
+\includegraphics[width=1\linewidth]{trajectoires.pdf} 
+\begin{minipage}{15cm}
+\footnotesize
+\textsc{Population:} Individus qui font leur entrée dans le régime en 2007 au grade AT2, et qui connaissent toutes leur carrière dans le corps. \\
+\textsc{Note:} Les carrés bleus correspondent à des années de changement de grille, les ronds rouges à des années de changement de grade. 
+\end{minipage}
+\end{figure}
+
+
+
+\begin{figure}[ht] 
+\caption{Exemples de trajectoires salariales projetées dans Destinie}
+\label{trajectories} 
+\includegraphics[width=1\linewidth, height = 0.5\linewidth]{trajectoires_D.pdf} 
+\begin{minipage}{12cm}
+\footnotesize
+\textsc{Population:} Individus nés en 1990 avec des salaires > 0 entre 30 et 40 ans. \\
+\textsc{Source:} Modèle Destinie de l'Insee
+\end{minipage}
+\end{figure}
+
+
+
+
+
+
+
+\clearpage
 \subsection{Grade de provenance et de destination}
 
 
@@ -369,8 +405,89 @@ Parmi ces 24\% de départs depuis le grade AT2 vers des autres grades, la princi
 
 
 
+\begin{figure}[ht] 
+  \caption{Survie dans le grade: Adjoints techniques}
+  \label{echelon_by_neg} 
+  \begin{subfigure}[b]{0.55\linewidth}
+      \caption{Grade AT2} 
+    \label{echelon_by_neg_0} 
+    \centering
+    \includegraphics[width=1\linewidth]{survival_AT_1.pdf} 
+    \vspace{4ex}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.55\linewidth}
+        \caption{Grade AT1} 
+    \label{echelon_by_neg_1} 
+    \centering
+    \includegraphics[width=1\linewidth]{survival_AT_2.pdf} 
+    \vspace{4ex}
+  \end{subfigure} 
+\end{figure}
+\begin{minipage}{12cm}
+\footnotesize
+\textsc{Population:} Filtres F1 et F2. Années 2007 à 2015.
+\textsc{Lecture:} .
+\end{minipage}
 
 
+\begin{figure}[ht] 
+  \caption{Survie dans le grade: Adjoints administratifs}
+  \label{echelon_by_neg} 
+  \begin{subfigure}[b]{0.55\linewidth}
+      \caption{Grade AA2} 
+    \label{echelon_by_neg_0} 
+    \centering
+    \includegraphics[width=1\linewidth]{survival_AA_1.pdf} 
+    \vspace{4ex}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.55\linewidth}
+        \caption{Grade AA1} 
+    \label{echelon_by_neg_1} 
+    \centering
+    \includegraphics[width=1\linewidth]{survival_AA_2.pdf} 
+    \vspace{4ex}
+  \end{subfigure} 
+  \begin{minipage}{12cm}
+\footnotesize
+\textsc{Population:} Filtres F1 et F2. Années 2007 à 2015.
+\textsc{Lecture:} .
+\end{minipage}
+\end{figure}
+
+
+
+
+
+
+
+
+
+\begin{figure}[ht] 
+  \caption{Répartitions des situation à chaque date pour les individus entrant en 2007 et encore présent dans le grade en n-1}
+  \label{echelon_by_neg} 
+  \begin{subfigure}[b]{0.65\linewidth}
+      \caption{Grade AT2 en 2007}
+      \vspace{-0.5cm} 
+    \label{echelon_by_neg_0} 
+    \centering
+    \includegraphics[width=1\linewidth]{destination_AT_1.pdf} 
+  \end{subfigure}
+  \begin{subfigure}[b]{0.65\linewidth}
+      \caption{Grade AA2 en 2007} 
+              \vspace{-0.5cm} 
+    \label{echelon_by_neg_1} 
+    \centering
+    \includegraphics[width=1\linewidth]{destination_AA_1.pdf} 
+    \vspace{4ex}
+  \end{subfigure} 
+\end{figure}
+
+
+
+
+
+
+\clearpage
 \subsection{Probabilité de sortie par échelon}
 
 
@@ -379,14 +496,14 @@ Parmi ces 24\% de départs depuis le grade AT2 vers des autres grades, la princi
 \begin{figure}[ht] 
   \caption{Situation d'une année à l'autre, selon l'échelon}
   \label{echelon_by_neg} 
-  \begin{subfigure}[b]{0.75\linewidth}
+  \begin{subfigure}[b]{0.65\linewidth}
       \caption{Grade AT2 à l'année courante}
       \vspace{-0.5cm} 
     \label{echelon_by_neg_0} 
     \centering
     \includegraphics[width=1\linewidth]{next_AT2.pdf} 
   \end{subfigure}
-  \begin{subfigure}[b]{0.75\linewidth}
+  \begin{subfigure}[b]{0.65\linewidth}
         \caption{Grade AT1 à l'année courante} 
               \vspace{-0.5cm} 
     \label{echelon_by_neg_1} 
@@ -397,9 +514,64 @@ Parmi ces 24\% de départs depuis le grade AT2 vers des autres grades, la princi
 \end{figure}
 
 
+
+
+\clearpage
+\subsection{Vitesse dans le grade et dans l'échelon}
+
+
+\subsubsection*{Vitesse dans le grade}
+
+\subsubsection*{Vitesse dans l'échelon}
+
+Nous nous concentrons sur les années pour lesquelles l'échelon est bien renseigné (2011-2015) et adoptons la stratégie suivante: pour chaque individus de la base après application des filtres F1, F2 et F3, nous calculons la distribution de la durée passée dans l'échelon pour les individus ayant au moins 2 changements d'échelons entre 2011 et 2015. Notons qu'à ce stade, à nouveau, nous considérons séparement les grades et les échelons, de sorte que nous pouvons surestimer la durée passée dans l'échelon (si l'individu change de grade mais reste dans un échelon de même niveau, nous n'identifions pas de changement d'échelon à ce stade). 
+
+
+\begin{table}[h!]
+\label{means}
+\centering
+\caption{Conditions d'avancement pour le grade AT2} 
+\begin{tabular}{l|cc}
+\toprule
+Echelon &  durée min &  durée max \\
+01  &12	&12 \\
+02	&24	&18 \\
+03	&24	&18\\
+04	&36	&24\\
+05	&36	&24 \\
+06	&36	&24 \\
+07	&48	&36 \\
+08	&48	&36 \\
+09	&48	&36 \\
+10	&48	&36	 \\
+%	
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+01	12	12
+02	24	18
+03	24	18
+04	36	24
+05	36	24
+06	36	24
+07	48	36
+08	48	36
+09	48	36
+10	48	36
+
+
+
+
+
+\clearpage
 \section{Premières estimations}
 
 
+
+\clearpage
 \section{Résumé et liste des points à aborder en priorité}
 
 

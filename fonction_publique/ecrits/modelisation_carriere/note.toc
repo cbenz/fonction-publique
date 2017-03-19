@@ -1,11 +1,14 @@
 \select@language {english}
 \select@language {frenchb}
 \contentsline {section}{\numberline {1}Le corps des adjoints techniques}{2}{section.1}
-\contentsline {section}{\numberline {2}Point sur les donn\IeC {\'e}es}{3}{section.2}
-\contentsline {subsection}{\numberline {2.1}S\IeC {\'e}lection de l'\IeC {\'e}chantillon}{3}{subsection.2.1}
-\contentsline {subsection}{\numberline {2.2}Qualit\IeC {\'e} de l'information avant 2011}{4}{subsection.2.2}
-\contentsline {subsection}{\numberline {2.3}Censure des donn\IeC {\'e}es}{5}{subsection.2.3}
-\contentsline {section}{\numberline {3}Analyse des trajectoires: statistiques descriptives}{5}{section.3}
-\contentsline {subsection}{\numberline {3.1}Grade de provenance et de destination}{5}{subsection.3.1}
-\contentsline {subsection}{\numberline {3.2}Survie dans le grade}{6}{subsection.3.2}
-\contentsline {section}{\numberline {4}R\IeC {\'e}sum\IeC {\'e} et liste des points \IeC {\`a} aborder en priorit\IeC {\'e}}{6}{section.4}
+\contentsline {section}{\numberline {2}Point sur les donn\IeC {\'e}es}{5}{section.2}
+\contentsline {subsection}{\numberline {2.1}S\IeC {\'e}lection de l'\IeC {\'e}chantillon}{5}{subsection.2.1}
+\contentsline {subsection}{\numberline {2.2}Qualit\IeC {\'e} de l'information avant 2011}{5}{subsection.2.2}
+\contentsline {subsection}{\numberline {2.3}Censure des donn\IeC {\'e}es}{6}{subsection.2.3}
+\contentsline {section}{\numberline {3}Analyse des trajectoires: statistiques descriptives}{8}{section.3}
+\contentsline {subsection}{\numberline {3.1}Trajectoires indicaires}{8}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Grade de provenance et de destination}{11}{subsection.3.2}
+\contentsline {subsection}{\numberline {3.3}Survie dans le grade}{11}{subsection.3.3}
+\contentsline {subsection}{\numberline {3.4}Probabilit\IeC {\'e} de sortie par \IeC {\'e}chelon}{15}{subsection.3.4}
+\contentsline {section}{\numberline {4}Premi\IeC {\`e}res estimations}{17}{section.4}
+\contentsline {section}{\numberline {5}R\IeC {\'e}sum\IeC {\'e} et liste des points \IeC {\`a} aborder en priorit\IeC {\'e}}{18}{section.5}
