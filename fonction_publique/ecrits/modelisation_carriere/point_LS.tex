@@ -54,155 +54,19 @@
 
 % Section II: Travail sur les données
 \section{Point sur les données}
-
-
-\subsection{Sélection de l'échantillon}
-
-Nous nous concentrons sur les individus, nés entre 1960 et 1999, et ayant passé au moins une année dans l'un des grades du corps. Nous supprimons les individus apparaissant deux fois (environ 250). Nous obtenus un échantillon initial de 546709 individus. 
-
-L'étude des transitions entre grades et échelon nécessite de pouvoir identifier clairement les moments où le grade et l'échelon changent. La difficulté est alors la suivante: une information manquante pour l'une des variables clés rend difficile l'analyse de la séquence globale pour l'individu, car nous ne pouvons différencier une information manquante d'un changement dans la carrière. Le choix est pour l'instant fait de se concentrer sur une population très restrictive, en ne gardant que les individus pour lesquels nous pouvons reconstituer la carrière de manière précise. L'objectif est de se concentrer sur l'aspect modélisation de la question à ce stade. 
-
-Nous appliquons donc les filtres suivants à la base initiale. L'impact sur la taille de l'échantillon de ces filtres successifs est présenté à la table \ref{filters}. 
-\begin{enumerate}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
-\item[F1] Garder uniquement les individus pour lesquels le libemploi n'est pas manquant quand l'indice ou le statut ne sont pas nuls. Nous perdons alors 15\% des individus, ce qui est relativement important par rapport à ce qui était attendu. 
-\item[F2] Garder uniquement individus pour lesquels tous les grades sont renseignés, quand la variable libemploi n'est pas nulle. Cela implique de supprimer tous les individus pour lesquels les procédures d'imputation des libellés n'ont pas permis d'attribuer un grade neg pour chaque libemploi. Nous perdons ainsi 35\% des individus, ce qui était attendu. 
-\end{enumerate}
-
-
-
 \begin{table}[h!]
 \centering
-\caption{Impact des filtres successifs sur la taille de l'échantillon} 
-\label{filters}
-\begin{tabular}{lcc}
+\caption{Proportion de valeurs manquantes par années et par grade} 
+\label{quality1}
+\begin{tabular}{lccccccc}
 \toprule
- & Nb d'individus & \% echantillon initial \\ 
-  \hline
-Echantillon initial & 10000 & 100 \\ 
-F1: Libemploi manquant quand statut non vide & 8595 & 86 \\ 
-  F2: Neg manquant quand libemploi renseigné & 4881 & 49 \\ 
-  F3: Echelon manquant quand neg dans AT & 1193 & 12 \\ 
+ & \%  lib NA & \% neg NA  & \% ech NA & \% ech NA   & \% ech NA   & \% ech NA  & \% ech NA  \\ 
+&(statut rempli) & (lib rempli) & (neg rempli) & AT2 & 794 & 795 & 796 \\
+\midrule 
+\input{Tables/AT_data_quality1.tex} 
 \bottomrule
 \end{tabular}
 \end{table}
-
-
-Estimer les modèles sur une si faible part de la population d'intérêt est susceptible de poser des problèmes, peut-être en termes de nombre d'observations mais surtout en termes de validité externe. Plus la population d'estimation est spécifique, moins la modélisation des comportements est susceptible d'être généralisable à l'ensemble de la population. 
-
-
-Questions et pistes amélioration pour augmenter la taille de l'échantillon retenu pour l'analyse: 
-\begin{itemize}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
-\item Améliorer le remplissage des neg 
-	\begin{enumerate}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
-	\item Poursuivre le matching
-	\item Renseigner des grades à la main 
-	\item Matching sur une sous-population de libellés des individus ayant au moins un NEG dans le corps
-	\end{enumerate}
-\item Correction du grade à partir de l'indice. 
-\item Échelon = - 1?
-\item Utilisation de l'information infra
-\end{itemize}
-
-
-Remarque: travail sur les grades uniquement, on n'applique pas le filtre F3 ici. 
-
-
-\subsection{Censure des données}
-
-Par exemple, si l'on prend la grille qui a cours en 2008, la durée minimale (resp. maximale) pour parcourir l'ensemble du grade est de 21 (resp. 30) ans. Si la plupart des individus ne parcoure pas l'ensemble d'un grade, 
-
-NB: pas censure totale, possibilité d'utiliser les informations sur les libellés avant 2007, et sur les variables individuelles: date d'affiliation etc. 
-
-
-\begin{figure}[ht] 
-  \caption{Censure des données: illustration}
-  \label{echelon_by_neg} 
-    \includegraphics[width=1\linewidth]{schema_censoring.pdf} 
-\end{figure}
-
-
-
-\section{Survie dans le grade}
-
-Rappel des conditions d'avancement pour les AT, en 2015 (mêmes conditions pour les AA)
-\begin{table}[h!]
-\label{means}
-\centering
-\caption{Conditions d'avancement pour le corps des AT} 
-\begin{tabular}{l|c|ccc}
-\toprule
- Grade  & Type d'avancement&  \multicolumn{3}{c}{ Condition de .. }  \\
-		&  				   &  Durée dans le grade	&  Échelon	dans le grade & Durée dans l'échelon \\
-\midrule
-AT2  &	Avec exam pro. 	&   3 ans  & 	4  & NA \\
-AT2  &	Sans exam pro. 	& 	10 ans &	7  &	NA \\
-AT1  & Tous				& 	6 ans  &	5  &	NA \\
-ATP2 & Tous				& 	5 ans  &	6  &	2 ans  \\	
-%	
-\bottomrule
-\end{tabular}
-\end{table}
-
-
-
-\begin{figure}[ht] 
-  \caption{Survie dans le grade: Adjoints techniques}
-  \label{echelon_by_neg} 
-  \begin{subfigure}[b]{0.55\linewidth}
-      \caption{Grade AT2} 
-    \label{echelon_by_neg_0} 
-    \centering
-    \includegraphics[width=1\linewidth]{survival_AT_1.pdf} 
-    \vspace{4ex}
-  \end{subfigure}
-  \begin{subfigure}[b]{0.55\linewidth}
-        \caption{Grade AT1} 
-    \label{echelon_by_neg_1} 
-    \centering
-    \includegraphics[width=1\linewidth]{survival_AT_2.pdf} 
-    \vspace{4ex}
-  \end{subfigure} 
-\end{figure}
-
-
-\begin{figure}[ht] 
-  \caption{Survie dans le grade: Adjoints administratifs}
-  \label{echelon_by_neg} 
-  \begin{subfigure}[b]{0.55\linewidth}
-      \caption{Grade AA2} 
-    \label{echelon_by_neg_0} 
-    \centering
-    \includegraphics[width=1\linewidth]{survival_AA_1.pdf} 
-    \vspace{4ex}
-  \end{subfigure}
-  \begin{subfigure}[b]{0.55\linewidth}
-        \caption{Grade AA1} 
-    \label{echelon_by_neg_1} 
-    \centering
-    \includegraphics[width=1\linewidth]{survival_AA_2.pdf} 
-    \vspace{4ex}
-  \end{subfigure} 
-\end{figure}
-
-
-
-\begin{figure}[ht] 
-  \caption{Répartions des sorties de grade à chaque date pour les individus entrant dans le grade AT2 en 2007}
-  \label{echelon_by_neg} 
-    \includegraphics[width=1\linewidth]{destination_AT_1.pdf} 
-\end{figure}
-
-
-\begin{figure}[ht] 
-  \caption{Répartions des sorties de grade à chaque date pour les individus entrant dans le grade AA2 en 2007}
-  \label{echelon_by_neg} 
-    \includegraphics[width=1\linewidth]{destination_AA_1.pdf} 
-\end{figure}
-
-
-
-\clearpage
-Points à discuter
 
 
 \end{document}

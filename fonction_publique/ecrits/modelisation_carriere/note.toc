@@ -6,9 +6,5 @@
 \contentsline {subsection}{\numberline {2.2}Qualit\IeC {\'e} de l'information avant 2011}{6}{subsection.2.2}
 \contentsline {subsection}{\numberline {2.3}Censure des donn\IeC {\'e}es}{7}{subsection.2.3}
 \contentsline {section}{\numberline {3}Analyse des trajectoires: statistiques descriptives}{8}{section.3}
-\contentsline {subsection}{\numberline {3.1}Trajectoires indicaires}{8}{subsection.3.1}
-\contentsline {subsection}{\numberline {3.2}Grade de provenance et de destination}{10}{subsection.3.2}
-\contentsline {subsection}{\numberline {3.3}Survie dans le grade}{11}{subsection.3.3}
-\contentsline {subsection}{\numberline {3.4}Probabilit\IeC {\'e} de sortie par \IeC {\'e}chelon}{15}{subsection.3.4}
-\contentsline {subsection}{\numberline {3.5}Vitesse dans le grade et dans l'\IeC {\'e}chelon}{16}{subsection.3.5}
-\contentsline {section}{\numberline {4}R\IeC {\'e}sum\IeC {\'e} et liste des points \IeC {\`a} aborder en priorit\IeC {\'e}}{18}{section.4}
+\contentsline {subsection}{\numberline {3.1}Trajectoires indiciaires}{9}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Grade de provenance et de destination}{11}{subsection.3.2}

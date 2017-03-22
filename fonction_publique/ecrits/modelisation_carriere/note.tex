@@ -66,9 +66,9 @@ Ce note propose une première analyse des trajectoires indiciaires sur un sous-�
 % Section I: Analyse des grilles
 \section{Le corps des adjoints techniques}
 
-Le corps des adjoints techniques comporte quatre grades distincts: les adjoints technique de 2eme classe, les adjoints techniques de 1ere classe, les adjoints techniques principal de 2e classe et les adjoints technique principal de 1ere classe. 
+Le corps des adjoints techniques comporte quatre grades distincts: les adjoints technique de deuxième classe, les adjoints techniques de première classe, les adjoints techniques principal de deuxième classe et les adjoints technique principal de première classe. 
 
-Dans la suite de la note nous utilisons les abréviations suivantes pour ces différents grades: AT2, AT1, ATP2 et ATP1 respectivement. 
+Dans la suite de la note nous utilisons les code neg suivants pour ces différents grades: 793, 794, 795 et 796 respectivement. 
 
 Le tableau ci-dessous précise les conditions de passage au grade immédiatement supérieur\footnote{Source: \url{http://www.cdg45.fr/racine/accueil/gestion_des_ressources_humaines/cadres_d_emplois_de_la_fpt/filiere_technique/adjoint_technique_territorial/avancement_de_grade/avancement_de_grade}.}. Les conditions présentées correspondent à la grille actuelle, mais peuvent avoir évoluées au cours du temps. Intégrer l'historique des conditions d'avancement serait utile à terme. 
 
@@ -84,16 +84,16 @@ Si l'évolution dans les carrières est régie par ces conditions, nous nous att
  Grade  & Type d'avancement&  \multicolumn{3}{c}{Condition}  \\
 		&  				   &  Durée dans le grade	&  Échelon	dans le grade & Durée dans l'échelon \\
 \midrule
-AT2  &	Avec exam pro. 	&   3 ans  & 	4  & NA \\
-AT2  &	Sans exam pro. 	& 	10 ans &	7  &	NA \\
-AT1  & Tous				& 	6 ans  &	5  &	NA \\
-ATP2 & Tous				& 	5 ans  &	6  &	2 ans  \\	
+793  &	Exam. pro. 	&   3 ans  & 	4  & NA \\
+794  &	Au choix 	& 	10 ans &	7  &	NA \\
+795  & Au choix		& 	6 ans  &	5  &	NA \\
+796 & Au choix		& 	5 ans  &	6  &	2 ans  \\	
 %	
 \bottomrule
 \end{tabular}
 \end{table}
 
-Les grilles de ces différents grades ont connu de nombreuses évolutions dans les années considérées (4 pour les trois premiers, 6 pour le grade ATP1). Les graphiques \ref{echelon_by_neg} et \ref{echelon_by_date} proposent une visualisation de ces différentes évolutions. 
+Les grilles de ces différents grades ont connu de nombreuses évolutions dans les années considérées (4 pour les trois premiers, 6 pour le grade 796). Les graphiques \ref{echelon_by_neg} et \ref{echelon_by_date} proposent une visualisation de ces différentes évolutions. 
 
 Nous présentons d'abord l'évolution de chaque grade au cours du temps. La principale évolution a lieu en 2008 : le niveau des échelons inférieurs a été fortement relevé pour les différents grades du corps. Ainsi pour le grade AT2 par exemple, l'indice du premier échelon après le changement de 2008 correspond au niveau de l'échelon 4 précédemment, et l'indice du premier échelon après le changement de 2014 correspond au niveau 7 précédent. 
 
@@ -117,20 +117,20 @@ Ces évolutions dans le niveau des grilles peuvent avoir des conséquences impor
     \vspace{4ex}
   \end{subfigure}%% 
   \begin{subfigure}[b]{0.55\linewidth}
-        \caption{Grade AT1} 
+        \caption{Grade 794} 
     \label{echelon_by_neg_1} 
     \centering
     \includegraphics[width=1\linewidth]{1_grille_by_neg.pdf} 
     \vspace{4ex}
   \end{subfigure} 
   \begin{subfigure}[b]{0.55\linewidth}
-        \caption{Grade ATP2} 
+        \caption{Grade 795} 
     \label{echelon_by_neg_2} 
     \centering
     \includegraphics[width=1\linewidth]{2_grille_by_neg.pdf} 
   \end{subfigure}%%
   \begin{subfigure}[b]{0.55\linewidth}
-        \caption{Grade ATP1} 
+        \caption{Grade 796} 
     \label{echelon_by_neg_3} 
     \centering
     \includegraphics[width=1\linewidth]{3_grille_by_neg.pdf} 
@@ -194,7 +194,7 @@ Nous appliquons donc les filtres suivants à la base initiale. L'impact sur la t
 \begin{enumerate}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
 \item[F1] Garder uniquement les individus pour lesquels le libemploi n'est pas manquant quand l'indice ou le statut ne sont pas nuls. Nous perdons alors 15\% des individus, ce qui est relativement important par rapport à ce qui était attendu. 
 \item[F2] Garder uniquement individus pour lesquels tous les grades sont renseignés, quand la variable libemploi n'est pas nulle. Cela implique de supprimer tous les individus pour lesquels les procédures d'imputation des libellés n'ont pas permis d'attribuer un grade neg pour chaque libemploi. Nous perdons ainsi 35\% des individus, ce qui était attendu. 
-\item[F3] Garder uniquement les individus pour lesquels l'échelon est renseigné pour les années dans le corps. Ce filtre a un effet fort et inattendu, puisque l'on perd encore 12\% des individus. Par ailleurs cet effet est très hétérogène en fonction des grades. A cette étape les échelons manquant représentent environ 15\% des observations pour le grade AT2, contre 90\% pour le grade ATP2.
+\item[F3] Garder uniquement les individus pour lesquels l'échelon est renseigné pour les années dans le corps. Ce filtre a un effet fort et inattendu, puisque l'on perd encore 12\% des individus. Par ailleurs cet effet est très hétérogène en fonction des grades. A cette étape les échelons manquant représentent environ 15\% des observations pour le grade AT2, contre 90\% pour le grade 795.
 \end{enumerate}
 
 La déperdition en étape F2 et F3 semble plus importante que ce que suggérait les statistiques descriptives pour les années les plus récentes. Cela suggère, comme précédemment soulignée\footnote{cf. mail Isabelle:  \\
@@ -225,9 +225,9 @@ Année &2003&	2004 &	2005&	2006&	2007&	2008	&2010	&2011	&2012	&2013	&2014	&2015 
 Outre la question de l'alimentation des CIR, la dégradation de l'information au cours du temps peut s'expliquer par les différences dans le mode d'imputation du grade NEG avant et après 2011. En effet, après 2011 le grade est imputé sur la base du code NETNEH quand il est disponible, et avant l'imputation se fait sur la seule base du matching à partir des libellés saisis à la main. 
 
 Une première illustration de la dégradation de l'information au cours du temps est présenté à la table \ref{quality1}. A partir d'une base pour laquelle seuls le filtre F1 (libemploi manquant), nous présentons l'évolution au cours du temps du taux de valeurs manquantes pour le grade et pour l'échelon. 
-Nous re-constatons bien sur nous sous-population un taux de remplissage du grade qui chute avant 2011 (30\% de valeurs manquantes contre 12\% pour les années plus récentes). De manière encore plus marquée, nous observons une chute du taux de remplissage des échelons avant 2011. La proportion de valeurs manquantes est multipliée par trois avant 2011. Ce taux est par ailleurs variable d'une année à l'autre (43\% en 2007, 63\% en 2008) et d'un grade à l'autre (de 15\% à 100\% entre AT2 et ATP1). 
+Nous re-constatons bien sur nous sous-population un taux de remplissage du grade qui chute avant 2011 (30\% de valeurs manquantes contre 12\% pour les années plus récentes). De manière encore plus marquée, nous observons une chute du taux de remplissage des échelons avant 2011. La proportion de valeurs manquantes est multipliée par trois avant 2011. Ce taux est par ailleurs variable d'une année à l'autre (43\% en 2007, 63\% en 2008) et d'un grade à l'autre (de 15\% à 100\% entre AT2 et 796). 
 
-Ces chiffres doivent au préalables être confirmés et recoupés avec les analyses cotés CDC\footnote{En particulier pour le grade ATP1}, mais peuvent s'expliquer par au moins deux raisons: 
+Ces chiffres doivent au préalables être confirmés et recoupés avec les analyses cotés CDC\footnote{En particulier pour le grade 796}, mais peuvent s'expliquer par au moins deux raisons: 
 \begin{enumerate}
 \item Un problème lié aux changements de grille (au niveau des collectivité ou de l'imputation), car les années marquées par des changements de grilles importants (2008, 2014) semblent particulièrement touchées). 
 \item Un problème lié à une mauvaise imputation du grade sur la base des libellés remplis à la main à partir du matching. 
@@ -243,23 +243,16 @@ Dans la suite du document, nous faisons le choix de ne pas étudier les échelon
 \centering
 \caption{Proportion de valeurs manquantes par années et par grade} 
 \label{quality1}
-\begin{tabular}{lcccccccc}
+\begin{tabular}{lccccccc}
 \toprule
-& \% neg NA  & \% ech NA & \% ech NA   & \% ech NA   & \% ech NA  & \% ech NA  \\ 
-& (libemploi rempli) & (neg rempli) & AT2 & AT1 & ATP2 & ATP1 \\
-  \midrule 
-2007 & 0.31 & 0.43 & 0.21 & 0.65 & 0.39 & 0.94 \\ 
-  2008 & 0.31 & 0.63 & 0.60 & 0.57 & 0.65 & 0.99 \\ 
-  2009 & 0.29 & 0.34 & 0.19 & 0.35 & 0.31 & 0.99 \\ 
-  2010 & 0.28 & 0.32 & 0.15 & 0.33 & 0.39 & 1.00 \\ 
-  2011 & 0.12 & 0.09 & 0.05 & 0.06 & 0.13 & 0.94 \\ 
-  2012 & 0.12 & 0.09 & 0.06 & 0.06 & 0.13 & 0.99 \\ 
-  2013 & 0.12 & 0.08 & 0.07 & 0.08 & 0.13 & 0.05 \\ 
-  2014 & 0.13 & 0.16 & 0.15 & 0.17 & 0.22 & 0.14 \\ 
-  2015 & 0.13 & 0.09 & 0.08 & 0.09 & 0.14 & 0.05 \\ 
+ & \%  lib NA & \% neg NA  & \% ech NA & \% ech NA   & \% ech NA   & \% ech NA  & \% ech NA  \\ 
+&(statut rempli) & (lib rempli) & (neg rempli) & AT2 & 794 & 795 & 796 \\
+\midrule 
+\input{Tables/AT_data_quality1.tex} 
 \bottomrule
 \end{tabular}
 \end{table}
+
 
 La table \ref{quality2} permet de comprendre les conséquences de cette rupture statistique sur l'analyse des trajectoire présente l'évolution de la proportion de changement d'une année à l'autre, proportion qui est décomposée en fonction des différents types de changements possible (de grade manquant à grade renseignée, de grade renseigné à grade manquant, et de grade à grade). 
 Nous constatons à l'année 2011 une forte augmentation de la probabilité de changement de grade. Cette augmentation est liée à deux facteurs: 
@@ -275,23 +268,23 @@ Nous constatons à l'année 2011 une forte augmentation de la probabilité de ch
 \label{quality2}
 \begin{tabular}{lcccccccc}
 \toprule
- & 2008 & 2009 & 2010 & 2011 & 2012 & 2013 & 2014 & 2015 \\ 
-  \hline
-\% tout type & 0.16 & 0.17 & 0.17 & 0.47 & 0.16 & 0.15 & 0.16 & 0.17 \\ 
+Année & 2008 & 2009 & 2010 & 2011 & 2012 & 2013 & 2014 & 2015 \\[0.2em]
 \midrule
-  \% de NA à grade & 0.09 & 0.08 & 0.08 & 0.23 & 0.07 & 0.05 & 0.05 & 0.04 \\ 
-  \% de grade à NA & 0.03 & 0.03 & 0.04 & 0.06 & 0.03 & 0.02 & 0.03 & 0.04 \\ 
-  \% de grade à grade & 0.04 & 0.05 & 0.05 & 0.18 & 0.06 & 0.07 & 0.08 & 0.09 \\ 
+Filtre F1 &&&&&& \\ \midrule
+\input{Tables/AT_data_quality2_1.tex} 
+&&&&&& \\ 
+Filtre F2 &&&&&& \\ \midrule
+\input{Tables/AT_data_quality2_2.tex}   
+&&&&&& \\
+Filtre F3 &&&&&& \\ \midrule
+\input{Tables/AT_data_quality2_3.tex}   
 \bottomrule
 \end{tabular}
 \begin{minipage}{12cm}
 \footnotesize
-\textsc{Population:} Population initiale sans filtres.
+\textsc{Population:} Population initiale avec application des filtres successifs.
 \end{minipage}
 \end{table}
-
-
-
 
 
 
@@ -314,12 +307,13 @@ Notons enfin que nous ne sommes pas dans un cas de censure totale, puisqu'il est
 \end{figure}
 
 
+
 % Section III: Statistiques descriptives
 \section{Analyse des trajectoires: statistiques descriptives}
 
 Dans cette section nous présentons des statistiques descriptives permettant de décrire les trajectoires dans les grilles de la population considérée. 
 
-\subsection{Trajectoires indicaires}
+\subsection{Trajectoires indiciaires}
 
 Une première illustration des trajectoires de rémunération est proposée à la figure \ref{trajectories}. Elle présente l'évolution par année de l'indice pour une sous-population particulière, des individus dont l'année d'affiliation au régime est 2007, et qui passent ensuite l'ensemble de leur carrière dans le corps des adjoints techniques. Nous représentons en bleu les changements de grilles et en rouge les changements de grade entre deux années. 
 
@@ -334,7 +328,7 @@ A titre d'illustration, la figure \ref{trajectories_D} présent des exemples (re
 \includegraphics[width=1\linewidth]{trajectoires.pdf} 
 \begin{minipage}{15cm}
 \footnotesize
-\textsc{Population:} Individus qui font leur entrée dans le régime en 2007 au grade AT2, et qui connaissent toutes leur carrière dans le corps. \\
+\textsc{Population:} Individus qui font leur entrée dans le régime en 2007 au grade 793, et qui connaissent toutes leur carrière dans le corps. \\
 \textsc{Note:} Les carrés bleus correspondent à des années de changement de grille, les ronds rouges à des années de changement de grade. 
 \end{minipage}
 \end{figure}
@@ -368,7 +362,7 @@ Nous nous concentrons sur les transitions ayant lieu dans les années plus réce
 
 Pour ce qui est des grades de provenance, nous soulignons les points suivants: 
 \begin{enumerate}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
-\item L'approche par corps semble bien justifiée: une très grande majorité des individus se trouvant dans un grade donné provient du grade immédiatement précédent dans le corps (sauf pour le premier grade AT2, qui correspond aux premières affiliations).  
+\item L'approche par corps semble bien justifiée: une très grande majorité des individus se trouvant dans un grade donné provient du grade immédiatement précédent dans le corps (sauf pour le premier grade 793, qui correspond aux premières affiliations).  
 \item Nous observons des transitions a priori surprenantes voire impossibles d'un grade supérieur vers un grade inférieur.  
 \end{enumerate}
 
@@ -378,7 +372,7 @@ Pour ce qui est des grades de destination, nous soulignons les points suivants:
 \begin{enumerate}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
 \item Il y a également une forte détermination du corps dans les trajectoires, le corps suivant étant toujours la principale destination. 
 \item Ce constat est moins vrai pour le premier grade du corps, pour lequel on observe plus de transition vers l'extérieur. Cela s'explique peut-etre par la structure pyramidale du corps: s'il y a moins de poste pour les grades supérieurs, tout le monde ne peut pas passer au grade supérieur ("up or out"). 
-\item Parmi ces 24\% de départs depuis le grade AT2 vers des autres grades, la principale destination est le grade d'adjoint administratif de deuxième classe (17\% du total des destinations). Cela suggère des liens potentiellement importants entre ces deux corps.
+\item Parmi ces 24\% de départs depuis le grade 793 vers des autres grades, la principale destination est le grade d'adjoint administratif de deuxième classe (17\% du total des destinations). Cela suggère des liens potentiellement importants entre ces deux corps.
 \end{enumerate}
 
 
@@ -390,23 +384,17 @@ Pour ce qui est des grades de destination, nous soulignons les points suivants:
 \label{entry}
 \begin{tabular}{lcccc}
 \toprule
- & \multicolumn{4}{c}{Grade en n pour un changement entre n-1 et n} \\
- & AT2 & AT1 & ATP2 & ATP1 \\ 
+ & \multicolumn{4}{c}{Grade en n (changement en n)} \\
+ & 793 & 794 & 795 & 796 \\ 
   \hline
-NEG n-1 = AT1 & 0.00 & 79.60 & 4.30 & 0.99 \\ 
-  NEG n-1 = AT2 & 2.28 & 0.00 & 81.92 & 0.83 \\ 
-  NEG n-1 = ATP2 & 0.13 & 0.14 & 0.00 & 92.22 \\ 
-  NEG n-1 = ATP1 & 0.01 & 0.14 & 0.00 & 0.00 \\ 
-  NEG n-1 = autres & 7.24 & 2.25 & 2.84 & 1.16 \\ 
-  NEG n-1 = manquant & 90.34 & 17.86 & 10.95 & 4.80 \\ 
-  total & 100.00 & 100.00 & 100.00 & 100.00 \\ 
+\input{Tables/AT_transition_entry.tex}  
    \hline
 \bottomrule
 \end{tabular}
 \begin{minipage}{12cm}
 \footnotesize
 \textsc{Population:} Filtres F1 et F2. Années 2012 à 2015. Observations pour lesquelles il y a un changement de grade entre l'année précédente et l'année courante. \\
-\textsc{Lecture:} 79,6\% des individus arrivant dans le grade AT1 proviennent du grade AT2.
+\textsc{Lecture:} 79,6\% des individus arrivant dans le grade 794 proviennent du grade 793.
 \end{minipage}
 \end{table}
 
@@ -419,31 +407,22 @@ NEG n-1 = AT1 & 0.00 & 79.60 & 4.30 & 0.99 \\
 \label{exit}
 \begin{tabular}{lcccc}
 \toprule
- & \multicolumn{4}{c}{Grade en n pour un changement entre n et n+1} \\
- & AT2 & AT1 & ATP2 & ATP1 \\ 
+ & \multicolumn{4}{c}{Grade en n (changement en n+1)} \\
+ & 793 & 794 & 795 & 796 \\ 
   \hline
-NEG n+1 = AT1 & 0.00 & 8.22 & 1.51 & 4.76 \\ 
-  NEG n+1 = AT2 & 54.22 & 0.00 & 0.69 & 23.81 \\ 
-  NEG n+1 = ATP2 & 1.97 & 79.99 & 0.00 & 0.00 \\ 
-  NEG n+1 = ATP1 & 0.12 & 0.21 & 76.62 & 0.00 \\ 
-  NEG n+1 = autres & 23.85 & 5.91 & 10.04 & 4.76 \\ 
-  NEG n+1 = manquant & 19.84 & 5.66 & 11.14 & 66.67 \\ 
-  total & 100.00 & 100.00 & 100.00 & 100.00 \\ 
+\input{Tables/AT_transition_exit.tex}  
    \hline
 \bottomrule
 \end{tabular}
 \begin{minipage}{12cm}
 \footnotesize
-\textsc{Population:} Filtres F1 et F2. Années 2011 à 2014. Observations pour lesquelles il y a un changement de grade entre l'année courante et l'année suivante. \\
-\textsc{Lecture:} 54,2\% des individus quittant le grade AT2 vont dans le grade AT1.
+\textsc{Population:} Filtres F1 et F2. Années 2012 à 2015. Observations pour lesquelles il y a un changement de grade entre l'année précédente et l'année courante. \\
+\textsc{Lecture:} 81,4\% des individus quittant le grade 794 arrivent dans le grade 795.
 \end{minipage}
 \end{table}
-
 \medskip
 
-
-
-
+\end{document}
 
 
 
@@ -454,13 +433,13 @@ NEG n+1 = AT1 & 0.00 & 8.22 & 1.51 & 4.76 \\
 
 Dans le but d'avoir une première idée des trajectoires dans les différents grades, nous présentons les courbes de survie dans les différents grades. En pratique, nous calculons, pour différentes années d'entrée dans le grade, le nombre ou la proportion d'individu toujours dans le grade à l'année suivante. 
 
-D'après les conditions d'avancement des grades décrites au début du document, nous attendions une décroissance plus rapide de la courbe de survie aux moments correspondants aux années d'éligibilité (autour de 3 ans pour les AT2, et 6 ans pour les AT1) d'après le critère de durée passée dans le grade. Nous ne constatons rien de tel pour le moment. Le graphique semble suggérer un taux de sortie globalement constant au cours du temps, et les principales variations semblent plus provenir d'effet "année" (en 2011 et 2015) que d'effet "durée dans le grade". 
+D'après les conditions d'avancement des grades décrites au début du document, nous attendions une décroissance plus rapide de la courbe de survie aux moments correspondants aux années d'éligibilité (autour de 3 ans pour les 793, et 6 ans pour les 794) d'après le critère de durée passée dans le grade. Nous ne constatons rien de tel pour le moment. Le graphique semble suggérer un taux de sortie globalement constant au cours du temps, et les principales variations semblent plus provenir d'effet "année" (en 2011 et 2015) que d'effet "durée dans le grade". 
 
 \medskip
 
 Pour se rapprocher de la probabilité que l'on souhaiterait modéliser dans le module carrière, le graphique \ref{hazard} présente le résultat suivant. Pour la population des individus entrés dans le grade en 2007, nous présentons pour chaque année la situation des individus qui sont encore présents dans le grade l'année précédente. Comme précédemment, nous attendons une forte augmentation de la probabilité de partir dans le grade immédiatement supérieur à partir du moment ou le critère du durée passée dans le grade est atteint (3 ans). 
 
-Nous remarquons en effet, entre la 3e et la 4e année, une augmentation de la probabilité de sortie du grade, à la fois vers les autres grades et vers le grade suivant AT1. L'augmentation observée semble toutefois relativement faible, mais cela s'explique potentiellement par le deuxième critère, la condition d'échelon atteint, que nous n'intégrons pas ici. 
+Nous remarquons en effet, entre la 3e et la 4e année, une augmentation de la probabilité de sortie du grade, à la fois vers les autres grades et vers le grade suivant 794. L'augmentation observée semble toutefois relativement faible, mais cela s'explique potentiellement par le deuxième critère, la condition d'échelon atteint, que nous n'intégrons pas ici. 
 
 Par ailleurs, nous observons des transitions vers le grade immédiatement supérieur dès la première année dans le grade, sans que l'on puisse déterminer si cela provient d'un problème lié aux données ou de la non-application des critères d'éligibilité. 
 
@@ -469,14 +448,14 @@ Par ailleurs, nous observons des transitions vers le grade immédiatement supér
   \caption{Survie dans le grade: Adjoints techniques}
   \label{surv_by_entry} 
   \begin{subfigure}[b]{0.55\linewidth}
-      \caption{Grade AT2} 
+      \caption{Grade 793} 
     \label{echelon_by_neg_0} 
     \centering
     \includegraphics[width=1\linewidth]{survival_AT_1.pdf} 
     \vspace{4ex}
   \end{subfigure}
   \begin{subfigure}[b]{0.55\linewidth}
-        \caption{Grade AT1} 
+        \caption{Grade 794} 
     \label{echelon_by_neg_1} 
     \centering
     \includegraphics[width=1\linewidth]{survival_AT_2.pdf} 
@@ -485,20 +464,20 @@ Par ailleurs, nous observons des transitions vers le grade immédiatement supér
   \begin{minipage}{12cm}
 \footnotesize
 \textsc{Population:} Filtres F1 et F2. Années 2007 à 2015. \\
-\textsc{Lecture:} Environ 75\% des individus entrés dans le grade AT2 en 2007 sont encore présents en 2011. 
+\textsc{Lecture:} Environ 75\% des individus entrés dans le grade 793 en 2007 sont encore présents en 2011. 
 \end{minipage}
 \end{figure}
 
 
 \begin{figure}[ht] 
-  \caption{Répartitions des situations à chaque date pour les individus entrant en 2007 dans le grade AT2 et encore présent dans le grade en n-1}
+  \caption{Répartitions des situations à chaque date pour les individus entrant en 2007 dans le grade 793 et encore présent dans le grade en n-1}
   \label{hazard} 
     \centering
     \includegraphics[width=0.75\linewidth]{destination_AT_1.pdf}  
     \begin{minipage}{12cm}
 \footnotesize
 \textsc{Population:} Filtres F1 et F2. Années 2007 à 2015. \\
-\textsc{Lecture:} Parmi les individus entrés dans le grade AT2 en 2007 et toujours dans le grade en 2010, environ 8\% part dans le grade AT1, 10\% part dans un autre grade,  et le reste demeure dans le grade AT2. 
+\textsc{Lecture:} Parmi les individus entrés dans le grade 793 en 2007 et toujours dans le grade en 2010, environ 8\% part dans le grade 794, 10\% part dans un autre grade,  et le reste demeure dans le grade 793. 
 \end{minipage}
 \end{figure}
 
@@ -512,11 +491,11 @@ Les analyses précédentes n'intègrent pas l'échelon, car celui-ci ne semble p
 
 Nous reprenons ici l'approche développée précédemment par Pierrick, en rassemblant l'ensemble des observations qu'on l'on observe pour les années les plus récentes. 
 
-La figure \ref{evo_by_ech} présente les transitions d'une année à l'autre en fonction du grade à l'année courante (AT2 ou AT1), vers les différents grades possibles (même grade, grade manquant, grade suivant ou autre grade) et en fonction de l'échelon à l'année courante. 
+La figure \ref{evo_by_ech} présente les transitions d'une année à l'autre en fonction du grade à l'année courante (793 ou 794), vers les différents grades possibles (même grade, grade manquant, grade suivant ou autre grade) et en fonction de l'échelon à l'année courante. 
 
-Les conditions d'éligibilité semblent bien avoir un impact, plus important encore que précédemment: c'est uniquement à partir de l'échelon d'éligibilité (4 pour le corps AT2, 5 pour le corps AT1) que les transitions vers le grade suivant commencent à augmenter.  
+Les conditions d'éligibilité semblent bien avoir un impact, plus important encore que précédemment: c'est uniquement à partir de l'échelon d'éligibilité (4 pour le corps 793, 5 pour le corps 794) que les transitions vers le grade suivant commencent à augmenter.  
 
-Notons toutefois les fortes transitions du grade AT1 vers des grades "autres" dans les échelons inférieurs, qui constituent en réalité majoritairement des transitions vers le grade inférieur AT2. Ces transitions incohérentes devront être élucidées. 
+Notons toutefois les fortes transitions du grade 794 vers des grades "autres" dans les échelons inférieurs, qui constituent en réalité majoritairement des transitions vers le grade inférieur 793. Ces transitions incohérentes devront être élucidées. 
 
 \bigskip
 
@@ -524,16 +503,16 @@ Notons toutefois les fortes transitions du grade AT1 vers des grades "autres" da
   \caption{Situation d'une année à l'autre, selon l'échelon}
   \label{evo_by_ech} 
   \begin{subfigure}[b]{0.5\linewidth}
-      \caption{Grade AT2 à l'année courante}
+      \caption{Grade 793 à l'année courante}
     \label{evo_by_ech_0} 
     \centering
-    \includegraphics[width=1\linewidth]{next_AT2.pdf} 
+    \includegraphics[width=1\linewidth]{next_793.pdf} 
   \end{subfigure}%
   \begin{subfigure}[b]{0.5\linewidth}
-        \caption{Grade AT1 à l'année courante} 
+        \caption{Grade 794 à l'année courante} 
     \label{evo_by_ech_1} 
     \centering
-    \includegraphics[width=1\linewidth]{next_AT1.pdf} 
+    \includegraphics[width=1\linewidth]{next_794.pdf} 
   \end{subfigure} 
 \end{figure}
 
@@ -551,7 +530,7 @@ Nous laissons pour l'instant de coté cet aspect, qui nécessite un recul tempor
 
 \subsubsection*{Vitesse dans l'échelon}
 
-Nous nous concentrons sur les années pour lesquelles l'échelon est bien renseigné (2011-2015) et adoptons la stratégie suivante: pour chaque individus de la base après application des filtres F1, F2 et F3, nous calculons la distribution de la durée passée dans le deuxième échelon observé pour les individus du grade AT2 ayant au moins 2 changements d'échelons entre 2011 et 2015. Notons qu'à ce stade, à nouveau, nous considérons séparément les grades et les échelons, de sorte que nous pouvons surestimer la durée passée dans l'échelon (si l'individu change de grade mais reste dans un échelon de même niveau, nous n'identifions pas de changement d'échelon à ce stade). 
+Nous nous concentrons sur les années pour lesquelles l'échelon est bien renseigné (2011-2015) et adoptons la stratégie suivante: pour chaque individus de la base après application des filtres F1, F2 et F3, nous calculons la distribution de la durée passée dans le deuxième échelon observé pour les individus du grade 793 ayant au moins 2 changements d'échelons entre 2011 et 2015. Notons qu'à ce stade, à nouveau, nous considérons séparément les grades et les échelons, de sorte que nous pouvons surestimer la durée passée dans l'échelon (si l'individu change de grade mais reste dans un échelon de même niveau, nous n'identifions pas de changement d'échelon à ce stade). 
 
 La figure \ref{duree_by_ech} présente la distribution des durées passée dans l'échelon, pour différents groupes. 
 Si l'on prend l'ensemble de la population du grade (panel a), nous observons une distribution plurimodale de la durée passée dans l'échelon. Cela pourrait suggérer une forte variation interindividuelle pour ce qui est de la durée passée dans l'échelon. Mais si l'on différencie en fonction de l'échelon considérée, on constate que ces différents pics recoupent largement les différentes conditions d'avancements pour le passage à l'échelon suivants, présentées ci-dessous. 
@@ -559,7 +538,7 @@ Si l'on prend l'ensemble de la population du grade (panel a), nous observons une
 \begin{table}[h!]
 \label{means}
 \centering
-\caption{Conditions d'avancement pour le grade AT2} 
+\caption{Conditions d'avancement pour le grade 793} 
 \footnotesize
 \begin{tabular}{l|cc}
 \toprule
@@ -593,12 +572,12 @@ Certains points restent toutefois obscurs:
 
 
 \begin{figure}[ht] 
-  \caption{Durée passée dans l'échelon, en fonction de l'échelon (grade AT2)}
+  \caption{Durée passée dans l'échelon, en fonction de l'échelon (grade 793)}
   \label{duree_by_ech} 
-    \includegraphics[scale = 0.6]{duree_ech_AT2.pdf} 
+    \includegraphics[scale = 0.6]{duree_ech_793.pdf} 
       \begin{minipage}{12cm}
 \footnotesize
-\textsc{Population:} Filtres F1, F2 et F3. Années 2011 à 2015. Individus qui ont connu au moins deux échelons entre 2011 et 2012 et qui se trouvent dans le grade AT2 en 2012. 
+\textsc{Population:} Filtres F1, F2 et F3. Années 2011 à 2015. Individus qui ont connu au moins deux échelons entre 2011 et 2012 et qui se trouvent dans le grade 793 en 2012. 
 \end{minipage}
 \end{figure}
 
