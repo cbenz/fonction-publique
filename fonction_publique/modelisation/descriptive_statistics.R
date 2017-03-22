@@ -374,75 +374,103 @@ dev.off()
 
 #### III.2 Grade of entry and exit #### 
 
-list1 = data_all_AT$ident[which(data_all_AT$statut != '' & data_all_AT$libemploi == '')]
-list2 = data_all_AT$ident[which(data_all_AT$c_neg == 0 & data_all_AT$libemploi != '')]
-data_clean =  data_all_AT[which(!is.element(data_all_AT$ident, union(list1,list2))),]  
+data_all = data_all_AT
+list_neg = list_neg_AT
+corps = 'AT'
 
-t = table(data_clean[which(data_clean$c_neg == 793 & data_clean$change_neg_next == 1 & 
-                           data_clean$echelon4 == 3 & 
-                           data_clean$annee >= 2011 & data_clean$annee < 2015),"next_neg"])
-t / length(data_clean[which(data_clean$c_neg == 793 & data_clean$change_neg_next == 1 &  data_clean$echelon4 == 3 &  
-                            data_clean$annee >= 2011 & data_clean$annee < 2015),"next_neg"])
-# TODO: echelon d'entree, de sortie, duree passee dans le corps
-# Repartion par échelon des sortie vers le grade AA
-t = table(data_clean[which(data_clean$c_neg == 793 & data_clean$next_neg == 791 & 
-                             data_clean$annee >= 2011 & data_clean$annee < 2015),"echelon"])
-t /length(table(data_clean[which(data_clean$c_neg == 793 & data_clean$next_neg == 791 & 
-                             data_clean$annee >= 2011 & data_clean$annee < 2015),"echelon"]))
-list_neg = c(793, 794, 795, 796)
-table_entry = matrix(ncol = length(list_neg), nrow = 7)
-table_exit  = matrix(ncol = length(list_neg), nrow = 7)
-
-data_entry = data[which(data$change_neg_bef ==1  & data$annee >= 2012),]
-data_exit = data[which(data$change_neg_next ==1  & data$annee >= 2011 & data$annee < 2015),]
+compute_transitions_entry <- function(data_all, list_neg, corps)
+{
+list1 = data_all$ident[which(data_all$statut != '' & data_all$libemploi == '')]
+list2 = data_all$ident[which(data_all$c_neg == 0 & data_all$libemploi != '')]
+data_clean =  data_all[which(!is.element(data_all$ident, union(list1,list2))),]  
+data_entry = data_clean[which(data_clean$change_neg_bef ==1  & data_clean$annee >= 2012),]
+table_entry = matrix(ncol = length(list_neg), nrow = 11)  
 
 for (n in 1:length(list_neg))
 {
-list = which(data_entry$c_neg == list_neg[n]) 
-# From AT neg
-for (n2 in 1:length(list_neg))
+  list = which(data_entry$c_neg == list_neg[n]) 
+  # Intra-corps transitions
+  for (n2 in 1:length(list_neg))
+  {
+    list2 = which(data_entry$bef_neg == list_neg[n2])
+    table_entry[(n2),n] = length(intersect(list, list2))/length(list)  
+  }
+  # From other known neg
+  list_oth = which(!is.element(data_entry$bef_neg, cbind(0, list_neg)))
+  t = table(data_entry$bef_neg[intersect(list, list_oth)])
+  table_entry[5,n] = sum(t)/length(list)  
+  t = rev(t[order(t)])
+  table_entry[6,n] = 0
+  table_entry[7,n] = t[[1]]/length(list) 
+  table_entry[8,n] = 0
+  table_entry[9,n] = t[[2]]/length(list) 
+  # From missing neg
+  list4 = which(data_entry$bef_neg == 0)
+  table_entry[10,n] = length(intersect(list, list4))/length(list)  
+  # Total: 
+  table_entry[11, n] = sum(table_entry[1:10, n])
+  table_entry[-c(6,8),] = table_entry[-c(6,8),]*100
+  
+  table = table_entry
+  colnames(table) <- paste0("NEG n = ", list_neg)
+  rownames(table) <- c(paste0("NEG n-1 = ", list_neg),
+                       "NEG n-1 = autres", "  dont ...", "... representant ", "  dont ...", "... representant ",
+                       "NEG n-1 = manquant", "total")
+  
+  print(xtable(table,align="l|cccc",nrow = nrow(table), ncol=ncol(table)+1, byrow=T),
+        sanitize.text.function=identity,size="\\footnotesize", only.contents=T,
+        hline = c(4,9)),
+        file = paste0(tab_path, corps, "_transition_entry.tex"))
+  print(paste0("Saving table ",paste0( corps, "_transition_entry.tex")))
+  
+}  
+
+compute_transitions_exit <- function(data_all, list_neg, corps)
 {
-list2 = which(data_entry$bef_neg == list_neg[n2])
-table_entry[(n2),n] = length(intersect(list, list2))/length(list)  
-}
-# From other known neg
-list3 = which(!is.element(data_entry$bef_neg, cbind(0, list_neg)))
-table_entry[5,n] = length(intersect(list, list3))/length(list)  
-# From missing neg
-list4 = which(data_entry$bef_neg == 0)
-table_entry[6,n] = length(intersect(list, list4))/length(list)  
-# Total: 
-table_entry[7,n] = sum(table_entry[1:6,n])
+list1 = data_all$ident[which(data_all$statut != '' & data_all$libemploi == '')]
+list2 = data_all$ident[which(data_all$c_neg == 0 & data_all$libemploi != '')]
+data_clean =  data_all[which(!is.element(data_all$ident, union(list1,list2))),]  
+data_exit = data_clean[which(data_clean$change_neg_next ==1  & data_clean$annee >= 2011 & data_clean$annee < 2015),]
+table_exit = matrix(ncol = length(list_neg), nrow = 11)  
 
-## Exit
-list = which(data_exit$c_neg == list_neg[n]) 
-# To AT neg
-for (n2 in 1:length(list_neg)){
-list2 = which(data_exit$next_neg == list_neg[n2])
-table_exit[(n2),n] = length(intersect(list, list2))/length(list)  
-}
-# To other known neg
-list3 = which(!is.element(data_exit$next_neg, cbind(0, list_neg)))
-table_exit[5,n] = length(intersect(list, list3))/length(list)  
-# From missing neg
-list4 = which(data_exit$next_neg == 0)
-table_exit[6,n] = length(intersect(list, list4))/length(list)  
-table_exit[7,n] = sum(table_exit[1:6,n])
-}
+for (n in 1:length(list_neg))
+{
+  list = which(data_exit$c_neg == list_neg[n]) 
+  # Intra-corps transitions
+  for (n2 in 1:length(list_neg))
+  {
+    list2 = which(data_exit$next_neg == list_neg[n2])
+    table_exit[(n2),n] = length(intersect(list, list2))/length(list)  
+  }
+  # From other known neg
+  list_oth = which(!is.element(data_exit$next_neg, cbind(0, list_neg)))
+  t = table(data_exit$next_neg[intersect(list, list_oth)])
+  table_exit[5,n] = sum(t)/length(list)  
+  t = rev(t[order(t)])
+  table_exit[6,n] = 0
+  table_exit[7,n] = t[[1]]/length(list) 
+  table_exit[8,n] = 0
+  table_exit[9,n] = t[[2]]/length(list) 
+  # From missing neg
+  list4 = which(data_exit$next_neg == 0)
+  table_exit[10,n] = length(intersect(list, list4))/length(list)  
+  # Total: 
+  table_exit[11, n] = sum(table_exit[1:10, n])
+  table_exit[-c(6,8),] = table_exit[-c(6,8),]*100
+  
+  table = table_exit
+  colnames(table) <- paste0("NEG n = ", list_neg)
+  rownames(table) <- c(paste0("NEG n+1 = ", list_neg),
+                       "NEG n+1 = autres", "  dont ...", "... representant ", "  dont ...", "... representant ",
+                       "NEG n+1 = manquant", "total")
+  
+  print(xtable(table,align="l|cccc",nrow = nrow(table), ncol=ncol(table)+1, byrow=T),
+        sanitize.text.function=identity,size="\\footnotesize", only.contents=T,
+        hline = c(4,9)),
+  file = paste0(tab_path, corps, "_transition_exit.tex"))
+  print(paste0("Saving table ",paste0( corps, "_transition_exit.tex")))
+}  
 
-table = table_entry*100
-colnames(table) <- c("AT2", "AT1", "ATP2", "ATP1")
-rownames(table) <- c("NEG n-1 = AT1", "NEG n-1 = AT2", "NEG n-1 = ATP2", "NEG n-1 = ATP1",
-                    "NEG n-1 = autres", "NEG n-1 = manquant", "total")
-print(xtable(table,align="l|cccc",nrow = nrow(table), ncol=ncol(table)+1, byrow=T),
-     sanitize.text.function=identity,size="\\footnotesize", only.contents=T)
-
-table = table_exit*100
-colnames(table) <- c("AT2", "AT1", "ATP2", "ATP1")
-rownames(table) <- c("NEG n+1 = AT1", "NEG n+1 = AT2", "NEG n+1 = ATP2", "NEG n+1 = ATP1",
-                     "NEG n+1 = autres", "NEG n+1 = manquant", "total")
-print(xtable(table,align="l|cccc",nrow = nrow(table), ncol=ncol(table)+1, byrow=T),
-      sanitize.text.function=identity,size="\\footnotesize", only.contents=T)
 
 
 

@@ -95,7 +95,7 @@ ATP2 & Tous				& 	5 ans  &	6  &	2 ans  \\
 
 Les grilles de ces différents grades ont connu de nombreuses évolutions dans les années considérées (4 pour les trois premiers, 6 pour le grade ATP1). Les graphiques \ref{echelon_by_neg} et \ref{echelon_by_date} proposent une visualisation de ces différentes évolutions. 
 
-Nous présentons d'abord l'évolution de chaque grade au cours du temps. La principale évolution a lieu entre et : le niveau des échelons inférieurs a été fortement relevé pour les différents grades du corps. Ainsi pour le grade AT2 par exemple, l'indice du premier échelon après le changement de 2008 correspond au niveau de l'échelon 4 précédemment, et l'indice du premier échelon après le changement de 2014 correspond au niveau 7 précédent. 
+Nous présentons d'abord l'évolution de chaque grade au cours du temps. La principale évolution a lieu en 2008 : le niveau des échelons inférieurs a été fortement relevé pour les différents grades du corps. Ainsi pour le grade AT2 par exemple, l'indice du premier échelon après le changement de 2008 correspond au niveau de l'échelon 4 précédemment, et l'indice du premier échelon après le changement de 2014 correspond au niveau 7 précédent. 
 
 Les évolutions propres à chaque grade sont susceptibles d'affecter le niveau relatif des différentes grilles, ce qui en retour peut avoir un impact sur les trajectoires. En effet si, par hypothèse, un individu ne peut diminuer d'indice en changeant de corps, le rapprochement des grilles de deux grades successifs peut conduire à augmenter l'échelon auquel on entre sur une grille et donc la vitesse globale de progression dans le corps. La figure \ref{echelon_by_date} montre qu'il y a une à la fois un rapprochement des différentes grilles sur les échelons inférieurs mais un écartement des grilles sur les échelons supérieurs. 
 
@@ -210,15 +210,10 @@ Année &2003&	2004 &	2005&	2006&	2007&	2008	&2010	&2011	&2012	&2013	&2014	&2015 
 \begin{table}[h!]
 \centering
 \caption{Impact des filtres successifs sur la taille de l'échantillon} 
-\label{filters}
+\label{filters_AT}
 \begin{tabular}{lcc}
 \toprule
- & Nb d'individus & \% échantillon initial \\ 
-  \hline
-Echantillon initial & 304367 & 100 \\ 
-F1: Libemploi manquant quand statut non vide & 265572 & 87 \\ 
-  F2: Neg manquant quand libemploi renseigné & 145560 & 48 \\ 
-  F3: Echelon manquant quand neg dans AT & 108825 & 36 \\ 
+\input{Tables/AT_sample_selection.tex}
 \bottomrule
 \end{tabular}
 \end{table}
@@ -269,14 +264,14 @@ Dans la suite du document, nous faisons le choix de ne pas étudier les échelon
 La table \ref{quality2} permet de comprendre les conséquences de cette rupture statistique sur l'analyse des trajectoire présente l'évolution de la proportion de changement d'une année à l'autre, proportion qui est décomposée en fonction des différents types de changements possible (de grade manquant à grade renseignée, de grade renseigné à grade manquant, et de grade à grade). 
 Nous constatons à l'année 2011 une forte augmentation de la probabilité de changement de grade. Cette augmentation est liée à deux facteurs: 
 \begin{enumerate}
-\item Une hausse des transition de grade manquant vers grade renseigné, qui découle du meilleur remplissage de la variable neg à partir de 2011, qui conduit à l'apparition de nouveaux individus à partir de 2011.  
-\item Une mauvaise imputation du grade avant 2011, qui conduit à une hausse fictive des changements de grade à grade qui traduisent simplement la correction induite par 
+\item Une hausse des transitions de grade manquant vers grade renseigné, qui découle du meilleur remplissage de la variable neg à partir de 2011, qui conduit à l'apparition de nouveaux individus à partir de 2011.  
+\item Une mauvaise imputation du grade avant 2011, qui conduit à une hausse fictive des changements de grade à grade qui traduisent simplement la correction induite par l'imputation du grade neg sur la base du NETNEH. 
 \end{enumerate}
  
 
 \begin{table}[h!]
 \centering
-\caption{Proportion de changement de grade par année} 
+\caption{Proportion de changements de grade par année} 
 \label{quality2}
 \begin{tabular}{lcccccccc}
 \toprule
@@ -373,7 +368,7 @@ Nous nous concentrons sur les transitions ayant lieu dans les années plus réce
 
 Pour ce qui est des grades de provenance, nous soulignons les points suivants: 
 \begin{enumerate}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
-\item L'approche par corps semble bien justifié: une très grande majorité des individus se trouvant dans un grade donné provient du grade immédiatement précédent dans le corps (sauf pour la premier grade AT2, qui correspond aux premières affiliations).  
+\item L'approche par corps semble bien justifiée: une très grande majorité des individus se trouvant dans un grade donné provient du grade immédiatement précédent dans le corps (sauf pour le premier grade AT2, qui correspond aux premières affiliations).  
 \item Nous observons des transitions a priori surprenantes voire impossibles d'un grade supérieur vers un grade inférieur.  
 \end{enumerate}
 
@@ -465,7 +460,7 @@ D'après les conditions d'avancement des grades décrites au début du document,
 
 Pour se rapprocher de la probabilité que l'on souhaiterait modéliser dans le module carrière, le graphique \ref{hazard} présente le résultat suivant. Pour la population des individus entrés dans le grade en 2007, nous présentons pour chaque année la situation des individus qui sont encore présents dans le grade l'année précédente. Comme précédemment, nous attendons une forte augmentation de la probabilité de partir dans le grade immédiatement supérieur à partir du moment ou le critère du durée passée dans le grade est atteint (3 ans). 
 
-Nous remarquons en effet, entre la 3e et la 4e année, une augmentation de la probabilité de sortie du grade, à la fois vers et faire le grade suivant AT1. L'augmentation observée semble toutefois relativement faible, mais cela s'explique potentiellement par le deuxième critère, la condition d'échelon atteint, que nous n'intégrons pas ici. 
+Nous remarquons en effet, entre la 3e et la 4e année, une augmentation de la probabilité de sortie du grade, à la fois vers les autres grades et vers le grade suivant AT1. L'augmentation observée semble toutefois relativement faible, mais cela s'explique potentiellement par le deuxième critère, la condition d'échelon atteint, que nous n'intégrons pas ici. 
 
 Par ailleurs, nous observons des transitions vers le grade immédiatement supérieur dès la première année dans le grade, sans que l'on puisse déterminer si cela provient d'un problème lié aux données ou de la non-application des critères d'éligibilité. 
 
@@ -592,7 +587,7 @@ Certains points restent toutefois obscurs:
 \begin{itemize}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
 \item Concentration à 1: souvent un changement de grade suivant un changement d'échelon?
 \item Pas beaucoup de durée max, durée min = durée fixe?
-\item Beaucoup de départ avant la durée min, en particulier pour les  échelons supérieurs. A nouveau, il n'est pas encore possible de savoir si cela vient d'un problème des données ou d'une application lache des critères d'éligibilité. 
+\item Beaucoup de départ avant la durée min, en particulier pour les  échelons supérieurs. A nouveau, il n'est pas encore possible de savoir si cela vient d'un problème des données ou d'une application lâche des critères d'éligibilité. 
 \end{itemize}
 
 
