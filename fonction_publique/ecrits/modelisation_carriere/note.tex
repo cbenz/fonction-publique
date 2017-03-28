@@ -110,30 +110,28 @@ Ces évolutions dans le niveau des grilles peuvent avoir des conséquences impor
   \caption{Evolution des grilles: grade par grade}
   \label{echelon_by_neg} 
   \begin{subfigure}[b]{0.55\linewidth}
-      \caption{Grade AT2} 
+      \caption{Grade 793} 
     \label{echelon_by_neg_0} 
     \centering
-    \includegraphics[width=1\linewidth]{0_grille_by_neg.pdf} 
-    \vspace{4ex}
+    \includegraphics[width=1\linewidth]{AT_793_grille_by_neg.pdf} 
   \end{subfigure}%% 
   \begin{subfigure}[b]{0.55\linewidth}
         \caption{Grade 794} 
     \label{echelon_by_neg_1} 
     \centering
-    \includegraphics[width=1\linewidth]{1_grille_by_neg.pdf} 
-    \vspace{4ex}
+    \includegraphics[width=1\linewidth]{AT_794_grille_by_neg.pdf} 
   \end{subfigure} 
   \begin{subfigure}[b]{0.55\linewidth}
         \caption{Grade 795} 
     \label{echelon_by_neg_2} 
     \centering
-    \includegraphics[width=1\linewidth]{2_grille_by_neg.pdf} 
+    \includegraphics[width=1\linewidth]{AT_795_grille_by_neg.pdf} 
   \end{subfigure}%%
   \begin{subfigure}[b]{0.55\linewidth}
         \caption{Grade 796} 
     \label{echelon_by_neg_3} 
     \centering
-    \includegraphics[width=1\linewidth]{3_grille_by_neg.pdf} 
+    \includegraphics[width=1\linewidth]{AT_796_grille_by_neg.pdf} 
   \end{subfigure} 
 \end{figure}
 
@@ -307,6 +305,23 @@ Notons enfin que nous ne sommes pas dans un cas de censure totale, puisqu'il est
 \end{figure}
 
 
+\begin{table}[h!]
+\centering
+\caption{Répartition des séquences de grade selon le type de censure} 
+\label{exit}
+\begin{tabular}{lccccr}
+\input{Tables/AT_censure.tex}  
+   \hline
+\bottomrule
+\end{tabular}
+\begin{minipage}{12cm}
+\footnotesize
+\textsc{Population:} Filtres F1, F2 et F3. Années 2007 à 2015 \\
+\textsc{Lecture:} 81,4\% des séquences de grade ne sont censurées ni à gauche ni à droite (cas 1)
+\end{minipage}
+\end{table}
+\medskip
+
 
 % Section III: Statistiques descriptives
 \section{Analyse des trajectoires: statistiques descriptives}
@@ -422,10 +437,6 @@ Pour ce qui est des grades de destination, nous soulignons les points suivants:
 \end{table}
 \medskip
 
-\end{document}
-
-
-
 
 
 \subsection{Survie dans le grade}
@@ -447,19 +458,17 @@ Par ailleurs, nous observons des transitions vers le grade immédiatement supér
 \begin{figure}[ht] 
   \caption{Survie dans le grade: Adjoints techniques}
   \label{surv_by_entry} 
-  \begin{subfigure}[b]{0.55\linewidth}
+  \begin{subfigure}[b]{0.5\linewidth}
       \caption{Grade 793} 
     \label{echelon_by_neg_0} 
     \centering
-    \includegraphics[width=1\linewidth]{survival_AT_1.pdf} 
-    \vspace{4ex}
-  \end{subfigure}
-  \begin{subfigure}[b]{0.55\linewidth}
+    \includegraphics[width=1\linewidth]{AT_survival_793.pdf} 
+  \end{subfigure}%
+  \begin{subfigure}[b]{0.5\linewidth}
         \caption{Grade 794} 
     \label{echelon_by_neg_1} 
     \centering
-    \includegraphics[width=1\linewidth]{survival_AT_2.pdf} 
-    \vspace{4ex}
+    \includegraphics[width=1\linewidth]{AT_survival_794.pdf} 
   \end{subfigure} 
   \begin{minipage}{12cm}
 \footnotesize
@@ -470,10 +479,20 @@ Par ailleurs, nous observons des transitions vers le grade immédiatement supér
 
 
 \begin{figure}[ht] 
-  \caption{Répartitions des situations à chaque date pour les individus entrant en 2007 dans le grade 793 et encore présent dans le grade en n-1}
+  \caption{Répartitions des situations à chaque date pour les individus entrant le grade 793 en 2007 et 2009 et encore présent dans le grade en n-1}
   \label{hazard} 
+  \begin{subfigure}[b]{0.5\linewidth}
+      \caption{Affiliation en 2007}
+    \label{hazard_2007} 
     \centering
-    \includegraphics[width=0.75\linewidth]{destination_AT_1.pdf}  
+    \includegraphics[width=1\linewidth]{AT_destination_2007.pdf}  
+    \end{subfigure}%
+  \begin{subfigure}[b]{0.5\linewidth}
+        \caption{Affiliation en 2009}
+    \label{hazard_2007} 
+    \centering
+    \includegraphics[width=1\linewidth]{AT_destination_2009.pdf}  
+    \end{subfigure}
     \begin{minipage}{12cm}
 \footnotesize
 \textsc{Population:} Filtres F1 et F2. Années 2007 à 2015. \\
@@ -504,82 +523,82 @@ Notons toutefois les fortes transitions du grade 794 vers des grades "autres" da
   \label{evo_by_ech} 
   \begin{subfigure}[b]{0.5\linewidth}
       \caption{Grade 793 à l'année courante}
-    \label{evo_by_ech_0} 
+    \label{evo_by_ech_793} 
     \centering
-    \includegraphics[width=1\linewidth]{next_793.pdf} 
-  \end{subfigure}%
+    \includegraphics[width=1\linewidth]{AT_hazard_by_ech_793.pdf} 
+  \end{subfigure}
   \begin{subfigure}[b]{0.5\linewidth}
         \caption{Grade 794 à l'année courante} 
-    \label{evo_by_ech_1} 
+    \label{evo_by_ech_794} 
     \centering
-    \includegraphics[width=1\linewidth]{next_794.pdf} 
+    \includegraphics[width=1\linewidth]{AT_hazard_by_ech_794.pdf} 
   \end{subfigure} 
 \end{figure}
 
-
-
-
-\clearpage
-\subsection{Vitesse dans le grade et dans l'échelon}
-
-Un dernier point devant être documenté en amont des choix de modélisation est l'importance des effets individuels dans la durée passée dans les grades ou les échelons. 
-
-\subsubsection*{Vitesse dans le grade}
-
-Nous laissons pour l'instant de coté cet aspect, qui nécessite un recul temporel important. 
-
-\subsubsection*{Vitesse dans l'échelon}
-
-Nous nous concentrons sur les années pour lesquelles l'échelon est bien renseigné (2011-2015) et adoptons la stratégie suivante: pour chaque individus de la base après application des filtres F1, F2 et F3, nous calculons la distribution de la durée passée dans le deuxième échelon observé pour les individus du grade 793 ayant au moins 2 changements d'échelons entre 2011 et 2015. Notons qu'à ce stade, à nouveau, nous considérons séparément les grades et les échelons, de sorte que nous pouvons surestimer la durée passée dans l'échelon (si l'individu change de grade mais reste dans un échelon de même niveau, nous n'identifions pas de changement d'échelon à ce stade). 
-
-La figure \ref{duree_by_ech} présente la distribution des durées passée dans l'échelon, pour différents groupes. 
-Si l'on prend l'ensemble de la population du grade (panel a), nous observons une distribution plurimodale de la durée passée dans l'échelon. Cela pourrait suggérer une forte variation interindividuelle pour ce qui est de la durée passée dans l'échelon. Mais si l'on différencie en fonction de l'échelon considérée, on constate que ces différents pics recoupent largement les différentes conditions d'avancements pour le passage à l'échelon suivants, présentées ci-dessous. 
-
-\begin{table}[h!]
-\label{means}
-\centering
-\caption{Conditions d'avancement pour le grade 793} 
-\footnotesize
-\begin{tabular}{l|cc}
-\toprule
-Echelon &  durée min &  durée max \\
-01  &12	&12 \\
-02	&24	&18 \\
-03	&24	&18\\
-04	&36	&24\\
-05	&36	&24 \\
-06	&36	&24 \\
-07	&48	&36 \\
-08	&48	&36 \\
-09	&48	&36 \\
-10	&48	&36	 \\
-%	
-\bottomrule
-\end{tabular}
-\end{table}
-
-
-Ainsi par exemple nous observons une forte concentration de la durée de l'échelon à 24 mois pour les échelons 4 à 7. 
- 
-
-Certains points restent toutefois obscurs:
-\begin{itemize}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
-\item Concentration à 1: souvent un changement de grade suivant un changement d'échelon?
-\item Pas beaucoup de durée max, durée min = durée fixe?
-\item Beaucoup de départ avant la durée min, en particulier pour les  échelons supérieurs. A nouveau, il n'est pas encore possible de savoir si cela vient d'un problème des données ou d'une application lâche des critères d'éligibilité. 
-\end{itemize}
-
-
-
-\begin{figure}[ht] 
-  \caption{Durée passée dans l'échelon, en fonction de l'échelon (grade 793)}
-  \label{duree_by_ech} 
-    \includegraphics[scale = 0.6]{duree_ech_793.pdf} 
-      \begin{minipage}{12cm}
-\footnotesize
-\textsc{Population:} Filtres F1, F2 et F3. Années 2011 à 2015. Individus qui ont connu au moins deux échelons entre 2011 et 2012 et qui se trouvent dans le grade 793 en 2012. 
-\end{minipage}
-\end{figure}
+%
+%
+%
+%\clearpage
+%\subsection{Vitesse dans le grade et dans l'échelon}
+%
+%Un dernier point devant être documenté en amont des choix de modélisation est l'importance des effets individuels dans la durée passée dans les grades ou les échelons. 
+%
+%\subsubsection*{Vitesse dans le grade}
+%
+%Nous laissons pour l'instant de coté cet aspect, qui nécessite un recul temporel important. 
+%
+%\subsubsection*{Vitesse dans l'échelon}
+%
+%Nous nous concentrons sur les années pour lesquelles l'échelon est bien renseigné (2011-2015) et adoptons la stratégie suivante: pour chaque individus de la base après application des filtres F1, F2 et F3, nous calculons la distribution de la durée passée dans le deuxième échelon observé pour les individus du grade 793 ayant au moins 2 changements d'échelons entre 2011 et 2015. Notons qu'à ce stade, à nouveau, nous considérons séparément les grades et les échelons, de sorte que nous pouvons surestimer la durée passée dans l'échelon (si l'individu change de grade mais reste dans un échelon de même niveau, nous n'identifions pas de changement d'échelon à ce stade). 
+%
+%La figure \ref{duree_by_ech} présente la distribution des durées passée dans l'échelon, pour différents groupes. 
+%Si l'on prend l'ensemble de la population du grade (panel a), nous observons une distribution plurimodale de la durée passée dans l'échelon. Cela pourrait suggérer une forte variation interindividuelle pour ce qui est de la durée passée dans l'échelon. Mais si l'on différencie en fonction de l'échelon considérée, on constate que ces différents pics recoupent largement les différentes conditions d'avancements pour le passage à l'échelon suivants, présentées ci-dessous. 
+%
+%\begin{table}[h!]
+%\label{means}
+%\centering
+%\caption{Conditions d'avancement pour le grade 793} 
+%\footnotesize
+%\begin{tabular}{l|cc}
+%\toprule
+%Echelon &  durée min &  durée max \\
+%01  &12	&12 \\
+%02	&24	&18 \\
+%03	&24	&18\\
+%04	&36	&24\\
+%05	&36	&24 \\
+%06	&36	&24 \\
+%07	&48	&36 \\
+%08	&48	&36 \\
+%09	&48	&36 \\
+%10	&48	&36	 \\
+%%	
+%\bottomrule
+%\end{tabular}
+%\end{table}
+%
+%
+%Ainsi par exemple nous observons une forte concentration de la durée de l'échelon à 24 mois pour les échelons 4 à 7. 
+% 
+%
+%Certains points restent toutefois obscurs:
+%\begin{itemize}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
+%\item Concentration à 1: souvent un changement de grade suivant un changement d'échelon?
+%\item Pas beaucoup de durée max, durée min = durée fixe?
+%\item Beaucoup de départ avant la durée min, en particulier pour les  échelons supérieurs. A nouveau, il n'est pas encore possible de savoir si cela vient d'un problème des données ou d'une application lâche des critères d'éligibilité. 
+%\end{itemize}
+%
+%
+%
+%\begin{figure}[ht] 
+%  \caption{Durée passée dans l'échelon, en fonction de l'échelon (grade 793)}
+%  \label{duree_by_ech} 
+%    \includegraphics[scale = 0.6]{duree_ech_793.pdf} 
+%      \begin{minipage}{12cm}
+%\footnotesize
+%\textsc{Population:} Filtres F1, F2 et F3. Années 2011 à 2015. Individus qui ont connu au moins deux échelons entre 2011 et 2012 et qui se trouvent dans le grade 793 en 2012. 
+%\end{minipage}
+%\end{figure}
 
 
 
@@ -654,39 +673,291 @@ Certains points restent toutefois obscurs:
 
 
 
-%
-%\section*{Annexes}
-%
-%\subsection{Résultats pour les adjoints administratifs}
-%
-%\begin{figure}[ht] 
-%  \caption{Survie dans le grade: Adjoints administratifs}
-%  \label{echelon_by_neg} 
-%  \begin{subfigure}[b]{0.55\linewidth}
-%      \caption{Grade AA2} 
-%    \label{echelon_by_neg_0} 
-%    \centering
-%    \includegraphics[width=1\linewidth]{survival_AA_1.pdf} 
-%    \vspace{4ex}
-%  \end{subfigure}
-%  \begin{subfigure}[b]{0.55\linewidth}
-%        \caption{Grade AA1} 
-%    \label{echelon_by_neg_1} 
-%    \centering
-%    \includegraphics[width=1\linewidth]{survival_AA_2.pdf} 
-%    \vspace{4ex}
-%  \end{subfigure} 
-%  \begin{minipage}{12cm}
-%\footnotesize
-%\textsc{Population:} Filtres F1 et F2. Années 2007 à 2015.
-%\textsc{Lecture:} .
-%\end{minipage}
-%\end{figure}
-%
-%
-%\subsection{Résultats pour les aides soignants}
+\clearpage
+\section*{Annexes}
+\addcontentsline{toc}{section}{Annexes}
+
+\subsection*{A. Résultats pour les adjoints administratifs}
+\addcontentsline{toc}{subsection}{A. Résultats pour les adjoints administratifs}
+\setcounter{table}{0}
+\setcounter{figure}{0}
+\renewcommand{\thefigure}{A.\arabic{figure}}
+\renewcommand{\thetable}{A.\arabic{table}}
 
 
+
+
+\begin{figure}[ht] 
+  \caption{Evolution des grilles: grade par grade}
+  \label{echelon_by_negAA} 
+  \begin{subfigure}[b]{0.55\linewidth}
+      \caption{Grade 791} 
+    \label{echelon_by_neg_0} 
+    \centering
+    \includegraphics[width=1\linewidth]{AA_791_grille_by_neg.pdf} 
+  \end{subfigure}%% 
+  \begin{subfigure}[b]{0.55\linewidth}
+        \caption{Grade 792} 
+    \label{echelon_by_neg_1} 
+    \centering
+    \includegraphics[width=1\linewidth]{AA_792_grille_by_neg.pdf} 
+  \end{subfigure} 
+  \begin{subfigure}[b]{0.55\linewidth}
+        \caption{Grade 14} 
+    \label{echelon_by_neg_2} 
+    \centering
+    \includegraphics[width=1\linewidth]{AA_14_grille_by_neg.pdf} 
+  \end{subfigure}%%
+  \begin{subfigure}[b]{0.55\linewidth}
+        \caption{Grade 162} 
+    \label{echelon_by_neg_3} 
+    \centering
+    \includegraphics[width=1\linewidth]{AA_162_grille_by_neg.pdf} 
+  \end{subfigure} 
+\end{figure}
+
+
+
+\begin{table}[h!]
+\centering
+\caption{Impact des filtres successifs sur la taille de l'échantillon} 
+\label{filters_AT}
+\begin{tabular}{lcc}
+\toprule
+\input{Tables/AA_sample_selection.tex}
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\begin{table}[h!]
+\centering
+\caption{Répartition des grades de provenance} 
+\label{entry}
+\begin{tabular}{lcccc}
+\toprule
+ & \multicolumn{4}{c}{Grade en n (changement en n)} \\
+ & 793 & 794 & 795 & 796 \\ 
+  \hline
+\input{Tables/AA_transition_entry.tex}  
+   \hline
+\bottomrule
+\end{tabular}
+\end{table}
+
+\medskip
+
+
+\begin{table}[h!]
+\centering
+\caption{Répartition des grades de destination} 
+\label{exit}
+\begin{tabular}{lcccc}
+\toprule
+ & \multicolumn{4}{c}{Grade en n (changement en n+1)} \\
+ & 791 & 792 &  &  \\ 
+  \hline
+\input{Tables/AA_transition_exit.tex}  
+   \hline
+\bottomrule
+\end{tabular}
+\end{table}
+\medskip
+
+
+
+\begin{figure}[ht] 
+  \caption{Survie dans le grade: Adjoints administratifs}
+  \label{surv_by_entry} 
+  \begin{subfigure}[b]{0.5\linewidth}
+      \caption{Grade 791} 
+    \label{echelon_by_neg_0} 
+    \centering
+    \includegraphics[width=1\linewidth]{AA_survival_791.pdf} 
+  \end{subfigure}%
+  \begin{subfigure}[b]{0.5\linewidth}
+        \caption{Grade 792} 
+    \label{echelon_by_neg_1} 
+    \centering
+    \includegraphics[width=1\linewidth]{AA_survival_792.pdf} 
+  \end{subfigure} 
+\end{figure}
+
+
+\begin{figure}[ht] 
+  \caption{Répartitions des situations à chaque date pour les individus entrant le grade 791 en 2007 et 2009 et encore présent dans le grade en n-1}
+  \label{hazard} 
+  \begin{subfigure}[b]{0.5\linewidth}
+      \caption{Affiliation en 2007}
+    \label{hazard_2007} 
+    \centering
+    \includegraphics[width=1\linewidth]{AA_destination_2007.pdf}  
+    \end{subfigure}%
+  \begin{subfigure}[b]{0.5\linewidth}
+        \caption{Affiliation en 2009}
+    \label{hazard_2007} 
+    \centering
+    \includegraphics[width=1\linewidth]{AA_destination_2009.pdf}  
+    \end{subfigure}
+\end{figure}
+
+
+\begin{figure}[ht] 
+  \caption{Situation d'une année à l'autre, selon l'échelon}
+  \label{evo_by_ech} 
+  \begin{subfigure}[b]{0.5\linewidth}
+      \caption{Grade 793 à l'année courante}
+    \label{evo_by_ech_791} 
+    \centering
+    \includegraphics[width=1\linewidth]{AA_hazard_by_ech_791.pdf} 
+  \end{subfigure}
+  \begin{subfigure}[b]{0.5\linewidth}
+        \caption{Grade 794 à l'année courante} 
+    \label{evo_by_ech_792} 
+    \centering
+    \includegraphics[width=1\linewidth]{AA_hazard_by_ech_792.pdf} 
+  \end{subfigure} 
+\end{figure}
+
+
+
+\clearpage
+
+\subsection{B. Résultats pour les aides soignants}
+\addcontentsline{toc}{subsection}{B. Résultats pour les aides soignants}
+\setcounter{table}{0}
+\setcounter{figure}{0}
+\renewcommand{\thefigure}{B.\arabic{figure}}
+\renewcommand{\thetable}{B.\arabic{table}}
+
+
+
+
+\begin{figure}[ht] 
+  \caption{Evolution des grilles: grade par grade}
+  \label{echelon_by_negAA} 
+  \begin{subfigure}[b]{0.33\linewidth}
+      \caption{Grade 839} 
+    \label{echelon_by_neg_0} 
+    \centering
+    \includegraphics[width=1\linewidth]{AS_839_grille_by_neg.pdf} 
+  \end{subfigure}%% 
+  \begin{subfigure}[b]{0.33\linewidth}
+        \caption{Grade 840} 
+    \label{echelon_by_neg_1} 
+    \centering
+    \includegraphics[width=1\linewidth]{AS_840_grille_by_neg.pdf} 
+  \end{subfigure}% 
+  \begin{subfigure}[b]{0.33\linewidth}
+        \caption{Grade 841} 
+    \label{echelon_by_neg_2} 
+    \centering
+    \includegraphics[width=1\linewidth]{AS_841_grille_by_neg.pdf} 
+  \end{subfigure}%%
+
+\end{figure}
+
+
+
+\begin{table}[h!]
+\centering
+\caption{Impact des filtres successifs sur la taille de l'échantillon} 
+\label{filters_AS}
+\begin{tabular}{lcc}
+\toprule
+\input{Tables/AS_sample_selection.tex}
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\begin{table}[h!]
+\centering
+\caption{Répartition des grades de provenance} 
+\label{entry}
+\begin{tabular}{lccc}
+\toprule
+ & \multicolumn{3}{c}{Grade en n (changement en n)} \\
+ & 839 & 840 & 841 \\ 
+  \hline
+\input{Tables/AS_transition_entry.tex}  
+   \hline
+\bottomrule
+\end{tabular}
+\end{table}
+
+\medskip
+
+
+\begin{table}[h!]
+\centering
+\caption{Répartition des grades de destination} 
+\label{exit}
+\begin{tabular}{lccc}
+\toprule
+ & \multicolumn{3}{c}{Grade en n (changement en n+1)} \\
+ & 839 & 840 & 841  \\ 
+  \hline
+\input{Tables/AS_transition_exit.tex}  
+   \hline
+\bottomrule
+\end{tabular}
+\end{table}
+\medskip
+
+
+\begin{figure}[ht] 
+  \caption{Survie dans le grade: Aides soignants}
+  \label{surv_by_entry} 
+  \begin{subfigure}[b]{0.5\linewidth}
+      \caption{Grade 839} 
+    \label{echelon_by_neg_0} 
+    \centering
+    \includegraphics[width=1\linewidth]{AS_survival_839.pdf} 
+  \end{subfigure}%
+  \begin{subfigure}[b]{0.5\linewidth}
+        \caption{Grade 840} 
+    \label{echelon_by_neg_1} 
+    \centering
+    \includegraphics[width=1\linewidth]{AS_survival_840.pdf} 
+  \end{subfigure} 
+\end{figure}
+
+
+\begin{figure}[ht] 
+  \caption{Répartitions des situations à chaque date pour les individus entrant le grade 839 en 2007 et 2009 et encore présent dans le grade en n-1}
+  \label{hazard} 
+  \begin{subfigure}[b]{0.5\linewidth}
+      \caption{Affiliation en 2007}
+    \label{hazard_2007} 
+    \centering
+    \includegraphics[width=1\linewidth]{AS_destination_2007.pdf}  
+    \end{subfigure}%
+  \begin{subfigure}[b]{0.5\linewidth}
+        \caption{Affiliation en 2009}
+    \label{hazard_2007} 
+    \centering
+    \includegraphics[width=1\linewidth]{AS_destination_2009.pdf}  
+    \end{subfigure}
+\end{figure}
+
+
+\begin{figure}[ht] 
+  \caption{Situation d'une année à l'autre, selon l'échelon}
+  \label{evo_by_ech} 
+  \begin{subfigure}[b]{0.5\linewidth}
+      \caption{Grade 839 à l'année courante}
+    \label{evo_by_ech_791} 
+    \centering
+    \includegraphics[width=1\linewidth]{AS_hazard_by_ech_839.pdf} 
+  \end{subfigure}
+  \begin{subfigure}[b]{0.5\linewidth}
+        \caption{Grade 840 à l'année courante} 
+    \label{evo_by_ech_792} 
+    \centering
+    \includegraphics[width=1\linewidth]{AS_hazard_by_ech_840.pdf} 
+  \end{subfigure} 
+\end{figure}
 
 
 \end{document}

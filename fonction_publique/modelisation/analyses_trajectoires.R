@@ -5,9 +5,10 @@
 
 #### 0. Initialisation ####
 
+rm(list = ls()); gc()
 
 # path
-place = "ipp"
+place = "mac"
 if (place == "ipp"){
 data_path = "M:/CNRACL/output/"
 git_path =  'U:/Projets/CNRACL/fonction-publique/fonction_publique/'
@@ -26,6 +27,7 @@ source(paste0(git_path, 'modelisation/OutilsCNRACL.R'))
 
 load_data <- function(data_path, corps)
 {
+print(paste0("Loading data  ",corps))  
 filename = paste0(data_path,"corps",corps,".csv")
 main = read.csv(filename)
 return (main)
@@ -35,15 +37,16 @@ get_list_neg <- function(corps)
 {
 if (corps == "AT"){list_neg = c(793, 794, 795, 796)}
 if (corps == "AA"){list_neg = c(791, 792, 0014, 0162)}
-if (corps == "AS"){list_neg = c(840, 841, 842, 0162)}
+if (corps == "AS"){list_neg = c(839 ,840, 841)}
 return(list_neg)
 }  
 
 
 #### I. WOD ####
 
-data_wod <- function(data, list_neg) 
+data_wod <- function(data, list_neg, corps) 
 {
+  print(paste0("Cleaning data  ",corps)) 
   # Remove duplicates (why not in select_table?)
   di = data[data$annee == 2015,]
   dup = di$ident[duplicated(di$ident)]
@@ -120,11 +123,7 @@ data_clean <- function(data, list_neg)
 
 #### II.1 Sample selection ####
 
-data_all = data_all_AA
-list_neg = list_neg_AA
-corps = 'AA'
-
-sample_selection <- function(data, list_neg, corps, savepath)
+sample_selection <- function(data_all, list_neg, corps, savepath)
 {  
 list1 = data_all$ident[which(data_all$statut != "" & data_all$libemploi == ''  & data_all$annee>= 2007)]
 list2 = data_all$ident[which(data_all$c_neg == 0 & data_all$libemploi != '' & data_all$annee>= 2007)]
@@ -260,14 +259,49 @@ quality2 <- function(data_all, corps,  list_neg, savepath)
 
 
 
-
-
 ### II.2.3 Repartition des erreurs entre individus ###
 
 
-### II.2.4 Répartition de la censure ###
+### II.2.4 Repartition de la censure ###
 
+count_censoring <- function(data_clean, list_neg, savepath, corps)
+{
+  data <- data_clean[which(data_clean$annee >= 2007), ]
+  data$bef_neg  <- ave(data$c_neg, data$ident, FUN=shiftm1)
+  data$change_neg_bef  <- ifelse(data$c_neg == data$bef_neg , 0, 1)
+  data$change_neg_bef[data$annee == 2007] = 1
+  # Count change grade
+  data$cumsum  <- ave(data$change_neg_bef,data$ident,FUN=cumsum)
+  data$tot     <- ave(data$change_neg_bef,data$ident,FUN=sum)  
+  data = data[, c('ident', 'annee', 'cumsum',"c_neg")]
+  data$seq = paste(data$ident, data$cumsum, sep = "_")
+  # Removing sequences of empty neg
+  data = data[-which(data$c_neg == 0), ]
+  # Count number of sequences: 
+  first_year <- tapply(data$annee,  data$seq, FUN = min) 
+  last_year <-  tapply(data$annee,  data$seq, FUN = max) 
+  # Count
+  count = matrix(ncol = 5, nrow = 2)
+  denom = length(first_year)
+  count[1,1] = length(which(first_year > 2007 & last_year < 2015))
+  count[1,2] = length(which(first_year == 2007 & last_year < 2015))
+  count[1,3] = length(which(first_year > 2007 & last_year == 2015))
+  count[1,4] = length(which(first_year == 2007 & last_year == 2015))
 
+  count[1,5] = length(first_year)
+  count[2,] = 100*count[1,]/denom
+
+table = count
+colnames(table) <- c("Cas 1", "Cas 2", "Cas 3", "Cas 4", "Total")
+rownames(table) <- c("Nombre", "Pourcentage")
+
+print(xtable(table, digits = matrix(c(rep(0,(ncol(table)+1)),rep(2,(ncol(table)+1))),
+                             nrow = nrow(table), ncol=(ncol(table)+1), byrow=T)),
+      sanitize.text.function=identity,size="\\footnotesize", 
+      only.contents=T, hline = c(0), 
+      file = paste0(savepath, corps, "_censure.tex"))
+print(paste0("Saving table ",paste0( corps, "_censure.tex")))
+}
 
 #### III. Statistiques descriptives ####
 
@@ -275,7 +309,7 @@ quality2 <- function(data_all, corps,  list_neg, savepath)
 
 # Sous pop: toute la carriere dans le corps, pas de missing. 
 
-plot_random_trajectories = function(data_clean, list_neg, savepath, corps)
+plot_random_trajectories = function(data_clean, list_neg, savepath, corps, Destinie = F)
 {
 list_drop1 = unique(data_clean$ident[which(!is.element(data_clean$c_neg, list_neg) & data_clean$annee > 2006)])
 list_drop2 = unique(data_clean$ident[which(data_clean$ib4 == 0 & data_clean$annee > 2006)])
@@ -311,21 +345,25 @@ dev.off()
 
 print(paste0("Saving graph  ",corps,"_trajectoires.pdf"))
 
-load  ( (paste0("U:/PENSIPP 0.1/Modele/Outils/OutilsBio/BiosDestinie2-old.RData"        )) ) 
-sub_ident = which(anaiss == 90 & salaire[, 120]>0 & salaire[, 121]>0 & salaire[, 122]>0 & salaire[, 124]>0& salaire[, 125] >0 &
-                                 salaire[, 126]>0 & salaire[, 127]>0 & salaire[, 128] >0 & salaire[, 129]>0)
-sub = sample(sub_ident , 4)
-sub_data = as.data.frame(salaire[sub,120:129])
-sub_data$ident = 1:nrow(sub_data)
-colnames(sub_data) = paste0("age_",seq(20,29,1)) 
-sub_data2 = reshape(sub_data, idvar = "ident", varying = list(1:10) , direction = "long", sep = "_",  v.names = "salaire", timevar = "age")
-#lim = range(sub_data[sub_data2>2000])
-pdf(paste0(savepath,"trajectoires_D.pdf"))
-ggplot(data = sub_data2, aes(x = age, y = salaire)) + geom_line() + 
-  ylim(lim[1], lim[2]) + 
-  theme(strip.background = element_blank(), strip.text = element_blank(), axis.text.x=element_blank()) + 
-  facet_wrap(~ident,  ncol = 4)
-dev.off()
+if (Destinie == T)
+{
+  load("/Users/simonrabate/Desktop/PENSIPP 0.1/Modele/Outils/OutilsBio/BiosDestinie2-Old.RData")
+  #load  ( (paste0("U:/PENSIPP 0.1/Modele/Outils/OutilsBio/BiosDestinie2-old.RData"        )) ) 
+  sub_ident = which(anaiss == 90 & salaire[, 120]>0 & salaire[, 121]>0 & salaire[, 122]>0 & salaire[, 124]>0& salaire[, 125] >0 &
+                                   salaire[, 126]>0 & salaire[, 127]>0 & salaire[, 128] >0 & salaire[, 129]>0)
+  sub = sample(sub_ident , 4)
+  sub_data = as.data.frame(salaire[sub,120:129])
+  sub_data$ident = 1:nrow(sub_data)
+  colnames(sub_data) = paste0("age_",seq(20,29,1)) 
+  sub_data2 = reshape(sub_data, idvar = "ident", varying = list(1:10) , direction = "long", sep = "_",  v.names = "salaire", timevar = "age")
+  lim = range(sub_data[sub_data2>2000])
+  pdf(paste0(savepath,"trajectoires_D.pdf"))
+  ggplot(data = sub_data2, aes(x = age, y = salaire)) + geom_line() + 
+    ylim(lim[1], lim[2]) + 
+    theme(strip.background = element_blank(), strip.text = element_blank(), axis.text.x=element_blank()) + 
+    facet_wrap(~ident,  ncol = 4)
+  dev.off()
+}
 }
 
 
@@ -337,7 +375,7 @@ compute_transitions_entry <- function(data_all, list_neg, corps, savepath)
   list2 = data_all$ident[which(data_all$c_neg == 0 & data_all$libemploi != '')]
   data_clean =  data_all[which(!is.element(data_all$ident, union(list1,list2))),]  
   data_entry = data_clean[which(data_clean$change_neg_bef ==1  & data_clean$annee >= 2012),]
-  table_entry = matrix(ncol = length(list_neg), nrow = 11)  
+  table_entry = matrix(0, ncol = length(list_neg), nrow = 11)  
   
   for (n in 1:length(list_neg))
   {
@@ -352,11 +390,14 @@ compute_transitions_entry <- function(data_all, list_neg, corps, savepath)
     list_oth = which(!is.element(data_entry$bef_neg, cbind(0, list_neg)))
     t = as.data.frame(table(data_entry$bef_neg[intersect(list, list_oth)]))
     t = t[order(-t$Freq),]
+    if (length(intersect(list, list_oth))>0)
+    {
     table_entry[5,n] = sum(t$Freq)/length(list)  
     table_entry[6,n] = as.numeric(format(t[1,1]))
     table_entry[7,n] = t[1,2]/length(list) 
     table_entry[8,n] = round(as.numeric(format(t[2,1])), digits = 0)
     table_entry[9,n] = t[2,2]/length(list) 
+    }
     # From missing neg
     list4 = which(data_entry$bef_neg == 0)
     table_entry[10,n] = length(intersect(list, list4))/length(list)  
@@ -388,7 +429,7 @@ compute_transitions_exit <- function(data_all, list_neg, corps, savepath = tab_p
   list2 = data_all$ident[which(data_all$c_neg == 0 & data_all$libemploi != '')]
   data_clean =  data_all[which(!is.element(data_all$ident, union(list1,list2))),]  
   data_exit = data_clean[which(data_clean$change_neg_next ==1  & data_clean$annee >= 2011 & data_clean$annee < 2015),]
-  table_exit = matrix(ncol = length(list_neg), nrow = 11)  
+  table_exit = matrix(0, ncol = length(list_neg), nrow = 11)  
   
   for (n in 1:length(list_neg))
   {
@@ -400,14 +441,17 @@ compute_transitions_exit <- function(data_all, list_neg, corps, savepath = tab_p
       table_exit[(n2),n] = length(intersect(list, list2))/length(list)  
     }
     # From other known neg
-    list_oth = which(!is.element(data_entry$next_neg, cbind(0, list_neg)))
-    t = as.data.frame(table(data_entry$next_neg[intersect(list, list_oth)]))
+    list_oth = which(!is.element(data_exit$next_neg, cbind(0, list_neg)))
+    t = as.data.frame(table(data_exit$next_neg[intersect(list, list_oth)]))
     t = t[order(-t$Freq),]
+    if (length(intersect(list, list_oth))>0)
+    {
     table_exit[5,n] = sum(t$Freq)/length(list)  
     table_exit[6,n] = as.numeric(format(t[1,1]))
     table_exit[7,n] = t[1,2]/length(list) 
     table_exit[8,n] = round(as.numeric(format(t[2,1])), digits = 0)
-    table_exit[9,n] = t[2,2]/length(list)  
+    table_exit[9,n] = t[2,2]/length(list)
+    }
     # From missing neg
     list4 = which(data_exit$next_neg == 0)
     table_exit[10,n] = length(intersect(list, list4))/length(list)  
@@ -460,7 +504,7 @@ for (n in 1: length(list_neg))
 {
 for (y in 1:length(years))
 {
-list_keep1 = unique(data$ident[which(data$bef_lib == '' & data$bef_lib2 == '' & data$c_neg == list_neg[n] & data$annee == years[y])])
+list_keep1 = unique(data$ident[which(data$change_neg_bef == 1  & data$c_neg == list_neg[n] & data$annee == years[y])])
 sub_data = data[which(is.element(data$ident, list_keep1) & data$annee >= years[y]), c("ident", "annee", "c_neg", "echelon", "libemploi", "change_neg_bef", "change_neg_next")]  
 sub_data$cum_sum_change = ave(sub_data$change_neg_bef, sub_data$ident, FUN= cumsum)
 sub_data = sub_data[which(sub_data$cum_sum_change <= 1),]
@@ -530,7 +574,7 @@ hazard_rates = function(data_all, corps, list_neg, savepath)
     }  
     
     
-    pdf(paste0(savepath, corps, "destination_",entry_year,".pdf"))
+    pdf(paste0(savepath, corps, "_destination_",entry_year,".pdf"))
     n_col = c("black", "grey40", "grey60", "grey80") 
     layout(matrix(c(1, 2), nrow=2,ncol=1, byrow=TRUE), heights=c(5,1))
     par(mar=c(2,2.5,1,1))
@@ -545,6 +589,7 @@ hazard_rates = function(data_all, corps, list_neg, savepath)
   }  
   
 }
+
 
 #### III.4  Distribution of next grade by echelon ####
 
@@ -627,45 +672,16 @@ hazard_rates_by_ech <- function(data_all, corps, list_neg, savepath)
 }
  
 
-
-
-# Load data
-main = load_data(data_path, corps)
-list_neg = get_list_neg(corps)
-data_all =  data_wod(data = main, list_neg = list_neg)
-data_clean = data_clean(data_all, list_neg)
-rm(main)
-gc()
-# Filters 
-sample_selection(data = data_all, corps = corps, list_neg = list_neg, savepath = tab_path)
-# Quality
-quality1(data = data_all, corps = corps, list_neg = list_neg, savepath = tab_path)
-quality2(data_all = data_all, corps = corps, list_neg = list_neg, savepath = tab_path)
-# Trajectories
-if (corps == 'AT'){plot_random_trajectories(data_clean = data_clean, corps = corps, list_neg = list_neg, savepath = fig_path)}
-# Transitions
-compute_transitions_entry(data = data_all, corps = corps, list_neg = list_neg, savepath = tab_path)
-compute_transitions_exit(data = data_all, corps = corps, list_neg = list_neg, savepath = tab_path)
-# Survival by entry year
-survival_in_grade(data_all = data_all, corps = corps, list_neg = list_neg, savepath = fig_path)  
-# Hazard rates by entry year
-hazard_rates(data_all = data_all, corps = corps, list_neg = list_neg, savepath = fig_path)  
-# Hazard rates by echelon
-hazard_rates_by_ech(data_all = data_all, corps = corps, list_neg = list_neg, savepath = fig_path)  
-
 #### III.5 Distribution of time spent in grade and echelon ####
 
 ## III.5.1 Time spent in grade ##
 
-list1 = data_all_AT$ident[which(data_all_AT$statut != '' & data_all_AT$libemploi == '')]
-list2 = data_all_AT$ident[which(data_all_AT$c_neg == 0 & data_all_AT$libemploi != '')]
-data_clean =  data_all_AT[which(!is.element(data_all_AT$ident, union(list1,list2))),] 
-
-data = data[which(data$annee)]
 
 ## III.5.2 Time spent in echelon (filter: entering new echelon in 2012) ##
 
-data =  data_clean_AT[which(data_clean_AT$annee >= 2011), c("ident", "annee", "c_neg",'bef_neg' , 'an_aff',
+duration_in_ech <- function(data_clean, list_neg, savepath, corps)
+{
+data =  data_clean[which(data_clean$annee >= 2011), c("ident", "annee", "c_neg",'bef_neg' , 'an_aff',
                                                             "echelon1", "echelon2", "echelon3", "echelon4")] 
 data = reshape(data, idvar = c("ident", "annee"), v.names = "ech", timevar = "trimestre",
                     varying = c("echelon1", "echelon2", "echelon3", "echelon4") , direction = "long")
@@ -680,7 +696,6 @@ data$change_ech <- ifelse((data$ech != data$bef_ech), 1, 0)
 data$change_ech[is.na(data$change_ech)] = 1
 data$cumsum  <- ave(data$change_ech,data$ident,FUN=cumsum)
 data$tot     <- ave(data$change_ech,data$ident,FUN=sum)
-
 
 # Pop: changement d'echelon entre 2011 et 2012: 
 list_keep = data$ident[which(data$annee == 2012 & data$cumsum == 2)]
@@ -700,7 +715,7 @@ hist(datai$tot,
      xlim=c(1,15))
 
 # Differenciation par neg et echelon
-list_keep = data$ident[which(data$annee == 2012 & data$cumsum == 2 & data$c_neg == 793)]
+list_keep = data$ident[which(data$annee == 2012 & data$cumsum == 2 & data$c_neg == list_neg[1])]
 data2 = data[which(is.element(data$ident, list_keep)),]
 data2 = data[which(data$tot > 2 & data$cumsum == 2), ]
 data2$a = 1
@@ -744,129 +759,41 @@ axis(side=1,at=h$breaks[c(2,4,6,8,10,12,14,16)],labels=(h$breaks*3)[c(2,4,6,8,10
 
 dev.off()
 
-
-## Vitesse individuelle: distribution duree dans grade 4 pour ceux qui ont ?t? rapide/lent dans grade 3.
-list_ident1 = data$ident[which(data$annee == 2012 & data$cumsum == 2 & data$c_neg == 793 & data$ech == 3)]
-list_ident2 = data$ident[which(data$cumsum == 3 & data$c_neg == 793 & data$ech == 4)]
-list_keep = intersect(list_ident1, list_ident2)
-data2 = data[which(is.element(data$ident, list_keep)),]
-data2 = data[which(data$tot > 2 & data$cumsum == 2), ]
-data2$a = 1
-data2$count = ave(data2$a, data2$ident, FUN=cumsum)
-data2$tot   = ave(data2$a, data2$ident, FUN=sum)
-datai = data2[which(data2$count == 1), ]
-
-table(datai$tot)
-
-pdf(paste0(fig_path,"duree_ech_AT2.pdf"))
-
-layout(matrix(c(1,2,3,4), nrow=2,ncol=2, byrow=TRUE), heights=c(3,3))
-par(mar=c(2,2,2,2))
-h = hist(datai$tot, 
-         xlab="Duree (en trimestre)", ylab = "Frequence", main = "(a) Tous",
-         col="grey50",xaxt="n",
-         border="black", 
-         xlim=c(1,15))
-axis(side=1,at=h$breaks[c(2,4,6,8,10,12,14,16)],labels=(h$breaks*3)[c(2,4,6,8,10,12,14,16)], font = 0.8)
-
-# Distribution nombre d'echelons par individus (vitesse)
-datai = data[which(data$annee == 2012 & data$trimestre == 4 & data$cumsum ==2), ]
-hist(datai$tot)
-
-data = mainAT
-data$a = 1
-data$count = ave(data$a, data$ident, FUN = sum)
-table(data$count)
-
-## Proba de quitter le corps par echelon (survival)
-exit_rate  = matrix(ncol = 11, nrow = 4)
-surv_rate  = matrix(ncol = 11, nrow = 4)
-exit_rate2 = matrix(ncol = 11, nrow = 4)
-surv_rate2 = matrix(ncol = 11, nrow = 4)
-
-table(data_cleaned$echelon[which(data_cleaned$c_neg == 794)])
-table(data_cleaned$echelon[which(data_cleaned$c_neg == 793)])
-
-
-for (e in seq(1,11,1))
-{
-  for (n in seq(1,4,1))
-  {
-    exit_rate[n, e] = length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee<2015 & data_cleaned$change_neg_next == 1 ))/ 
-      length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee<2015))
-    surv_rate[n, e] = length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee>2007 & data_cleaned$change_neg_bef == 1 ))/ 
-      length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee>2007))  
-    exit_rate2[n, e] = length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee>2011 & data_cleaned$annee<2015 & data_cleaned$change_neg_next == 1 ))/ 
-      length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e  & data_cleaned$annee>2011 & data_cleaned$annee<2015))
-    surv_rate2[n, e] = length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee>2007 & data_cleaned$change_neg_bef == 1 ))/ 
-      length(which(data_cleaned$c_neg == list_neg[n] & data_cleaned$echelon == e & data_cleaned$annee>2007))  
-  }
 }
-
-View(data_cleaned[, c('ident', 'annee', 'c_neg', 'echelon1', 'echelon4', 'ib', 'next_neg', 'next_neg2', 'bef_neg', 'bef_neg2', 'change_neg_next', 'change_neg_next')])
-
-data_all = data[which(data$count_AT == 9 & data$count_lib == 9 & data$count_missing_ech == 0), ]
-
-
 
 ##### MAIN #####
 
 main <- function(liste_corps)
 {
-
-  
+  for (corps in liste_corps)
+  {
+  # Load data
+  main = load_data(data_path, corps)
+  list_neg = get_list_neg(corps)
+  data_all =  data_wod(data = main, list_neg = list_neg, corps = corps)
+  data_clean = data_clean(data_all, list_neg)
+  rm(main)
+  gc()
+  # Filters 
+  sample_selection(data_all = data_all, corps = corps, list_neg = list_neg, savepath = tab_path)
+  # Quality
+  quality1(data = data_all, corps = corps, list_neg = list_neg, savepath = tab_path)
+  quality2(data_all = data_all, corps = corps, list_neg = list_neg, savepath = tab_path)
+  count_censoring(data_clean = data_clean, corps = corps, list_neg = list_neg, savepath = tab_path)
+  # Trajectories
+  if (corps == 'AT'){plot_random_trajectories(data_clean = data_clean, corps = corps, list_neg = list_neg, savepath = fig_path)}
+  # Transitions
+  compute_transitions_entry(data = data_all, corps = corps, list_neg = list_neg, savepath = tab_path)
+  compute_transitions_exit(data = data_all, corps = corps, list_neg = list_neg, savepath = tab_path)
+  # Survival by entry year
+  survival_in_grade(data_all = data_all, corps = corps, list_neg = list_neg, savepath = fig_path)  
+  # Hazard rates by entry year
+  hazard_rates(data_all = data_all, corps = corps, list_neg = list_neg, savepath = fig_path)  
+  # Hazard rates by echelon
+  hazard_rates_by_ech(data_all = data_all, corps = corps, list_neg = list_neg, savepath = fig_path)    
+ } 
 }  
-# Initialisation
-  
-# Tableau sample selection  
-sample_selection(data = data_all, corps, list_neg)
 
-# Subsample : after 2011 with echelon
-data = data_clean_AT[which(data_clean_AT$annee > 2010 & data_clean_AT$annee < 2015 & 
-                            data_clean_AT$c_neg != 0  & data_clean_AT$c_neg == 793), ]
-data$age = data$annee - data$generation
-data$age2 = data$age*data$age
-# Legislation
-data$ind_elig1 = ifelse(data$echelon4 >= 5, 1, 0)
-
-data$change_next_grade =  ifelse(data$next_neg == 794, 1, 0)
-
-# Mean by echelon
-aggregate(data$change_neg_next, list(data$echelon4), FUN = mean, na.rm = F)
-
-m0  <-  lm(change_neg_next ~ 1,        
-           data=data)
-m1  <-  lm(change_neg_next ~ sexe +  age + age2,        
-           data=data)
-m2  <-  lm(change_neg_next ~ echelon4,        
-           data=data)
-m3  <-  lm(change_neg_next ~  sexe + age + age2 + ind_elig1,        
-           data=data)
-m4  <-  lm(change_next_grade ~  sexe + age + age2 + ind_elig1,        
-           data=data)
-
-
-## Duration ## 
-
-##### DIVERS ####
-
-
-list1 = data_all_AT$ident[which(data_all_AT$statut != '' & data_all_AT$libemploi == '')]
-list2 = data_all_AT$ident[which(data_all_AT$c_neg == 0 & data_all_AT$libemploi != '')]
-data_clean =  data_all_AT[which(!is.element(data_all_AT$ident, union(list1,list2))),]  
-
-data = data_clean[which(data_clean$c_neg == 793 & 
-                          data_clean$annee >= 2011 & data_clean$annee <= 2014),]
-
-table(data$echelon4)/length(data$echelon4)
-table(data$echelon4[which(data$change_neg_next==1)])/length(data$echelon4[which(data$change_neg_next==1)])
-table(data$echelon4[which(data$next_neg == 794)])/length(data$echelon4[which(data$next_neg == 794)])
-
-data = data_clean[which(data_clean$c_neg == 794 & 
-                          data_clean$annee >= 2011 & data_clean$annee <= 2014),]
-
-table(data$echelon4)/length(data$echelon4)
-table(data$echelon4[which(data$change_neg_next==1)])/length(data$echelon4[which(data$change_neg_next==1)])
-table(data$echelon4[which(data$next_neg == 795)])/length(data$echelon4[which(data$next_neg == 794)])
-
-
+#main('AT')
+#main('AA')
+main('AS')
