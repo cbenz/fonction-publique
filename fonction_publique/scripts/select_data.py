@@ -37,16 +37,16 @@ def main():
 #        help = 'path of source directory containing the original files (stata or csv)')
 #    parser.add_argument('-t', '--target', default = clean_directory_path,
 #        help = 'path of generated hdf5 files through the cleaning operation')
-#    parser.add_argument('-v', '--verbose', action = 'store_true', default = False, help = "increase output verbosity")
-#    args = parser.parse_args()
-#    logging.basicConfig(level = logging.INFO if args.verbose else logging.WARNING, stream = sys.stdout)
+    parser.add_argument('-v', '--verbose', action = 'store_true', default = False, help = "increase output verbosity")
+    args = parser.parse_args()
+    logging.basicConfig(level = logging.INFO if args.verbose else logging.WARNING, stream = sys.stdout)
 #    log.info('Start extracting data from {}'.format(args.source))
 #    log.info('Cleaned data will be saved in {}'.format(args.target))
 
 
     select_data.main(
         first_year = args.first_year,
-        subset_data = args.subset_data,
+        datasets = args.subset_data,
         list_corps = args.list_corps,
         )
 

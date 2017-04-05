@@ -39,7 +39,7 @@ def select_grilles(corps):
     elif corps == 'AS':
         libNEG_corps = ['AIDE SOIGNANT CL NORMALE (E04)', 'AIDE SOIGNANT CL SUPERIEURE (E05)',
                         'AIDE SOIGNANT CL EXCEPT (E06)']
-    else : 
+    else :
         print("NEG for the corps are not specified in the select_grilles function")
         stop
     subset_grilles = grilles[grilles.libelle_grade_NEG.isin(libNEG_corps)]
@@ -70,10 +70,10 @@ def cleaning_data(dataset, subset_by_corps, corps, first_year):
     del an_aff, generation, sexe
 
     where = "(ident in {}) & (annee >= {})".format(subset_ident, first_year)
-    quaterly_variables =  ['ib', 'echelon', 'etat']  
+    quaterly_variables =  ['ib', 'echelon', 'etat']
     ib  =  get_careers(variable = quaterly_variables[0], data_path = dataset, where = where)
     ib  =  ib.pivot_table(index= ['ident', 'annee'], columns='trimestre', values='ib').reset_index()
-    ib.columns = ['ident', 'annee', 'ib1', 'ib2', 'ib3', 'ib4'] 
+    ib.columns = ['ident', 'annee', 'ib1', 'ib2', 'ib3', 'ib4']
     ech =  get_careers(variable = quaterly_variables[1], data_path = dataset, where = where)
     ech.echelon =  pd.to_numeric(ech.echelon, errors='coerce')
     ech  =  ech.pivot_table(index= ['ident', 'annee'], columns='trimestre', values='echelon').reset_index()
@@ -81,7 +81,7 @@ def cleaning_data(dataset, subset_by_corps, corps, first_year):
     etats  =  get_careers(variable = quaterly_variables[2], data_path = dataset, where = where)
     etats.etat = pd.to_numeric(etats.etat, errors='coerce')
     etats  =  etats.pivot_table(index= ['ident', 'annee'], columns='trimestre', values='etat').reset_index()
-    etats.columns = ['ident', 'annee', 'etat1', 'etat2', 'etat3', 'etat4']  
+    etats.columns = ['ident', 'annee', 'etat1', 'etat2', 'etat3', 'etat4']
 
 
     where = "(ident in {}) & (annee >= {})".format(subset_ident, first_year)
@@ -112,37 +112,27 @@ def cleaning_data(dataset, subset_by_corps, corps, first_year):
 
 
 def main(first_year = None, list_corps = None, datasets = None ):
-    data_merge_corps = {}        
+    data_merge_corps = {}
     for dataset in datasets:
-        print("Processing data {}".format(dataset))        
+        print("Processing data {}".format(dataset))
         for corps in list_corps:
             print("Processing corps {}".format(corps))
-            
-            
-            # List of ident
+           # List of ident of the corps
             subset_by_corps = select_ident(dataset)
             # Load and clean data by corps
             data_cleaned = cleaning_data(dataset, subset_by_corps, corps = corps, first_year = first_year)
-#            data_AT = cleaning_data(dataset, subset_by_corps, corps = 'AT')
-#        data_ES = cleaning_data(dataset, subset_by_corps, corps = 'AS')
-
             if dataset == datasets[0]:
                 data_merge_corps["data_corps_{}".format(corps)] = data_cleaned
-                # data_merge_AT = data_AT
-                # data_merge_ES = data_ES
             else:
                 data_merge = data_merge_corps["data_corps_{}".format(corps)].append(data_cleaned)
                 data_merge_corps["data_corps_{}".format(corps)] = data_merge
-                #data_merge_corps = data_merge_corps.append(data_corps)
-#               data_merge_AT = data_merge_AA.append(data_AT)
-#               data_merge_ES = data_merge_ES.append(data_ES)
-    
-    for corps in list_corps:           
+
+    for corps in list_corps:
         path = os.path.join(save_path,
                         "corps{}_{}.csv".format(corps, first_year)
                         )
         data_merge_corps["data_corps_{}".format(corps)].to_csv(path)
-        
+
         print("Saving data corps{}_{}.csv".format(corps, first_year))
 
     return
@@ -154,5 +144,5 @@ def main(first_year = None, list_corps = None, datasets = None ):
 
 #if __name__ == '__main__':
 #    logging.basicconfig(level = logging.info, stream = sys.stdout)
-#main(first_year = 2015, list_corps =  ['AT', 'AS'],#, 'AS'], 
+#main(first_year = 2015, list_corps =  ['AT', 'AS'],#, 'AS'],
  #                 datasets = ['1976_1979_carrieres_debug.h5', '1980_1999_carrieres_debug.h5'])
