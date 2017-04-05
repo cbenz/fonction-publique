@@ -66,7 +66,7 @@ Ce note propose une première analyse des trajectoires indiciaires sur un sous-�
 % Section I: Analyse des grilles
 \section{Le corps des adjoints techniques}
 
-Le corps des adjoints techniques comporte quatre grades distincts: les adjoints technique de deuxième classe, les adjoints techniques de première classe, les adjoints techniques principal de deuxième classe et les adjoints technique principal de première classe. 
+Le corps des adjoints techniques comporte quatre grades distincts: les adjoints techniques de deuxième classe, les adjoints techniques de première classe, les adjoints techniques principaux de deuxième classe et les adjoints technique principaux de première classe. 
 
 Dans la suite de la note nous utilisons les code neg suivants pour ces différents grades: 793, 794, 795 et 796 respectivement. 
 
@@ -133,6 +133,11 @@ Ces évolutions dans le niveau des grilles peuvent avoir des conséquences impor
     \centering
     \includegraphics[width=1\linewidth]{AT_796_grille_by_neg.pdf} 
   \end{subfigure} 
+ \begin{minipage}{15cm}
+ \footnotesize
+ \textsc{Lecture : }Les couleurs rouge, verte et blues correspondent aux grades aux années 2008, 2014 et 2015 respectivement. 
+ 
+ \end{minipage}
 \end{figure}
 
 
@@ -167,6 +172,11 @@ Ces évolutions dans le niveau des grilles peuvent avoir des conséquences impor
     \centering
     \includegraphics[width=1\linewidth]{3_grille_by_date.pdf} 
   \end{subfigure} 
+   \begin{minipage}{15cm}
+ \footnotesize
+ \textsc{Lecture : }Les couleurs orange, vertes et blues et violet correspondent aux grades aux années 793, 794, 795 et 796 respectivement. 
+ 
+ \end{minipage}
 \end{figure}
 
 
@@ -192,8 +202,11 @@ Nous appliquons donc les filtres suivants à la base initiale. L'impact sur la t
 \begin{enumerate}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
 \item[F1] Garder uniquement les individus pour lesquels le libemploi n'est pas manquant quand l'indice ou le statut ne sont pas nuls. Nous perdons alors 15\% des individus, ce qui est relativement important par rapport à ce qui était attendu. 
 \item[F2] Garder uniquement individus pour lesquels tous les grades sont renseignés, quand la variable libemploi n'est pas nulle. Cela implique de supprimer tous les individus pour lesquels les procédures d'imputation des libellés n'ont pas permis d'attribuer un grade neg pour chaque libemploi. Nous perdons ainsi 35\% des individus, ce qui était attendu. 
-\item[F3] Garder uniquement les individus pour lesquels l'échelon est renseigné pour les années dans le corps. Ce filtre a un effet fort et inattendu, puisque l'on perd encore 12\% des individus. Par ailleurs cet effet est très hétérogène en fonction des grades. A cette étape les échelons manquant représentent environ 15\% des observations pour le grade AT2, contre 90\% pour le grade 795.
+\item[F3] Garder uniquement les individus pour lesquels l'échelon est renseigné pour les années dans le corps. Ce filtre a un effet fort et inattendu, puisque l'on perd encore 12\% des individus. 
 \end{enumerate}
+
+
+Par ailleurs l'effet de l'application des filtres est très hétérogène en fonction des grades. La table \ref{count_AT} présente l'effet des filtres successifs sur le nombre d'observations indiquant un passage dans les différents grades (d'après la variable c-neg). Nous constatons que l'impact des différents filtres augmente avec le niveau du grade, ce qui suggère que l'imputation des grades et/ou des échelons est moins bonne pour ces grades. 
 
 La déperdition en étape F2 et F3 semble plus importante que ce que suggérait les statistiques descriptives pour les années les plus récentes. Cela suggère, comme précédemment soulignée\footnote{cf. mail Isabelle:  \\
 \scriptsize
@@ -217,17 +230,33 @@ Année &2003&	2004 &	2005&	2006&	2007&	2008	&2010	&2011	&2012	&2013	&2014	&2015 
 \end{table}
 
 
+\begin{table}[h!]
+\centering
+\caption{Nombre d'observations par grade et année, avant et après filtres} 
+\label{count_AT}
+\begin{tabular}{lcc|cc|cc|cc}
+\toprule
+ & \multicolumn{2}{c}{793} & \multicolumn{2}{c}{794} & 		  	   \multicolumn{2}{c}{795} & \multicolumn{2}{c}{796} \\
+ \midrule
+ & Nb obs & \% ech init  & Nb obs & \% ech init & Nb obs & \% ech init & Nb obs & \% ech init  \\
+\input{Tables/AT_data_count1.tex}
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
 
 \subsection{Qualité de l'information avant 2011}
 
 Outre la question de l'alimentation des CIR, la dégradation de l'information au cours du temps peut s'expliquer par les différences dans le mode d'imputation du grade NEG avant et après 2011. En effet, après 2011 le grade est imputé sur la base du code NETNEH quand il est disponible, et avant l'imputation se fait sur la seule base du matching à partir des libellés saisis à la main. 
 
 Une première illustration de la dégradation de l'information au cours du temps est présenté à la table \ref{quality1}. A partir d'une base pour laquelle seuls le filtre F1 (libemploi manquant), nous présentons l'évolution au cours du temps du taux de valeurs manquantes pour le grade et pour l'échelon. 
-Nous re-constatons bien sur nous sous-population un taux de remplissage du grade qui chute avant 2011 (30\% de valeurs manquantes contre 12\% pour les années plus récentes). De manière encore plus marquée, nous observons une chute du taux de remplissage des échelons avant 2011. La proportion de valeurs manquantes est multipliée par trois avant 2011. Ce taux est par ailleurs variable d'une année à l'autre (43\% en 2007, 63\% en 2008) et d'un grade à l'autre (de 15\% à 100\% entre AT2 et 796). 
+Nous re-constatons bien sur notre sous-population un taux de remplissage du grade qui chute avant 2011 (30\% de valeurs manquantes contre 12\% pour les années plus récentes). De manière encore plus marquée, nous observons une chute du taux de remplissage des échelons avant 2011. La proportion de valeurs manquantes est multipliée par trois avant 2011. Ce taux est par ailleurs variable d'une année à l'autre (43\% en 2007, 63\% en 2008) et d'un grade à l'autre (de 15\% à 100\% entre 793 et 796). 
 
-Ces chiffres doivent au préalables être confirmés et recoupés avec les analyses cotés CDC\footnote{En particulier pour le grade 796}, mais peuvent s'expliquer par au moins deux raisons: 
-\begin{enumerate}
-\item Un problème lié aux changements de grille (au niveau des collectivité ou de l'imputation), car les années marquées par des changements de grilles importants (2008, 2014) semblent particulièrement touchées). 
+Ces chiffres doivent au préalables être confirmés et recoupés avec les analyses coté CDC\footnote{En particulier pour le grade 796}, mais peuvent s'expliquer par au moins deux raisons: 
+\begin{enumerate}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm]
+\item Un problème lié aux changements de grille (au niveau de l'application des nouvelles grilles par les collectivités ou de l'imputation), car les années marquées par des changements de grilles importants (2008, 2014) semblent particulièrement touchées. 
 \item Un problème lié à une mauvaise imputation du grade sur la base des libellés remplis à la main à partir du matching. 
 \end{enumerate}
 
@@ -244,7 +273,7 @@ Dans la suite du document, nous faisons le choix de ne pas étudier les échelon
 \begin{tabular}{lccccccc}
 \toprule
  & \%  lib NA & \% neg NA  & \% ech NA & \% ech NA   & \% ech NA   & \% ech NA  & \% ech NA  \\ 
-&(statut rempli) & (lib rempli) & (neg rempli) & AT2 & 794 & 795 & 796 \\
+&(statut rempli) & (lib rempli) & (neg rempli) & 793 & 794 & 795 & 796 \\
 \midrule 
 \input{Tables/AT_data_quality1.tex} 
 \bottomrule
@@ -252,15 +281,17 @@ Dans la suite du document, nous faisons le choix de ne pas étudier les échelon
 \end{table}
 
 
+
+
 La table \ref{quality2} permet de comprendre les conséquences de cette rupture statistique sur l'analyse des trajectoire présente l'évolution de la proportion de changement d'une année à l'autre, proportion qui est décomposée en fonction des différents types de changements possible (de grade manquant à grade renseignée, de grade renseigné à grade manquant, et de grade à grade). 
 Nous constatons à l'année 2011 une forte augmentation de la probabilité de changement de grade. Cette augmentation est liée à deux facteurs: 
-\begin{enumerate}
+\begin{enumerate}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm]
 \item Une hausse des transitions de grade manquant vers grade renseigné, qui découle du meilleur remplissage de la variable neg à partir de 2011, qui conduit à l'apparition de nouveaux individus à partir de 2011.  
 \item Une mauvaise imputation du grade avant 2011, qui conduit à une hausse fictive des changements de grade à grade qui traduisent simplement la correction induite par l'imputation du grade neg sur la base du NETNEH. 
 \end{enumerate}
  
 
-\begin{table}[h!]
+\begin{table}[H]
 \centering
 \caption{Proportion de changements de grade par année} 
 \label{quality2}
@@ -270,10 +301,10 @@ Année & 2008 & 2009 & 2010 & 2011 & 2012 & 2013 & 2014 & 2015 \\[0.2em]
 \midrule
 Filtre F1 &&&&&& \\ \midrule
 \input{Tables/AT_data_quality2_1.tex} 
-&&&&&& \\ 
+\midrule
 Filtre F2 &&&&&& \\ \midrule
 \input{Tables/AT_data_quality2_2.tex}   
-&&&&&& \\
+\midrule
 Filtre F3 &&&&&& \\ \midrule
 \input{Tables/AT_data_quality2_3.tex}   
 \bottomrule
@@ -314,6 +345,7 @@ Notons enfin que nous ne sommes pas dans un cas de censure totale, puisqu'il est
    \hline
 \bottomrule
 \end{tabular}
+\vspace{0.2cm}
 \begin{minipage}{12cm}
 \footnotesize
 \textsc{Population:} Filtres F1, F2 et F3. Années 2007 à 2015 \\
@@ -371,7 +403,7 @@ Une question importante dans la modélisation des trajectoires est le niveau ad�
 
 La définition du bon niveau d'analyse devrait pouvoir se déterminer directement à partir des données, par l'étude des réseaux générés par les différentes transitions. Dans l'attente de développer une telle analyse, nous décrivons simplement les transitions pour les grades étudiés. Nous présentons d'une part les grades de provenance (table \ref{entry}) et les grades de destinations (table \ref{exit}) pour les grades étudiés. 
 
-Nous nous concentrons sur les transitions ayant lieu dans les années plus récentes, pour lesquelles l'information est la plus fiable. Nous n'appliquons par le filtre F3 sur les échelons car nous travaillons uniquement sur les grades. 
+Nous nous concentrons sur les transitions ayant lieu dans les années plus récentes (2011 à 2014), pour lesquelles l'information est la plus fiable. Nous n'appliquons par le filtre F3 sur les échelons car nous travaillons uniquement sur les grades. 
 
 \bigskip
 
@@ -387,7 +419,7 @@ Pour ce qui est des grades de destination, nous soulignons les points suivants:
 \begin{enumerate}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
 \item Il y a également une forte détermination du corps dans les trajectoires, le corps suivant étant toujours la principale destination. 
 \item Ce constat est moins vrai pour le premier grade du corps, pour lequel on observe plus de transition vers l'extérieur. Cela s'explique peut-etre par la structure pyramidale du corps: s'il y a moins de poste pour les grades supérieurs, tout le monde ne peut pas passer au grade supérieur ("up or out"). 
-\item Parmi ces 24\% de départs depuis le grade 793 vers des autres grades, la principale destination est le grade d'adjoint administratif de deuxième classe (17\% du total des destinations). Cela suggère des liens potentiellement importants entre ces deux corps.
+\item Parmi ces 20\% de départs depuis le grade 793 vers des autres grades, la principale destination est le grade d'adjoint administratif de deuxième classe (14\% du total des destinations). Cela suggère des liens potentiellement importants entre ces deux corps.
 \end{enumerate}
 
 
@@ -448,9 +480,9 @@ D'après les conditions d'avancement des grades décrites au début du document,
 
 \medskip
 
-Pour se rapprocher de la probabilité que l'on souhaiterait modéliser dans le module carrière, le graphique \ref{hazard} présente le résultat suivant. Pour la population des individus entrés dans le grade en 2007, nous présentons pour chaque année la situation des individus qui sont encore présents dans le grade l'année précédente. Comme précédemment, nous attendons une forte augmentation de la probabilité de partir dans le grade immédiatement supérieur à partir du moment ou le critère du durée passée dans le grade est atteint (3 ans). 
+Pour se rapprocher de la probabilité que l'on souhaiterait modéliser dans le module carrière, le graphique \ref{hazard_2007_AT} présente le résultat suivant. Pour la population des individus entrés dans le grade en 2007, nous présentons pour chaque année la situation des individus qui sont encore présents dans le grade l'année précédente. Comme précédemment, nous attendons une forte augmentation de la probabilité de partir dans le grade immédiatement supérieur à partir du moment ou le critère du durée passée dans le grade est atteint (3 ans). 
 
-Nous remarquons en effet, entre la 3e et la 4e année, une augmentation de la probabilité de sortie du grade, à la fois vers les autres grades et vers le grade suivant 794. L'augmentation observée semble toutefois relativement faible, mais cela s'explique potentiellement par le deuxième critère, la condition d'échelon atteint, que nous n'intégrons pas ici. 
+Nous remarquons en effet, entre la 3e et la 4e année, une augmentation de la probabilité de sortie du grade, à la fois vers les autres grades et vers le grade suivant 794. L'augmentation observée semble toutefois relativement faible, mais cela s'explique potentiellement par le deuxième critère, la condition d'échelon atteint, que nous n'intégrons pas ici. Cette double augmentation est susceptible de recouper deux effet: l'effet année en 2011 lien à la rupture statistique, et l'effet grille de la 3e à la 4e année correspondant à la condition d'éligibilité pour le changement de grade vers le grade suivant. Pour illustrer ce double effet, le graphique \ref{hazard_2009_AT} présente la même information pour les individus entrant dans le grade en 2009. Nous voyons bien pour ce groupe deux ruptures distinctes: l'augmentation des départs vers d'autres grades en 2011 correspondant à la rupture statistique, et l'augmentation des départs vers le grade suivant à partir de 2012 correspondant à la condition d'éligibilité de durée passée dans le grade. 
 
 Par ailleurs, nous observons des transitions vers le grade immédiatement supérieur dès la première année dans le grade, sans que l'on puisse déterminer si cela provient d'un problème lié aux données ou de la non-application des critères d'éligibilité. 
 
@@ -460,13 +492,13 @@ Par ailleurs, nous observons des transitions vers le grade immédiatement supér
   \label{surv_by_entry} 
   \begin{subfigure}[b]{0.5\linewidth}
       \caption{Grade 793} 
-    \label{echelon_by_neg_0} 
+    \label{echelon_by_neg_793} 
     \centering
     \includegraphics[width=1\linewidth]{AT_survival_793.pdf} 
   \end{subfigure}%
   \begin{subfigure}[b]{0.5\linewidth}
         \caption{Grade 794} 
-    \label{echelon_by_neg_1} 
+    \label{echelon_by_neg_794} 
     \centering
     \includegraphics[width=1\linewidth]{AT_survival_794.pdf} 
   \end{subfigure} 
@@ -480,16 +512,16 @@ Par ailleurs, nous observons des transitions vers le grade immédiatement supér
 
 \begin{figure}[ht] 
   \caption{Répartitions des situations à chaque date pour les individus entrant le grade 793 en 2007 et 2009 et encore présent dans le grade en n-1}
-  \label{hazard} 
+  \label{hazard_AT} 
   \begin{subfigure}[b]{0.5\linewidth}
       \caption{Affiliation en 2007}
-    \label{hazard_2007} 
+    \label{hazard_2007_AT} 
     \centering
     \includegraphics[width=1\linewidth]{AT_destination_2007.pdf}  
     \end{subfigure}%
   \begin{subfigure}[b]{0.5\linewidth}
         \caption{Affiliation en 2009}
-    \label{hazard_2007} 
+    \label{hazard_2009_AT} 
     \centering
     \includegraphics[width=1\linewidth]{AT_destination_2009.pdf}  
     \end{subfigure}
@@ -510,17 +542,17 @@ Les analyses précédentes n'intègrent pas l'échelon, car celui-ci ne semble p
 
 Nous reprenons ici l'approche développée précédemment par Pierrick, en rassemblant l'ensemble des observations qu'on l'on observe pour les années les plus récentes. 
 
-La figure \ref{evo_by_ech} présente les transitions d'une année à l'autre en fonction du grade à l'année courante (793 ou 794), vers les différents grades possibles (même grade, grade manquant, grade suivant ou autre grade) et en fonction de l'échelon à l'année courante. 
+La figure \ref{evo_by_ech_AT} présente les transitions d'une année à l'autre en fonction du grade à l'année courante (793 ou 794), vers les différents grades possibles (même grade, grade manquant, grade suivant ou autre grade) et en fonction de l'échelon à l'année courante. 
 
 Les conditions d'éligibilité semblent bien avoir un impact, plus important encore que précédemment: c'est uniquement à partir de l'échelon d'éligibilité (4 pour le corps 793, 5 pour le corps 794) que les transitions vers le grade suivant commencent à augmenter.  
 
-Notons toutefois les fortes transitions du grade 794 vers des grades "autres" dans les échelons inférieurs, qui constituent en réalité majoritairement des transitions vers le grade inférieur 793. Ces transitions incohérentes devront être élucidées. 
+Notons toutefois les fortes transitions du grade 794 vers des grades "autres" dans les échelons inférieurs, qui constituent en réalité majoritairement des transitions vers le grade inférieur 793. Ces transitions incohérentes devront être élucidées. Soulignons qu'elles ne représentent toutefois pas un nombre important d'individus, car la plupart des individus présents dans le grade 794 se trouvent sur les échelons  5 ou supérieurs. 
 
 \bigskip
 
 \begin{figure}[ht] 
   \caption{Situation d'une année à l'autre, selon l'échelon}
-  \label{evo_by_ech} 
+  \label{evo_by_ech_AT} 
   \begin{subfigure}[b]{0.5\linewidth}
       \caption{Grade 793 à l'année courante}
     \label{evo_by_ech_793} 
@@ -534,6 +566,18 @@ Notons toutefois les fortes transitions du grade 794 vers des grades "autres" da
     \includegraphics[width=1\linewidth]{AT_hazard_by_ech_794.pdf} 
   \end{subfigure} 
 \end{figure}
+
+
+\section{Analyse des autres corps}
+
+L'ensemble des résultats présentés pour le corps des adjoints techniques ont été reproduits pour deux autres corps: le corps des adjoints administratifs et le corps des aides soignants (augmenté des ASHQ). Les tables et figures sont présentées aux annexes A et B, et ne sont pas commentées en détail dans la présente note. 
+
+Nous faisons simplement les remarques suivantes: 
+\begin{itemize}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
+\item Les résultats pour les adjoints administratifs sont relativement proches de ceux obtenus pour les adjoints techniques. 
+\item Les résultats sont moins clairs pour les aides soignants à ce stade, mais cela semble s'expliquer d'une part par des problèmes d'imputation des échelons pour certains grades et par un découpage du corps qui reste à affiner (quelle place du grades ASQH, comment intégrer les grades annexes comme la puériculture?). 
+\end{itemize}
+
 
 %
 %
@@ -721,7 +765,7 @@ Notons toutefois les fortes transitions du grade 794 vers des grades "autres" da
 \begin{table}[h!]
 \centering
 \caption{Impact des filtres successifs sur la taille de l'échantillon} 
-\label{filters_AT}
+\label{filters_AA}
 \begin{tabular}{lcc}
 \toprule
 \input{Tables/AA_sample_selection.tex}
@@ -732,12 +776,30 @@ Notons toutefois les fortes transitions du grade 794 vers des grades "autres" da
 
 \begin{table}[h!]
 \centering
+\caption{Nombre d'observations par grade et année, avant et après filtres} 
+\label{count_AA}
+\begin{tabular}{lcc|cc|cc|cc}
+\toprule
+ & \multicolumn{2}{c}{791} & \multicolumn{2}{c}{792} & 		  	   \multicolumn{2}{c}{14} & \multicolumn{2}{c}{162} \\
+ \midrule
+ & Nb obs & \% ech init  & Nb obs & \% ech init & Nb obs & \% ech init & Nb obs & \% ech init  \\
+\input{Tables/AA_data_count1.tex}
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+
+
+\begin{table}[h!]
+\centering
 \caption{Répartition des grades de provenance} 
 \label{entry}
 \begin{tabular}{lcccc}
 \toprule
  & \multicolumn{4}{c}{Grade en n (changement en n)} \\
- & 793 & 794 & 795 & 796 \\ 
+ & 791 & 792 & 14 & 162 \\ 
   \hline
 \input{Tables/AA_transition_entry.tex}  
    \hline
@@ -755,7 +817,7 @@ Notons toutefois les fortes transitions du grade 794 vers des grades "autres" da
 \begin{tabular}{lcccc}
 \toprule
  & \multicolumn{4}{c}{Grade en n (changement en n+1)} \\
- & 791 & 792 &  &  \\ 
+ & 791 & 792 & 14 & 162 \\ 
   \hline
 \input{Tables/AA_transition_exit.tex}  
    \hline
@@ -768,16 +830,16 @@ Notons toutefois les fortes transitions du grade 794 vers des grades "autres" da
 
 \begin{figure}[ht] 
   \caption{Survie dans le grade: Adjoints administratifs}
-  \label{surv_by_entry} 
+  \label{surv_by_entry_AT} 
   \begin{subfigure}[b]{0.5\linewidth}
       \caption{Grade 791} 
-    \label{echelon_by_neg_0} 
+    \label{echelon_by_neg_791} 
     \centering
     \includegraphics[width=1\linewidth]{AA_survival_791.pdf} 
   \end{subfigure}%
   \begin{subfigure}[b]{0.5\linewidth}
         \caption{Grade 792} 
-    \label{echelon_by_neg_1} 
+    \label{echelon_by_neg_792} 
     \centering
     \includegraphics[width=1\linewidth]{AA_survival_792.pdf} 
   \end{subfigure} 
@@ -786,16 +848,16 @@ Notons toutefois les fortes transitions du grade 794 vers des grades "autres" da
 
 \begin{figure}[ht] 
   \caption{Répartitions des situations à chaque date pour les individus entrant le grade 791 en 2007 et 2009 et encore présent dans le grade en n-1}
-  \label{hazard} 
+  \label{hazard_AT} 
   \begin{subfigure}[b]{0.5\linewidth}
       \caption{Affiliation en 2007}
-    \label{hazard_2007} 
+    \label{hazard_2007_AT} 
     \centering
     \includegraphics[width=1\linewidth]{AA_destination_2007.pdf}  
     \end{subfigure}%
   \begin{subfigure}[b]{0.5\linewidth}
         \caption{Affiliation en 2009}
-    \label{hazard_2007} 
+    \label{hazard_2009_AT} 
     \centering
     \includegraphics[width=1\linewidth]{AA_destination_2009.pdf}  
     \end{subfigure}
@@ -804,15 +866,15 @@ Notons toutefois les fortes transitions du grade 794 vers des grades "autres" da
 
 \begin{figure}[ht] 
   \caption{Situation d'une année à l'autre, selon l'échelon}
-  \label{evo_by_ech} 
+  \label{evo_by_ech_AT} 
   \begin{subfigure}[b]{0.5\linewidth}
-      \caption{Grade 793 à l'année courante}
+      \caption{Grade 791 à l'année courante}
     \label{evo_by_ech_791} 
     \centering
     \includegraphics[width=1\linewidth]{AA_hazard_by_ech_791.pdf} 
   \end{subfigure}
   \begin{subfigure}[b]{0.5\linewidth}
-        \caption{Grade 794 à l'année courante} 
+        \caption{Grade 792 à l'année courante} 
     \label{evo_by_ech_792} 
     \centering
     \includegraphics[width=1\linewidth]{AA_hazard_by_ech_792.pdf} 
@@ -835,22 +897,22 @@ Notons toutefois les fortes transitions du grade 794 vers des grades "autres" da
 
 \begin{figure}[ht] 
   \caption{Evolution des grilles: grade par grade}
-  \label{echelon_by_negAA} 
+  \label{echelon_by_neg_AS} 
   \begin{subfigure}[b]{0.33\linewidth}
       \caption{Grade 839} 
-    \label{echelon_by_neg_0} 
+    \label{echelon_by_neg_839} 
     \centering
     \includegraphics[width=1\linewidth]{AS_839_grille_by_neg.pdf} 
   \end{subfigure}%% 
   \begin{subfigure}[b]{0.33\linewidth}
         \caption{Grade 840} 
-    \label{echelon_by_neg_1} 
+    \label{echelon_by_neg_840} 
     \centering
     \includegraphics[width=1\linewidth]{AS_840_grille_by_neg.pdf} 
   \end{subfigure}% 
   \begin{subfigure}[b]{0.33\linewidth}
         \caption{Grade 841} 
-    \label{echelon_by_neg_2} 
+    \label{echelon_by_neg_841} 
     \centering
     \includegraphics[width=1\linewidth]{AS_841_grille_by_neg.pdf} 
   \end{subfigure}%%
@@ -873,12 +935,28 @@ Notons toutefois les fortes transitions du grade 794 vers des grades "autres" da
 
 \begin{table}[h!]
 \centering
+\caption{Nombre d'observations par grade et année, avant et après filtres} 
+\label{count_AS}
+\begin{tabular}{lcc|cc|cc|cc}
+\toprule
+ & \multicolumn{2}{c}{839} & \multicolumn{2}{c}{840} & 		  	   \multicolumn{2}{c}{841} & \multicolumn{2}{c}{773} \\
+ \midrule
+ & Nb obs & \% ech init  & Nb obs & \% ech init & Nb obs & \% ech init & Nb obs & \% ech init  \\
+\input{Tables/AS_data_count1.tex}
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+\begin{table}[h!]
+\centering
 \caption{Répartition des grades de provenance} 
 \label{entry}
-\begin{tabular}{lccc}
+\begin{tabular}{lcccc}
 \toprule
  & \multicolumn{3}{c}{Grade en n (changement en n)} \\
- & 839 & 840 & 841 \\ 
+ & 839 & 840 & 841  & 773 \\ 
   \hline
 \input{Tables/AS_transition_entry.tex}  
    \hline
@@ -893,10 +971,10 @@ Notons toutefois les fortes transitions du grade 794 vers des grades "autres" da
 \centering
 \caption{Répartition des grades de destination} 
 \label{exit}
-\begin{tabular}{lccc}
+\begin{tabular}{lcccc}
 \toprule
  & \multicolumn{3}{c}{Grade en n (changement en n+1)} \\
- & 839 & 840 & 841  \\ 
+ & 839 & 840 & 841  & 773 \\ 
   \hline
 \input{Tables/AS_transition_exit.tex}  
    \hline
@@ -908,16 +986,16 @@ Notons toutefois les fortes transitions du grade 794 vers des grades "autres" da
 
 \begin{figure}[ht] 
   \caption{Survie dans le grade: Aides soignants}
-  \label{surv_by_entry} 
+  \label{surv_by_entry_AS} 
   \begin{subfigure}[b]{0.5\linewidth}
       \caption{Grade 839} 
-    \label{echelon_by_neg_0} 
+    \label{echelon_by_neg_839} 
     \centering
     \includegraphics[width=1\linewidth]{AS_survival_839.pdf} 
   \end{subfigure}%
   \begin{subfigure}[b]{0.5\linewidth}
         \caption{Grade 840} 
-    \label{echelon_by_neg_1} 
+    \label{echelon_by_neg_840} 
     \centering
     \includegraphics[width=1\linewidth]{AS_survival_840.pdf} 
   \end{subfigure} 
@@ -926,16 +1004,16 @@ Notons toutefois les fortes transitions du grade 794 vers des grades "autres" da
 
 \begin{figure}[ht] 
   \caption{Répartitions des situations à chaque date pour les individus entrant le grade 839 en 2007 et 2009 et encore présent dans le grade en n-1}
-  \label{hazard} 
+  \label{hazard_AS} 
   \begin{subfigure}[b]{0.5\linewidth}
       \caption{Affiliation en 2007}
-    \label{hazard_2007} 
+    \label{hazard_2007_AS} 
     \centering
     \includegraphics[width=1\linewidth]{AS_destination_2007.pdf}  
     \end{subfigure}%
   \begin{subfigure}[b]{0.5\linewidth}
         \caption{Affiliation en 2009}
-    \label{hazard_2007} 
+    \label{hazard_2007_AS} 
     \centering
     \includegraphics[width=1\linewidth]{AS_destination_2009.pdf}  
     \end{subfigure}
@@ -947,13 +1025,13 @@ Notons toutefois les fortes transitions du grade 794 vers des grades "autres" da
   \label{evo_by_ech} 
   \begin{subfigure}[b]{0.5\linewidth}
       \caption{Grade 839 à l'année courante}
-    \label{evo_by_ech_791} 
+    \label{evo_by_ech_839} 
     \centering
     \includegraphics[width=1\linewidth]{AS_hazard_by_ech_839.pdf} 
   \end{subfigure}
   \begin{subfigure}[b]{0.5\linewidth}
         \caption{Grade 840 à l'année courante} 
-    \label{evo_by_ech_792} 
+    \label{evo_by_ech_840} 
     \centering
     \includegraphics[width=1\linewidth]{AS_hazard_by_ech_840.pdf} 
   \end{subfigure} 

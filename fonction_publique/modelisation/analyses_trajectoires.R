@@ -8,7 +8,7 @@
 rm(list = ls()); gc()
 
 # path
-place = "mac"
+place = "ipp"
 if (place == "ipp"){
 data_path = "M:/CNRACL/output/"
 git_path =  'U:/Projets/CNRACL/fonction-publique/fonction_publique/'
@@ -37,7 +37,7 @@ get_list_neg <- function(corps)
 {
 if (corps == "AT"){list_neg = c(793, 794, 795, 796)}
 if (corps == "AA"){list_neg = c(791, 792, 0014, 0162)}
-if (corps == "AS"){list_neg = c(839 ,840, 841)}
+if (corps == "AS"){list_neg = c(839 ,840, 841, 773)}
 return(list_neg)
 }  
 
@@ -171,35 +171,73 @@ print(xtable(size_sample,align="l|cc",nrow = nrow(size_sample), ncol=ncol(size_s
 }
 
 
+# Nb d'observation par corps avant et après filtre
+count1 <- function(data_all, corps, list_neg, savepath)
+{
+  list1 = data_all$ident[which(data_all$statut != "" & data_all$libemploi == ''  & data_all$annee>= 2007)]
+  list2 = data_all$ident[which(data_all$c_neg == 0 & data_all$libemploi != '' & data_all$annee>= 2007)]
+  list3 = data_all$ident[which(is.na(data_all$echelon) & is.element(data_all$c_neg, list_neg)  & data_all$annee>= 2007)]  
+  data1 =  data_all[-which(is.element(data_all$ident, list1)),]
+  data2 =  data1[-which(is.element(data1$ident, list2)),]
+  data3 =  data2[-which(is.element(data2$ident, list3)),]
+  
+  count = matrix(ncol = length(list_neg)*2, nrow = 4)
+  
+    for (n in 1:length(list_neg))
+    {
+    count[1, (n*2 - 1)] =  length(which(data_all$c_neg == list_neg[n]))
+    count[1, n*2]       =  100*length(which(data_all$c_neg == list_neg[n]))/  count[1, (n*2 - 1)]
+    count[2, (n*2 - 1)] =  length(which(data1$c_neg == list_neg[n]))
+    count[2, n*2]       =  100*length(which(data1$c_neg == list_neg[n]))/  count[1, (n*2 - 1)]
+    count[3, (n*2 - 1)] =  length(which(data2$c_neg == list_neg[n]))
+    count[3, n*2]       =  100*length(which(data2$c_neg == list_neg[n]))/  count[1, (n*2 - 1)]
+    count[4, (n*2 - 1)] =  length(which(data3$c_neg == list_neg[n]))
+    count[4, n*2]       =  100*length(which(data3$c_neg == list_neg[n]))/  count[1, (n*2 - 1)]
+    }
+
+rownames(count) <- c("Tous","F1", "F2", "F3")
+table = count
+print(xtable(table,align="l|cccccccc",nrow = nrow(table), ncol=ncol(table)+1, byrow=T, digits = 0),
+      sanitize.text.function=identity,size="\\footnotesize", 
+      only.contents=T, include.colnames = F, hline.after = c(-1),
+      file = paste0(savepath, corps, "_data_count1.tex"))
+print(paste0("Saving table ",paste0(corps, "_data_count1.tex")))
+}
+
+
+
+
+
 #### II.2 Data quality  ####
 
 ### II.2.1 proportion des missing echelon par annee ###
 
+
 quality1 <- function(data, corps, list_neg, savepath)
 {
-years = 2007:2015
-missing = matrix(ncol = 7, nrow = length(years))
-for (y in 1:length(years))
-{
-data1 = data[which(data$annee == years[y]), ]
-missing[y,1] =  length(which(data1$statut != '' & data1$libemploi == ''))/length(which(data1$statut != ''))
-missing[y,2] =  length(which(data1$c_neg == 0 & data1$libemploi != ''))/length(which(data1$libemploi != ''))
-missing[y,3] =  length(which(is.na(data1$echelon4) & data1$c_neg != 0))/length(which(data1$c_neg != 0))  
-missing[y,4] =  length(which(is.na(data1$echelon4) & data1$c_neg == list_neg[1]))/length(which(data1$c_neg == list_neg[1]))  
-missing[y,5] =  length(which(is.na(data1$echelon4) & data1$c_neg == list_neg[2]))/length(which(data1$c_neg == list_neg[2]))  
-missing[y,6] =  length(which(is.na(data1$echelon4) & data1$c_neg == list_neg[3]))/length(which(data1$c_neg == list_neg[3]))  
-missing[y,7] =  length(which(is.na(data1$echelon4) & data1$c_neg == list_neg[4]))/length(which(data1$c_neg == list_neg[4]))  
-}
-
-colnames(missing) <- c("\\% libemploi NA (statut OK)", "\\% neg NA (libemploi OK) ", "\\% ech NA", 
-                        paste0("\\% ech NA ", list_neg))
-rownames(missing) <- years
-table = missing
-print(xtable(table,align="l|ccccccc",nrow = nrow(table), ncol=ncol(table)+1, byrow=T),
-      sanitize.text.function=identity,size="\\footnotesize", 
-      only.contents=T, include.colnames = F, hline.after = c(-1),
-      file = paste0(savepath, corps, "_data_quality1.tex"))
-print(paste0("Saving table ",paste0(corps, "_data_quality1.tex")))
+  years = 2007:2015
+  missing = matrix(ncol = 7, nrow = length(years))
+  for (y in 1:length(years))
+  {
+    data1 = data[which(data$annee == years[y]), ]
+    missing[y,1] =  length(which(data1$statut != '' & data1$libemploi == ''))/length(which(data1$statut != ''))
+    missing[y,2] =  length(which(data1$c_neg == 0 & data1$libemploi != ''))/length(which(data1$libemploi != ''))
+    missing[y,3] =  length(which(is.na(data1$echelon4) & data1$c_neg != 0))/length(which(data1$c_neg != 0))  
+    missing[y,4] =  length(which(is.na(data1$echelon4) & data1$c_neg == list_neg[1]))/length(which(data1$c_neg == list_neg[1]))  
+    missing[y,5] =  length(which(is.na(data1$echelon4) & data1$c_neg == list_neg[2]))/length(which(data1$c_neg == list_neg[2]))  
+    missing[y,6] =  length(which(is.na(data1$echelon4) & data1$c_neg == list_neg[3]))/length(which(data1$c_neg == list_neg[3]))  
+    missing[y,7] =  length(which(is.na(data1$echelon4) & data1$c_neg == list_neg[4]))/length(which(data1$c_neg == list_neg[4]))  
+  }
+  
+  colnames(missing) <- c("\\% libemploi NA (statut OK)", "\\% neg NA (libemploi OK) ", "\\% ech NA", 
+                         paste0("\\% ech NA ", list_neg))
+  rownames(missing) <- years
+  table = missing
+  print(xtable(table,align="l|ccccccc",nrow = nrow(table), ncol=ncol(table)+1, byrow=T),
+        sanitize.text.function=identity,size="\\footnotesize", 
+        only.contents=T, include.colnames = F, hline.after = c(-1),
+        file = paste0(savepath, corps, "_data_quality1.tex"))
+  print(paste0("Saving table ",paste0(corps, "_data_quality1.tex")))
 }
 
 
@@ -500,7 +538,7 @@ surv_rel_1 = matrix(nrow = length(years), ncol = length(years))
 surv = array(dim = c(length(list_neg), length(years), ncol = length(years)))
 surv_rel = array(dim = c(length(list_neg), length(years), ncol = length(years)))
 
-for (n in 1: length(list_neg))
+for (n in 1:length(list_neg))
 {
 for (y in 1:length(years))
 {
@@ -527,11 +565,11 @@ for (t in y:length(years))
   layout(matrix(c(1, 2, 3), nrow=3,ncol=1, byrow=TRUE), heights=c(3, 3,1))
   par(mar=c(4.1,4.1,0.2,0.2))
   # Nb
-  table = surv[1, ,]
+  table = surv[n, ,]
   plot  (years,rep(NA,length(years)),ylim=c(min(table, na.rm = T),max(table, na.rm = T)),ylab="Nb d'individus",xlab="Annee")
   for (a in 1:length(years)){lines(years,table[a, ],col=n_col[a],lwd=3, lty = type[a])}
   # Freq
-  table = surv_rel[1, ,]
+  table = surv_rel[n, ,]
   plot  (years,rep(NA,length(years)),ylim=c(min(table, na.rm = T),max(table, na.rm = T)),ylab="% d'individus",xlab="Annee")
   for (a in 1:length(years)){lines(years,table[a, ],col=n_col[a],lwd=3, lty = type[a])}
   par(mar=c(0,0,0,0),font=1.5)
@@ -776,6 +814,7 @@ main <- function(liste_corps)
   gc()
   # Filters 
   sample_selection(data_all = data_all, corps = corps, list_neg = list_neg, savepath = tab_path)
+  count1(data_all = data_all, corps = corps, list_neg = list_neg, savepath = tab_path)
   # Quality
   quality1(data = data_all, corps = corps, list_neg = list_neg, savepath = tab_path)
   quality2(data_all = data_all, corps = corps, list_neg = list_neg, savepath = tab_path)
@@ -794,6 +833,6 @@ main <- function(liste_corps)
  } 
 }  
 
-#main('AT')
-#main('AA')
+main('AT')
+main('AA')
 main('AS')
