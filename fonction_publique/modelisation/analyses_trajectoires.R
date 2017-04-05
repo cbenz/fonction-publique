@@ -47,7 +47,7 @@ return(list_neg)
 data_wod <- function(data, list_neg, corps) 
 {
   print(paste0("Cleaning data  ",corps)) 
-  # Remove duplicates (why not in select_table?)
+  # Remove duplicates (why not in select_table.py?)
   di = data[data$annee == 2015,]
   dup = di$ident[duplicated(di$ident)]
   data = data[which(!is.element(data$ident, dup)), ]
