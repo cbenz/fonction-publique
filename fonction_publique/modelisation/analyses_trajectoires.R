@@ -8,13 +8,8 @@
 rm(list = ls()); gc()
 
 # path
-<<<<<<< HEAD
-place = "ipp"
-if (place == "ipp"){
-=======
-place = "ippL"
+place = "ippS"
 if (place == "ippS"){
->>>>>>> 43bf22db3898eda9b2229cfab25dff194ba49e02
 data_path = "M:/CNRACL/output/"
 git_path =  'U:/Projets/CNRACL/fonction-publique/fonction_publique/'
 }
@@ -36,6 +31,9 @@ source(paste0(git_path, 'modelisation/OutilsCNRACL.R'))
 
 load_data <- function(data_path, corps)
 {
+print(paste0("Loading data  ",corps))  
+filename = paste0(data_path,"corps",corps,"_2007.csv")
+main = read.csv(filename)  
 return (main)
 }
 
@@ -52,9 +50,6 @@ return(list_neg)
 
 data_wod <- function(data, list_neg, corps) 
 {
-  # Select years
-  data = data[which(data$annee >= 2007), ]
-  
   print(paste0("Cleaning data  ",corps)) 
   # Remove duplicates (why not in select_data.py?)
   di = data[data$annee == 2015,]
@@ -65,6 +60,7 @@ data_wod <- function(data, list_neg, corps)
   data$c_neg = as.numeric(format(data$c_neg))
   data$c_neg[which(is.na(data$c_neg))] <- 0
   data$echelon = data$echelon4
+  data$etat = data$etat4
   # First/last
   data$a     <- 1
   data$b     <- ave(data$a,data$ident,FUN=cumsum)
@@ -362,7 +358,7 @@ data2 = sub_data[, c("ident", 'annee', "ib_change1")]; data2$indice = data2$ib_c
 data3 = sub_data[, c("ident", 'annee', "ib_change2")]; data3$indice = data3$ib_change2
 lim = range(data1$ib[data1$ib4>0])
 
-print(data1[1:10,])
+#print(data1[1:10,])
 pdf(paste0(savepath, corps, "_trajectoires.pdf"))
 ggplot(data = data1, aes(x = annee, y = indice)) + geom_line() + 
   geom_point(data=data3, shape = 22, fill = "blue")+
@@ -825,5 +821,5 @@ main <- function(liste_corps)
 }  
 
 main('AT')
-main('AA')
-main('AS')
+#main('AA')
+#main('AS')
