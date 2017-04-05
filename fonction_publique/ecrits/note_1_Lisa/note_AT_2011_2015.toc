@@ -1,0 +1,8 @@
+\select@language {english}
+\select@language {frenchb}
+\contentsline {section}{\numberline {1}Le corps des adjoints techniques}{2}{section.1}
+\contentsline {section}{\numberline {2}Point sur les donn\IeC {\'e}es}{2}{section.2}
+\contentsline {subsection}{\numberline {2.1}S\IeC {\'e}lection de l'\IeC {\'e}chantillon}{2}{subsection.2.1}
+\contentsline {subsection}{\numberline {2.2}Censure des donn\IeC {\'e}es}{3}{subsection.2.2}
+\contentsline {section}{\numberline {3}Dispersion des dur\IeC {\'e}es pass\IeC {\'e}es dans l'\IeC {\'e}chelon}{3}{section.3}
+\contentsline {section}{\numberline {4}Transition de grade : d'un m\IeC {\^e}me \IeC {\'e}chelon au m\IeC {\^e}me \IeC {\'e}chelon ?}{3}{section.4}

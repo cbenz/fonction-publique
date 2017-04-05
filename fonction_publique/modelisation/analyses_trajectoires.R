@@ -8,10 +8,19 @@
 rm(list = ls()); gc()
 
 # path
+<<<<<<< HEAD
 place = "ipp"
 if (place == "ipp"){
+=======
+place = "ippL"
+if (place == "ippS"){
+>>>>>>> 43bf22db3898eda9b2229cfab25dff194ba49e02
 data_path = "M:/CNRACL/output/"
 git_path =  'U:/Projets/CNRACL/fonction-publique/fonction_publique/'
+}
+if (place == "ippL"){
+  data_path = "M:/CNRACL/output/"
+  git_path =  'C:/Users/l.degalle/CNRACL/fonction-publique/fonction_publique/'
 }
 if (place == "mac"){
   data_path = "/Users/simonrabate/Desktop/data/CNRACL/"
@@ -27,9 +36,6 @@ source(paste0(git_path, 'modelisation/OutilsCNRACL.R'))
 
 load_data <- function(data_path, corps)
 {
-print(paste0("Loading data  ",corps))  
-filename = paste0(data_path,"corps",corps,".csv")
-main = read.csv(filename)
 return (main)
 }
 
@@ -46,8 +52,11 @@ return(list_neg)
 
 data_wod <- function(data, list_neg, corps) 
 {
+  # Select years
+  data = data[which(data$annee >= 2007), ]
+  
   print(paste0("Cleaning data  ",corps)) 
-  # Remove duplicates (why not in select_table.py?)
+  # Remove duplicates (why not in select_data.py?)
   di = data[data$annee == 2015,]
   dup = di$ident[duplicated(di$ident)]
   data = data[which(!is.element(data$ident, dup)), ]
@@ -64,12 +73,6 @@ data_wod <- function(data, list_neg, corps)
   data$last  <- ifelse(data$b==data$c,1,0)
   data$count = data$b
   data <- data[, !names(data) %in% c('a', 'b', 'c')]
-  
-  # AT variables
-  data$ind_AT = ifelse(is.element(data$c_neg, list_neg), 1, 0) 
-  data$a = ave(data$ind_AT,data$ident,FUN=cumsum)
-  data$first_AT <- ifelse(data$a==1,1,0)
-  data$count_AT <-  ave(data$ind_AT, data$ident, FUN = sum)
   
   ## Correction: si grade[n-1] = grade[n+1] et != grade[n] on modifie grade[n]
   data$bef_neg  <-ave(data$c_neg, data$ident, FUN=shiftm1)
@@ -92,18 +95,6 @@ data_wod <- function(data, list_neg, corps)
   
   data$bef_ech  <-ave(data$echelon4, data$ident, FUN=shiftm1)
   data$next_ech <-ave(data$echelon4, data$ident, FUN=shift1)
-  
-  # Ind libemploi 
-  data$ind_lib = ifelse(data$libemploi == '', 0, 1)
-  data$count_lib = ave(data$ind_lib, data$ident, FUN = sum)
-  data$bef_ind_lib  <- ave(data$ind_lib, data$ident, FUN=shiftm1)
-  data$bef2_ind_lib <- ave(data$ind_lib, data$ident, FUN=shiftm2)
-  data$next_ind_lib <- ave(data$ind_lib, data$ident, FUN=shift1)
-  # Lib without AT
-  data$diff = data$count_lib - data$count_AT
-  # Ind missing echelon 
-  data$missing_ech = ifelse(is.na(data$echelon) & data$libemploi != '', 1, 0)
-  data$count_missing_ech = ave(data$missing_ech, data$ident, FUN = sum)
   
   return(data)
 }

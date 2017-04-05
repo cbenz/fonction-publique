@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 
-## Test sur corps des techniciens de la FPT
+
+
 
 # Filters: individuals at least one time in the corps
 from __future__ import division
@@ -13,9 +14,6 @@ import sys
 import pkg_resources
 import pandas as pd
 import numpy as np
-
-
-
 from fonction_publique.base import raw_directory_path, get_careers, parser
 from fonction_publique.merge_careers_and_legislation import get_grilles
 from slugify import slugify
@@ -35,12 +33,15 @@ def select_grilles(corps):
     if corps == 'AT':
         libNEG_corps = ['ADJOINT TECHNIQUE DE 2EME CLASSE', 'ADJOINT TECHNIQUE DE 1ERE CLASSE',
                         'ADJOINT TECHNIQUE PRINCIPAL DE 2EME CLASSE', 'ADJOINT TECHNIQUE PRINCIPAL DE 1ERE CLASSE']
-    if corps == 'AA':
+    elif corps == 'AA':
         libNEG_corps = ['ADJOINT ADMINISTRATIF DE 2EME CLASSE', 'ADJOINT ADMINISTRATIF DE 1ERE CLASSE',
                     'ADJOINT ADMINISTRATIF PRINCIPAL DE 2EME CLASSE', 'ADJOINT ADMINISTRATIF PRINCIPAL DE 1ERE CLASSE']
-    if corps == 'ES':
+    elif corps == 'AS':
         libNEG_corps = ['AIDE SOIGNANT CL NORMALE (E04)', 'AIDE SOIGNANT CL SUPERIEURE (E05)',
                         'AIDE SOIGNANT CL EXCEPT (E06)']
+    else : 
+        print("NEG for the corps are not specified in the select_grilles function")
+        stop
     subset_grilles = grilles[grilles.libelle_grade_NEG.isin(libNEG_corps)]
     return (subset_grilles)
 
@@ -48,16 +49,15 @@ def select_ident(dataset):
     variable =  'c_neg'
     c_neg =  get_careers(variable = variable, data_path = dataset)
     subset_by_corps = {}
-    for corps in ['AT', 'AA', 'ES']:
+    for corps in ['AT', 'AA', 'AS']:
         grilles = select_grilles(corps = corps)
         list_code = list(set(grilles.code_grade_NEG.astype(str)))
         list_code = ['0' + s for s in list_code]
         subset_ident = list(set(c_neg.ident[c_neg.c_neg.isin(list_code)]))
         subset_by_corps[corps] = subset_ident
-
     return subset_by_corps
 
-def cleaning_data(dataset, subset_by_corps, corps):
+def cleaning_data(dataset, subset_by_corps, corps, first_year):
     # Filter
     subset_ident = subset_by_corps[corps]
     # Load data by type
@@ -69,17 +69,22 @@ def cleaning_data(dataset, subset_by_corps, corps):
     data_i = generation.merge(sexe, how = "left", on = ['ident']).merge(an_aff, how = "left", on = ['ident']).sort_values(['ident'])
     del an_aff, generation, sexe
 
-    where = "(ident in {}) & (annee > 2004)".format(subset_ident)
-    quaterly_variables =  ['ib', 'echelon']
+    where = "(ident in {}) & (annee >= {})".format(subset_ident, first_year)
+    quaterly_variables =  ['ib', 'echelon', 'etat']  
     ib  =  get_careers(variable = quaterly_variables[0], data_path = dataset, where = where)
     ib  =  ib.pivot_table(index= ['ident', 'annee'], columns='trimestre', values='ib').reset_index()
-    ib.columns = ['ident', 'annee', 'ib1', 'ib2', 'ib3', 'ib4']
+    ib.columns = ['ident', 'annee', 'ib1', 'ib2', 'ib3', 'ib4'] 
     ech =  get_careers(variable = quaterly_variables[1], data_path = dataset, where = where)
     ech.echelon =  pd.to_numeric(ech.echelon, errors='coerce')
     ech  =  ech.pivot_table(index= ['ident', 'annee'], columns='trimestre', values='echelon').reset_index()
     ech.columns = ['ident', 'annee', 'echelon1', 'echelon2', 'echelon3', 'echelon4']
+    etats  =  get_careers(variable = quaterly_variables[2], data_path = dataset, where = where)
+    etats.etat = pd.to_numeric(etats.etat, errors='coerce')
+    etats  =  etats.pivot_table(index= ['ident', 'annee'], columns='trimestre', values='etat').reset_index()
+    etats.columns = ['ident', 'annee', 'etat1', 'etat2', 'etat3', 'etat4']  
 
-    where = "(ident in {}) & (annee > 2004)".format(subset_ident)
+
+    where = "(ident in {}) & (annee >= {})".format(subset_ident, first_year)
     yearly_variables =  ['c_neg', 'libemploi', 'statut']
     c_neg =  get_careers(variable = yearly_variables[0], data_path = dataset, where = where)
     libemploi =  get_careers(variable = yearly_variables[1], data_path = dataset, where = where)
@@ -91,6 +96,7 @@ def cleaning_data(dataset, subset_by_corps, corps):
                 .merge(statut, how = "left", on = ['ident', 'annee'])
                 .merge(ib, how = "left", on = ['ident', 'annee'])
                 .merge(ech, how = "left", on = ['ident', 'annee'])
+                .merge(etats, how = "left", on = ['ident', 'annee'])
                 .sort_values(['ident', 'annee'])
             )
     # Merge two data
@@ -105,38 +111,48 @@ def cleaning_data(dataset, subset_by_corps, corps):
     return data
 
 
-def main():
-    datasets = ['1980_1999_carrieres.h5',
-                '1976_1979_carrieres.h5',
-                '1970_1975_carrieres.h5',
-                '1960_1965_carrieres.h5',
-                '1966_1969_carrieres.h5',
-                ]
+def main(first_year = None, list_corps = None, datasets = None ):
+    data_merge_corps = {}        
     for dataset in datasets:
-        print("Processing data {}".format(dataset))
-        # List of ident
-        subset_by_corps = select_ident(dataset)
-        # Load and clean data by corps
-   #     data_AA = cleaning_data(dataset, subset_by_corps, corps = 'AA')
-   #     data_AT = cleaning_data(dataset, subset_by_corps, corps = 'AT')
-        data_ES = cleaning_data(dataset, subset_by_corps, corps = 'ES')
+        print("Processing data {}".format(dataset))        
+        for corps in list_corps:
+            print("Processing corps {}".format(corps))
+            
+            
+            # List of ident
+            subset_by_corps = select_ident(dataset)
+            # Load and clean data by corps
+            data_cleaned = cleaning_data(dataset, subset_by_corps, corps = corps, first_year = first_year)
+#            data_AT = cleaning_data(dataset, subset_by_corps, corps = 'AT')
+#        data_ES = cleaning_data(dataset, subset_by_corps, corps = 'AS')
 
-        if dataset == datasets[0]:
-   #         data_merge_AA = data_AA
-   #         data_merge_AT = data_AT
-            data_merge_ES = data_ES
-        else:
-   #         data_merge_AA = data_merge_AA.append(data_AA)
-   #         data_merge_AT = data_merge_AA.append(data_AT)
-            data_merge_ES = data_merge_ES.append(data_ES)
+            if dataset == datasets[0]:
+                data_merge_corps["data_corps_{}".format(corps)] = data_cleaned
+                # data_merge_AT = data_AT
+                # data_merge_ES = data_ES
+            else:
+                data_merge = data_merge_corps["data_corps_{}".format(corps)].append(data_cleaned)
+                data_merge_corps["data_corps_{}".format(corps)] = data_merge
+                #data_merge_corps = data_merge_corps.append(data_corps)
+#               data_merge_AT = data_merge_AA.append(data_AT)
+#               data_merge_ES = data_merge_ES.append(data_ES)
+    
+    for corps in list_corps:           
+        path = os.path.join(save_path,
+                        "corps{}_{}.csv".format(corps, first_year)
+                        )
+        data_merge_corps["data_corps_{}".format(corps)].to_csv(path)
+        
+        print("Saving data corps{}_{}.csv".format(corps, first_year))
 
-#    path = os.path.join(save_path, "corpsAA.csv")
-#    data_merge_AA.to_csv(path)
-#    path = os.path.join(save_path, "corpsAT.csv")
+    return
+
+#    path = os.path.join(save_path, "corpsAT_2011_2015.csv")
 #    data_merge_AT.to_csv(path)
-    path = os.path.join(save_path, "corpsES.csv")
-    data_merge_ES.to_csv(path)
+#    path = os.path.join(save_path, "corpsAS_2011_2015.csv")
+#    data_merge_ES.to_csv(path)
 
-if __name__ == '__main__':
-    logging.basicConfig(level = logging.INFO, stream = sys.stdout)
-    main()
+#if __name__ == '__main__':
+#    logging.basicconfig(level = logging.info, stream = sys.stdout)
+#main(first_year = 2015, list_corps =  ['AT', 'AS'],#, 'AS'], 
+ #                 datasets = ['1976_1979_carrieres_debug.h5', '1980_1999_carrieres_debug.h5'])
