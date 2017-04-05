@@ -31,8 +31,6 @@ source(paste0(git_path, 'modelisation/OutilsCNRACL.R'))
 
 load_data <- function(data_path, corps)
 {
-
-  
 return (main)
 }
 
@@ -53,7 +51,7 @@ data_wod <- function(data, list_neg, corps)
   data = data[which(data$annee >= 2007), ]
   
   print(paste0("Cleaning data  ",corps)) 
-  # Remove duplicates (why not in select_table?)
+  # Remove duplicates (why not in select_data.py?)
   di = data[data$annee == 2015,]
   dup = di$ident[duplicated(di$ident)]
   data = data[which(!is.element(data$ident, dup)), ]

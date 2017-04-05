@@ -9,12 +9,14 @@ data_path = "M:/CNRACL/output/"
 git_path =  'C:/Users/l.degalle/CNRACL/fonction-publique/fonction_publique/'
 
 tab_path = paste0(git_path,"ecrits/note_1_Lisa/Tables/")
+grille_path = paste0(git_path, "")
 
 ### Loading packages and functions ###
 source(paste0(git_path, 'modelisation/OutilsCNRACL.R'))
 
 # Read csv
 mainAT = read.csv(paste0(data_path,"corpsAT_2011_2015.csv"))
+mainAT2 = read.csv(paste0(data_path,"corpsAT.csv"))
 list_neg_AT = c(793, 794, 795, 796)
 sub_data_AT = mainAT[which(is.element(mainAT$ident, sample(unique(mainAT$ident), 10000))), ]
 
@@ -41,9 +43,12 @@ data_wod <- function(data, list_neg)
   # Remove duplicates (why not in select_table?)
   di = data[data$annee == 2015,]
   dup = di$ident[duplicated(di$ident)]
-  print(dim(data))
+  nb_indiv_bef_supp_dup <- (length(unique(data$ident)))
   data = data[which(!is.element(data$ident, dup)), ]
-  print(dim(data))
+  nb_indiv_aft_supp_dup <- (length(unique(data$ident)))
+  
+  # Get number of individual for which we delete obs due to duplicates
+  print(nb_indiv_bef_supp_dup - nb_indiv_aft_supp_dup)
   
   # Change types
   data$libemploi = as.character(data$libemploi)
@@ -117,6 +122,8 @@ data_clean <- function(data, list_neg)
 }
 
 # Data
+main_AT <- maintAT[order(mainAT[,2], mainAT[,4]), ]
+
 data_all_AT   <- data_wod(data = mainAT, list_neg = list_neg_AT)
 data_clean_AT <- data_clean(data_all_AT, list_neg_AT)
 
@@ -185,6 +192,9 @@ sample_selection(data_all_AT, list_neg_AT, 'AT')
 
 
 # II. 2. Dispersion duration échelon
+
+# Add durée légale dans l'échelon en matchant les données admin et les grilles
+
 
 
 
