@@ -106,7 +106,7 @@ def cleaning_data(dataset, subset_by_corps, corps, first_year):
     data = data.drop_duplicates(subset = ['ident', 'annee'], keep = False)
     b = len(set(data.ident))
     diff = a - b
-    #print("{}: {} individus dupliqués et supprimés".format(dataset, diff))
+    print("{}: {} individus dupliqués et supprimés".format(dataset, diff))
 
     return data
 
@@ -137,10 +137,6 @@ def main(first_year = None, list_corps = None, datasets = None ):
 
     return
 
-#    path = os.path.join(save_path, "corpsAT_2011_2015.csv")
-#    data_merge_AT.to_csv(path)
-#    path = os.path.join(save_path, "corpsAS_2011_2015.csv")
-#    data_merge_ES.to_csv(path)
 
 #if __name__ == '__main__':
 #    logging.basicconfig(level = logging.info, stream = sys.stdout)
