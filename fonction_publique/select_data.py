@@ -18,7 +18,8 @@ from fonction_publique.base import raw_directory_path, get_careers, parser
 from fonction_publique.merge_careers_and_legislation import get_grilles
 from slugify import slugify
 
-libelles_emploi_directory = parser.get('correspondances', 'libelles_emploi_directory')
+libelles_emploi_directory = parser.get('correspondances',
+                                       'libelles_emploi_directory')
 save_path = 'M:/CNRACL/output'
 
 
@@ -31,14 +32,22 @@ def select_grilles(corps):
     )
     grilles = pd.read_hdf(os.path.join(path_grilles,"grilles_old.h5"))
     if corps == 'AT':
-        libNEG_corps = ['ADJOINT TECHNIQUE DE 2EME CLASSE', 'ADJOINT TECHNIQUE DE 1ERE CLASSE',
-                        'ADJOINT TECHNIQUE PRINCIPAL DE 2EME CLASSE', 'ADJOINT TECHNIQUE PRINCIPAL DE 1ERE CLASSE']
+        libNEG_corps = ['ADJOINT TECHNIQUE DE 2EME CLASSE',
+                        'ADJOINT TECHNIQUE DE 1ERE CLASSE',
+                        'ADJOINT TECHNIQUE PRINCIPAL DE 2EME CLASSE',
+                        'ADJOINT TECHNIQUE PRINCIPAL DE 1ERE CLASSE'
+                        ]
     elif corps == 'AA':
-        libNEG_corps = ['ADJOINT ADMINISTRATIF DE 2EME CLASSE', 'ADJOINT ADMINISTRATIF DE 1ERE CLASSE',
-                    'ADJOINT ADMINISTRATIF PRINCIPAL DE 2EME CLASSE', 'ADJOINT ADMINISTRATIF PRINCIPAL DE 1ERE CLASSE']
+        libNEG_corps = ['ADJOINT ADMINISTRATIF DE 2EME CLASSE',
+                        'ADJOINT ADMINISTRATIF DE 1ERE CLASSE',
+                        'ADJOINT ADMINISTRATIF PRINCIPAL DE 2EME CLASSE',
+                        'ADJOINT ADMINISTRATIF PRINCIPAL DE 1ERE CLASSE'
+                        ]
     elif corps == 'AS':
-        libNEG_corps = ['AIDE SOIGNANT CL NORMALE (E04)', 'AIDE SOIGNANT CL SUPERIEURE (E05)',
-                        'AIDE SOIGNANT CL EXCEPT (E06)']
+        libNEG_corps = ['AIDE SOIGNANT CL NORMALE (E04)',
+                        'AIDE SOIGNANT CL SUPERIEURE (E05)',
+                        'AIDE SOIGNANT CL EXCEPT (E06)'
+                        ]
     else :
         print("NEG for the corps are not specified in the select_grilles function")
         stop
@@ -57,12 +66,13 @@ def select_ident(dataset):
         subset_by_corps[corps] = subset_ident
     return subset_by_corps
 
-def cleaning_data(dataset, subset_by_corps, corps, first_year):
+def cleaning_data(dataset, subset_by_corps, corps, first_year, list_permanent_variables, list_quaterly_variables, list_yearly_variables):
     # Filter
     subset_ident = subset_by_corps[corps]
     # Load data by type
     where = "ident in {}".format(subset_ident)
-    permanent_variables = ['generation', 'sexe', 'an_aff']
+    permanent_variables = list_permanent_variables
+   # permanent_variables = ['generation', 'sexe', 'an_aff']
     generation =  get_careers(variable = permanent_variables[0], data_path = dataset, where = where)
     sexe =  get_careers(variable = permanent_variables[1], data_path = dataset, where = where)
     an_aff =  get_careers(variable = permanent_variables[2], data_path = dataset, where = where)
@@ -70,7 +80,8 @@ def cleaning_data(dataset, subset_by_corps, corps, first_year):
     del an_aff, generation, sexe
 
     where = "(ident in {}) & (annee >= {})".format(subset_ident, first_year)
-    quaterly_variables =  ['ib', 'echelon', 'etat']
+    quaterly_variables = list_quaterly_variables
+#    quaterly_variables =  ['ib', 'echelon', 'etat']
     ib  =  get_careers(variable = quaterly_variables[0], data_path = dataset, where = where)
     ib  =  ib.pivot_table(index= ['ident', 'annee'], columns='trimestre', values='ib').reset_index()
     ib.columns = ['ident', 'annee', 'ib1', 'ib2', 'ib3', 'ib4']
@@ -85,7 +96,8 @@ def cleaning_data(dataset, subset_by_corps, corps, first_year):
 
 
     where = "(ident in {}) & (annee >= {})".format(subset_ident, first_year)
-    yearly_variables =  ['c_neg', 'libemploi', 'statut']
+    yearly_variables = list_yearly_variables
+#    yearly_variables =  ['c_neg', 'libemploi', 'statut']
     c_neg =  get_careers(variable = yearly_variables[0], data_path = dataset, where = where)
     libemploi =  get_careers(variable = yearly_variables[1], data_path = dataset, where = where)
     statut =  get_careers(variable = yearly_variables[2], data_path = dataset, where = where)
@@ -111,7 +123,13 @@ def cleaning_data(dataset, subset_by_corps, corps, first_year):
     return data
 
 
-def main(first_year = None, list_corps = None, datasets = None ):
+def main(first_year = None,
+         list_corps = None,
+         datasets = None,
+         list_permanent_variables = None,
+         list_quaterly_variables = None,
+         list_yearly_variables = None
+         ):
     data_merge_corps = {}
     for dataset in datasets:
         print("Processing data {}".format(dataset))
@@ -120,7 +138,14 @@ def main(first_year = None, list_corps = None, datasets = None ):
            # List of ident of the corps
             subset_by_corps = select_ident(dataset)
             # Load and clean data by corps
-            data_cleaned = cleaning_data(dataset, subset_by_corps, corps = corps, first_year = first_year)
+            data_cleaned = cleaning_data(dataset,
+                                         subset_by_corps,
+                                         corps = corps,
+                                         first_year = first_year,
+                                         list_permanent_variables = list_permanent_variables,
+                                         list_quaterly_variables = list_quaterly_variables,
+                                         list_yearly_variables = list_yearly_variables
+                                         )
             if dataset == datasets[0]:
                 data_merge_corps["data_corps_{}".format(corps)] = data_cleaned
             else:
