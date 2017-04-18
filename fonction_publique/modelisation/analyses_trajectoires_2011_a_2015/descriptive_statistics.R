@@ -6,27 +6,31 @@
 #### 0. Initialisation ####
 
 data_path = "M:/CNRACL/output/"
-git_path =  'C:/Users/l.degalle/CNRACL/fonction-publique/fonction_publique/'
+git_path =  'C:/Users/l.degalle/CNRACL/fonction-publique/fonction_publique'
 
 tab_path = paste0(git_path,"ecrits/note_1_Lisa/Tables/")
 grille_path = paste0(git_path, "")
+
+savepath = 'C:/Users/l.degalle/CNRACL/fonction-publique/fonction_publique/ecrits/note_1_Lisa/Tables/'
 
 ### Loading packages and functions ###
 source(paste0(git_path, 'modelisation/OutilsCNRACL.R'))
 
 # Read csv
-mainAT = read.csv(paste0(data_path,"corpsAT_2011_2015.csv"))
-mainAT2 = read.csv(paste0(data_path,"corpsAT.csv"))
+mainAT = read.csv(paste0(data_path,"corpsAT_2011.csv"))
 list_neg_AT = c(793, 794, 795, 796)
-sub_data_AT = mainAT[which(is.element(mainAT$ident, sample(unique(mainAT$ident), 10000))), ]
+#sub_data_AT = mainAT[which(is.element(mainAT$ident, sample(unique(mainAT$ident), 10000))), ]
 
-# mainAA = read.csv(paste0(data_path,"corpsAA_2011_2015.csv"))
-# list_neg_AA = c(791, 792, 0014, 0162)
-# sub_data_AA = mainAA[which(is.element(mainAA$ident, sample(unique(mainAA$ident), 10000))), ]
-# 
-# mainAS = read.csv(paste0(data_path,"corpsAS_2011_2015.csv"))
-# list_neg_AS = c(840, 841, 842, 0162)
-# sub_data_AS = mainAS[which(is.element(mainAS$ident, sample(unique(mainAS$ident), 10000))), ]
+mainAA = read.csv(paste0(data_path,"corpsAA_2011.csv"))
+list_neg_AA = c(791, 792, 0014, 0162)
+#sub_data_AA = mainAA[which(is.element(mainAA$ident, sample(unique(mainAA$ident), 10000))), ]
+
+mainAS = read.csv(paste0(data_path,"corpsAS_2011.csv"))
+list_neg_AS = c(839 ,840, 841, 773)
+#sub_data_AS = mainAS[which(is.element(mainAS$ident, sample(unique(mainAS$ident), 10000))), ]
+
+# Read CSV debug
+debugAT = read.csv(paste0(data_path,"/debug/corpsAT_2007.csv"))
 
 get_list_neg <- function(corps)
 {
@@ -49,7 +53,7 @@ data_wod <- function(data, list_neg)
   
   # Get number of individual for which we delete obs due to duplicates
   print(nb_indiv_bef_supp_dup - nb_indiv_aft_supp_dup)
-  
+  stop
   # Change types
   data$libemploi = as.character(data$libemploi)
   data$c_neg = as.numeric(format(data$c_neg))
@@ -122,15 +126,20 @@ data_clean <- function(data, list_neg)
 }
 
 # Data
-main_AT <- maintAT[order(mainAT[,2], mainAT[,4]), ]
-
+mainAT <- mainAT[order(mainAT[,2], mainAT[,4]), ]
 data_all_AT   <- data_wod(data = mainAT, list_neg = list_neg_AT)
 data_clean_AT <- data_clean(data_all_AT, list_neg_AT)
 
-# data_all_AA   <- data_wod(data = mainAA, list_neg = list_neg_AA)
-# data_clean_AA <- data_clean(data_all_AA, list_neg_AA)
+mainAA <- mainAA[order(mainAA[,2], mainAA[,4]), ]
+data_all_AA   <- data_wod(data = mainAA, list_neg = list_neg_AA)
+data_clean_AA <- data_clean(data_all_AA, list_neg_AA)
 
-rm(mainAT) #mainAA)
+mainAS <- mainAS[order(mainAS[,2], mainAS[,4]), ]
+data_all_AS   <- data_wod(data = mainAS, list_neg = list_neg_AS)
+data_clean_AS <- data_clean(data_all_AS, list_neg_AS)
+
+
+rm(mainAT, mainAA, mainAS)
 gc()
 
 #### II. Data analysis ####
@@ -141,11 +150,11 @@ data_all = data_all_AT
 list_neg = list_neg_AT
 corps = 'AT'
 
-sample_selection <- function(data, list_neg, corps)
+sample_selection <- function(data_all, list_neg, corps, savepath)
 {  
-  list1 = data_all$ident[which(data_all$etat4 == 1 & data_all$libemploi == '')]
-  list2 = data_all$ident[which(data_all$c_neg == 0 & data_all$libemploi != '')]
-  list3 = data_all$ident[which(is.na(data_all$echelon) & is.element(data_all$c_neg, list_neg))]
+  list1 = data_all$ident[which(data_all$etat4 == 1 & data_all$libemploi == ''  & data_all$annee>= 2007)]
+  list2 = data_all$ident[which(data_all$c_neg == 0 & data_all$libemploi != '' & data_all$annee>= 2007)]
+  list3 = data_all$ident[which(is.na(data_all$echelon) & is.element(data_all$c_neg, list_neg)  & data_all$annee>= 2007)]
   list4 = data_all$ident[which(is.element(data_all$c_neg, list_neg) & 
                                  data_all$c_neg == data_all$next_neg & 
                                  !is.na(data_all$echelon) & !is.na(data_all$next_ech) & 
@@ -175,7 +184,7 @@ sample_selection <- function(data, list_neg, corps)
   
   colnames(size_sample) <- c("Nb d'individus", "\\% echantillon initial")
   rownames(size_sample) <- c("Echantillon initial",
-                             "F1: Libemploi manquant quand etat4 est en activite",
+                             "F1: Libemploi manquant quand etat activite",
                              "F2: Neg manquant quand libemploi renseigne", 
                              "F3: Echelon manquant quand neg dans le corps",
                              "F3bis: Baisse d'echelon", 
@@ -184,18 +193,205 @@ sample_selection <- function(data, list_neg, corps)
   print(xtable(size_sample,align="l|cc",nrow = nrow(size_sample), ncol=ncol(size_sample)+1, byrow=T, digits=0),
         hline.after=c(1), sanitize.text.function=identity,
         size="\\footnotesize", only.contents=T,
-        file=paste0(tab_path, corps, "_sample_selection.tex"),)
+        file=paste0(savepath, corps, "_sample_selection.tex"),)
   
 }
 
-sample_selection(data_all_AT, list_neg_AT, 'AT')
+sample_selection(data_all_AT, list_neg_AT, 'AT', savepath)
+sample_selection(data_all_AA, list_neg_AA, 'AA', savepath)
+sample_selection(data_all_AS, list_neg_AS, 'AS', savepath)
 
+#count
+count1 <- function(data_all, corps, list_neg, savepath)
+{
+  list1 = data_all$ident[which(data_all$statut != "" & data_all$libemploi == ''  & data_all$annee>= 2007)]
+  list2 = data_all$ident[which(data_all$c_neg == 0 & data_all$libemploi != '' & data_all$annee>= 2007)]
+  list3 = data_all$ident[which(is.na(data_all$echelon) & is.element(data_all$c_neg, list_neg)  & data_all$annee>= 2007)]  
+  data1 =  data_all[-which(is.element(data_all$ident, list1)),]
+  data2 =  data1[-which(is.element(data1$ident, list2)),]
+  data3 =  data2[-which(is.element(data2$ident, list3)),]
+  
+  count = matrix(ncol = length(list_neg)*2, nrow = 4)
+  
+  for (n in 1:length(list_neg))
+  {
+    count[1, (n*2 - 1)] =  length(which(data_all$c_neg == list_neg[n]))
+    count[1, n*2]       =  100*length(which(data_all$c_neg == list_neg[n]))/  count[1, (n*2 - 1)]
+    count[2, (n*2 - 1)] =  length(which(data1$c_neg == list_neg[n]))
+    count[2, n*2]       =  100*length(which(data1$c_neg == list_neg[n]))/  count[1, (n*2 - 1)]
+    count[3, (n*2 - 1)] =  length(which(data2$c_neg == list_neg[n]))
+    count[3, n*2]       =  100*length(which(data2$c_neg == list_neg[n]))/  count[1, (n*2 - 1)]
+    count[4, (n*2 - 1)] =  length(which(data3$c_neg == list_neg[n]))
+    count[4, n*2]       =  100*length(which(data3$c_neg == list_neg[n]))/  count[1, (n*2 - 1)]
+  }
+  
+  rownames(count) <- c("Tous","F1", "F2", "F3")
+  table = count
+  print(xtable(table,align="l|cccccccc",nrow = nrow(table), ncol=ncol(table)+1, byrow=T, digits = 0),
+        sanitize.text.function=identity,size="\\footnotesize", 
+        only.contents=T, include.colnames = F, hline.after = c(-1),
+        file = paste0(savepath, corps, "_data_count1.tex"))
+  print(paste0("Saving table ",paste0(corps, "_data_count1.tex")))
+}
+
+# II. Matrices de transitions
+compute_transitions_entry <- function(data_all, list_neg, corps, savepath)
+{
+  list1 = data_all$ident[which(data_all$etat4 == 1 & data_all$libemploi == '')]
+  list2 = data_all$ident[which(data_all$c_neg == 0 & data_all$libemploi != '')]
+  data_clean =  data_all[which(!is.element(data_all$ident, union(list1,list2))),]  
+  data_entry = data_clean[which(data_clean$change_neg_bef ==1  & data_clean$annee >= 2012),]
+  table_entry = matrix(0, ncol = length(list_neg), nrow = 11)  
+  
+  for (n in 1:length(list_neg))
+  {
+    list = which(data_entry$c_neg == list_neg[n]) 
+    # Intra-corps transitions
+    for (n2 in 1:length(list_neg))
+    {
+      list2 = which(data_entry$bef_neg == list_neg[n2])
+      table_entry[(n2),n] = length(intersect(list, list2))/length(list)  
+    }
+    # From other known neg
+    list_oth = which(!is.element(data_entry$bef_neg, cbind(0, list_neg)))
+    t = as.data.frame(table(data_entry$bef_neg[intersect(list, list_oth)]))
+    t = t[order(-t$Freq),]
+    if (length(intersect(list, list_oth))>0)
+    {
+      table_entry[5,n] = sum(t$Freq)/length(list)  
+      table_entry[6,n] = as.numeric(format(t[1,1]))
+      table_entry[7,n] = t[1,2]/length(list) 
+      table_entry[8,n] = round(as.numeric(format(t[2,1])), digits = 0)
+      table_entry[9,n] = t[2,2]/length(list) 
+    }
+    # From missing neg
+    list4 = which(data_entry$bef_neg == 0)
+    table_entry[10,n] = length(intersect(list, list4))/length(list)  
+    # Total: 
+    table_entry[11, n] = sum(table_entry[-c(6:9,11), n])
+  }
+  table_entry[-c(6,8),] = table_entry[-c(6,8),]*100
+  table = table_entry
+  print(list_neg)
+  colnames(table) <- paste0("NEG n = ", list_neg)
+  rownames(table) <- c(paste0("NEG n-1 = ", list_neg),
+                       "NEG n-1 = autres", " \\hfill dont le grade ", "\\hfill  representant ", 
+                       " \\hfill dont le grade ", "\\hfill  representant ",
+                       "NEG n-1 = manquant", "total")
+  
+  print(xtable(data.frame(var  = rownames(table), data.frame(table)),
+               digits = matrix(c(rep(2,(ncol(table)+2)*5),rep(0,(ncol(table)+2)*1), 
+                                 rep(2,(ncol(table)+2)*1),rep(0,(ncol(table)+2)*1),
+                                 rep(2,(ncol(table)+2)*3)),nrow = nrow(table), ncol=ncol(table)+2, byrow=T)),
+        sanitize.text.function=identity,size="\\footnotesize", 
+        only.contents=T, hline = c(4,9), include.rownames = FALSE, include.colnames = FALSE,
+        file = paste0(savepath, corps, "_transition_entry.tex"))
+  print(paste0("Saving figure ",paste0( corps, "_transition_entry.tex")))
+}  
+
+compute_transitions_entry(data_all_AT, list_neg_AT, 'AT', savepath)
+compute_transitions_entry(data_all_AS, list_neg = list_neg_AS, corps = 'AS', savepath)
+compute_transitions_entry(data_all_AA, list_neg_AA, 'AA', savepath)
+
+compute_transitions_exit <- function(data_all, list_neg, corps, savepath = tab_path)
+{
+  list1 = data_all$ident[which(data_all$statut != '' & data_all$libemploi == '')]
+  list2 = data_all$ident[which(data_all$c_neg == 0 & data_all$libemploi != '')]
+  data_clean =  data_all[which(!is.element(data_all$ident, union(list1,list2))),]  
+  data_exit = data_clean[which(data_clean$change_neg_next ==1  & data_clean$annee >= 2011 & data_clean$annee < 2015),]
+  table_exit = matrix(0, ncol = length(list_neg), nrow = 11)  
+  
+  for (n in 1:length(list_neg))
+  {
+    list = which(data_exit$c_neg == list_neg[n]) 
+    # Intra-corps transitions
+    for (n2 in 1:length(list_neg))
+    {
+      list2 = which(data_exit$next_neg == list_neg[n2])
+      table_exit[(n2),n] = length(intersect(list, list2))/length(list)  
+    }
+    # From other known neg
+    list_oth = which(!is.element(data_exit$next_neg, cbind(0, list_neg)))
+    t = as.data.frame(table(data_exit$next_neg[intersect(list, list_oth)]))
+    t = t[order(-t$Freq),]
+    if (length(intersect(list, list_oth))>0)
+    {
+      table_exit[5,n] = sum(t$Freq)/length(list)  
+      table_exit[6,n] = as.numeric(format(t[1,1]))
+      table_exit[7,n] = t[1,2]/length(list) 
+      table_exit[8,n] = round(as.numeric(format(t[2,1])), digits = 0)
+      table_exit[9,n] = t[2,2]/length(list)
+    }
+    # From missing neg
+    list4 = which(data_exit$next_neg == 0)
+    table_exit[10,n] = length(intersect(list, list4))/length(list)  
+    # Total: 
+    table_exit[11, n] = sum(table_exit[1:10, n])
+    table_exit[11, n] = sum(table_exit[-c(6:9,11), n])
+  }
+  table_exit[-c(6,8),] = table_exit[-c(6,8),]*100
+  
+  table = table_exit
+  colnames(table) <- paste0("NEG n = ", list_neg)
+  rownames(table) <- c(paste0("NEG n+1 = ", list_neg),
+                       "NEG n+1 = autres", " \\hfill dont le grade ", "\\hfill  representant ", 
+                       " \\hfill dont le grade ", "\\hfill  representant ",
+                       "NEG n+1 = manquant", "total")
+  
+  
+  print(xtable(data.frame(var  = rownames(table), data.frame(table)),
+               digits = matrix(c(rep(2,(ncol(table)+2)*5),rep(0,(ncol(table)+2)*1), 
+                                 rep(2,(ncol(table)+2)*1),rep(0,(ncol(table)+2)*1),
+                                 rep(2,(ncol(table)+2)*3)),nrow = nrow(table), ncol=ncol(table)+2, byrow=T)),
+        sanitize.text.function=identity,size="\\footnotesize", 
+        only.contents=T, hline = c(4,9), include.rownames = FALSE, include.colnames = FALSE,
+        file = paste0(savepath, corps, "_transition_exit.tex"))
+  print(paste0("Saving figure ",paste0( corps, "_transition_exit.tex")))
+} 
+
+compute_transitions_exit(data_all_AT, list_neg_AT, 'AT', savepath)
+compute_transitions_exit(data_all_AS, list_neg = list_neg_AS, corps = 'AS', savepath)
+compute_transitions_exit(data_all_AA, list_neg_AA, 'AA', savepath)
 
 # II. 2. Dispersion duration échelon
 
+# back to 1 observations = 1 indiv trimestre
+library(tidyr)
+library(plyr)
+library(zoo)
+
+# load grille (générée grâce à la fonction select_grille de select_data.py, todo: trouver un moyen d'appeler des fonctions définies
+# sur Python en R sur Windows)
+grille <- read.csv("C:/Users/l.degalle/CNRACL/fonction-publique/fonction_publique/assets/grille_AT.csv")
+grille$echelon <- as.numeric(grille$echelon)
+grille <- rename(grille, c('code_grade_NEG' = 'c_neg'))
+grille$date_effet_grille <- as.Date(grille$date_effet_grille)
+grille$annee <- as.numeric(format(grille$date_effet_grille, format = "%Y"))
+grille$trimestre <- quarters(grille$date_effet_grille)
+grille$trimestre <- as.numeric(gsub("Q", "", grille$trimestre))
+grille$date_effet_quarter <- as.yearqtr(paste(grille$annee, grille$trimestre), "%Y%m")
+
+sub_AT <- head(data_clean_AT)
+sub_AT <- sub_AT[,1:21]
+sub_AT <- melt(setDT(sub_AT), measure = list(7:10, 11:14, 15:18))
+sub_AT <- rename(sub_AT, c("variable" = "trimestre", "value1"="ib", "value2"="echelon", "value3"='etat'))
+sub_AT$trimestre <- as.numeric(sub_AT$trimestre)
+sub_AT$date_as_annee_trimestre <- as.yearqtr(paste(sub_AT$annee , sub_AT$trimestre), "%Y%m")
+
 # Add durée légale dans l'échelon en matchant les données admin et les grilles
+#subset(merge(sub_AT, grille, by = c("ib", "c_neg", "echelon"), how = "outer"), grille$date_effet_quarter <= sub_AT$date & sub_AT$date <= grille$date_effet_quarter)
+grille$period <- ave(grille$date_effet_quarter, grille$c_neg, FUN=shiftm1)
 
+library('xts')
+data(sample_matrix)
+grille <- as.xts(grille)
+head(x)
+grille <-as.data.frame(grille)
+head(df)
+newdates<-grille$date_effet_grille
 
-
+grille$nextdates<-c(newdates[2:length(newdates)],"NA")
+grille$nextdates<-as.POSIXct(strptime(grille$nextdates, "%Y-%m-%d"))
+head(df)
 
 # II. 3. Unicité de la trajectoire échelon-grade à échelon-grade ?

@@ -15,7 +15,7 @@ import pkg_resources
 import pandas as pd
 import numpy as np
 from fonction_publique.base import raw_directory_path, get_careers, parser
-from fonction_publique.merge_careers_and_legislation import get_grilles
+from fonction_publique.merge_careers_and_legislation import get_grilles, law_to_hdf
 from slugify import slugify
 
 libelles_emploi_directory = parser.get('correspondances',
@@ -71,17 +71,20 @@ def cleaning_data(dataset, subset_by_corps, corps, first_year, list_permanent_va
     subset_ident = subset_by_corps[corps]
     # Load data by type
     where = "ident in {}".format(subset_ident)
-    permanent_variables = list_permanent_variables
-   # permanent_variables = ['generation', 'sexe', 'an_aff']
+  #  permanent_variables = list_permanent_variables
+    permanent_variables = ['generation', 'sexe', 'an_aff']
     generation =  get_careers(variable = permanent_variables[0], data_path = dataset, where = where)
     sexe =  get_careers(variable = permanent_variables[1], data_path = dataset, where = where)
     an_aff =  get_careers(variable = permanent_variables[2], data_path = dataset, where = where)
+    
+#    data_i = get_careers(variables = ["generation", "sexe", "an_aff"], data_path = dataset, where = where).sort_values(['ident'])
+#    data_i['ident'] = data_i.index
     data_i = generation.merge(sexe, how = "left", on = ['ident']).merge(an_aff, how = "left", on = ['ident']).sort_values(['ident'])
     del an_aff, generation, sexe
 
     where = "(ident in {}) & (annee >= {})".format(subset_ident, first_year)
-    quaterly_variables = list_quaterly_variables
-#    quaterly_variables =  ['ib', 'echelon', 'etat']
+#    quaterly_variables = list_quaterly_variables
+    quaterly_variables =  ['ib', 'echelon', 'etat']
     ib  =  get_careers(variable = quaterly_variables[0], data_path = dataset, where = where)
     ib  =  ib.pivot_table(index= ['ident', 'annee'], columns='trimestre', values='ib').reset_index()
     ib.columns = ['ident', 'annee', 'ib1', 'ib2', 'ib3', 'ib4']
@@ -96,8 +99,8 @@ def cleaning_data(dataset, subset_by_corps, corps, first_year, list_permanent_va
 
 
     where = "(ident in {}) & (annee >= {})".format(subset_ident, first_year)
-    yearly_variables = list_yearly_variables
-#    yearly_variables =  ['c_neg', 'libemploi', 'statut']
+#    yearly_variables = list_yearly_variables
+    yearly_variables =  ['c_neg', 'libemploi', 'statut']
     c_neg =  get_careers(variable = yearly_variables[0], data_path = dataset, where = where)
     libemploi =  get_careers(variable = yearly_variables[1], data_path = dataset, where = where)
     statut =  get_careers(variable = yearly_variables[2], data_path = dataset, where = where)
@@ -163,7 +166,11 @@ def main(first_year = None,
     return
 
 
-#if __name__ == '__main__':
+if __name__ == '__main__':
 #    logging.basicconfig(level = logging.info, stream = sys.stdout)
-#main(first_year = 2015, list_corps =  ['AT', 'AS'],#, 'AS'],
- #                 datasets = ['1976_1979_carrieres_debug.h5', '1980_1999_carrieres_debug.h5'])
+    main(first_year = 2011, list_corps =  ['AT'],#, 'AS'],
+                  datasets = ['1980_1999_carrieres.h5',
+                               '1976_1979_carrieres.h5',
+                               '1970_1975_carrieres.h5',
+                               '1960_1965_carrieres.h5',
+                               '1966_1969_carrieres.h5'])
