@@ -21,12 +21,12 @@ mainAT = read.csv(paste0(data_path,"corpsAT_2011.csv"))
 list_neg_AT = c(793, 794, 795, 796)
 #sub_data_AT = mainAT[which(is.element(mainAT$ident, sample(unique(mainAT$ident), 10000))), ]
 
-mainAA = read.csv(paste0(data_path,"corpsAA_2011.csv"))
-list_neg_AA = c(791, 792, 0014, 0162)
-#sub_data_AA = mainAA[which(is.element(mainAA$ident, sample(unique(mainAA$ident), 10000))), ]
-
-mainAS = read.csv(paste0(data_path,"corpsAS_2011.csv"))
-list_neg_AS = c(839 ,840, 841, 773)
+# mainAA = read.csv(paste0(data_path,"corpsAA_2011.csv"))
+# list_neg_AA = c(791, 792, 0014, 0162)
+# #sub_data_AA = mainAA[which(is.element(mainAA$ident, sample(unique(mainAA$ident), 10000))), ]
+# 
+# mainAS = read.csv(paste0(data_path,"corpsAS_2011.csv"))
+# list_neg_AS = c(839 ,840, 841, 773)
 #sub_data_AS = mainAS[which(is.element(mainAS$ident, sample(unique(mainAS$ident), 10000))), ]
 
 # Read CSV debug
@@ -130,13 +130,13 @@ mainAT <- mainAT[order(mainAT[,2], mainAT[,4]), ]
 data_all_AT   <- data_wod(data = mainAT, list_neg = list_neg_AT)
 data_clean_AT <- data_clean(data_all_AT, list_neg_AT)
 
-mainAA <- mainAA[order(mainAA[,2], mainAA[,4]), ]
-data_all_AA   <- data_wod(data = mainAA, list_neg = list_neg_AA)
-data_clean_AA <- data_clean(data_all_AA, list_neg_AA)
-
-mainAS <- mainAS[order(mainAS[,2], mainAS[,4]), ]
-data_all_AS   <- data_wod(data = mainAS, list_neg = list_neg_AS)
-data_clean_AS <- data_clean(data_all_AS, list_neg_AS)
+# mainAA <- mainAA[order(mainAA[,2], mainAA[,4]), ]
+# data_all_AA   <- data_wod(data = mainAA, list_neg = list_neg_AA)
+# data_clean_AA <- data_clean(data_all_AA, list_neg_AA)
+# 
+# mainAS <- mainAS[order(mainAS[,2], mainAS[,4]), ]
+# data_all_AS   <- data_wod(data = mainAS, list_neg = list_neg_AS)
+# data_clean_AS <- data_clean(data_all_AS, list_neg_AS)
 
 
 rm(mainAT, mainAA, mainAS)
@@ -355,43 +355,23 @@ compute_transitions_exit(data_all_AA, list_neg_AA, 'AA', savepath)
 
 # II. 2. Dispersion duration échelon
 
-# back to 1 observations = 1 indiv trimestre
-library(tidyr)
-library(plyr)
-library(zoo)
+mainAT_w_conditions <- read.csv(paste0(data_path,"corps_AT_2011_w_echelon_conditions.csv"))
 
-# load grille (générée grâce à la fonction select_grille de select_data.py, todo: trouver un moyen d'appeler des fonctions définies
-# sur Python en R sur Windows)
-grille <- read.csv("C:/Users/l.degalle/CNRACL/fonction-publique/fonction_publique/assets/grille_AT.csv")
-grille$echelon <- as.numeric(grille$echelon)
-grille <- rename(grille, c('code_grade_NEG' = 'c_neg'))
-grille$date_effet_grille <- as.Date(grille$date_effet_grille)
-grille$annee <- as.numeric(format(grille$date_effet_grille, format = "%Y"))
-grille$trimestre <- quarters(grille$date_effet_grille)
-grille$trimestre <- as.numeric(gsub("Q", "", grille$trimestre))
-grille$date_effet_quarter <- as.yearqtr(paste(grille$annee, grille$trimestre), "%Y%m")
+mainAT_w_conditions$ident = as.character(mainAT_w_conditions$ident)
+mainAT_w_conditions$c_neg = as.character(mainAT_w_conditions$c_neg)
+mainAT_w_conditions$echelon_x = as.character(mainAT_w_conditions$echelon_x)
+mainAT_w_conditions$ident_cneg_ech <- as.character(with(mainAT_w_conditions, paste0(ident, c_neg, echelon_x)))
+mainAT_w_conditions$number_of_quarters_in_cneg_ech <- transform(mainAT_w_conditions, count = table(ident_cneg_ech)[ident_cneg_ech])
 
-sub_AT <- head(data_clean_AT)
-sub_AT <- sub_AT[,1:21]
-sub_AT <- melt(setDT(sub_AT), measure = list(7:10, 11:14, 15:18))
-sub_AT <- rename(sub_AT, c("variable" = "trimestre", "value1"="ib", "value2"="echelon", "value3"='etat'))
-sub_AT$trimestre <- as.numeric(sub_AT$trimestre)
-sub_AT$date_as_annee_trimestre <- as.yearqtr(paste(sub_AT$annee , sub_AT$trimestre), "%Y%m")
+mainAT_w_conditions$number_of_months_in_cneg_ech <- as.numeric(as.character(mainAT_w_conditions$number_of_quarters_in_cneg_ech)) * 3
+par(mfrow = c(3, 2))
 
-# Add durée légale dans l'échelon en matchant les données admin et les grilles
-#subset(merge(sub_AT, grille, by = c("ib", "c_neg", "echelon"), how = "outer"), grille$date_effet_quarter <= sub_AT$date & sub_AT$date <= grille$date_effet_quarter)
-grille$period <- ave(grille$date_effet_quarter, grille$c_neg, FUN=shiftm1)
-
-library('xts')
-data(sample_matrix)
-grille <- as.xts(grille)
-head(x)
-grille <-as.data.frame(grille)
-head(df)
-newdates<-grille$date_effet_grille
-
-grille$nextdates<-c(newdates[2:length(newdates)],"NA")
-grille$nextdates<-as.POSIXct(strptime(grille$nextdates, "%Y-%m-%d"))
-head(df)
-
+list_unique_period_min <- unique(mainAT_w_conditions$min_mois)
+for (n in 1:length(list_unique_period_min)){
+  period_min = list_unique_period_min[n]
+  data = mainAT_w_conditions[mainAT_w_conditions$min_mois == period_min,]
+  hist(data$number_of_months_in_cneg_ech, main = "")
+}
+  
+  
 # II. 3. Unicité de la trajectoire échelon-grade à échelon-grade ?
