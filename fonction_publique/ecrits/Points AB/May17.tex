@@ -1,0 +1,121 @@
+
+
+ 
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}		% LaTeX, comprend les accents !
+\usepackage[T1]{fontenc}
+\usepackage{natbib}	
+%\usepackage[square,sort&compress,sectionbib]{natbib}		% Doit être chargé avant babel      
+\usepackage[frenchb,english]{babel}
+\usepackage{lmodern}
+\usepackage{a4wide}
+\usepackage[capposition=top]{floatrow}
+\usepackage{verbatim}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{flafter}
+\usepackage{longtable}
+\usepackage{import}
+\usepackage{pdflscape}
+\usepackage{rotating}
+\usepackage{hhline}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage[pdftex,pdfborder={0 0 0},colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue,bookmarksopen=true]{hyperref}
+\usepackage{eurosym}
+%\usepackage{breakcites}
+\usepackage[autostyle]{csquotes}
+%\usepackage{datetime}
+\usepackage{natbib}
+\usepackage{setspace}
+\usepackage{lscape}
+\usepackage[usenames]{color}
+\usepackage{indentfirst}
+\usepackage{url}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{subcaption}
+\usepackage[justification=centering]{caption}
+\bibliographystyle{agsm}
+
+\usepackage{array}
+
+
+\selectlanguage{frenchb}
+
+\newcommand{\isEmbedded}{true}
+
+
+
+\begin{document}
+
+\title{Point d'étape CNRACL}
+
+
+\maketitle
+
+\section{Complétion des durées initiales}
+
+\subsubsection*{Résumé:}
+
+
+
+\subsubsection*{Améliorations futures:}
+
+Limiter l'importance de la censure à gauche: 
+\begin{enumerate}
+\item Hypothèses fortes avant 2007 (ex: an aff = entrée dans le grade)
+\item Attente des grilles du corps avant 2006 pour prolonger la complétion. 
+\end{enumerate}
+
+
+
+
+\section{Estimations}
+
+\subsection{Kaplan-Meyer}
+
+\subsection{Estimation simple}
+
+\subsection{Chetty}
+
+\section{Divers}
+
+\subsubsection*{Données}
+
+\begin{itemize}
+\item Toujours des nouveaux problèmes: qualité de l'information se dégrade fortement (et de manière discontinue au cours du temps). 
+\item Lien avec la CDC pour qu'ils fassent le job. 
+\item Question des variables utilisées pour l'estimation et leur présence en projection. 
+\end{itemize}
+
+\subsubsection*{Policy variables}
+
+
+\subsubsection*{Turin}
+
+\begin{itemize}
+\item Billet/hôtel
+\item Autre? Parler de bigdata?
+\end{itemize}
+
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+Potential extensions:
+\begin{itemize}
+\item Dealing with left-truncation: reweighting to account for selection of longer spells
+\item Dealing with left-censoring: find $a_i$ for everybody or specific likelihood for censored individuals. 
+\item Use additional information from inflows after 2011. 
+\end{itemize}
