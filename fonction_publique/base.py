@@ -126,8 +126,8 @@ def get_careers(variable = None, variables = None, stop = None, data_path = None
     else:
         actual_clean_directory_path = clean_directory_path
 
-    careers_hdf_path = os.path.join(actual_clean_directory_path,data_path)
-            
+    careers_hdf_path = os.path.join(actual_clean_directory_path, data_path)
+
     if variable:
         print('Reading variable {} from file {}'.format(variable, careers_hdf_path))
         return pd.read_hdf(careers_hdf_path, variable, stop = stop, where = where)
