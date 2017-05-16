@@ -5,6 +5,7 @@ config.ini
 *.mo
 *.pyc
 *.pyo
+*.h5
 
 # tex files
 *.aux
