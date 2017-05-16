@@ -119,6 +119,13 @@ def main(annee,
 
     resultat_chgmt_de_grade.to_csv(results_path)
 
+    resultat_non_chgmt_de_grade = pd.concat(
+            liste_data_individs_nayant_pas_change_de_grade_en_2007
+            )
+
+    resultat_non_chgmt_de_grade.to_csv('M:/CNRACL/output/base_AT_clean_2007_2011/data_non_chgmt.csv')
+
+
     return resultat_chgmt_de_grade_certain
 
 if __name__ == '__main__':
