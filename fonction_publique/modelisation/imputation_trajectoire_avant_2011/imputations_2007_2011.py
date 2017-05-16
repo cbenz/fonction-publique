@@ -7,7 +7,10 @@ import logging
 import numpy as np
 import os
 import pandas as pd
+import pkg_resources
+import sys
 
+from fonction_publique.base import output_directory_path
 
 from clean_data_initialisation import (
     merge_careers_w_grille,
@@ -26,9 +29,13 @@ log = logging.getLogger(__name__)
 
 
 # Paths
-asset_path = r"M:\CNRACL\output\bases_AT_imputations_trajectoires_avant_2011"
-CNRACL_project_path = "C:/Users/l.degalle/CNRACL/fonction-publique/fonction_publique/"
-grilles_path = os.path.join(CNRACL_project_path, "assets/")
+asset_path = os.path.join(output_directory_path, r"bases_AT_imputations_trajectoires_avant_2011")
+
+CNRACL_project_path = os.path.join(
+    pkg_resources.get_distribution('fonction_publique').location,
+    'fonction_publique'
+    )
+grilles_path = os.path.join(CNRACL_project_path, "assets")
 results_filename = os.path.join(
     CNRACL_project_path, "modelisation/imputation_trajectoire_avant_2011/resultats_imputation.csv"
     )
@@ -143,7 +150,7 @@ def main(annee,
 
 
 if __name__ == '__main__':
-    # logging.basicconfig(level = logging.info, stream = sys.stdout)
+    logging.basicconfig(level = logging.info, stream = sys.stdout)
     main(
         2011,
         grilles,
