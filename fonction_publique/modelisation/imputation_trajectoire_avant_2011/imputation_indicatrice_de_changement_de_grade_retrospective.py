@@ -268,7 +268,7 @@ def map_cas_uniques_to_data(cas_uniques_w_indic_df, data, annee, test):
             'c_cir_{}'.format(annee),
             'ib_{}'.format(annee),
             'date_effet_grille_{}_x'.format(annee),
-            'date_effet_grille_{}'.format(annee -1),
+            'date_effet_grille_{}'.format(annee - 1),
             'ib_{}'.format(annee - 1),
             'ambiguite_{}'.format(annee - 1),
             'c_cir_{}_predit'.format(annee - 1),
