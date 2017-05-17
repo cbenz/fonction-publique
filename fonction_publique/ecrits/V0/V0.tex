@@ -1,0 +1,92 @@
+
+
+ 
+\documentclass[11pt,a4paper]{article}
+\usepackage[english]{babel}
+\usepackage[latin1]{inputenc}
+\usepackage[OT1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb, amsthm}
+\usepackage{a4wide}
+\usepackage[capposition=top]{floatrow}
+\usepackage{verbatim}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{flafter}
+\usepackage{longtable}
+\usepackage{import}
+\usepackage{pdflscape}
+\usepackage{rotating}
+\usepackage{hhline}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage[pdftex,pdfborder={0 0 0},colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue,bookmarksopen=true]{hyperref}
+\usepackage{eurosym}
+%\usepackage{breakcites}
+\usepackage[autostyle]{csquotes}
+%\usepackage{datetime}
+\usepackage{natbib}
+\usepackage{setspace}
+\usepackage{lscape}
+\usepackage[usenames]{color}
+\usepackage{indentfirst}
+\usepackage{url}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{subcaption}
+\usepackage[justification=centering]{caption}
+\bibliographystyle{agsm}
+
+\usepackage{array}
+
+\newcommand{\isEmbedded}{true}
+
+
+
+\begin{document}
+
+\title{Modeling the Career of the French Public Servants: \\ An Alternative to Wage Equations ?}
+
+
+\author{Mahdi Ben Jelloul, Lisa Degalle and Simon Rabat\'e \thanks{Institut des politiques publiques \newline Contact: simon.rabate@ipp.eu}}
+
+
+\maketitle
+
+\section{Introduction}
+
+
+
+\section{Institutional Background}
+
+
+\section{Data}
+
+We use administrative data from the CNRACL pension scheme. It contains the whole universe of the affiliates to the scheme, and provide a career record for the periods spent as a public servant. This record is not complete though: some key variables are only available for recent years. It is the case for our main variable of interest: the administrative grade in the administration is recorded from 2011 onward only. 
+
+
+\appendix
+
+\section{Imputation of the initial state}
+
+
+
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+Potential extensions:
+\begin{itemize}
+\item Dealing with left-truncation: reweighting to account for selection of longer spells
+\item Dealing with left-censoring: find $a_i$ for everybody or specific likelihood for censored individuals. 
+\item Use additional information from inflows after 2011. 
+\end{itemize}

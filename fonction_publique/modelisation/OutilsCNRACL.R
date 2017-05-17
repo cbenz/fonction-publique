@@ -4,6 +4,7 @@ library(data.table)
 library(xtable)
 library(DataCombine)
 library(ggplot2)
+library(Hmisc)
 
 ##### function ####
 
@@ -42,7 +43,7 @@ shift2<-function(x){
 }
 
 lag1<-function(x){
-  out<- lag(x, k = 1)
+  out<- Lag(x, shift = 1)
   out
 }
 
@@ -60,9 +61,9 @@ shiftm2<- function(x)  #adapt? de shift  : cr?er une variable d?cal?e de 1 vers 
 }
 
 
-lag1<- function(x)  #adapt? de shift  : cr?er une variable d?cal?e de 1 vers le base. 
+lagm1<- function(x)  #adapt? de shift  : cr?er une variable d?cal?e de 1 vers le base. 
 {
-  out <- shift(x,-1)
+  out <-Lag(x, shift = -1)
   return(out)
 }
 
