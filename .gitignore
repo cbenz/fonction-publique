@@ -5,6 +5,7 @@ config.ini
 *.mo
 *.pyc
 *.pyo
+*.h5
 
 # tex files
 *.aux
@@ -13,6 +14,7 @@ config.ini
 *.log
 *.out
 *.gz
+*.toc
 
 .pydevproject
 .spyderproject
