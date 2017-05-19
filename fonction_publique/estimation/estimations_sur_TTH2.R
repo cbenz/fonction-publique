@@ -53,7 +53,7 @@ data_id = data_long[,c("ident", "c_cir","sexe", "generation_group","max_duration
 data_id = data_id[!duplicated(data_id$ident),]
 
 
-### Data grade TTH3, (5 ans de services eff. sont nécessaires pour passer au grade suivant)
+### Data grade TTH3, (5 ans de services eff. sont n?cessaires pour passer au grade suivant)
 data_TTH3 <- data_id[data_id$c_cir == 'TTH3',]
 
 
@@ -176,6 +176,7 @@ dev.off()
 
 
 
+
 detach(data_TTH3)
 *
 ## II.2  Cox PH with time-fixed variable ####
@@ -239,7 +240,7 @@ data_TTH3_long$a = 1
 data_TTH3_long$count = ave(data_TTH3_long$a, data_TTH3_long$ident, FUN = cumsum)
 data_TTH3_long$start = data_TTH3_long$count -1
 data_TTH3_long$stop  = data_TTH3_long$count 
-# Ind de départ 
+# Ind de d?part 
 data_TTH3_long$max_annee = ave(data_TTH3_long$annee, data_TTH3_long$ident, FUN = max)
 data_TTH3_long$exit.time  = ifelse(data_TTH3_long$max_annee == data_TTH3_long$annee & data_TTH3_long$observed == 1, 1 ,0)
 # Dummies pour la distance 

@@ -1,24 +1,21 @@
 
 
-
-
-
 #### 0. Initialisation ####
 
 rm(list = ls()); gc()
 
 # path
-place = "ippS"
+place = "mac"
 if (place == "ippS"){
-  data_path = "M:/CNRACL/output/"
+  data_path = "M:/CNRACL/output/base_AT_clean_2007_2011/"
   git_path =  'U:/Projets/CNRACL/fonction-publique/fonction_publique/'
 }
 if (place == "ippL"){
-  data_path = "M:/CNRACL/output/"
+  data_path = "M:/CNRACL/output/base_AT_clean_2007_2011/"
   git_path =  'C:/Users/l.degalle/CNRACL/fonction-publique/fonction_publique/'
 }
 if (place == "mac"){
-  data_path = "/Users/simonrabate/Desktop/data/CNRACL/"
+  data_path = "/Users/simonrabate/Desktop/data/CNRACL/output/"
   git_path =  '/Users/simonrabate/Desktop/IPP/CNRACL/fonction_publique/'
 }
 fig_path = paste0(git_path,"ecrits/Points AB/")
@@ -34,12 +31,19 @@ library(RColorBrewer)
 library(RcmdrPlugin.survival)
 
 # Chargement de la base
-filename = paste0(data_path,"base_AT_clean_2007_2011/base_AT_clean_w_echelon_sex_generation_group.csv")
-data_new = read.csv(filename) 
-filename = paste0(data_path,"base_AT_clean_2007_2011/base_AT_clean.csv")
+filename = paste0(data_path,"base_AT_clean.csv")
 data_long = read.csv(filename) 
-data_long$generation_group = data_new$generation_group
-data_long$sexe = data_new$sexe
+
+# MODIF A DEPLACER: cleaning when right censoring and not duration in grade = 5
+data_long = data_long[-which(data_long$duration_in_grade_from_2011 < 5 & data_long$right_censoring== 'True'),]
+
+data_long$generation_group = 9
+data_long$generation_group[data_long$generation<1990] = 8
+data_long$generation_group[data_long$generation<1985] = 7
+data_long$generation_group[data_long$generation<1980] = 6
+data_long$generation_group[data_long$generation<1975] = 5
+data_long$generation_group[data_long$generation<1970] = 4
+data_long$generation_group[data_long$generation<1965] = 3
 
 data_long$ind_exit_once = ave(data_long$exit_status, data_long$ident, FUN = max) 
 data_long$observed = ifelse(data_long$ind_exit_once == 1, 1, 0)
@@ -48,14 +52,13 @@ data_long$time_max = data_long$max_duration_in_grade + data_long$duration_in_gra
 
 
 # Mise au format data 1obs/indiv
-data_id = data_long[,c("ident", "c_cir","sexe", "generation_group","max_duration_in_grade","min_duration_in_grade","duration_in_grade_from_2011", 
+data_id = data_long[,c("ident", "c_cir", "generation_group","max_duration_in_grade","min_duration_in_grade","duration_in_grade_from_2011", 
                        "observed",  "right_censoring", "time_min", "time_max")]
 data_id = data_id[!duplicated(data_id$ident),]
 
-
 ## Data grade TTH3 
 data_TTH3 <- data_id[data_id$c_cir == 'TTH3',]
-data_TTH3 <- data_id[-which(data_TTH3$generation_group == '9'),]
+data_TTH3 <- data_TTH3[-which(data_TTH3$generation_group == '9'),]
 
 ## Learning and prediction sample
 list_id = data_TTH3$ident
@@ -66,40 +69,137 @@ data_test     = data_TTH3[which(!is.element(data_TTH3$ident, list_learning)),]
 
 ## I. Estimation ####
 
-
 ## KM
 srFit_KM <-survfit(Surv(time_max, observed)~1, data = data_learning)
 summary(srFit_KM)
 
 ## Exponential
-srFit_exp <- survreg(Surv(time_max, observed) ~ sexe + as.factor(generation_group) , data = data_learning, dist = "exponential")
+srFit_exp <- survreg(Surv(time_max, observed) ~  1 + as.factor(generation_group) , data = data_learning, dist = "exponential")
 summary(srFit_exp)
 
 ## Loglogistic
-srFit_loglog <- survreg(Surv(time_max, observed) ~  sexe +as.factor(generation_group) , data = data_learning,, dist = "loglogistic")
+srFit_loglog <- survreg(Surv(time_max, observed) ~  as.factor(generation_group) , data = data_learning,, dist = "loglogistic")
 summary(srFit_loglog)
 
 ## Gaussian
-srFit_gaus <- survreg(Surv(time_max, observed) ~  sexe +as.factor(generation_group) , data = data_learning,  dist = "gaussian")
+srFit_gaus <- survreg(Surv(time_max, observed) ~  as.factor(generation_group) , data = data_learning,  dist = "gaussian")
 summary(srFit_gauss)
 
 ## Weibull 
-srFit_weibull <- survreg(Surv(time_max, observed) ~  sexe + as.factor(generation_group) , data = data_learning, dist = "weibull")
+srFit_weibull <- survreg(Surv(time_max, observed) ~  1 + as.factor(generation_group) , data = data_learning, dist = "weibull")
 summary(srFit_weibull)
-
-a <- 1/srFit_weibull$scale 
-b <- exp( coef(srFit_weibull) )
-y2 <- b * ( -log( 1-runif(1000) ) ) ^(1/a)
-plot(sort(y2), main="Conditional Weibull Hazard",
-     xlab="time", ylab="Hazard")
-
-
 
 
 ### II. Fit ###
 
-## Graphical comparison
+summary(srFit_weibull)
+round(srFit_weibull$coefficients, 3)
+
+# Hazard rate
+lambda.wei.i <- exp(-predict(srFit_weibull, data = data_learning, type="linear"))
+lambda.wei <- mean(lambda.i, na.rm=TRUE)
+lambda.exp.i <- exp(-predict(srFit_exp, data = data_learning, type="linear"))
+lambda.exp <- mean(lambda.i, na.rm=TRUE)
+t <- seq(0, max(comp$fit$time), len=99)
+p <- 1/srFit_weibull$scale
+hazard_wei <- lambda * p * (lambda * t)^(p-1)
+hazard_exp <- lambda 
+plot(t, hazard_wei, type="l", main="Weibull and exponential Hazard rates", 
+     xlab="Years in grade", ylab="Hazard Rate")
+lines(t, rep(hazard_exp, length(t)))
+
+
+
+
+
+
+
+## II.1 Graphical comparison
+#srFit_exp <- survreg(Surv(time_max, observed) ~  1 , data = data_learning, dist = "exponential")
+#srFit_weibull <- survreg(Surv(time_max, observed) ~  1 , data = data_learning, dist = "weibull")
 comp = list(fit=srFit_KM, lam.e=exp(-coef(srFit_exp)), lam.w=exp(-coef(srFit_weibull)), gam=1/srFit_weibull$scale)
+
+par(mar=c(4,4,1,1))
+plot(comp$fit, conf.int=FALSE, las=1, mark.time=FALSE, col='grey60',lwd=3, 
+     ylab = "Survival",xlab = "Duration in grade")
+tt <- seq(0, max(comp$fit$time), len=99)
+lines(tt, pexp(tt, comp$lam.e, low=FALSE), col="grey20", lwd=3)
+lines(tt, pweibull(tt, comp$gam, 1/comp$lam.w, low=FALSE), col="black", , lwd=3)
+legend("bottomleft", legend = c("KM","Exponential", "Weibull"), lty = 1, col = c("grey60", "grey20", "black"), lwd = 3)
+
+
+### III. Simulation ###
+#srFit_exp <- survreg(Surv(time_max, observed) ~  1 , data = data_learning, dist = "exponential")
+#srFit_weibull <- survreg(Surv(time_max, observed) ~  1 , data = data_learning, dist = "weibull")
+
+
+attach(data_test)
+tirage<-function(var)
+{
+t<-rbinom(1,1,var) # Loi binomiale 
+return(t)
+}
+
+
+### Predicted exit date
+duration = max_duration_in_grade
+predicted_exit_exp = rep(NA,length(ident))
+data_sim_exp <- data_test
+predicted_exit_wei = rep(NA,length(ident))
+data_sim_wei <- data_test 
+
+for (y in seq(2011, 2014, 1))
+{
+# Keep only individuals that are not left
+list_wei = which(is.na(predicted_exit_wei))
+data_sim_wei = data_sim[list_wei,]
+list_exp = which(is.na(predicted_exit_exp))
+data_sim_exp = data_sim[list_exp,]  
+# Computing hazard rate bw y an y+1  
+  lambda.wei <- exp(-predict(srFit_weibull, newdata = data_sim_wei, type="linear"))
+  lambda.exp <- exp(-predict(srFit_exp, newdata = data_sim_exp, type="linear"))
+  t = duration[list_wei] + 0.5  # Hyp: proba of exit at t+0.5
+  p <- 1/srFit_weibull$scale
+  hazard_wei <- lambda.wei * p * (lambda.wei * t)^(p-1)  
+  hazard_exp <- lambda.exp
+# Drawing exit based on the predicted probability
+  exit_wei = as.numeric(lapply(hazard_wei, tirage))
+  exit_exp = as.numeric(lapply(hazard_exp, tirage))
+# Saving exit date when predicted
+predicted_exit_wei[list_wei] = ifelse(exit_wei == 1, y+1, NA)
+predicted_exit_exp[list_exp] = ifelse(exit_exp == 1, y+1, NA)
+# Incrementing duration 
+duration = duration + 1 
+}
+
+# Observed/predicted survival between 2011 and 2015
+observed_exit = duration_in_grade_from_2011 + 2011
+observed_exit[right_censoring == "True"] = NA  
+annee <- seq(2011, 2015, 1)
+survival = matrix(ncol = length(annee), nrow = 3)
+for (y in 1:length(annee))
+{
+n = length(observed_exit)
+survival[1, y] = length(which(observed_exit > annee[y] | is.na(observed_exit)))/n
+survival[2, y] = length(which(predicted_exit_wei > annee[y] | is.na(predicted_exit_wei)))/n
+survival[3, y] = length(which(predicted_exit_exp > annee[y] | is.na(predicted_exit_exp)))/n
+}  
+
+# Plot
+plot(annee, rep(NA, length(annee)), ylim = c(0,1),  ylab = "Survival rate",xlab = "Year")
+lines(annee, survival[1, ], col="grey20", lwd=3)
+lines(annee, survival[2, ], col="grey50", lwd=3)
+lines(annee, survival[3, ], col="grey80", lwd=3)
+legend("bottomleft", legend = c("Observed", "Weibull","Exponential"), 
+       lty = 1, col = c("grey20", "grey50", "grey80"), lwd = 3)
+
+
+
+
+# Predicted Exit for the data_test
+
+
+
 
 
 predict(srFit_weibull)
@@ -135,149 +235,10 @@ plot(brier)
 
 
 
+data_prediction = 
 
 
 
-## II. Estimation ####
 
 
-attach(data_TTH3)
-
-## II.1 Parametric estimation ####
-
-
-## Comparison
-fit <- survfit(Surv(time_max, observed)~1)
-fit.exp <- survreg(Surv(time_max, observed)~1, dist='exponential')
-fit.wbl <- survreg(Surv(time_max, observed)~1, dist='weibull')
-comp = list(fit=fit, lam.e=exp(-coef(fit.exp)), lam.w=exp(-coef(fit.wbl)), gam=1/fit.wbl$scale)
-
-dev.off()
-pdf(paste0(fig_path,"comp.pdf"))
-par(mar=c(4,4,1,1))
-plot(comp$fit, conf.int=FALSE, las=1, mark.time=FALSE, col='grey60',lwd=3, 
-     ylab = "Survival",xlab = "Duration in grade")
-tt <- seq(0, max(comp$fit$time), len=99)
-lines(tt, pexp(tt, comp$lam.e, low=FALSE), col="grey20", lwd=3)
-lines(tt, pweibull(tt, comp$gam, 1/comp$lam.w, low=FALSE), col="black", , lwd=3)
-legend("bottomleft", legend = c("KM","Exponential", "Weibull"), lty = 1, col = c("grey60", "grey20", "black"), lwd = 3)
-dev.off()
-
-
-
-detach(data_TTH3)
-*
-  ## II.2  Cox PH with time-fixed variable ####
-attach(data_TTH3)
-
-my.surv   <- Surv(time_max, observed)
-coxph.fit1 <- coxph(my.surv ~ sexe + as.factor(generation_group), method="breslow") #sexe +
-coxph.fit3 <- coxph(my.surv ~ sexe +  as.factor(generation_group), method="efron")
-
-plot(survfit(coxph.fit1), ylim=c(0, 1), xlab="Year",ylab="Proportion in grade")
-
-detach(data_TTH3)
-
-## II.3  Cox PH with time-dependent variable ####
-
-## II.3.1  0/1 Treatment ####
-
-N <- dim(data_TTH3)[1]
-t1 <- rep(0, N+sum(data_TTH3$time_max >= 5)) # initialize start time at 0
-t2 <- rep(-1, length(t1)) # build vector for end times
-d <- rep(-1, length(t1)) # whether event was censored
-generation <- rep(-1, length(t1)) # generation covariate
-duree_legale_depassee <- rep(FALSE, length(t1)) # initialize duree_legale_depassee at FALSE
-
-j <- 1
-for(ii in 1:dim(data_TTH3)[1]){
-  if(data_TTH3$time_max[ii] < 5){ # duree non depassee, copy survival record
-    print('hello')
-    t2[j] <- data_TTH3$time_max[ii]
-    d[j] <- data_TTH3$observed[ii]
-    generation[j] <- data_TTH3$generation[ii]
-    j <- j+1
-  } else { # intervention, split records
-    print('bye')
-    generation[j+0:1] <- data_TTH3$generation[ii] # gender is same for each time
-    d[j] <- 0 # pas de fin obs avant 5 ans
-    d[j+1] <- data_TTH3$observed[ii] 
-    duree_legale_depassee[j+1] <- TRUE 
-    t2[j] <- 5 
-    t1[j+1] <- 5 # start of post-intervention
-    t2[j+1] <- data_TTH3$time_max[ii] # end of post-intervention
-    j <- j+2 # two records added
-  }
-}
-
-mySurv <- Surv(t1, t2, d)
-myCPH <- coxph(mySurv ~ generation + factor(duree_legale_depassee))
-
-"ERREUR: In coxph(mySurv ~ generation + factor(duree_legale_depassee)) :
-X matrix deemed to be singular; variable 2"
-
-
-
-## II.3.2  Distance to threshold dummies ####
-# Mise au format pour l'estimation avec varying
-data_TTH3_long <-  data_long[which(data_long$c_cir == 'TTH3'), c("ident","annee", "sexe", "generation_group","observed", "exit_status", "right_censoring", "time_min", "time_max")]
-
-# Count de la duree
-data_TTH3_long$duree_ref= 5
-data_TTH3_long$a = 1
-data_TTH3_long$count = ave(data_TTH3_long$a, data_TTH3_long$ident, FUN = cumsum)
-data_TTH3_long$start = data_TTH3_long$count -1
-data_TTH3_long$stop  = data_TTH3_long$count 
-# Ind de départ 
-data_TTH3_long$max_annee = ave(data_TTH3_long$annee, data_TTH3_long$ident, FUN = max)
-data_TTH3_long$exit.time  = ifelse(data_TTH3_long$max_annee == data_TTH3_long$annee & data_TTH3_long$observed == 1, 1 ,0)
-# Dummies pour la distance 
-data_TTH3_long$dist = data_TTH3_long$count - data_TTH3_long$duree_ref
-data_TTH3_long$Im5 = ifelse(data_TTH3_long$dist == -5, 1, 0)
-data_TTH3_long$Im4 = ifelse(data_TTH3_long$dist == -4, 1, 0)
-data_TTH3_long$Im3 = ifelse(data_TTH3_long$dist == -3, 1, 0)
-data_TTH3_long$Im2 = ifelse(data_TTH3_long$dist == -2, 1, 0)
-data_TTH3_long$Im1 = ifelse(data_TTH3_long$dist == -1, 1, 0)
-data_TTH3_long$Ip5 = ifelse(data_TTH3_long$dist == 5, 1, 0)
-data_TTH3_long$Ip4 = ifelse(data_TTH3_long$dist == 4, 1, 0)
-data_TTH3_long$Ip3 = ifelse(data_TTH3_long$dist == 3, 1, 0)
-data_TTH3_long$Ip2 = ifelse(data_TTH3_long$dist == 2, 1, 0)
-data_TTH3_long$Ip1 = ifelse(data_TTH3_long$dist == 1, 1, 0)
-data_TTH3_long$I0 = ifelse(data_TTH3_long$dist == 0, 1, 0)
-
-coxph.fit1 = coxph(Surv(start, stop, exit.time) ~  sexe + generation_group + I0,
-                   data=data_TTH3_long)
-
-
-# tutoriel
-data(relapse)
-
-N <- dim(relapse)[1]
-t1 <- rep(0, N+sum(!is.na(relapse$int))) # initialize start time at 0
-t2 <- rep(-1, length(t1)) # build vector for end times
-d <- rep(-1, length(t1)) # whether event was censored
-g <- rep(-1, length(t1)) # gender covariate
-i <- rep(FALSE, length(t1)) # initialize intervention at FALSE
-
-j <- 1
-for(ii in 1:dim(relapse)[1]){
-  if(is.na(relapse$int[ii])){ # no intervention, copy survival record
-    t2[j] <- relapse$event[ii]
-    d[j] <- relapse$delta[ii]
-    g[j] <- relapse$gender[ii]
-    j <- j+1
-  } else { # intervention, split records
-    g[j+0:1] <- relapse$gender[ii] # gender is same for each time
-    d[j] <- 0 # no relapse observed pre-intervention
-    d[j+1] <- relapse$delta[ii] # relapse occur post-intervention?
-    i[j+1] <- TRUE # intervention covariate, post-intervention
-    t2[j] <- relapse$int[ii]-1 # end of pre-intervention
-    t1[j+1] <- relapse$int[ii]-1 # start of post-intervention
-    t2[j+1] <- relapse$event[ii] # end of post-intervention
-    j <- j+2 # two records added
-  }
-}
-
-mySurv <- Surv(t1, t2, d) # pg 3 discusses left-trunc. right-cens. data
-myCPH <- coxph(mySurv ~ g + i)
 
