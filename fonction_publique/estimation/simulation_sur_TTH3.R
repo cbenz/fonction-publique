@@ -21,6 +21,7 @@ if (place == "mac"){
 
 # Packages
 #install.packages("OIsurv");install.packages("rms");install.packages("emuR");install.packages("RColorBrewer");install.packages("RcmdrPlugin");install.packages("pec")
+#install.packages("prodlim")
 library(OIsurv)
 library(rms)
 library(emuR)
@@ -60,19 +61,24 @@ data_TTH3 <- data_TTH3[-which(data_TTH3$generation_group == '9'),]
 ## Learning and prediction sample
 list_id = data_TTH3$ident
 list_learning = sample(list_id, ceiling(length(list_id)/2))
-data_learning = data_TTH3[which(is.element(data_TTH3$ident, list_learning)),]
-data_test     = data_TTH3[which(!is.element(data_TTH3$ident, list_learning)),]
+list_test = setdiff(list_id, list_learning)
+data_learning = data_id[which(is.element(data_id$ident, list_learning)),]
+data_test     = data_id[which(is.element(data_id$ident, list_test)),]
 
 length(which(data_TTH3$right_censoring == 'True'))/length(data_TTH3$right_censoring)
 
 ## I. Estimation ####
 
+## KM
+srFit_KM <- survfit(Surv(data_learning$time_max, data_learning$observed) ~ 1)
+summary(srFit_KM)
+
 ## Exponential
-srFit_exp <- survreg(Surv(time_max, observed) ~  1 + generation_group, data = data_learning, dist = "exponential")
+srFit_exp <- survreg(Surv(time_max, observed) ~  1 + factor(generation_group), data = data_learning, dist = "exponential")
 summary(srFit_exp)
 
 ## Weibull 
-srFit_weibull <- survreg(Surv(time_max, observed) ~  1 + generation_group, data = data_learning, dist = "weibull")
+srFit_weibull <- survreg(Surv(time_max, observed) ~  1 + factor(generation_group), data = data_learning, dist = "weibull")
 summary(srFit_weibull)
 
 
@@ -95,18 +101,17 @@ for (y in seq(2011, 2015, 1))
 {
   # Keep only individuals that are not left
   list_wei = which(is.na(predicted_exit_wei))
-  ident[list_wei]
   data_sim_wei = data_test[list_wei,]
   list_exp = which(is.na(predicted_exit_exp))
   data_sim_exp = data_test[list_exp,]  
   # Computing hazard rate bw y an y+1  
   intercept.wei = predict(srFit_weibull, newdata = data_sim_wei,type="linear")
-  intercept.exp = predict(srFit_exp, newdata = data_sim_wei,type="linear")  
+  intercept.exp = predict(srFit_exp, newdata = data_sim_exp,type="linear")  
   t = duration[list_wei] + 0.5  # Hyp: proba of exit at t+0.5
   scale = srFit_weibull$scale
   hazard_wei <-dweibull(t, scale=exp(intercept.wei), shape=1/scale)/pweibull(t, scale=exp(intercept.wei), shape=1/scale, lower.tail=FALSE)
-  hazard_exp <-dweibull(t, scale=exp(intercept.exp), shape=1)/pweibull(t, scale=exp(intercept.exp), shape=1, lower.tail=FALSE)
-  print(c(y, "mean wei", mean(hazard_wei), "mean exp", mean(hazard_exp)))
+  hazard_exp <-dweibull(1, scale=exp(intercept.exp), shape=1)/pweibull(1, scale=exp(intercept.exp), shape=1, lower.tail=FALSE)
+#  print(c(y, "mean wei", mean(hazard_wei), "mean exp", mean(hazard_exp)))
   # Drawing exit based on the predicted probability
   exit_wei = as.numeric(lapply(hazard_wei, tirage))
   exit_exp = as.numeric(lapply(hazard_exp, tirage))
@@ -116,22 +121,36 @@ for (y in seq(2011, 2015, 1))
   # Incrementing duration 
   duration = duration + 1 
 }
-
+detach(data_test)
 
 
 # Observed/predicted survival between 2011 and 2015
-observed_exit = duration_in_grade_from_2011 + 2011
-observed_exit[right_censoring == "True"] = NA  
+observed_exit = data_test$duration_in_grade_from_2011 + 2011
+observed_exit[data_test$right_censoring == "True"] = NA  
 annee <- seq(2011, 2015, 1)
 survival = matrix(ncol = length(annee), nrow = 3)
-for (y in 1:length(annee))
+hazard_rate = matrix(ncol = length(annee), nrow = 3)
+
+observed_exit[is.na(observed_exit)] = 9999
+predicted_exit_wei[is.na(predicted_exit_wei)] = 9999
+predicted_exit_exp[is.na(predicted_exit_exp)] = 9999
+
+for (y in (1:length(annee)))
 {
   n = length(observed_exit)
+  # Survival Rate
   survival[1, y] = length(which(observed_exit > annee[y] | is.na(observed_exit)))/n
   survival[2, y] = length(which(predicted_exit_wei > annee[y] | is.na(predicted_exit_wei)))/n
   survival[3, y] = length(which(predicted_exit_exp > annee[y] | is.na(predicted_exit_exp)))/n
+  # Hazard Rate
+  if (y < length(annee))
+  {
+  hazard_rate[1, y] = length(which(observed_exit == annee[y]+1))/length(which(observed_exit >= annee[y]))
+  hazard_rate[2, y] = length(which(predicted_exit_wei == annee[y]+1))/length(which(predicted_exit_wei >= annee[y]))
+  hazard_rate[3, y] = length(which(predicted_exit_exp == annee[y]+1))/length(which(predicted_exit_exp >= annee[y]))
+  }
 }  
-detach(data_test)
+
 
 # Plot
 plot(annee, rep(NA, length(annee)), ylim = c(0,1),  ylab = "Survival rate",xlab = "Year")
@@ -141,8 +160,15 @@ lines(annee, survival[3, ], col="grey80", lwd=3)
 legend("bottomleft", legend = c("Observed", "Weibull","Exponential"), 
        lty = 1, col = c("grey20", "grey50", "grey80"), lwd = 3)
 
-
+# Plot
+plot(annee, rep(NA, length(annee)), ylim = c(0,0.4),  ylab = "Hazard rate",xlab = "Year")
+lines(annee, hazard_rate[1, ], col="grey20", lwd=3)
+lines(annee, hazard_rate[2, ], col="grey50", lwd=3)
+lines(annee, hazard_rate[3, ], col="grey80", lwd=3)
+legend("topleft", legend = c("Observed", "Weibull","Exponential"), 
+       lty = 1, col = c("grey20", "grey50", "grey80"), lwd = 3)
   
+
   
   
   
