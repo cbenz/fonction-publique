@@ -213,7 +213,11 @@ scale = srFit_weibull$scale
 scale1 = srFit_weibull1$scale
 scale2 = srFit_weibull2$scale
 hazard_wei <-dweibull(t, scale=exp(intercept.wei), shape=1/scale)/pweibull(t, scale=exp(intercept.wei), shape=1/scale, lower.tail=FALSE)
-hazard_exp <-dweibull(1, scale=exp(intercept.exp), shape=1)/pweibull(1, scale=exp(intercept.exp), shape=1, lower.tail=FALSE)
-#  print(c(y, "mean wei", mean(hazard_wei), "mean exp", mean(hazard_exp)))
+hazard_wei1 <-dweibull(t, scale=exp(intercept.wei1), shape=1/scale1)/pweibull(t, scale=exp(intercept.wei1), shape=1/scale1, lower.tail=FALSE)
+hazard_wei2 <-dweibull(t, scale=exp(intercept.wei2), shape=1/scale1)/pweibull(t, scale=exp(intercept.wei2), shape=1/scale2, lower.tail=FALSE)
+
+print(c("mean wei", mean(hazard_wei), 
+        "mean wei1", mean(hazard_wei1),
+        "mean wei2", mean(hazard_wei2)))
   
   
