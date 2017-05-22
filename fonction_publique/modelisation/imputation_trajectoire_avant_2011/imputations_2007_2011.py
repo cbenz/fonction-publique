@@ -29,7 +29,7 @@ log = logging.getLogger(__name__)
 
 
 # Paths
-asset_path = os.path.join(output_directory_path, r"bases_AT_imputations_trajectoires_avant_2011")
+asset_path = os.path.join(output_directory_path, r"bases_AT_imputations_trajectoires_2006_2011")
 
 CNRACL_project_path = os.path.join(
     pkg_resources.get_distribution('fonction_publique').location,
@@ -41,7 +41,7 @@ results_filename = os.path.join(
     )
 
 # Data
-data_carrieres_2007 = pd.read_csv(os.path.join(asset_path, "corpsAT_2007.csv"))
+data_carrieres_2007 = pd.read_csv(os.path.join(asset_path, "corpsAT_2006.csv"))
 #data_carrieres_1995_2015 = pd.read_csv(
 #    "M:/CNRACL/output/bases_AT_imputations_trajectoires_1995_2011/corpsAT_1995.csv"
 #    )
@@ -53,7 +53,7 @@ corresp_corps = pd.read_csv(
     delimiter = ';'
     )
 
-annees = list(reversed(range(2008, 2012)))
+annees = list(reversed(range(2007, 2012)))
 
 
 def main(annee,
@@ -125,7 +125,7 @@ def main(annee,
 
         liste_data_individus_ayant_change_de_grade.append(data_a_storer)
 
-        if annee == 2008:
+        if annee == 2007:
             data_a_storer_indiv_ne_changeant_pas_de_grade_apres_2007 = get_indiv_who_change_grade_or_not_at_t(
                 data_annee_et_annee_bef_avec_grades_predits,
                 False,
@@ -170,15 +170,15 @@ if __name__ == '__main__':
         1960,
         'ATT',
         True,
-        results_path = "", #"M:/CNRACL/output/base_AT_clean_2007_2011",
-        filename_data_chgmt ="", #"data_changement_grade_2007_2011.csv",
-        filename_data_non_chgmt = "", #"data_non_changement_grade_2007_2011.csv",
+        results_path = "M:/CNRACL/output/base_AT_clean_2006_2011",
+        filename_data_chgmt = "data_changement_grade_2006_2011.csv",
+        filename_data_non_chgmt = "data_non_changement_grade_2006_2011.csv",
         )
 
 
-result_non_chg = pd.read_csv("M:/CNRACL/output/base_AT_clean_2007_2011/data_non_changement_grade_2007_2011.csv")
-result_chg = pd.read_csv("M:/CNRACL/output/base_AT_clean_2007_2011/data_changement_grade_2007_2011.csv")
-len(set(result_chg.ident.unique().tolist() + result_non_chg.ident.unique().tolist()))
+#result_non_chg = pd.read_csv("M:/CNRACL/output/base_AT_clean_2007_2011/data_non_changement_grade_2007_2011.csv")
+#result_chg = pd.read_csv("M:/CNRACL/output/base_AT_clean_2007_2011/data_changement_grade_2007_2011.csv")
+#len(set(result_chg.ident.unique().tolist() + result_non_chg.ident.unique().tolist()))
 
 # resultat_non_chgmt_de_grade = pd.concat(
 #        liste_data_individs_nayant_pas_change_de_grade_en_2007
