@@ -24,6 +24,9 @@ corresp_corps = pd.read_csv(
     os.path.join(grilles_path, 'corresp_neg_netneh.csv'),
     delimiter = ';'
     )
+corresp_grilles_ATT_et_pre_ATT = pd.read_csv(os.path.join(grilles_path, "neg_grades_supp.csv"),
+                                             delimiter = ';')
+
 
 data_2011 = data.query('annee == 2011')
 log.info("Il y a {} agents qui sont ATT en 2011 selon leur c_cir".format(
@@ -32,7 +35,7 @@ log.info("Il y a {} agents qui sont ATT en 2011 selon leur c_cir".format(
 
 
 def clean_grille(grilles, short):
-    grilles['date_effet_grille'] = pd.to_datetime(grilles.date_effet_grille)
+    grilles['date_effet_grille'] = pd.to_datetime(grilles['date_effet_grille'])
     grilles.sort_values('date_effet_grille', inplace = True)
 
     grilles['c_cir'] = grilles['code_grade_NETNEH'].astype(str)
@@ -45,7 +48,7 @@ def clean_grille(grilles, short):
                 )
             )
         ).year
-    grilles['date_effet_grille'] = pd.to_datetime(grilles.date_effet_grille)
+    grilles['date_effet_grille'] = pd.to_datetime(grilles['date_effet_grille'])
 
     dict_corres_NETNEH = corresp_corps.set_index('CodeNETNEH')['cadredemploiNETNEH'].to_dict()
     grilles['corps_NETNEH'] = grilles['code_grade_NETNEH'].map(dict_corres_NETNEH)
@@ -63,24 +66,35 @@ def clean_data_carriere_initial(data, corps, ib_manquant_a_exclure, generation_m
     "retourne un df des carrières entre 2007 et 2011 des agents qui sont replaçables dans le corps des AT en"
     "2011, qui n'ont pas d'IB valant -1 sur la période 2007-2015, qui ont un c_cir suivant leur c_cir de 2011"
     "renseigné s'il existe et qui sont d'une génération postérieure à la génération minimale.    "
+    data = data.query('annee > 2003')
 
     tracking = []
     tracking.append(['Aucun', len(data.ident.unique())])
 
     if corps == "ATT":
         ident_keep_in_corps_2011 = data[(
-            data['annee'] == 2011) & (data['c_cir'].isin(['TTH1', 'TTH2', 'TTH3', 'TTH4']))
+            data['annee'] == 2011) & (data['c_cir'].isin(
+                ['TTH1', 'TTH2', 'TTH3', 'TTH4', 'STH1', 'STH2', 'STH3', 'STH4']
+                ))
             ].ident.unique()
+        print data.c_cir.value_counts()
         data = data[data['ident'].isin(ident_keep_in_corps_2011)]
         tracking.append(['Corps des {} en 2011'.format('ATT'), len(data.ident.unique())])
-
-    data = data[['ident', 'annee', 'c_cir', 'ib4', 'echelon4', 'generation', 'etat4']].rename(
+    data.c_cir = data.c_cir.replace({"STH1": "TTH1",
+                                     "STH2": "TTH2",
+                                     "STH3":"TTH3",
+                                     "STH4":"TTH4"})
+#
+#    print data.shape
+    print data.c_cir.value_counts()
+    data = data[['ident', 'an_aff', 'annee', 'c_cir', 'sexe', 'ib4', 'echelon4', 'generation', 'etat4']].rename(
         columns = {"ib4": "ib", "etat4": "etat", "echelon4": "echelon"}
         )
 
     data = data.query('generation > {}'.format(generation_min))
     tracking.append([r'Génération > {}'.format(generation_min), len(data.ident.unique())])
 
+    print data.shape
     data_2011_2015 = data[data['annee'] > 2010]
     ident_del_c_cir_nul_etat_activite_apres_2010 = data_2011_2015[
         data_2011_2015['c_cir'].isnull() & data_2011_2015['etat'] == 1
@@ -91,10 +105,12 @@ def clean_data_carriere_initial(data, corps, ib_manquant_a_exclure, generation_m
     if ib_manquant_a_exclure:
         ident_to_del = data.query('ib == -1').ident.unique()
         data = data[~data['ident'].isin(ident_to_del)]
-        tracking.append([r'IB manquant entre 2007 et 2015', len(data.ident.unique())])
+        tracking.append([r'IB manquant entre 2003 et 2015', len(data.ident.unique())])
 
     # On veut les identifiants qui sont rattachables à une grille en 2011
+    print len(data.ident.unique())
     idents_to_keep_on_grilles_in_2011 = merge_careers_w_grille(data, grilles, 2011).ident.unique()
+    print len(set(idents_to_keep_on_grilles_in_2011))
     data = data[data['ident'].isin(idents_to_keep_on_grilles_in_2011)]
     tracking.append([r'Rattaché à une grille en 2011', len(data.ident.unique())])
 
@@ -109,45 +125,9 @@ def merge_careers_w_grille(data, grilles, annee):
 
     if annee == 2011:
         data = data.query('annee == {}'.format(annee)).rename(columns = {"ib4": "ib"})
-#        condition_1 = (
-#            (data['c_cir'].isnull()
-#            ) | data['echelon4'].isnull())
-#        data = data[~(condition_1)]
-#        print "En supprimant les individus dont le c_cir ou l'échelon est nul en {}, on a {} agents".format(
-#           annee, len(data.ident.unique()))
-#
-#        data = data[~data['echelon4'].isnull()]
-#        data['echelon'] = data['echelon4'].astype(int)
-#        data['echelon'] = data['echelon'].astype(str)
-#        data['echelon'] = data['echelon'].str.zfill(2)
     else:
         data = data
         data["annee"] = annee
-
-#    grilles['date_effet_grille'] = pd.to_datetime(grilles.date_effet_grille)
-#    grilles.sort_values('date_effet_grille', inplace = True)
-#
-#    grilles['c_cir'] = grilles['code_grade_NETNEH'].astype(str)
-#    grilles['echelon']= grilles['echelon'].astype(str)
-#    grilles['annee_effet'] = (
-#        pd.to_datetime(np.array(
-#                        grilles.date_effet_grille.astype(str),
-#                        dtype='datetime64[Y]'))).year
-#    grilles['date_effet_grille'] = (
-#        pd.to_datetime(grilles.date_effet_grille)
-#        )
-#
-#    dict_corres_NETNEH = corresp_corps.set_index(
-#        'CodeNETNEH'
-#        )['cadredemploiNETNEH'].to_dict()
-#    grilles['corps_NETNEH'] = grilles[
-#            'code_grade_NETNEH'
-#            ].map(dict_corres_NETNEH)
-#
-#    grilles_short = grilles[[
-#            'c_cir',
-#            'date_effet_grille'
-#            ]].drop_duplicates()
 
     grilles = clean_grille(grilles, short = False)
     grilles_short = clean_grille(grilles, short = True)
@@ -158,7 +138,6 @@ def merge_careers_w_grille(data, grilles, annee):
             ]].drop_duplicates()
 
         uniques_c_cir = uniques_data_points.c_cir.unique().tolist()
-
     else:
         uniques_data_points = data[[
             "annee",
@@ -166,7 +145,6 @@ def merge_careers_w_grille(data, grilles, annee):
             ]]
         uniques_c_cir = uniques_data_points['c_cir_{}_predit'.format(annee)].unique().tolist()
 
-    #
     list_c_cir_dates_obs_effet = []
 
     for c_cir in uniques_c_cir:
@@ -188,6 +166,7 @@ def merge_careers_w_grille(data, grilles, annee):
 
         data_with_date_effet_grille = data.merge(df_corres,
                   on = ['c_cir', 'annee'], how = 'left')
+
 
         data_with_info_grilles = data_with_date_effet_grille.merge(
             grilles, on = ['date_effet_grille', 'c_cir', 'ib'], how = 'left'
@@ -213,6 +192,8 @@ def merge_careers_w_grille(data, grilles, annee):
         grilles['date_effet_grille_{}'.format(annee)] = grilles['date_effet_grille']
         grilles['ib_{}'.format(annee)] = grilles['ib']
 
+        print data_with_date_effet_grille.columns
+        print grilles.columns
         data_with_info_grilles = data_with_date_effet_grille.merge(
             grilles,
             on = [
@@ -227,13 +208,10 @@ def merge_careers_w_grille(data, grilles, annee):
             ~data_with_info_grilles['date_effet_grille_{}'.format(annee)].isnull()
             ]
 
-    data_with_info_grilles = data_with_info_grilles[
-        ~data_with_info_grilles['code_grade_NETNEH'].isnull()
-        ]
+#    data_with_info_grilles = data_with_info_grilles[
+#        ~data_with_info_grilles['code_grade_NETNEH'].isnull()
+#        ]
 
-#    print "En ne gardant que les individus qu'on peut rattacher à une grille en {}, on a {} agents".format(
-#            annee, len(data_with_info_grilles)
-#            )
     return data_with_info_grilles
 
 
