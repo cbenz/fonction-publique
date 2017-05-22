@@ -1,0 +1,99 @@
+ \documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}		% LaTeX, comprend les accents !
+\usepackage[T1]{fontenc}
+\usepackage{natbib}	
+%\usepackage[square,sort&compress,sectionbib]{natbib}		% Doit être chargé avant babel      
+\usepackage[frenchb,english]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb, amsthm}
+\usepackage{a4wide}
+\usepackage[capposition=top]{floatrow}
+\usepackage{verbatim}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{flafter}
+\usepackage{longtable}
+\usepackage{import}
+\usepackage{pdflscape}
+\usepackage{rotating}
+\usepackage{hhline}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage[pdftex,pdfborder={0 0 0},colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue,bookmarksopen=true]{hyperref}
+\usepackage{eurosym}
+%\usepackage{breakcites}
+\usepackage[autostyle]{csquotes}
+%\usepackage{datetime}
+\usepackage{natbib}
+\usepackage{setspace}
+\usepackage{lscape}
+\usepackage[usenames]{color}
+\usepackage{indentfirst}
+\usepackage{url}
+\usepackage{enumitem}
+\usepackage{multirow}
+\usepackage{subcaption}
+\usepackage[justification=centering]{caption}
+\bibliographystyle{agsm}
+
+\usepackage{array}
+
+\newcommand{\isEmbedded}{true}
+
+\graphicspath{{Figures/}}
+
+
+\begin{document}
+
+\selectlanguage{frenchb}
+\title{Analyse des trajectoires dans les grilles \\ Focus sur les adjoints techniques de 2011 à 2015}
+
+
+\author{}
+
+
+\maketitle
+
+% Introduction
+Ce note propose une première analyse des trajectoires indiciaires sur un sous-échantillon de la base carrière: les individus qui se trouvent dans le corps des adjoints techniques pour toutes les années entre 2007 et 2015. 
+
+\renewcommand*\contentsname{\textsc{Plan de la note}}
+\tableofcontents
+
+\clearpage
+
+
+\subsection{Sélection de l'échantillon}
+
+Nous nous concentrons sur les individus, nés entre 1960 et 1999, et ayant passé au moins une année dans l'un des grades du corps. Nous supprimons les individus apparaissant deux fois (environ 3500). Nous obtenus un échantillon initial d'environ ????? individus. 
+
+Nous appliquons donc les filtres suivants à la base initiale. L'impact sur la taille de l'échantillon de ces filtres successifs est présenté à la table 2. La règle appliquée est la suivante: dès que les conditions sont remplies pour au moins une observation dans la carrière de l'individu entre 2011 et 2015, nous retirons l'ensemble des observations pour l'individu en question. 
+\begin{enumerate}[leftmargin=1cm ,parsep=0cm,itemsep=0cm,topsep=0cm] 
+	\item[F1] On supprime les observations des individus pour lesquels le libemploi est manquant alors que l'état au dernier trimestre est "en activité". 
+	\item[F2] Garder uniquement individus pour lesquels tous les grades sont renseignés, quand la variable libemploi n'est pas nulle. Cela implique de supprimer tous les individus pour lesquels les procédures d'imputation des libellés n'ont pas permis d'attribuer un grade neg pour chaque libemploi.
+	\item[F3] Garder uniquement les individus pour lesquels l'échelon est renseigné pour les années dans le corps. Par ailleurs cet effet est très hétérogène en fonction des grades. A cette étape les échelons manquant représentent environ ??\% des observations pour le grade AT2, contre ??\% pour le grade 795.
+\end{enumerate}
+
+La déperdition en étape F2 et F3 semble plus importante que ce que suggérait les statistiques descriptives pour les années les plus récentes. Cela suggère, comme précédemment soulignée\footnote{cf. mail Isabelle:  \\
+	\scriptsize
+	\begin{tabular}{lcccccccccccccc}
+		Année &2003&	2004 &	2005&	2006&	2007&	2008	&2010	&2011	&2012	&2013	&2014	&2015 \\
+		\% Neg renseigné & 15,4\%&	15,8 \% &	17,05	& 37,2 \%	&51,4 &	53,4 \% &	57,7 \%&	70,2 \%&	71,0 \% & 	71,4 \%	&71,5 \%&	71,6 \% \\
+		\% Ech renseigné &  3,9 \%	& 4,2 \%&	4,4 \%	&10,2 \% 	&25 \%	&24 \%	&33,5 \% &	54 \%&	56,3 \%&	58,2 \%	&58,5 \%	&58,9 \% \\
+	\end{tabular}
+}, que la qualité de l'information de dégrade au cours du temps. 
+
+
+\texttt{\begin{table}[h!]
+		\centering
+		\caption{Impact des filtres successifs sur la taille de l'échantillon} 
+		\label{filters_AT}
+		\begin{tabular}{lcc}
+			\toprule
+			\input{Tables/AT_sample_selection.tex}
+			\bottomrule
+		\end{tabular}
+	\end{table}
+}
+
+\end{document}
