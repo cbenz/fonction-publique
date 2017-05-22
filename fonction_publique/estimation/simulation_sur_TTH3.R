@@ -169,6 +169,51 @@ legend("topleft", legend = c("Observed", "Weibull","Exponential"),
        lty = 1, col = c("grey20", "grey50", "grey80"), lwd = 3)
   
 
-  
+#### Test effect of censoring on estimation
+data_TTH3 <- data_id[data_id$c_cir == 'TTH3',]
+data_TTH3 <- data_TTH3[-which(data_TTH3$generation_group == '9'),]
+
+data_TTH3$duration_censored1 = pmin(data_TTH3$duration_in_grade_from_2011, 4)
+data_TTH3$duration_censored2 = pmin(data_TTH3$duration_in_grade_from_2011, 3)
+data_TTH3$observed1 = ifelse(data_TTH3$duration_censored1<4,1,0)
+data_TTH3$observed2 = ifelse(data_TTH3$duration_censored2<3,1,0)
+data_TTH3$time_max1 = data_TTH3$duration_censored1 + data_TTH3$max_duration_in_grade
+data_TTH3$time_max2 = data_TTH3$duration_censored2 + data_TTH3$max_duration_in_grade
+
+table(data_TTH3$duration_in_grade_from_2011, data_TTH3$observed)
+table(data_TTH3$duration_censored1, data_TTH3$observed1)
+table(data_TTH3$duration_censored2, data_TTH3$observed2)
+
+list_id = data_TTH3$ident
+list_learning = sample(list_id, ceiling(length(list_id)/2))
+list_test = setdiff(list_id, list_learning)
+data_learning = data_TTH3[which(is.element(data_TTH3$ident, list_learning)),]
+data_test     = data_TTH3[which(is.element(data_TTH3$ident, list_test)),]
+
+## Weibull 
+srFit_weibull <- survreg(Surv(time_max, observed) ~  1 + factor(generation_group), data = data_learning, dist = "weibull")
+summary(srFit_weibull)
+## Weibull 
+srFit_weibull1 <- survreg(Surv(time_max1, observed1) ~  1 + factor(generation_group), data = data_learning, dist = "weibull")
+summary(srFit_weibull1)
+## Weibull 
+srFit_weibull2 <- survreg(Surv(time_max2, observed2) ~  1 + factor(generation_group), data = data_learning, dist = "weibull")
+summary(srFit_weibull2)
+
+
+# Hazards rate in 2011
+# Keep only individuals that are not left
+# Computing hazard rate bw y an y+1  
+intercept.wei = predict(srFit_weibull, newdata = data_test,type="linear")
+intercept.wei1 = predict(srFit_weibull1, newdata = data_test,type="linear")
+intercept.wei2 = predict(srFit_weibull2, newdata = data_test,type="linear")
+
+t = data_test$max_duration_in_grade + 0.5  # Hyp: proba of exit at t+0.5
+scale = srFit_weibull$scale
+scale1 = srFit_weibull1$scale
+scale2 = srFit_weibull2$scale
+hazard_wei <-dweibull(t, scale=exp(intercept.wei), shape=1/scale)/pweibull(t, scale=exp(intercept.wei), shape=1/scale, lower.tail=FALSE)
+hazard_exp <-dweibull(1, scale=exp(intercept.exp), shape=1)/pweibull(1, scale=exp(intercept.exp), shape=1, lower.tail=FALSE)
+#  print(c(y, "mean wei", mean(hazard_wei), "mean exp", mean(hazard_exp)))
   
   

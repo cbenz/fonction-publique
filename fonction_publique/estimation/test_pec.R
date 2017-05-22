@@ -56,6 +56,6 @@ print(brier)
 plot(brier)
 
 
-
+#### Test effect of censoring on estimation
 
 
