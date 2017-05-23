@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 '''
+Date dernier edit: 23/05/2017
 Auteur : Lisa Degalle
 
 Objectif : clean_data_initialisation.py a pour but de préparer les données de carrières des adjoints techniques
@@ -55,24 +56,30 @@ table_corresp_grade_corps = pd.read_csv(
     delimiter = ';'
     )
 
+
 def clean_grille(grilles, short, table_corresp_grade_corps):
-    '''
-    Description :
-        Nettoie les grilles de la fonction publique, en modifiant les types de données, ajoutant une variable d'année
-        d'entrée en vigueur de la grille (annee_effet) et ajoutant une variable spécifiant le corps d'appartenance des
-        grades présents dans les grilles (corps_NETNEH)
+    """
+    Nettoie les grilles de la fonction publique, en modifiant les types de données, ajoutant une variable d'année
+    d'entrée en vigueur de la grille (annee_effet) et ajoutant une variable spécifiant le corps d'appartenance des
+    grades présents dans les grilles (corps_NETNEH)
 
-    Parametres :
-        - grilles : 'grilles_old.h5'
-        - short : si True, on obtient une version courte des grilles, i.e une table associant à chaque grade les dates
-        d'entrée en vigueur des réformes de sa grille. Si short = False, on a la version complète de la grille
-        avec les échelons, ib, etc.
-        - table_corresp_grade_corps : 'corresp_neg_netneh.csv'
+    Parameters
+    ---------
+    `grilles` : dataframe
+        'grilles_old.h5'
+    `short` : bool
+        If True, on obtient une version courte des grilles, i.e une table associant à chaque grade les dates
+        d'entrée en vigueur des réformes de sa grille
+        If False, on a la version complète de la grille avec les échelons, ib, etc.
+    `table_corresp_grade_corps` : dataframe
+        'corresp_neg_netneh.csv'
 
-    Output :
-        - grilles courte ou longue, avec deux variables additionnelles : un corps et une année d'entrée en vigueur pour
+    Returns
+    -------
+    dataframe
+        grilles courte ou longue, avec deux variables additionnelles : un corps et une année d'entrée en vigueur pour
         chaque grille
-    '''
+    """
     grilles['date_effet_grille'] = pd.to_datetime(grilles['date_effet_grille'])
     grilles.sort_values('date_effet_grille', inplace = True)
 
@@ -101,20 +108,26 @@ def clean_grille(grilles, short, table_corresp_grade_corps):
 
 
 def merge_careers_with_grille(data, grilles, annee):
-    '''
-    Description :
-        Pour chaque année, entre l'année de début d'observation pour l'imputation de la durée déjà passée dans le grade
-        et l'année 2011, positionne chaque agent sur une grille, en utilisant son code c_cir observé en 2011 et prédit
-        pour les années précédents et l'année en cours. La grille de l'agent est celle qui correspond à son c_cir et qui
-        est la dernière à être en effet l'année d'observation.
-    Parametres :
-        - data : données de carrières
-        - grilles : grilles
-        - annee : entre 2007 et 2011, le fonctionnement est différent avant 2007 car le corps des ATT n'existait pas.
-    Output :
-        - donnée de carrière pour annee == annee avec chaque agent positionné sur une grille, et toutes les variables
+    """
+    Pour chaque année, entre l'année de début d'observation pour l'imputation de la durée déjà passée dans le grade
+    et l'année 2011, positionne chaque agent sur une grille, en utilisant son code c_cir observé en 2011 et prédit
+    pour les années précédents et l'année en cours. La grille de l'agent est celle qui correspond à son c_cir et qui
+    est la dernière à être en effet l'année d'observation.
+
+    Parameters
+    ---------
+    `data` : dataframe
+        données de carrières
+    `grilles` : dataframe
+    `annee` : int
+        entre 2007 et 2011, le fonctionnement est différent avant 2007 car le corps des ATT n'existait pas.
+
+    Returns
+    ---------
+    dataframe
+        donnée de carrière pour annee == annee avec chaque agent positionné sur une grille, et toutes les variables
         de cette grille
-    '''
+    """
     if annee == 2011:
         data = data.query('annee == {}'.format(annee)).rename(columns = {"ib4": "ib"})
     else:
@@ -191,27 +204,33 @@ def merge_careers_with_grille(data, grilles, annee):
 
 
 def clean_carreers(data, corps, ib_manquant_a_exclure, generation_min):
-    '''
-    Description :
-        Retourne une table des carrières entre 2003 et 2015 des agents qui
-            - sont ATT en 2011 selon leur c_cir, y compris les stagiaires
-            - sont d'une génération supérieure à generation_min
-            - n'ont pas d'IB manquant sur la période
-            - n'ont pas de code cir nul quand leur état est en activité après 2010
-            - sont rattachés à une grille en 2011
+    """
+    Retourne une table des carrières entre 2003 et 2015 des agents qui sont:
+        sont ATT en 2011 selon leur c_cir, y compris les stagiaires
+        sont d'une génération supérieure à generation_min
+        n'ont pas d'IB manquant sur la période
+        n'ont pas de code cir nul quand leur état est en activité après 2010
+        sont rattachés à une grille en 2011
 
-    Parametres :
-        - data : données de carrières (data_carrieres)
-        - corps : 'ATT' (TOFIX, à l'avenir on voudrait pouvoir avoir tous les corps en argument)
-        - ib_manquant_a_exclure : si True, on supprime les carrières des agents qui ont un IB manquant (= -1) sur la
+    Parameters
+    ---------
+    `data` dataframe
+        données de carrières (data_carrieres)
+    `corps` : str
+        'ATT' (TOFIX, à l'avenir on voudrait pouvoir avoir tous les corps en argument)
+    `ib_manquant_a_exclure` : bool
+        if True, on supprime les carrières des agents qui ont un IB manquant (= -1) sur la
         période d'observation, ici 2003 à 1015
-        - generation_min : 1960, on ne considère pas les carrières des agents les plus âgés car on ne veut pas gérer
+    `generation_min` int
+        permet de ne pas sélectionner les carrières des agents les plus âgés si on ne veut pas gérer
         des fins de grade qui sont en fait des passage à la retraite
 
-    Output :
-        - Un print d'une table LaTeX qui permet de suivre les pertes associées à chaque filtre
-        - Les données de carrières filtrées selon la description
-    '''
+    Returns
+    ---------
+    dataframe
+        Les données de carrières filtrées selon la description
+        Un print d'une table LaTeX qui permet de suivre les pertes associées à chaque filtre
+    """
     tracking = []
     tracking.append(['Aucun', len(data.ident.unique())])
     if corps == "ATT":
@@ -254,17 +273,21 @@ def clean_carreers(data, corps, ib_manquant_a_exclure, generation_min):
 
 def clean_careers_annee_annee_bef(data_annee, data, annee, corps):
     '''
-    Description :
-        Ajoute les informations de carrières à année moins un aux données de carrières d'une année, comme nouvelles
-        variables.
+    Ajoute les informations de carrières à année moins un aux données de carrières d'une année, comme nouvelles var
 
-    Parametres :
-        - data_annee : données de carrière de l'année en cours
-        - data : données de carrière
-        - annee : année en cours
-        - corps : 'ATT'
+    Parameters
+    ---------
+    `data_anne` dataframe
+        données de carrière de l'année en cours
+    `data` dataframe
+        données de carrière
+    `annee` int
+        année en cours
+    `corps` str
+        'ATT'
 
-    Output :
+    Returns
+    ---------
         Une table des carrières avec les informations des grilles pour l'année en cours et les informations de carrières
         pour l'année précédente
     '''
@@ -315,20 +338,22 @@ def clean_careers_annee_annee_bef(data_annee, data, annee, corps):
 
 
 def get_career_transitions_uniques_annee_annee_bef(data_annee_annee_bef, annee):
-    '''
-    Description :
-        Retourne les cas uniques de transitions de carrières entre l'année en cours et l'année précédente, définis
-        comme un unique couple code cir de l'année en cours et indice brut de l'année précédente
+    """
+    Retourne les cas uniques de transitions de carrières entre l'année en cours et l'année précédente, définis
+    comme un unique couple code cir de l'année en cours et indice brut de l'année précédente
 
-    Parametres :
-        - data_annee_annee_bef : données de carrières de l'année en cours et de l'année précédente
-        (output de clean_careers_annee_annee_bef)
-        - annee : année en cours
+    Parameters
+    ---------
+    `data_annee_annee_bef` dataframe
+        données de carrières de l'année en cours et de l'année précédente (output de clean_careers_annee_annee_bef)
+    `annee` int
+        année en cours
 
-    Output :
-        - table des cas uniques de transitions de carrières
-
-    '''
+    Returns
+    ---------
+    dataframe
+        cas uniques de transitions de carrières
+    """
     cas_uniques = data_annee_annee_bef[[
         "c_cir_{}".format(annee),
         "ib_{}".format(annee - 1),
