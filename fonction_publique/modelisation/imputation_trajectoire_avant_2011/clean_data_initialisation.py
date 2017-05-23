@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-'''
+"""
 Date dernier edit: 23/05/2017
 Auteur : Lisa Degalle
 
@@ -26,7 +26,7 @@ Fonctions :
     - merge_careers_with_grilles
     - clean_careers_annee_annee_bef
     - get_career_transitions_uniques_annee_annee_bef
-'''
+"""
 
 from __future__ import division
 import logging
@@ -363,4 +363,33 @@ def get_career_transitions_uniques_annee_annee_bef(data_annee_annee_bef, annee):
             )
     cas_uniques = cas_uniques.loc[:, ~cas_uniques.columns.duplicated()]
     return cas_uniques
+
+
+def get_careers_chgmt_grade_annee_annee_bef(data_with_indicatrice_grade_change, chgmt_grade, annee):
+    """
+    Retourne les données des agents qui changent de grades entre année courante et année précédente
+
+    Parameters
+    ---------
+    `data_with_indicatrice_grade_change` dataframe
+        données de carrières de l'année et l'année précédente avec une indicatrice de changement de grade et un statut
+        d'ambiguité
+    `chgmt_grade` bool
+        if True, sélectionne les agents qui changent de grade entre année et année précédente
+        if False, sélectionne les agents qui ne changent pas de grade entre année et année précédente
+    `annee` int
+        année courante
+    Returns
+    ---------
+    dataframe
+        table des carrières des agents pour l'année et l'année précédente des agents qui changent ou ne changent pas de
+        grade entre l'année et l'année précédente
+    """
+    data = data_with_indicatrice_grade_change
+    if chgmt_grade:
+        data = data.query('indicat_ch_grade_{} == True'.format(annee - 1))
+        data['duree_initiale_dans_le_grade'] = 2011 - annee
+    else:
+        data = data.query('indicat_ch_grade_{} == False'.format(annee - 1))
+    return data
 
