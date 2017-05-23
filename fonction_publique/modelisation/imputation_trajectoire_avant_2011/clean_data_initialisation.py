@@ -65,13 +65,13 @@ def clean_grille(grilles, short, table_corresp_grade_corps):
 
     Parameters
     ---------
-    `grilles` : dataframe
+    `grilles`: dataframe
         'grilles_old.h5'
-    `short` : bool
+    `short`: bool
         If True, on obtient une version courte des grilles, i.e une table associant à chaque grade les dates
         d'entrée en vigueur des réformes de sa grille
         If False, on a la version complète de la grille avec les échelons, ib, etc.
-    `table_corresp_grade_corps` : dataframe
+    `table_corresp_grade_corps`: dataframe
         'corresp_neg_netneh.csv'
 
     Returns
@@ -116,10 +116,10 @@ def merge_careers_with_grille(data, grilles, annee):
 
     Parameters
     ---------
-    `data` : dataframe
+    `data`: dataframe
         données de carrières
-    `grilles` : dataframe
-    `annee` : int
+    `grilles`: dataframe
+    `annee`: int
         entre 2007 et 2011, le fonctionnement est différent avant 2007 car le corps des ATT n'existait pas.
 
     Returns
@@ -214,14 +214,14 @@ def clean_carreers(data, corps, ib_manquant_a_exclure, generation_min):
 
     Parameters
     ---------
-    `data` dataframe
+    `data`: dataframe
         données de carrières (data_carrieres)
-    `corps` : str
+    `corps`: str
         'ATT' (TOFIX, à l'avenir on voudrait pouvoir avoir tous les corps en argument)
-    `ib_manquant_a_exclure` : bool
+    `ib_manquant_a_exclure`: bool
         if True, on supprime les carrières des agents qui ont un IB manquant (= -1) sur la
         période d'observation, ici 2003 à 1015
-    `generation_min` int
+    `generation_min`: int
         permet de ne pas sélectionner les carrières des agents les plus âgés si on ne veut pas gérer
         des fins de grade qui sont en fait des passage à la retraite
 
@@ -277,13 +277,13 @@ def clean_careers_annee_annee_bef(data_annee, data, annee, corps):
 
     Parameters
     ---------
-    `data_anne` dataframe
+    `data_anne`: dataframe
         données de carrière de l'année en cours
-    `data` dataframe
+    `data`: dataframe
         données de carrière
-    `annee` int
+    `annee`: int
         année en cours
-    `corps` str
+    `corps`: str
         'ATT'
 
     Returns
@@ -344,9 +344,9 @@ def get_career_transitions_uniques_annee_annee_bef(data_annee_annee_bef, annee):
 
     Parameters
     ---------
-    `data_annee_annee_bef` dataframe
+    `data_annee_annee_bef`: dataframe
         données de carrières de l'année en cours et de l'année précédente (output de clean_careers_annee_annee_bef)
-    `annee` int
+    `annee`: int
         année en cours
 
     Returns
