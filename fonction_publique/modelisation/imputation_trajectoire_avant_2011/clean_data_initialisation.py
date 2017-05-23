@@ -12,16 +12,19 @@ Inputs :
     - deux tables de grilles de la fonction publiques : "grilles_old.h5" et "neg_grades_supp.csv"
     - table de correspondance des grades et des corps : "corresp_neg_netneh.csv"
 
-Outputs :
-    -
-
+Outputs (utilisés comme inputs dans imputations_2007_2011.py):
+    - grilles nettoyées avec variables "corps" et année d'entrée en vigueur
+    - carrières filtrées (sans ib manquant, corps des ATT en 2011, génération, code c_cir renseigné quand état activité)
+    - données de carrières de l'année courante avec les variables issues des grilles
+    - table des données de transitions de carrières entre année courante et année précédente
+    - table des cas uniques de transitions de carrières entre année courante et année précédente
 
 Fonctions :
     - clean_grille
     - clean_data_carriere_initial
     - merge_careers_with_grilles
-    - clean_careers_t_t_1
-    - get_cas_uniques
+    - clean_careers_annee_annee_bef
+    - get_career_transitions_uniques_annee_annee_bef
 '''
 
 from __future__ import division
@@ -40,6 +43,7 @@ careers_asset_path = os.path.join(
     )
 
 # Chargement des données de carrières, des tables de grilles et de la table de correspondances des grades et des corps :
+# (utile uniquement pour tester les fonctions de ce fichier indépendamment de imputations_2007_2011.py)
 data_carrieres = pd.read_csv(os.path.join(careers_asset_path, "corpsAT_2007.csv"))
 grilles = pd.read_hdf(
     os.path.join(grilles_path, 'grilles_fonction_publique/grilles_old.h5')
