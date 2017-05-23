@@ -13,7 +13,7 @@ Inputs :
     - deux tables de grilles de la fonction publiques : "grilles_old.h5" et "neg_grades_supp.csv"
     - table de correspondance des grades et des corps : "corresp_neg_netneh.csv"
 
-Outputs (utilisés comme inputs dans imputations_2007_2011.py):
+Outputs (utilisés comme inputs dans imputaion_indicatrice_chgmt_grade_annee_annee_bef imputations_2007_2011.py):
     - grilles nettoyées avec variables "corps" et année d'entrée en vigueur
     - carrières filtrées (sans ib manquant, corps des ATT en 2011, génération, code c_cir renseigné quand état activité)
     - données de carrières de l'année courante avec les variables issues des grilles
