@@ -127,6 +127,7 @@ def merge_careers_with_grilles(data, grilles, annee):
     else:
         data = data
         data["annee"] = annee
+    print grilles.head()
     grilles = clean_grille(grilles, False, table_corresp_grade_corps)
     grilles_short = clean_grille(grilles, True, table_corresp_grade_corps)
     if annee == 2011:
@@ -257,6 +258,7 @@ def clean_careers(data, corps, ib_manquant_a_exclure, generation_min, grilles):
         ident_to_del = data.query('ib == -1').ident.unique()
         data = data[~data['ident'].isin(ident_to_del)]
         tracking.append([r'IB manquant entre 2003 et 2015', len(data.ident.unique())])
+    data.head()
     idents_to_keep_on_grilles_in_2011 = merge_careers_with_grilles(data, grilles, 2011).ident.unique()
     data = data[data['ident'].isin(idents_to_keep_on_grilles_in_2011)]
     tracking.append([r'Rattaché à une grille en 2011', len(data.ident.unique())])
