@@ -20,26 +20,32 @@ app_name = os.path.splitext(os.path.basename(__file__))[0]
 log = logging.getLogger(app_name)
 
 # Paths to legislation
-grilles_path = os.path.join(
+
+project_path = os.path.join(
     pkg_resources.get_distribution('fonction_publique').location,
-    'fonction_publique',
-    'assets',
+    'fonction_publique'
     )
 
+grilles_path = os.path.join(
+  project_path,
+  'assets',
+  )
+
 asset_path = os.path.join(
-    pkg_resources.get_distribution('fonction_publique').location,
-    'fonction_publique',
-    'assets',
-    'grilles_fonction_publique',
-    )
+  project_path,
+  'assets',
+  'grilles_fonction_publique',
+   )
 
 law_xls_path = os.path.join(
     asset_path,
-    "neg_pour_ipp.txt")
+    "neg_pour_ipp.txt",
+    )
 
 law_hdf_path = os.path.join(
     asset_path,
-    "grilles.h5")
+    "grilles.h5",
+    )
 
 # Directories paths:
 raw_directory_path = parser.get('data', 'raw')
