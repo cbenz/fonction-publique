@@ -24,33 +24,6 @@ from imputation_indicatrice_chgmt_grade_annee_annee_bef import (
     )
 from fonction_publique.base import output_directory_path
 
-table_corresp_grade_corps = pd.read_csv(
-    os.path.join(grilles_path, 'corresp_neg_netneh.csv'),
-    delimiter = ';'
-    )
-corresp_grilles_ATT_et_pre_ATT = pd.read_csv(os.path.join(grilles_path, "neg_grades_supp.csv"),
-                                             delimiter = ';')
-
-grilles_path = os.path.join(CNRACL_project_path, "assets")
-grilles = pd.read_hdf(
-    os.path.join(grilles_path, 'grilles_fonction_publique/grilles_old.h5')
-    )
-grilles = clean_grille(grilles, False, table_corresp_grade_corps)
-
-
-#data_carrieres_1995_2007 = data_carrieres_1995_2015.query('(annee < 2008) & (annee > 1999)')
-
-data_non_chgmt_2006 = pd.read_csv(
-    "M:/CNRACL/output/base_AT_clean_2006_2011/data_non_changement_grade_2006_2011.csv"
-    )
-
-data_non_chgmt_2007 = pd.read_csv(
-    "M:/CNRACL/output/base_AT_clean_2007_2011/data_non_changement_grade_2007_2011.csv"
-    )
-
-grilles_pre_ATT = pd.read_table(
-    os.path.join(grilles_path, 'grilles_fonction_publique/neg_pour_ipp.txt')
-    )
 
 def clean_grilles_pre_ATT(table_corresp_grade_corps, grilles_pre_ATT):
     """
@@ -141,10 +114,10 @@ def clean_grilles_pre_ATT(table_corresp_grade_corps, grilles_pre_ATT):
     return grilles_pre_ATT_w_corps
 
 
-def clean_careers_annee_annee_bef(data_non_chgmt_2006, data_careers, annee):
+def clean_careers_annee_annee_bef_bef_2006(data_non_chgmt_2006, data_careers, annee):
     """
     Ajoute l'ib et l'état de l'agent en 2005 au dataframe des carrières de agents qui n'ont pas changé de grade entre
-    2006 et 2011. TOFIX, à fusionner avec clean_careers_annee_annee_bef de clean_data_initialisation.py
+    2006 et 2011. TOFIX, à fusionner avec clean_careers_annee_annee_bef_bef_2006 de clean_data_initialisation.py
 
     Parameters:
     ----------
@@ -336,6 +309,35 @@ def map_cas_uniques_2005_2006_to_data(data_2005_2006, cas_uniques_w_grade):
     return data_with_indicatrice_chgmt_grade_TTH1
 
 
+table_corresp_grade_corps = pd.read_csv(
+    os.path.join(grilles_path, 'corresp_neg_netneh.csv'),
+    delimiter = ';'
+    )
+corresp_grilles_ATT_et_pre_ATT = pd.read_csv(os.path.join(grilles_path, "neg_grades_supp.csv"),
+                                             delimiter = ';')
+
+grilles_path = os.path.join(CNRACL_project_path, "assets")
+grilles = pd.read_hdf(
+    os.path.join(grilles_path, 'grilles_fonction_publique/grilles_old.h5')
+    )
+grilles = clean_grille(grilles, False, table_corresp_grade_corps)
+
+
+#data_carrieres_1995_2007 = data_carrieres_1995_2015.query('(annee < 2008) & (annee > 1999)')
+
+data_non_chgmt_2006 = pd.read_csv(
+    "M:/CNRACL/output/base_AT_clean_2006_2011/data_non_changement_grade_2006_2011.csv"
+    )
+
+data_non_chgmt_2007 = pd.read_csv(
+    "M:/CNRACL/output/base_AT_clean_2007_2011/data_non_changement_grade_2007_2011.csv"
+    )
+
+grilles_pre_ATT = pd.read_table(
+    os.path.join(grilles_path, 'grilles_fonction_publique/neg_pour_ipp.txt')
+    )
+
+
 def main(results_filename):
     data_carrieres_1995_2015 = pd.read_csv(
         "M:/CNRACL/output/bases_AT_imputations_trajectoires_1995_2011/corpsAT_1995.csv"
@@ -347,7 +349,7 @@ def main(results_filename):
         1960,
         grilles,
         )
-    data_2005_2006 = clean_careers_annee_annee_bef(data_non_chgmt_2006, data_carrieres_1995_2015, 2005)
+    data_2005_2006 = clean_careers_annee_annee_bef_bef_2006(data_non_chgmt_2006, data_carrieres_1995_2015, 2005)
     cas_uniques = get_cas_uniques(data_2005_2006)
     cas_uniques_2005_2006_w_grade = get_indicatrice_de_changement_de_grade_2005_2006(
         cas_uniques, 'TTH1'
