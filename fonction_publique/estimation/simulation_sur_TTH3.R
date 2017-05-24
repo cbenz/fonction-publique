@@ -5,7 +5,7 @@
 rm(list = ls()); gc()
 
 # path
-place = "mac"
+place = "ippS"
 if (place == "ippS"){
   data_path = "M:/CNRACL/output/base_AT_clean_2007_2011/"
   git_path =  'U:/Projets/CNRACL/fonction-publique/fonction_publique/'
@@ -107,7 +107,7 @@ for (y in seq(2011, 2015, 1))
   # Computing hazard rate bw y an y+1  
   intercept.wei = predict(srFit_weibull, newdata = data_sim_wei,type="linear")
   intercept.exp = predict(srFit_exp, newdata = data_sim_exp,type="linear")  
-  t = duration[list_wei] + 0.5  # Hyp: proba of exit at t+0.5
+  t = duration[list_wei] + 1  # Hyp: proba of exit at t+0.5
   scale = srFit_weibull$scale
   hazard_wei <-dweibull(t, scale=exp(intercept.wei), shape=1/scale)/pweibull(t, scale=exp(intercept.wei), shape=1/scale, lower.tail=FALSE)
   hazard_exp <-dweibull(1, scale=exp(intercept.exp), shape=1)/pweibull(1, scale=exp(intercept.exp), shape=1, lower.tail=FALSE)
