@@ -20,6 +20,12 @@ app_name = os.path.splitext(os.path.basename(__file__))[0]
 log = logging.getLogger(app_name)
 
 # Paths to legislation
+grilles_path = os.path.join(
+    pkg_resources.get_distribution('fonction_publique').location,
+    'fonction_publique',
+    'assets',
+    )
+
 asset_path = os.path.join(
     pkg_resources.get_distribution('fonction_publique').location,
     'fonction_publique',
