@@ -106,10 +106,12 @@ def clean_data_durees_chgt(data_path):
     data_durees_imputees['ambig_duree_min'] = data_durees_imputees['ambig_duree_min'].fillna(value=False).astype('bool')
 
     # Incertitude en 2007
-    data_durees_imputees['ambiguity_2007'] = (data_durees_imputees['ambig_duree_max'] == True)
-    data_durees_imputees.max_duration_in_grade[(data_durees_imputees['ambiguity_2007']== True)] = None
-     # Dummy for change
-    data_durees_imputees['change'] = 1
+    data_durees_imputees['ambiguity_2007'] = (data_durees_imputees['ambig_duree_max'])
+    data_durees_imputees.loc[data_durees_imputees.ambiguity_2007, 'max_duration_in_grade'] = None
+
+
+    # Dummy for change
+    data_durees_imputees['change'] = [1] * len(data_durees_imputees)
 
     # Select variables
     data_durees_imputees = data_durees_imputees[[
@@ -131,14 +133,12 @@ def clean_data_durees_non_chgt(data_path):
     # étant par définition incertaine
     data_durees_imputees_non_chgt = pd.read_csv(data_path)
 
-    data_durees_imputees = data_durees_imputees_non_chgt[[
-        "ident"
-        ]].set_index("ident")
+    data_durees_imputees = data_durees_imputees_non_chgt[[ "ident"]].copy()
 
-    data_durees_imputees['change'] = 0
-    data_durees_imputees['min_duration_in_grade'] = None
-    data_durees_imputees['max_duration_in_grade'] = None
-    data_durees_imputees['ambiguity_2007'] = False
+    data_durees_imputees['change'] = [0] * len(data_durees_imputees)
+    data_durees_imputees['min_duration_in_grade'] = [None] * len(data_durees_imputees)
+    data_durees_imputees['max_duration_in_grade'] = [None] * len(data_durees_imputees)
+    data_durees_imputees['ambiguity_2007'] = [False] * len(data_durees_imputees)
 
     return data_durees_imputees
 
@@ -150,11 +150,10 @@ def merge_data_durees_and_careers(data_chgt,
     Merging data on carreers and imputed initial duration.
     '''
     # For individuals in both chgt and not_change we keep only one observation (those in the change data)
-    common_id = list(set(data_chgt.index) & set(data_non_chgt.index))
-    data_non_chgt = data_non_chgt[~data_non_chgt.index.isin(common_id)]
+    common_id = list(set(data_chgt.ident) & set(data_non_chgt.ident))
+    data_non_chgt = data_non_chgt[~data_non_chgt.ident.isin(common_id)]
     # Appending data
     appended_data = data_chgt.append(data_non_chgt)
-    appended_data.reset_index(level=0, inplace=True)
     # Merging with careers
     data = data_carreers.merge(appended_data, on = 'ident')
     return data
@@ -234,6 +233,35 @@ def impute_exit_grade(data):
     return data
 
 
+def variables_management(data):
+    """
+    Creating variables needed for estimations (generation_group, left_censoring) and selecting variables
+    kept for estimations
+
+    Parameters
+    ---------
+    `data`: dataframe
+
+    Returns
+    ---------
+    dataframe
+
+    """
+    data['generation_group'] = data['generation'].apply(str).str[2:3]
+    data['generation_group'] = data['generation_group'].astype('category')
+    data['generation'] = data.generation.fillna(-1)
+
+    data['left_censoring'] = (data.max_duration_in_grade.isnull())
+
+    variables_kept = [u'ident', u'annee', u'etat', u'c_cir', u'ib', u'grade_de_2011',
+                      u'sexe', 'an_aff', u'generation', u'generation_group',
+                      u'min_duration_in_grade', u'max_duration_in_grade', u'duration_in_grade_from_2011',
+                      u'right_censoring', u'left_censoring', u'change', u'ambiguity_2007',
+                      u'exit_status', u'next_grade']
+
+    return data[variables_kept]
+
+
 def main(first_year_imputation,
          first_year_data,
          careers_asset_path,
@@ -254,10 +282,12 @@ def main(first_year_imputation,
     # Formatting
     data_tidy = tidy_data(data)
     data_with_dummy_exit = impute_exit_grade(data_tidy)
+    # Variable kept
+    final_data = variables_management(data_with_dummy_exit)
     # Save
     filename = "base_AT_clean_" + str(first_year_imputation) + ".csv"
-    data_with_dummy_exit.to_csv(os.path.join(save_path, filename))
-
+    final_data.to_csv(os.path.join(save_path, filename))
+    print("Estimation data saved as {}".format(os.path.join(save_path, filename)))
 
 
 if __name__ == '__main__':
