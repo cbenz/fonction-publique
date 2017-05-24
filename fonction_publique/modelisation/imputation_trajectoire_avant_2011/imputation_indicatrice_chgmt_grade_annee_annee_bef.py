@@ -20,7 +20,7 @@ Outputs (utilisés comme inputs dans imputations_2007_2011.py):
 
 Fonctions :
     - get_indicatrice_chgmt_grade_annee_annee_bef
-    - map_cas_uniques_to_data
+    - map_transitions_uniques_annee_annee_bef_to_data
 """
 
 from __future__ import division
