@@ -1,43 +1,43 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Thu May 04 16:02:50 2017
 
-@author: l.degalle
-"""
 
 from __future__ import division
 import os
 import pandas as pd
 import numpy as np
-from clean_data_initialisation import clean_grille, clean_data_carriere_initial, merge_careers_w_grille
+from clean_data_initialisation import clean_grille, clean_careers, merge_careers_with_grilles
+from fonction_publique.base import output_directory_path, project_path
 
 # Paths
-fonction_publique_path = r"C:\Users\l.degalle\CNRACL\fonction-publique\fonction_publique\\"
-careers_asset_path = r"M:\CNRACL\output\bases_AT_imputations_trajectoires_avant_2011"
-results_asset_path = os.path.join(fonction_publique_path, "modelisation\imputation_trajectoire_avant_2011")
-grilles_path = os.path.join(fonction_publique_path, 'assets/')
-
-# Data carrières de 2007 à 2015
-data_carrieres = pd.read_csv(
-    os.path.join(careers_asset_path, "corpsAT_2007.csv")
-    ).query("annee >= 2007")
-data_carrieres = clean_data_carriere_initial(data_carrieres, 'ATT', True, 1960)
-
-# Data durées dans le grade
-data_durees_imputees = pd.read_csv(
-    os.path.join(results_asset_path, "resultats_imputation.csv")
-        )
+careers_asset_path = os.path.join(output_directory_path, 'bases_AT_imputations_trajectoires_avant_2011/')
+results_asset_path = os.path.join(output_directory_path, 'base_AT_clean_2007_2011/')
+save_path =  os.path.join(output_directory_path, 'estimations/')
+grilles_path = os.path.join(project_path, 'assets/')
 
 # Data grilles
 grilles = pd.read_hdf(
         os.path.join(grilles_path, 'grilles_fonction_publique/grilles_old.h5')
         )
 
+def load_clean_careers(first_year_data, first_year_imputation, careers_asset_path, grilles):
+    '''
+    # Load career data from first_year to 2015
+    '''
+    filename = "corpsAT_{}.csv".format(first_year_data)
+    data_carrieres = pd.read_csv(
+        os.path.join(careers_asset_path, filename)
+        )
+    data_carrieres = data_carrieres[data_carrieres.annee >= first_year_imputation]
+    data_carrieres = clean_careers(data_carrieres, 'ATT', True, 1960, grilles)
+    return data_carrieres
 
-def clean_data_durees_2007_2011(data_durees_imputees):
+
+def clean_data_durees_chgt(data_path):
     # On attribue une durée min et max dans le grade, avec un statut d'ambiguité pour la durée max, la durée min
     # étant par définition incertaine
-    data_durees_imputees = data_durees_imputees[[
+    data_durees_imputees_chgt = pd.read_csv(data_path)
+
+    data_durees_imputees = data_durees_imputees_chgt[[
         "ident",
         "duree_initiale_dans_le_grade.1",
         "duree_initiale_dans_le_grade",
@@ -105,34 +105,66 @@ def clean_data_durees_2007_2011(data_durees_imputees):
     data_durees_imputees['ambig_duree_max'] = data_durees_imputees['ambig_duree_max'].fillna(value=False).astype('bool')
     data_durees_imputees['ambig_duree_min'] = data_durees_imputees['ambig_duree_min'].fillna(value=False).astype('bool')
 
-    data_durees_imputees = data_durees_imputees[[
-        "ident",
-        "min_duration_in_grade",
-        "max_duration_in_grade",
-        "ambig_duree_min",
-        "ambig_duree_max"
-        ]]
+    # Incertitude en 2007
+    data_durees_imputees['ambiguity_2007'] = (data_durees_imputees['ambig_duree_max'] == True)
+    data_durees_imputees.max_duration_in_grade[(data_durees_imputees['ambiguity_2007']== True)] = None
+     # Dummy for change
+    data_durees_imputees['change'] = 1
 
-    # Correction to fix: on sait que les agents qui sont en ambiguité max = True sont en fait des
-    # agents qui ne changent pas de grade sur la période, et qui doivent être supprimés de ce dataset
-#    print len(data_durees_imputees.ident.unique())
-    data_durees_imputees = data_durees_imputees.query('ambig_duree_max == False')
-#    print len(data_durees_imputees.ident.unique())
+    # Select variables
+    data_durees_imputees = data_durees_imputees[[
+    "ident",
+    "min_duration_in_grade",
+    "max_duration_in_grade",
+    'ambiguity_2007',
+    'change',
+    ]]
+
+    # Drop duplicates
+    data_durees_imputees = data_durees_imputees.drop_duplicates()
+
     return data_durees_imputees
 
 
-def merge_data_durees_2007_2011_and_careers_2011_2015(data_durees_imputees, data_carrieres):
-# On fusionne maintenant les données sur les durées initiales et les carrières
-    data = data_carrieres.merge(data_durees_imputees, on = 'ident')
+def clean_data_durees_non_chgt(data_path):
+    # On attribue une durée min et max dans le grade, avec un statut d'ambiguité pour la durée max, la durée min
+    # étant par définition incertaine
+    data_durees_imputees_non_chgt = pd.read_csv(data_path)
+
+    data_durees_imputees = data_durees_imputees_non_chgt[[
+        "ident"
+        ]].set_index("ident")
+
+    data_durees_imputees['change'] = 0
+    data_durees_imputees['min_duration_in_grade'] = None
+    data_durees_imputees['max_duration_in_grade'] = None
+    data_durees_imputees['ambiguity_2007'] = False
+
+    return data_durees_imputees
+
+
+def merge_data_durees_and_careers(data_chgt,
+                                  data_non_chgt,
+                                  data_carreers):
+    '''
+    Merging data on carreers and imputed initial duration.
+    '''
+    # For individuals in both chgt and not_change we keep only one observation (those in the change data)
+    common_id = list(set(data_chgt.index) & set(data_non_chgt.index))
+    data_non_chgt = data_non_chgt[~data_non_chgt.index.isin(common_id)]
+    # Appending data
+    appended_data = data_chgt.append(data_non_chgt)
+    appended_data.reset_index(level=0, inplace=True)
+    # Merging with careers
+    data = data_carreers.merge(appended_data, on = 'ident')
     return data
 
 
-def tidy_data_2007_2015(data, duree_min):
-    "retourne données mergées 2007 2015 avec une ligne = un individu année"
-    if duree_min:
-        data['duree_initiale_en_2011'] = data['min_duration_in_grade']
-    else:
-        data['duree_initiale_en_2011'] = data['max_duration_in_grade']
+def tidy_data(data):
+    "retourne données mergées 2007 2015 avec une ligne = un individu*année"
+    # Initial duration (equal to max or to 2011 - first year)
+    data['duree_initiale_en_2011'] = data['max_duration_in_grade']
+    data['duree_initiale_en_2011'].fillna(4, inplace=True)
     durees = data.duree_initiale_en_2011.unique().tolist()
     data_clean = []
     for duree in durees:
@@ -140,17 +172,21 @@ def tidy_data_2007_2015(data, duree_min):
         data_par_duree_group = data_par_duree.groupby('ident').tail(duree + 5)
         data_clean.append(data_par_duree_group)
     data_clean = pd.concat(data_clean)
-    data_clean['c_cir_impute_2007_2011'] = data_clean.groupby('ident')['c_cir'].transform('first')
+    data_clean['c_cir_impute_bef_2011'] = data_clean.groupby('ident')['c_cir'].transform('first')
     data_clean_aft_2011 = data_clean.query('annee > 2011')
     data_clean_bef_2011 = data_clean.query('annee <= 2011')
     data_clean_bef_2011.c_cir.fillna(
-        data_clean_bef_2011.c_cir_impute_2007_2011, inplace = True
+        data_clean_bef_2011.c_cir_impute_bef_2011, inplace = True
         )
-    data_clean = data_clean_bef_2011.append(data_clean_aft_2011).sort_values(['ident', 'annee'])
-    del data_clean['c_cir_impute_2007_2011']
+    data_clean = data_clean_bef_2011.append(data_clean_aft_2011).sort(['ident', 'annee'])
+    # Ind datamin
+    data_clean['I_min'] = (data_clean['annee'] >= 2011 - data_clean['min_duration_in_grade'] )
+
+    del data_clean['c_cir_impute_bef_2011']
     return data_clean
 
-def impute_indicatrice_de_sortie_de_grade(data, duree_min):
+
+def impute_exit_grade(data):
     data.c_cir.fillna('out', inplace = True)
 
     data['first_year_in_index'] = data.groupby('ident')['annee'].transform('first')
@@ -173,20 +209,6 @@ def impute_indicatrice_de_sortie_de_grade(data, duree_min):
 
     data['next_grade'] = data.groupby(['ident'])['c_cir'].transform('last')
 
-#    data_group = data.groupby(
-#            ['ident', 'c_cir']
-#            )['annee'].value_counts().rename(columns={"annee":"annee2"}).reset_index().sort(['ident', 'annee'])
-#    print data_group.head(25)
-#    del data_group[0]
-#    data_group = data_group.groupby(
-#        ['ident'])['c_cir'].value_counts(dropna = False).rename(columns={'c_cir':'c_cir_2'}).reset_index().rename(
-#            columns = {0:'compte_c_cir'})
-##    data_group['next_grade'] =  data_group.groupby(
-##        ['ident']).c_cir.nth(2).dropna()
-#
-#    data_group['duree_dans_grade_de_2011'] = data_group.groupby('ident')['compte_c_cir'].transform('first')
-#    data_group = data_group[['ident', 'duree_dans_grade_de_2011']]
-#    data = data.merge(data_group, on = 'ident', how = 'left').drop_duplicates()
     data_ident_grade_de_2011 = data[['ident', 'grade_de_2011']].drop_duplicates().rename(columns={'grade_de_2011':'c_cir'})
 
     data_2011_2015 = data.query('annee > 2010')
@@ -211,226 +233,37 @@ def impute_indicatrice_de_sortie_de_grade(data, duree_min):
 
     return data
 
-def impute_echelon(data, grilles, duree_min):
-#    print data.groupby('annee')['ident'].count()
-    grilles_completes = clean_grille(grilles, False)
-    grilles_completes['annee'] = grilles_completes['annee_effet']
 
-    cas_uniques = data[['annee', 'c_cir']].drop_duplicates()
-    cas_uniques = cas_uniques.query("c_cir != 'out'")
-
-    cas_w_dates_effet_grille = []
-    for cas in range(len(cas_uniques)):
-        cas = cas_uniques.iloc[cas]
-        annee = cas['annee']
-        c_cir = cas['c_cir']
-        liste_dates = grilles_completes.query("c_cir == '{}'".format(c_cir)).annee_effet.unique()
-        if len(liste_dates) == 0:
-            date_effet_grille = -1
-        else:
-            list_date_effet_grille_ant = liste_dates[liste_dates <= annee]
-            date_effet_grille = list_date_effet_grille_ant.max()
-        cas_w_dates_effet_grille.append([c_cir, annee, date_effet_grille])
-
-    cas_w_dates_effet_grille = pd.DataFrame(cas_w_dates_effet_grille,
-                                            columns = ['c_cir', 'annee', 'annee_effet']
-                                            )
-
-    data_w_date_effet = data.merge(cas_w_dates_effet_grille, on = ['c_cir', 'annee'], how = 'left')
-    data_w_date_effet = data_w_date_effet.rename(columns = {"echelon":"echelon_impute_par_CNRACL"})
-    data_with_echelon = data_w_date_effet.merge(grilles, on = ['annee_effet', 'c_cir', 'ib'], how = 'left')
-    data_with_echelon = data_with_echelon.rename(columns = {"echelon":"echelon_impute_par_IPP",
-                                                            "annee_x":"annee"})
-
-    data_with_echelon['echelon_impute_par_IPP'] = data_with_echelon['echelon_impute_par_IPP'].fillna(-5)
-    data_with_echelon['index_for_ident_annee'] = range(len(data_with_echelon))
-    # La réforme de 2008 est appliquée avec un retard pour l'ensemble des grades du corps ATT
-
-#    data_with_echelon_nan_2008 = data_with_echelon.query('(echelon_impute_par_IPP) == -5 & (annee == 2008)')
-#    data_ident_to_del_2008 = data_with_echelon_nan_2008.index_for_ident_annee.unique()
-#
-#    data_with_echelon = data_with_echelon[~data_with_echelon['index_for_ident_annee'].isin(data_ident_to_del_2008)]
-#    del data_with_echelon_nan_2008['annee_effet']
-#    data_with_echelon_nan_2008['annee_effet'] = [2006] * len(data_with_echelon_nan_2008)
-#
-#
-#    data_with_echelon_nan_2008_w_echelon = data_with_echelon_nan_2008.merge(
-#        grilles,
-#        on = ['annee_effet', 'c_cir', 'ib'],
-#        how = 'left')[[u'ident', u'annee_x', u'c_cir', u'ib', u'echelon_impute_par_CNRACL',
-#       u'generation', u'etat', u'sexe', u'min_duration_in_grade',
-#       u'max_duration_in_grade', u'ambig_duree_min', u'ambig_duree_max',
-#       u'duree_initiale_en_2011', u'date_effet_grille_y',
-#       u'code_grade_NETNEH_y', u'max_mois_y',
-#       u'min_mois_y', u'moy_mois_y', u'libelle_FP_y', u'libelle_grade_NEG_y',
-#       u'code_grade_NEG_y', u'code_grade_y', u'corps_NETNEH_y',
-#       u'index_for_ident_annee', u'annee_effet', u'echelon', "index_for_ident_annee", "annee_y"]]
-#
-#
-#    data_with_echelon_nan_2008_w_echelon = data_with_echelon_nan_2008_w_echelon.rename(columns = {"annee_x":"annee",
-#                                                                              "echelon":"echelon_impute_par_IPP",
-#                                                                              "date_effet_grille_y":"date_effet_grille",
-#                                                                              "code_grade_NETNEH_y":"code_grade_NETNEH",
-#                                                                              "max_mois_y":"max_mois",
-#                                                                              "min_mois_y":"min_mois",
-#                                                                              "moy_mois_y":"moy_mois",
-#                                                                              "libelle_FP_y":"libelle_FP",
-#                                                                              "libelle_grade_NEG_y":"libelle_grade_NEG",
-#                                                                              "code_grade_NEG_y":"code_grade_NEG",
-#                                                                              "code_grade_y":"code_grade",
-#                                                                              "corps_NETNEH_y":"corps_NETNEH",
-#                                                                              "duree_initiale_en_2011":"duree_initiale_en_2011",
-#                                                                              })
-#
-#    print data_with_echelon_nan_2008_w_echelon.columns
-#    data_with_echelon_nan_2008_w_echelon = data_with_echelon_nan_2008_w_echelon.T.drop_duplicates().T
-#    print data_with_echelon_nan_2008_w_echelon.columns
-#    print data_with_echelon_nan_2008_w_echelon['duree_initiale_en_2011'].value_counts(dropna = False)
-#
-#    data_with_echelon = data_with_echelon.append(data_with_echelon_nan_2008_w_echelon)
-#    print data_with_echelon['duree_initiale_en_2011'].value_counts(dropna = False)
-
-    # La réforme de 2015 est appliquée avec un retard pour l'ensemble des grades du corps ATT
-#    data_with_echelon_nan_2015 = data_with_echelon.query('(echelon_impute_par_IPP) == -5 & (annee == 2015)')
-#    data_with_echelon_nan_2015_ATT = data_with_echelon_nan_2015[
-#        data_with_echelon_nan_2015['c_cir'].isin(['TTH1', 'TTH2', 'TTH3', 'TTH4'])
-#        ]
-#    data_ident_to_del_2015 = data_with_echelon_nan_2015_ATT.index_for_ident_annee.unique()
-#
-#    data_with_echelon = data_with_echelon[~data_with_echelon['index_for_ident_annee'].isin(data_ident_to_del_2015)]
-#    del data_with_echelon_nan_2008['annee_effet']
-#    data_with_echelon_nan_2015_ATT['annee_effet'] = [2014] * len(data_with_echelon_nan_2015_ATT)
-
-#    data_with_echelon_nan_2015_ATT = data_with_echelon_nan_2015_ATT.merge(
-#        grilles,
-#        on = ['annee_effet', 'c_cir', 'ib'],
-#        how = 'left'
-#        )
-##        )[[u'ident', u'annee', u'c_cir', u'ib', u'echelon_impute_par_CNRACL',
-##       u'generation', u'etat', u'sexe', u'min_duration_in_grade',
-##       u'max_duration_in_grade', u'ambig_duree_min', u'ambig_duree_max',
-##       u'duree_initiale_en_2011', u'annee_effet', u'date_effet_grille',
-##       u'code_grade_NETNEH', u'echelon_impute_par_IPP', u'max_mois',
-##       u'min_mois', u'moy_mois', u'libelle_FP', u'libelle_grade_NEG',
-##       u'code_grade_NEG', u'code_grade', u'corps_NETNEH', u'annee_y']]
-##    data_with_echelon_nan_2015_ATT['echelon'] = data_with_echelon_nan_2015_ATT['echelon'].fillna(-12)
-#
-#    data_with_echelon_nan_2015_ATT = data_with_echelon_nan_2015_ATT.rename(columns = {"annee_x":"annee",
-#                                                                                      "echelon":"echelon_impute_par_IPP"})
-#    data_with_echelon_nan_2015_ATT = data_with_echelon_nan_2015_ATT.T.groupby(level=0).first().T
-#
-##    print data_with_echelon_nan_2015_ATT.columns
-##    print data_with_echelon.columns
-#    data_with_echelon = data_with_echelon.append(data_with_echelon_nan_2015_ATT)
-#
-##    # La réforme de 2014 est appliquée avec un retard pour l'ensemble des grades du corps ATT, la grille préc.
-##    # des TTH4 est 2013. Pour les autres, la grille précédente date de 2008.
-#    data_with_echelon_nan_2014 = data_with_echelon.query('(echelon_impute_par_IPP) == -5 & (annee == 2014)')
-#    data_with_echelon_nan_2014_ATT_sauf_TTH4 = data_with_echelon_nan_2014[
-#        data_with_echelon_nan_2014['c_cir'].isin(['TTH1', 'TTH2', 'TTH3'])
-#        ]
-#    data_ident_to_del_2014 = data_with_echelon_nan_2014_ATT_sauf_TTH4.index_for_ident_annee.unique()
-#
-#    data_with_echelon = data_with_echelon[~data_with_echelon['index_for_ident_annee'].isin(data_ident_to_del_2014)]
-#
-#    data_with_echelon_nan_2014_ATT_sauf_TTH4['annee_effet'] = [2008] * len(data_with_echelon_nan_2014_ATT_sauf_TTH4)
-#    data_with_echelon_nan_2014 = data_with_echelon_nan_2014.T.drop_duplicates().T
-#    data_with_echelon_nan_2014_ATT_sauf_TTH4 = data_with_echelon_nan_2014_ATT_sauf_TTH4.merge(
-#        grilles,
-#        on = ['annee_effet', 'c_cir', 'ib'],
-#        how = 'left'
-#        )
-##        )[[u'ident', u'annee', u'c_cir', u'ib', u'echelon_impute_par_CNRACL',
-##       u'generation', u'etat', u'sexe', u'min_duration_in_grade',
-##       u'max_duration_in_grade', u'ambig_duree_min', u'ambig_duree_max',
-##       u'duree_initiale_en_2011', u'annee_effet', u'date_effet_grille',
-##       u'code_grade_NETNEH', u'echelon_impute_par_IPP', u'max_mois',
-##       u'min_mois', u'moy_mois', u'libelle_FP', u'libelle_grade_NEG',
-##       u'code_grade_NEG', u'code_grade', u'corps_NETNEH', u'annee_y']]
-##    data_with_echelon_nan_2015_ATT['echelon'] = data_with_echelon_nan_2015_ATT['echelon'].fillna(-12)
-#
-#    data_with_echelon_nan_2014_ATT_sauf_TTH4 = data_with_echelon_nan_2014_ATT_sauf_TTH4.rename(columns = {"annee_x":"annee",
-#                                                                                      "echelon":"echelon_impute_par_IPP"})
-#    data_with_echelon_nan_2014_ATT_sauf_TTH4 = data_with_echelon_nan_2014_ATT_sauf_TTH4.T.groupby(level=0).first().T
-#
-##    print data_with_echelon_nan_2015_ATT.columns
-##    print data_with_echelon.columns
-#    data_with_echelon = data_with_echelon.append(data_with_echelon_nan_2014_ATT_sauf_TTH4)
-    data_with_echelon['echelon_impute_par_IPP'] = data_with_echelon['echelon_impute_par_IPP'].fillna(-5)
-#    print data_with_echelon.groupby('annee')['ident'].count()
-    return data_with_echelon
-
-def add_generation_covariate_as_interval_of_yob(data, duree_min):
-    data['generation_group'] = data['generation'].apply(str).str[2:3]
-    data['generation_group'] = data['generation_group'].astype('category')
-    data['generation'] = data.generation.fillna(-1)
-    return data
-
-def select_columns_data(data):
-    data = data[[u'ident',
-                 u'sexe',
-                 u'generation',
-                 u'generation_group',
-                 u'annee',
-                 u'etat',
-                 u'c_cir',
-                 u'ib',
-                 u'echelon_impute_par_IPP',
-                 u'min_mois',
-                 u'max_mois',
-                 u'moy_mois',
-                 u'duree_initiale_en_2011',
-                 u'min_duration_in_grade',
-                 u'max_duration_in_grade',
-                 u'ambig_duree_max',
-                 u'ambig_duree_min',
-                 u'annee_effet',
-                 u'exit_status',
-                 u'next_grade',
-                 u'right_censoring',
-                 u'duration_in_grade_from_2011',
-                 ]]
-    return data
-
-def del_indiv_w_wrong_grades_transitions(data):
-    ident_to_del = data.query('(right_censoring == True) & (duration_in_grade_from_2011 != 5)').ident.unique()
-    data = data[~data['ident'].isin(ident_to_del)]
-    return data
+def main(first_year_imputation,
+         first_year_data,
+         careers_asset_path,
+         results_asset_path,
+         grilles,
+         ):
+    # Load Carrers
+    data_carreers = load_clean_careers(first_year_imputation, first_year_data, careers_asset_path, grilles)
+    # Load imputation:
+    filename = "data_changement_grade_" + str(first_year_imputation)+ "_2011.csv"
+    data_path_chgt = os.path.join(results_asset_path, filename)
+    data_chgt = clean_data_durees_chgt(data_path_chgt)
+    filename = "data_non_changement_grade_" + str(first_year_imputation)+ "_2011.csv"
+    data_path_non_chgt = os.path.join(results_asset_path, filename)
+    data_non_chgt = clean_data_durees_non_chgt(data_path_non_chgt)
+    # Merge
+    data = merge_data_durees_and_careers(data_chgt, data_non_chgt, data_carreers)
+    # Formatting
+    data_tidy = tidy_data(data)
+    data_with_dummy_exit = impute_exit_grade(data_tidy)
+    # Save
+    filename = "base_AT_clean_" + str(first_year_imputation) + ".csv"
+    data_with_dummy_exit.to_csv(os.path.join(save_path, filename))
 
 
-def main(data_durees_imputees, data_carrieres, duree_min):
-    data_durees_imputees = clean_data_durees_2007_2011(data_durees_imputees)
-    data = merge_data_durees_2007_2011_and_careers_2011_2015(data_durees_imputees, data_carrieres)
-#    print data.shape
-#    print len(data.ident.unique())
-#    compte_nan = pd.DataFrame(data[data['c_cir'].isnull()].groupby('annee')['c_cir'].value_counts(dropna = False))
-    data_tidy = tidy_data_2007_2015(data, True)
-    data_with_echelon = impute_echelon(data_tidy, grilles, True)
-    data_tidy_with_dummy_exit = impute_indicatrice_de_sortie_de_grade(data_with_echelon, True)
-#    print data_tidy_with_dummy_exit.shape
 
-#    print data_with_echelon.shape
-    data_with_generation_group = add_generation_covariate_as_interval_of_yob(data_tidy_with_dummy_exit, True)
-#    print len(data.ident.unique())
-    data_clean = select_columns_data(data_with_generation_group)
-    data_clean_without_wrong_grades_transitions = del_indiv_w_wrong_grades_transitions(data_clean)
-    data_clean.to_csv(
-        "M:/CNRACL/output/base_AT_clean_2007_2011/base_AT_clean_w_echelon_sex_generation_group.csv"
+if __name__ == '__main__':
+    main(first_year_imputation = 2007,
+         first_year_data = 2007,
+         careers_asset_path = careers_asset_path,
+         results_asset_path = results_asset_path,
+         grilles = grilles,
         )
-    return data_with_generation_group
-
-data = main(data_durees_imputees, data_carrieres, True)
-
-#data_with_echelon_2010 = data_with_echelon.query('annee == 2010')
-#
-#data_w_ech_bis = data_with_echelon.query('annee > 2011')
-#data_w_ech_bis = data_w_ech_bis[[u'ident',
-#                                 u'annee',
-#                                 u'c_cir',
-#                                 u'ib',
-#                                 u'echelon_impute_par_CNRACL',
-#                                 u'echelon_impute_par_IPP'
-#                                 ]]
-
-#if __name__ == '__main__':
-#    main(data_durees_imputees, data_carrieres, True)
