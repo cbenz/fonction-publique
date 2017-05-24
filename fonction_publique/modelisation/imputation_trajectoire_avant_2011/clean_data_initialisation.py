@@ -5,7 +5,7 @@ Date dernier edit: 23/05/2017
 Auteur : Lisa Degalle
 
 Objectif : clean_data_initialisation.py a pour but de préparer les données de carrières des adjoints techniques
-territoriaux et leurss grilles en vue de l'imputation des durées déjà passées dans le grade par ces agents en 2011,
+territoriaux et leurs grilles en vue de l'imputation des durées déjà passées dans le grade par ces agents en 2011,
 qui se fait dans le script imputations_2007_2011.py
 
 Inputs :
@@ -46,15 +46,9 @@ careers_asset_path = os.path.join(
 # Chargement des données de carrières, des tables de grilles et de la table de correspondances des grades et des corps :
 # (utile uniquement pour tester les fonctions de ce fichier indépendamment de imputations_2007_2011.py)
 data_carrieres = pd.read_csv(os.path.join(careers_asset_path, "corpsAT_2007.csv"))
-grilles = pd.read_hdf(
-    os.path.join(grilles_path, 'grilles_fonction_publique/grilles_old.h5')
-    )
-grilles_supp = pd.read_csv(os.path.join(grilles_path, "neg_grades_supp.csv"),
-                                             delimiter = ';')
-table_corresp_grade_corps = pd.read_csv(
-    os.path.join(grilles_path, 'corresp_neg_netneh.csv'),
-    delimiter = ';'
-    )
+grilles = pd.read_hdf(os.path.join(grilles_path, 'grilles_fonction_publique/grilles_old.h5'))
+grilles_supp = pd.read_csv(os.path.join(grilles_path, "neg_grades_supp.csv"), delimiter = ';')
+table_corresp_grade_corps = pd.read_csv(os.path.join(grilles_path, 'corresp_neg_netneh.csv'), delimiter = ';')
 
 
 def clean_grille(grilles, short, table_corresp_grade_corps):
@@ -107,7 +101,7 @@ def clean_grille(grilles, short, table_corresp_grade_corps):
     return grilles
 
 
-def merge_careers_with_grille(data, grilles, annee):
+def merge_careers_with_grilles(data, grilles, annee):
     """
     Pour chaque année, entre l'année de début d'observation pour l'imputation de la durée déjà passée dans le grade
     et l'année 2011, positionne chaque agent sur une grille, en utilisant son code c_cir observé en 2011 et prédit
@@ -203,7 +197,7 @@ def merge_careers_with_grille(data, grilles, annee):
     return data_with_info_grilles
 
 
-def clean_carreers(data, corps, ib_manquant_a_exclure, generation_min):
+def clean_careers(data, corps, ib_manquant_a_exclure, generation_min, grilles):
     """
     Retourne une table des carrières entre 2003 et 2015 des agents qui sont:
         sont ATT en 2011 selon leur c_cir, y compris les stagiaires
@@ -263,7 +257,7 @@ def clean_carreers(data, corps, ib_manquant_a_exclure, generation_min):
         ident_to_del = data.query('ib == -1').ident.unique()
         data = data[~data['ident'].isin(ident_to_del)]
         tracking.append([r'IB manquant entre 2003 et 2015', len(data.ident.unique())])
-    idents_to_keep_on_grilles_in_2011 = merge_careers_with_grille(data, grilles, 2011).ident.unique()
+    idents_to_keep_on_grilles_in_2011 = merge_careers_with_grilles(data, grilles, 2011).ident.unique()
     data = data[data['ident'].isin(idents_to_keep_on_grilles_in_2011)]
     tracking.append([r'Rattaché à une grille en 2011', len(data.ident.unique())])
     tracking = pd.DataFrame(tracking)
@@ -277,8 +271,8 @@ def clean_careers_annee_annee_bef(data_annee, data, annee, corps):
 
     Parameters
     ---------
-    `data_anne`: dataframe
-        données de carrière de l'année en cours
+    `data_annee`: dataframe
+        données de carrière de l'année en cours si annee différent de 2011, sinon données de carrières de 2011
     `data`: dataframe
         données de carrière
     `annee`: int

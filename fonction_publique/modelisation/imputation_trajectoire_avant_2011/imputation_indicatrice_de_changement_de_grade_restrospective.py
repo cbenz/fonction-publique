@@ -246,7 +246,7 @@ def impute_indicatrice_chgmt_grade_bef_2008(data_cas_uniques, transit_intra_corp
     """impute indicatrice de changement de grade aux cas uniques,"""
     """si transit_intra_corps = True, on ne considère comme possibles que les"""
     """transitions de grade à l'intérieur d'un même grade"""
-    grilles = clean_grille(grilles, False)
+    grilles = clean_grille(grilles, False, corresp_corps)
     grilles_pre_ATT = clean_grilles_pre_ATT(corresp_corps, grilles_pre_ATT, True)
     cas_uniques = data_cas_uniques
     cas_uniques_with_indic_chgmt_grade = []
