@@ -122,7 +122,7 @@ def load_libelles_emploi_data(decennie = None, debug = False, force_recreate = F
 
 
 def query_grade_neg(query = None, choices = None, score_cutoff = 95):
-    '''
+    u'''
     A partir de libelés observés, va chercher les 50 libellés les plus proches dans
     la liste des libellés officiels des grades. En l'absence de résultats, on abaisse le seuil.
 

@@ -29,7 +29,7 @@ import os
 import pandas as pd
 import pkg_resources
 import sys
-from fonction_publique.base import output_directory_path
+from fonction_publique.base import output_directory_path, project_path, grilles_path
 from clean_data_initialisation import (
     merge_careers_with_grilles,
     clean_careers_annee_annee_bef,
@@ -45,26 +45,10 @@ from imputation_indicatrice_chgmt_grade_annee_annee_bef import (
 log = logging.getLogger(__name__)
 
 # Paths
-asset_path = os.path.join(output_directory_path, r"bases_AT_imputations_trajectoires_2006_2011")
-CNRACL_project_path = os.path.join(
-    pkg_resources.get_distribution('fonction_publique').location,
-    'fonction_publique'
-    )
-grilles_path = os.path.join(CNRACL_project_path, "assets")
+asset_path = os.path.join(output_directory_path, r"bases_AT_imputations_trajectoires_1995_2011")
 
-def main(annee,
-         annee_debut_observation,
-         grilles,
-         table_corresp_grade_corps,
-         data_carrieres,
-         generation_min,
-         corps,
-         ib_manquant_a_exclure,
-         results_path,
-         filename_data_chgmt,
-         filename_data_non_chgmt,
-         ):
-
+def main(annee, annee_debut_observation, grilles, table_corresp_grade_corps, data_carrieres, generation_min,
+        corps, ib_manquant_a_exclure, results_path, filename_data_chgmt, filename_data_non_chgmt):
     """
     On boucle sur les années à partir de l'annee_debut_observation jusqu'à année = annee, inversée
     1. On obtient d'abord les données de carrières complètes nettoyées, puis
@@ -130,6 +114,10 @@ def main(annee,
             annee,
             'adjoints techniques territoriaux',
             )
+        if annee == 2011:
+            print "HOOOOOOOOOOOH"
+            print len(data_annee.ident.unique())
+            stop
         cas_uniques_annee_et_annee_bef = get_career_transitions_uniques_annee_annee_bef(data_annee, annee)
         cas_uniques_annee_et_annee_bef_avec_grades_predits = get_indicatrice_chgmt_grade_annee_annee_bef(
             cas_uniques_annee_et_annee_bef,
@@ -195,13 +183,13 @@ if __name__ == '__main__':
             os.path.join(grilles_path, 'corresp_neg_netneh.csv'),
             delimiter = ';'
             ),
-        data_carrieres = pd.read_csv(os.path.join(asset_path, "corpsAT_2006.csv")), # pd.read_csv(
+        data_carrieres = pd.read_csv(os.path.join(asset_path, "corpsAT_1995.csv")), # pd.read_csv(
 #   os.path.join(output_directory_path, "bases_AT_imputations_trajectoires_1995_2011/corpsAT_1995.csv")
 #    )
         generation_min = 1960,
         corps = 'ATT',
         ib_manquant_a_exclure = True,
         results_path = os.path.join(output_directory_path, "base_AT_clean_2006_2011"),
-        filename_data_chgmt = "data_changement_grade_2006_2011_t.csv",
-        filename_data_non_chgmt = "data_non_changement_grade_2006_2011_t.csv",
+        filename_data_chgmt = "data_changement_grade_2006_2011_t2.csv",
+        filename_data_non_chgmt = "data_non_changement_grade_2006_2011_t2.csv",
         )

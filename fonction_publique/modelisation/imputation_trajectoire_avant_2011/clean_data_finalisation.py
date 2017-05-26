@@ -9,8 +9,8 @@ from clean_data_initialisation import clean_grille, clean_careers, merge_careers
 from fonction_publique.base import output_directory_path, project_path
 
 # Paths
-careers_asset_path = os.path.join(output_directory_path, 'bases_AT_imputations_trajectoires_avant_2011/')
-results_asset_path = os.path.join(output_directory_path, 'base_AT_clean_2007_2011/')
+careers_asset_path = os.path.join(output_directory_path, 'bases_AT_imputations_trajectoires_1995_2011/')
+results_asset_path = os.path.join(output_directory_path, 'base_AT_clean_2006_2011/')
 save_path =  os.path.join(output_directory_path, 'estimations/')
 grilles_path = os.path.join(project_path, 'assets/')
 

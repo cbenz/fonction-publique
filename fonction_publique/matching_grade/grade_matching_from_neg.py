@@ -40,7 +40,7 @@ def select_grade_neg_by_hand(versant = None, libelles_grade_NEG = None, grilles 
     score_cutoff = 95
 
     while True:
-        print("Saisir un libellé NEG à la main:")
+        print(u"Saisir un libellé NEG à la main:")
         libelle_saisi = raw_input("""
 SAISIR UN LIBELLE, quitter (q)
 selection: """)
