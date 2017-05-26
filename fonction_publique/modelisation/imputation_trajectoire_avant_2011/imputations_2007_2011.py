@@ -108,24 +108,29 @@ def main(annee, annee_debut_observation, grilles, table_corresp_grade_corps, dat
             data = data_a_utiliser_pour_annee_precedente
         data_annee = merge_careers_with_grilles(data, grilles, annee)
 
+        # Fusionne année courante et année précédente pour repérer transition
         data_annee = clean_careers_annee_annee_bef(
             data_annee,
             data_carrieres,
             annee,
             'adjoints techniques territoriaux',
             )
+
         if annee == 2011:
             print "HOOOOOOOOOOOH"
             print len(data_annee.ident.unique())
             stop
+
         cas_uniques_annee_et_annee_bef = get_career_transitions_uniques_annee_annee_bef(data_annee, annee)
+
         cas_uniques_annee_et_annee_bef_avec_grades_predits = get_indicatrice_chgmt_grade_annee_annee_bef(
-            cas_uniques_annee_et_annee_bef,
-            True,
-            annee,
-            grilles,
-            table_corresp_grade_corps,
+            data_cas_uniques = cas_uniques_annee_et_annee_bef,
+            transit_intra_corps = True,
+            annee = annee,
+            grilles = grilles,
+            table_corresp_grade_corps = table_corresp_grade_corps,
             )
+
         data_annee_et_annee_bef_avec_grades_predits = map_transitions_uniques_annee_annee_bef_to_data(
             cas_uniques_annee_et_annee_bef_avec_grades_predits,
             data_annee,
