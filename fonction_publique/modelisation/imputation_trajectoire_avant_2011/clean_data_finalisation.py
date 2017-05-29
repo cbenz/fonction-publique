@@ -9,8 +9,6 @@ from clean_data_initialisation import clean_grille, clean_careers, merge_careers
 from fonction_publique.base import output_directory_path, project_path
 
 # Paths
-careers_asset_path = os.path.join(output_directory_path, 'bases_AT_imputations_trajectoires_1995_2011/')
-results_asset_path = os.path.join(output_directory_path, 'base_AT_clean_2006_2011/')
 save_path =  os.path.join(output_directory_path, 'estimations/')
 grilles_path = os.path.join(project_path, 'assets/')
 
@@ -18,6 +16,28 @@ grilles_path = os.path.join(project_path, 'assets/')
 grilles = pd.read_hdf(
         os.path.join(grilles_path, 'grilles_fonction_publique/grilles_old.h5')
         )
+
+
+def set_path(first_year_data, first_year_imputation):
+    """
+    Setting the path for loading careers data and imputed duration in grade
+
+    Parameters
+    ---------
+    `first_year_data`: first year kept in the career data
+    `first_year_imputation`: first year of the imputation process (first year on the time schedule, last year
+    of the imputation process from 2011)
+
+    Returns
+    ---------
+    List of import paths
+    """
+
+    filename = 'bases_AT_imputations_trajectoires_{}_2011'.format(first_year_data)
+    careers_asset_path = os.path.join(output_directory_path, filename)
+    filename = "base_AT_clean_{}_2011".format(first_year_imputation)
+    results_asset_path = os.path.join(output_directory_path, filename)
+    return( [careers_asset_path, results_asset_path] )
 
 def load_clean_careers(first_year_data, first_year_imputation, careers_asset_path, grilles):
     '''
@@ -264,11 +284,11 @@ def variables_management(data):
 
 def main(first_year_imputation,
          first_year_data,
-         careers_asset_path,
-         results_asset_path,
          grilles,
          ):
-    # Load Carrers
+    paths = set_path(first_year_data, first_year_imputation)
+    careers_asset_path = paths[0]
+    results_asset_path = paths[1]
     data_carreers = load_clean_careers(first_year_imputation, first_year_data, careers_asset_path, grilles)
     # Load imputation:
     filename = "data_changement_grade_" + str(first_year_imputation)+ "_2011.csv"
@@ -293,7 +313,5 @@ def main(first_year_imputation,
 if __name__ == '__main__':
     main(first_year_imputation = 2007,
          first_year_data = 2007,
-         careers_asset_path = careers_asset_path,
-         results_asset_path = results_asset_path,
          grilles = grilles,
         )

@@ -37,10 +37,13 @@ from fonction_publique.base import grilles_path, output_directory_path
 
 log = logging.getLogger(__name__)
 
+first_year = 2007
+
 # Chemins des données de carrières :
+
 careers_asset_path = os.path.join(
     output_directory_path,
-    "bases_AT_imputations_trajectoires_avant_2011"
+    "bases_AT_imputations_trajectoires_2007_2011"
     )
 
 # Chargement des données de carrières, des tables de grilles et de la table de correspondances des grades et des corps :
