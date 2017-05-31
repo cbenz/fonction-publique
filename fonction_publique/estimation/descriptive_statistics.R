@@ -71,6 +71,11 @@ table(right_censoring[list0])/length(list0)
 table(right_censoring[list1])/length(list1)
 table(right_censoring[list2])/length(list2)
 
+
+# Right censoring by grade and time spent in 2011. 
+table(time_max)
+
+
 attach(data)
 
 table(cir_2011)
@@ -99,9 +104,28 @@ print(xtable(stat,align="lccccc",nrow = nrow(stat), ncol=ncol(stat)+1, byrow=T, 
       only.contents=F, include.colnames = T, hline.after = c(-1,1,3,5))
 
 
+detach(data_id)
+
+
 
 #### I. Annee affilation ####
+
+data_id$max_duration_in_grade2 = 2011 - data_id$an_aff
+data_id$time_max2 = data_id$max_duration_in_grade2 + data_id$duration_in_grade_from_2011
+
+
+
+
+table(data_id$right_censoring[which(data_id$grade_de_2011 == "TTH1")], data_id$max_duration_grade2[which(data_id$grade_de_2011 == "TTH1")])
+
 
 table(an_aff)
 table(an_aff[which(grade_de_2011 == "TTH1")])
 table(an_aff[which(grade_de_2011 == "TTH1" & right_censoring == "False")])
+
+d
+
+
+
+
+

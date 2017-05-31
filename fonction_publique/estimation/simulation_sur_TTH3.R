@@ -1,5 +1,10 @@
 
 
+############################################ ESTIMATION DURATION MODEL FOR SURVIVAL IN GRADE #########################
+
+
+
+
 #### 0. Initialisation ####
 
 rm(list = ls()); gc()
@@ -35,6 +40,8 @@ data_long = read.csv(filename)
 # MODIF A DEPLACER: cleaning when right censoring and not duration in grade = 5
 data_long = data_long[-which(data_long$duration_in_grade_from_2011 < 5 & data_long$right_censoring== 'True'),]
 
+
+###  Variables creation ###
 data_long$generation_group = 9
 data_long$generation_group[data_long$generation<1990] = 8
 data_long$generation_group[data_long$generation<1985] = 7
@@ -48,12 +55,12 @@ data_long$observed = ifelse(data_long$ind_exit_once == 1, 1, 0)
 data_long$time_min = data_long$min_duration_in_grade + data_long$duration_in_grade_from_2011
 data_long$time_max = data_long$max_duration_in_grade + data_long$duration_in_grade_from_2011
 
+data_long$time = data_long$time_max
 
 # Mise au format data 1obs/indiv
 data_id = data_long[,c("ident", "c_cir", "generation_group","max_duration_in_grade","min_duration_in_grade","duration_in_grade_from_2011", 
-                       "observed",  "right_censoring", "time_min", "time_max")]
+                       "observed",  "right_censoring", "time_min", "time_max", "time")]
 data_id = data_id[!duplicated(data_id$ident),]
-
 ## Data grade TTH3 
 data_TTH3 <- data_id[data_id$c_cir == 'TTH3',]
 data_TTH3 <- data_TTH3[-which(data_TTH3$generation_group == '9'),]
@@ -67,22 +74,24 @@ data_test     = data_id[which(is.element(data_id$ident, list_test)),]
 
 length(which(data_TTH3$right_censoring == 'True'))/length(data_TTH3$right_censoring)
 
+
+
 ## I. Estimation ####
 
 ## KM
-srFit_KM <- survfit(Surv(data_learning$time_max, data_learning$observed) ~ 1)
+srFit_KM <- survfit(Surv(data_learning$time, data_learning$observed) ~ 1)
 summary(srFit_KM)
 
 ## Exponential
-srFit_exp <- survreg(Surv(time_max, observed) ~  1 + factor(generation_group), data = data_learning, dist = "exponential")
+srFit_exp <- survreg(Surv(time, observed) ~  1 + factor(generation_group), data = data_learning, dist = "exponential")
 summary(srFit_exp)
 
 ## Weibull 
-srFit_weibull <- survreg(Surv(time_max, observed) ~  1 + factor(generation_group), data = data_learning, dist = "weibull")
+srFit_weibull <- survreg(Surv(time, observed) ~  1 + factor(generation_group), data = data_learning, dist = "weibull")
 summary(srFit_weibull)
 
 
-### II. Simulation ###
+###### II. Simulation #####
 
 attach(data_test)
 tirage<-function(var)
@@ -107,11 +116,11 @@ for (y in seq(2011, 2015, 1))
   # Computing hazard rate bw y an y+1  
   intercept.wei = predict(srFit_weibull, newdata = data_sim_wei,type="linear")
   intercept.exp = predict(srFit_exp, newdata = data_sim_exp,type="linear")  
-  t = duration[list_wei] + 1  # Hyp: proba of exit at t+0.5
+  t = duration[list_wei] + 0.5  # Hyp: proba of exit at t+0.5
   scale = srFit_weibull$scale
   hazard_wei <-dweibull(t, scale=exp(intercept.wei), shape=1/scale)/pweibull(t, scale=exp(intercept.wei), shape=1/scale, lower.tail=FALSE)
   hazard_exp <-dweibull(1, scale=exp(intercept.exp), shape=1)/pweibull(1, scale=exp(intercept.exp), shape=1, lower.tail=FALSE)
-#  print(c(y, "mean wei", mean(hazard_wei), "mean exp", mean(hazard_exp)))
+  #  print(c(y, "mean wei", mean(hazard_wei), "mean exp", mean(hazard_exp)))
   # Drawing exit based on the predicted probability
   exit_wei = as.numeric(lapply(hazard_wei, tirage))
   exit_exp = as.numeric(lapply(hazard_exp, tirage))
@@ -145,9 +154,9 @@ for (y in (1:length(annee)))
   # Hazard Rate
   if (y < length(annee))
   {
-  hazard_rate[1, y] = length(which(observed_exit == annee[y]+1))/length(which(observed_exit >= annee[y]))
-  hazard_rate[2, y] = length(which(predicted_exit_wei == annee[y]+1))/length(which(predicted_exit_wei >= annee[y]))
-  hazard_rate[3, y] = length(which(predicted_exit_exp == annee[y]+1))/length(which(predicted_exit_exp >= annee[y]))
+    hazard_rate[1, y] = length(which(observed_exit == annee[y]+1))/length(which(observed_exit >= annee[y]))
+    hazard_rate[2, y] = length(which(predicted_exit_wei == annee[y]+1))/length(which(predicted_exit_wei >= annee[y]))
+    hazard_rate[3, y] = length(which(predicted_exit_exp == annee[y]+1))/length(which(predicted_exit_exp >= annee[y]))
   }
 }  
 
@@ -167,9 +176,12 @@ lines(annee, hazard_rate[2, ], col="grey50", lwd=3)
 lines(annee, hazard_rate[3, ], col="grey80", lwd=3)
 legend("topleft", legend = c("Observed", "Weibull","Exponential"), 
        lty = 1, col = c("grey20", "grey50", "grey80"), lwd = 3)
-  
 
-#### Test effect of censoring on estimation
+
+
+
+#### III. Test effect of censoring on estimation ####
+
 data_TTH3 <- data_id[data_id$c_cir == 'TTH3',]
 data_TTH3 <- data_TTH3[-which(data_TTH3$generation_group == '9'),]
 
@@ -177,8 +189,8 @@ data_TTH3$duration_censored1 = pmin(data_TTH3$duration_in_grade_from_2011, 4)
 data_TTH3$duration_censored2 = pmin(data_TTH3$duration_in_grade_from_2011, 3)
 data_TTH3$observed1 = ifelse(data_TTH3$duration_censored1<4,1,0)
 data_TTH3$observed2 = ifelse(data_TTH3$duration_censored2<3,1,0)
-data_TTH3$time_max1 = data_TTH3$duration_censored1 + data_TTH3$max_duration_in_grade
-data_TTH3$time_max2 = data_TTH3$duration_censored2 + data_TTH3$max_duration_in_grade
+data_TTH3$time1 = data_TTH3$duration_censored1 + data_TTH3$max_duration_in_grade
+data_TTH3$time2 = data_TTH3$duration_censored2 + data_TTH3$max_duration_in_grade
 
 table(data_TTH3$duration_in_grade_from_2011, data_TTH3$observed)
 table(data_TTH3$duration_censored1, data_TTH3$observed1)
@@ -191,13 +203,13 @@ data_learning = data_TTH3[which(is.element(data_TTH3$ident, list_learning)),]
 data_test     = data_TTH3[which(is.element(data_TTH3$ident, list_test)),]
 
 ## Weibull 
-srFit_weibull <- survreg(Surv(time_max, observed) ~  1 + factor(generation_group), data = data_learning, dist = "weibull")
+srFit_weibull <- survreg(Surv(time, observed) ~  1 + factor(generation_group), data = data_learning, dist = "weibull")
 summary(srFit_weibull)
 ## Weibull 
-srFit_weibull1 <- survreg(Surv(time_max1, observed1) ~  1 + factor(generation_group), data = data_learning, dist = "weibull")
+srFit_weibull1 <- survreg(Surv(time1, observed1) ~  1 + factor(generation_group), data = data_learning, dist = "weibull")
 summary(srFit_weibull1)
 ## Weibull 
-srFit_weibull2 <- survreg(Surv(time_max2, observed2) ~  1 + factor(generation_group), data = data_learning, dist = "weibull")
+srFit_weibull2 <- survreg(Surv(time2, observed2) ~  1 + factor(generation_group), data = data_learning, dist = "weibull")
 summary(srFit_weibull2)
 
 
@@ -219,5 +231,3 @@ hazard_wei2 <-dweibull(t, scale=exp(intercept.wei2), shape=1/scale1)/pweibull(t,
 print(c("mean wei", mean(hazard_wei), 
         "mean wei1", mean(hazard_wei1),
         "mean wei2", mean(hazard_wei2)))
-  
-  
