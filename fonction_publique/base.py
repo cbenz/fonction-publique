@@ -47,6 +47,15 @@ law_hdf_path = os.path.join(
     "grilles.h5",
     )
 
+table_corresp_grade_corps = pd.read_csv(
+    os.path.join(grilles_path, 'corresp_neg_netneh.csv'),
+    delimiter = ';'
+    )
+
+grilles = pd.read_hdf(
+    os.path.join(grilles_path, 'grilles_fonction_publique/grilles_old.h5')
+    )
+
 # Directories paths:
 raw_directory_path = parser.get('data', 'raw')
 tmp_directory_path = parser.get('data', 'tmp')
