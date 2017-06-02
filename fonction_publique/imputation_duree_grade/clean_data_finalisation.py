@@ -86,12 +86,15 @@ def get_var_duree_min_duree_max(data):
         ).groupby('ident')['annee'].max().reset_index().rename(columns={'annee':'annee_max_bef_entree_dans_grade'})
     data = data.merge(data_max_entree_dans_grade, on = ['ident'], how = 'outer')
     data['annee_max_entree_dans_grade'] = (data['annee_max_bef_entree_dans_grade'] + 1).fillna(-1).astype(int)
+
     del data['annee_max_bef_entree_dans_grade']
+    print data.annee_max_entree_dans_grade.value_counts()
     data_min_entree_dans_grade = data.query(
         'indicat_ch_grade == True'
         ).groupby('ident')['annee'].min().reset_index().rename(columns={'annee':'annee_min_bef_entree_dans_grade'})
     data = data.merge(data_min_entree_dans_grade, on = ['ident'], how = 'outer')
     data['annee_min_entree_dans_grade'] = (data['annee_min_bef_entree_dans_grade'] + 1).fillna(-1).astype(int)
+    print data.annee_min_entree_dans_grade.value_counts()
     del data['annee_min_bef_entree_dans_grade']
     data = data.set_index(['ident', 'annee']).sort_index()
     data = data.reset_index()
@@ -118,17 +121,23 @@ def main(data_bef_2011_path, output_filename):
     data_merged_w_censoring_and_exit_and_durations.to_csv(
         os.path.join(output_directory_path, "clean_data_finalisation", output_filename))
 
+
+
+
+#
+#ident_w_ambig = data.query('ambiguite == True').ident.unique().tolist()
+#datad = data[data['ident'].isin(ident_w_ambig)]
+#ident_without_grade_change = datad.groupby('ident')['indicat_ch_grade'].value_counts().rename(
+#    columns = {'indicat_ch_grade':'jj'}).reset_index()
+#compte = ident_without_grade_change.ident.value_counts().reset_index()
+#compte_1
+
 if __name__ == '__main__':
     data_bef_2011_path = os.path.join(
         output_directory_path,
         "imputation",
         "data_2003_2011_new_method_4.csv"
         )
-    main(data_bef_2011_path, "data_ATT_2002_2015.csv")
+    main(data_bef_2011_path, "data_ATT_2002_2015_wip.csv")
 
 
-data = pd.read_csv(os.path.join(
-        output_directory_path,
-        "imputation",
-        "data_2003_2011.csv"
-        ))

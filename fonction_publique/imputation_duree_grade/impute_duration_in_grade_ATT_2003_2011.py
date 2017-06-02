@@ -172,29 +172,42 @@ del data_career['Unnamed: 0']
 
 data_career['annee'] = data_career['annee'] - 1
 del data_career['c_cir']
-data_career = data_career.rename(columns = {"c_cir_bef_predit":"c_cir",
-                                            "ib_bef":"ib"})
+data_career = data_career.rename(
+    columns = {"c_cir_bef_predit" : "c_cir", "ib_bef" : "ib"}
+    )
 data_career = data_career.sort_values(['ident', 'date_effet_grille'])
 data_career = data_career.drop_duplicates(data_career.columns.difference(
-        ['date_effet_grille', 'max_mois', 'min_mois', 'echelon']), keep = "last"
+    ['date_effet_grille', 'max_mois', 'min_mois', 'echelon']), keep = "last"
     )
-data_career = data_career.set_index(['ident', 'annee'])
 
 data_career['temp_index'] = range(len(data_career))
 
-data_career_no_chgmt = data_career.query('(indicat_ch_grade == False) & (ambiguite == False)').reset_index()[[
-    'ident', 'annee']]
-data_career_no_chgmt = data_career_no_chgmt.groupby(['ident'], sort=False)['annee'].min().reset_index().rename(
-    columns = {'annee': 'annee_min_non_chgmt_non_ambig'})
+data_career_no_chgmt = data_career.query('(indicat_ch_grade == False) & (ambiguite == False)')[[
+    'ident', 'annee'
+    ]]
+data_career_no_chgmt = data_career_no_chgmt.groupby(['ident'], sort = False)['annee'].min().reset_index().rename(
+    columns = {'annee': 'annee_min_non_chgmt_non_ambig'}
+    )
 
-data_career_bis = data_career.reset_index().merge(
+data_career_bis = data_career.merge(
     data_career_no_chgmt, on = ['ident']
     )
 data_career_annee_sup_grade_change = data_career_bis.query(
     '(annee > annee_min_non_chgmt_non_ambig) & (indicat_ch_grade)').temp_index.unique().tolist()
-
+ident_temp_index = data_career[
+    data_career['temp_index'].isin(data_career_annee_sup_grade_change)
+    ].reset_index().ident.tolist()
 data_career = data_career[~data_career['temp_index'].isin(data_career_annee_sup_grade_change)]
 del data_career['temp_index']
+data_career = data_career.reset_index()
+
+data_career = data_career.merge(data_career_no_chgmt, on = 'ident', how = 'outer')
+data_career['annee_min_non_chgmt_non_ambig'] = data_career['annee_min_non_chgmt_non_ambig'].fillna(55555)
+
+data_career.loc[
+    ((data_career['ident'].isin(ident_temp_index))) & (
+        data_career['annee'] > data_career['annee_min_non_chgmt_non_ambig']
+        ), ['ambiguite']] = False
 
 data_career.to_csv(
     os.path.join(
