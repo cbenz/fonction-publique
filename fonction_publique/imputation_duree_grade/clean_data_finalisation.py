@@ -15,10 +15,10 @@ from clean_data_initialisation import clean_careers
 def merge_data_bef_aft_2011(data_bef_2011_path):
     """ Merge data before 2011 and after 2011, clean data types and add generation group var """
     data_carrieres = pd.read_csv(os.path.join(
-    output_directory_path,
-    "select_data",
-    "corpsAT_1995.csv"
-    )).query('annee > 2001')
+        output_directory_path,
+        "select_data",
+        "corpsAT_1995.csv",
+        )).query('annee > 2001')
     data_carrieres_clean = clean_careers(data_carrieres, 'ATT', True, 1960, grilles)
     data_aft_2011 = data_carrieres_clean.query('annee > 2010')
     data_bef_2011 = pd.read_csv(data_bef_2011_path)
@@ -56,6 +56,7 @@ def merge_data_bef_aft_2011(data_bef_2011_path):
 
 
 def get_censoring(data):
+    """ Create var indicating left and right censoring  """
     data = data.merge(data.query('annee == 2011')[['ident', 'c_cir']], on = 'ident').rename(
         columns = {'c_cir_x':'c_cir', 'c_cir_y':'c_cir_2011'}
         )
@@ -68,7 +69,8 @@ def get_censoring(data):
     return data
 
 
-def get_exit_grade_and_next_grade(data):
+def get_exit_status_and_next_grade(data):
+    """ Create var indicating exit status and next grade, if known """
     data['exit_status'] = (data['c_cir'] != data['c_cir_2011']) & (data['annee'] > 2010).astype(bool)
     data = data.sort_values(['ident', 'annee'])
     data['next_grade'] = data.groupby(['ident'])['c_cir'].transform('last')
@@ -78,24 +80,32 @@ def get_exit_grade_and_next_grade(data):
 
 
 def get_var_duree_min_duree_max(data):
+    """ Create var indicating duration min and max (if known) in grade """
     data_max_entree_dans_grade = data.query(
         'indicat_ch_grade == True'
-        ).groupby('ident')['annee'].max().reset_index().rename(columns={'annee':'annee_max_entree_dans_grade'})
+        ).groupby('ident')['annee'].max().reset_index().rename(columns={'annee':'annee_max_bef_entree_dans_grade'})
     data = data.merge(data_max_entree_dans_grade, on = ['ident'], how = 'outer')
-    data['annee_max_entree_dans_grade'] = data['annee_max_entree_dans_grade'].fillna(-1).astype(int)
+    data['annee_max_entree_dans_grade'] = (data['annee_max_bef_entree_dans_grade'] + 1).fillna(-1).astype(int)
+    del data['annee_max_bef_entree_dans_grade']
     data_min_entree_dans_grade = data.query(
         'indicat_ch_grade == True'
-        ).groupby('ident')['annee'].min().reset_index().rename(columns={'annee':'annee_min_entree_dans_grade'})
+        ).groupby('ident')['annee'].min().reset_index().rename(columns={'annee':'annee_min_bef_entree_dans_grade'})
     data = data.merge(data_min_entree_dans_grade, on = ['ident'], how = 'outer')
-    data['annee_min_entree_dans_grade'] = data['annee_min_entree_dans_grade'].fillna(-1).astype(int)
+    data['annee_min_entree_dans_grade'] = (data['annee_min_bef_entree_dans_grade'] + 1).fillna(-1).astype(int)
+    del data['annee_min_bef_entree_dans_grade']
     data = data.set_index(['ident', 'annee']).sort_index()
     data = data.reset_index()
-    data['last_year_in_c_cir'] = data.groupby(['ident'])['annee'].transform('last')
-    data['duree_min'] = data['last_year_in_c_cir'] - data['annee_max_entree_dans_grade']
-    data['duree_max'] = data['last_year_in_c_cir'] - data['annee_min_entree_dans_grade']
-    data.loc[data['left_censored'] == True, ['annee_min_entree_dans_grade']] = None
-    data.loc[data['left_censored'] == True, ['duree_max']] = None
-    data['is_in_duree_min'] = (data['annee'] >= data['annee_max_entree_dans_grade'])
+    data['last_year_in_c_cir_or_observed'] = data.groupby(['ident'])['annee'].transform('last').astype(int)
+    data['duree_min'] = data['last_year_in_c_cir_or_observed'] - data['annee_max_entree_dans_grade'] + 1
+    data.loc[
+        data['annee_max_entree_dans_grade'] == -1, ['duree_min']
+        ] = data['last_year_in_c_cir_or_observed'] - 2002
+    data['duree_max'] = data['last_year_in_c_cir_or_observed'] - data['annee_min_entree_dans_grade'] + 1
+    data.loc[data['left_censored'] == True, ['duree_max']] = -1
+    data.loc[data['right_censored'] == True, ['duree_max']] = -1
+    data['is_in_duree_min'] = (
+        (data['annee'] >= (data['annee_max_entree_dans_grade'])) & (data['c_cir'] == data['c_cir_2011'])
+        )
     data = data.set_index(['ident', 'annee']).sort_index()
     return data
 
@@ -103,7 +113,7 @@ def get_var_duree_min_duree_max(data):
 def main(data_bef_2011_path, output_filename):
     data_merged = merge_data_bef_aft_2011(data_bef_2011_path)
     data_merged_w_censoring = get_censoring(data_merged)
-    data_merged_w_censoring_and_exit = get_exit_grade_and_next_grade(data_merged_w_censoring)
+    data_merged_w_censoring_and_exit = get_exit_status_and_next_grade(data_merged_w_censoring)
     data_merged_w_censoring_and_exit_and_durations = get_var_duree_min_duree_max(data_merged_w_censoring_and_exit)
     data_merged_w_censoring_and_exit_and_durations.to_csv(
         os.path.join(output_directory_path, "clean_data_finalisation", output_filename))
@@ -120,14 +130,5 @@ if __name__ == '__main__':
 data = pd.read_csv(os.path.join(
         output_directory_path,
         "imputation",
-        "data_2003_2011_new_method_4.csv"
+        "data_2003_2011.csv"
         ))
-
-# TTH2 et 3 en 2005 (vide vs. TTH1 vs. autre)
-
-#idents = data.query("(c_cir == 'TTH1') & (annee == 2011)").reset_index().ident.unique().tolist()
-#idents_leave_2005 = data.query("(indicat_ch_grade == True) & (annee == 2006)").reset_index().ident.unique().tolist()
-#idents_keep = set(idents).intersection(idents_leave_2005)
-#
-#data_leave = data.reset_index()[data.reset_index()['ident'].isin(idents_keep)].query(
-#    '(annee == 2006) & (indicat_ch_grade == True)')
