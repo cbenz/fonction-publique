@@ -75,8 +75,12 @@ def get_exit_status_and_next_grade(data):
     data = data.sort_values(['ident', 'annee'])
     data['next_grade'] = data.groupby(['ident'])['c_cir'].transform('last')
     data.loc[data.next_grade == data.c_cir_2011, ['next_grade']] = None
-    data = data[(data['c_cir'] == data['c_cir_2011']) | (data['indicat_ch_grade'])]
-    return data
+    data_spell = data[(data['c_cir'] == data['c_cir_2011']) | (data['indicat_ch_grade'])]
+    data_spell = data_spell.groupby('ident')['annee'].max().reset_index().rename(columns = {'annee':'last_y_in_grade'})
+    data_spell['first_y_in_next_grade'] = data_spell['last_y_in_grade'] + 1
+    data_merged = data.merge(data_spell, on = 'ident')
+    data_merged = data_merged.query('annee <= first_y_in_next_grade')
+    return data_merged
 
 
 def get_var_duree_min_duree_max(data):
@@ -88,13 +92,13 @@ def get_var_duree_min_duree_max(data):
     data['annee_max_entree_dans_grade'] = (data['annee_max_bef_entree_dans_grade'] + 1).fillna(-1).astype(int)
 
     del data['annee_max_bef_entree_dans_grade']
-    print data.annee_max_entree_dans_grade.value_counts()
+
     data_min_entree_dans_grade = data.query(
         'indicat_ch_grade == True'
         ).groupby('ident')['annee'].min().reset_index().rename(columns={'annee':'annee_min_bef_entree_dans_grade'})
     data = data.merge(data_min_entree_dans_grade, on = ['ident'], how = 'outer')
     data['annee_min_entree_dans_grade'] = (data['annee_min_bef_entree_dans_grade'] + 1).fillna(-1).astype(int)
-    print data.annee_min_entree_dans_grade.value_counts()
+
     del data['annee_min_bef_entree_dans_grade']
     data = data.set_index(['ident', 'annee']).sort_index()
     data = data.reset_index()
@@ -121,16 +125,6 @@ def main(data_bef_2011_path, output_filename):
     data_merged_w_censoring_and_exit_and_durations.to_csv(
         os.path.join(output_directory_path, "clean_data_finalisation", output_filename))
 
-
-
-
-#
-#ident_w_ambig = data.query('ambiguite == True').ident.unique().tolist()
-#datad = data[data['ident'].isin(ident_w_ambig)]
-#ident_without_grade_change = datad.groupby('ident')['indicat_ch_grade'].value_counts().rename(
-#    columns = {'indicat_ch_grade':'jj'}).reset_index()
-#compte = ident_without_grade_change.ident.value_counts().reset_index()
-#compte_1
 
 if __name__ == '__main__':
     data_bef_2011_path = os.path.join(
