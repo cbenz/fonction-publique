@@ -7,8 +7,7 @@ Created on Wed May 31 10:20:44 2017
 
 import os
 import pandas as pd
-import numpy as np
-from fonction_publique.base import project_path, output_directory_path, grilles
+from fonction_publique.base import output_directory_path, grilles
 from clean_data_initialisation import clean_careers
 
 
@@ -76,44 +75,32 @@ def get_exit_status_and_next_grade(data):
     data['next_grade'] = data.groupby(['ident'])['c_cir'].transform('last')
     data.loc[data.next_grade == data.c_cir_2011, ['next_grade']] = None
     data_spell = data[(data['c_cir'] == data['c_cir_2011']) | (data['indicat_ch_grade'])]
-    data_spell = data_spell.groupby('ident')['annee'].max().reset_index().rename(columns = {'annee':'last_y_in_grade'})
-    data_spell['first_y_in_next_grade'] = data_spell['last_y_in_grade'] + 1
+    data_spell = data_spell.groupby('ident')['annee'].max().reset_index().rename(columns = {'annee':'last_y_observed_in_grade'})
+    data_spell['first_y_in_next_grade'] = data_spell['last_y_observed_in_grade'] + 1
     data_merged = data.merge(data_spell, on = 'ident')
     data_merged = data_merged.query('annee <= first_y_in_next_grade')
+    data_merged.loc[data_merged.first_y_in_next_grade == 2016, ['first_y_in_next_grade']] = None
+#    data.loc[data['right_censored'] == True, ['last_y_observed_in_grade']] = -1
     return data_merged
 
 
 def get_var_duree_min_duree_max(data):
     """ Create var indicating duration min and max (if known) in grade """
-    data_max_entree_dans_grade = data.query(
-        'indicat_ch_grade == True'
-        ).groupby('ident')['annee'].max().reset_index().rename(columns={'annee':'annee_max_bef_entree_dans_grade'})
-    data = data.merge(data_max_entree_dans_grade, on = ['ident'], how = 'outer')
-    data['annee_max_entree_dans_grade'] = (data['annee_max_bef_entree_dans_grade'] + 1).fillna(-1).astype(int)
-
-    del data['annee_max_bef_entree_dans_grade']
-
-    data_min_entree_dans_grade = data.query(
-        'indicat_ch_grade == True'
-        ).groupby('ident')['annee'].min().reset_index().rename(columns={'annee':'annee_min_bef_entree_dans_grade'})
-    data = data.merge(data_min_entree_dans_grade, on = ['ident'], how = 'outer')
-    data['annee_min_entree_dans_grade'] = (data['annee_min_bef_entree_dans_grade'] + 1).fillna(-1).astype(int)
-
-    del data['annee_min_bef_entree_dans_grade']
-    data = data.set_index(['ident', 'annee']).sort_index()
-    data = data.reset_index()
-    data['last_year_in_c_cir_or_observed'] = data.groupby(['ident'])['annee'].transform('last').astype(int)
-    data['duree_min'] = data['last_year_in_c_cir_or_observed'] - data['annee_max_entree_dans_grade'] + 1
-    data.loc[
-        data['annee_max_entree_dans_grade'] == -1, ['duree_min']
-        ] = data['last_year_in_c_cir_or_observed'] - 2002
-    data['duree_max'] = data['last_year_in_c_cir_or_observed'] - data['annee_min_entree_dans_grade'] + 1
-    data.loc[data['left_censored'] == True, ['duree_max']] = -1
-    data.loc[data['right_censored'] == True, ['duree_max']] = -1
-    data['is_in_duree_min'] = (
-        (data['annee'] >= (data['annee_max_entree_dans_grade'])) & (data['c_cir'] == data['c_cir_2011'])
-        )
-    data = data.set_index(['ident', 'annee']).sort_index()
+    data['annee_min_entree_dans_grade'] = data.groupby('ident')['annee'].transform('first').astype(int) + 1
+    data.loc[(data['annee_min_entree_dans_grade'] == 2003) & (data['c_cir'] != 'autre'), ['annee_min_entree_dans_grade']] = -1
+    data_ambiguite = data.query('ambiguite == True')
+    data_ambiguite['annee_max_entree_dans_grade'] = data_ambiguite.groupby('ident')['annee'].transform('last').astype(int) + 1
+    data_ambiguite = data_ambiguite[['ident', 'annee_max_entree_dans_grade']].drop_duplicates()
+    data = data.merge(data_ambiguite, on = 'ident', how = 'outer')
+    data['annee_max_entree_dans_grade'] = data['annee_max_entree_dans_grade'].fillna(-1)
+    data.loc[data['annee_max_entree_dans_grade'] == -1, ['annee_max_entree_dans_grade']] = data[
+        'annee_min_entree_dans_grade'
+        ]
+    assert len(data.query('(left_censored == True) & (annee_min_entree_dans_grade != 1)') == 0)
+    data['duree_min'] = data['last_y_observed_in_grade'] - data['annee_max_entree_dans_grade'] + 1
+    data.loc[data['annee_max_entree_dans_grade'] == -1, ['duree_min']] = -1
+    data['duree_max'] = data['last_y_observed_in_grade'] - data['annee_min_entree_dans_grade'] + 1
+    data.loc[data['annee_min_entree_dans_grade'] == -1, ['duree_max']] = -1
     return data
 
 
@@ -132,6 +119,6 @@ if __name__ == '__main__':
         "imputation",
         "data_2003_2011_new_method_4.csv"
         )
-    main(data_bef_2011_path, "data_ATT_2002_2015_wip.csv")
+    main(data_bef_2011_path, "data_ATT_2002_2015_redef_var.csv")
 
 
