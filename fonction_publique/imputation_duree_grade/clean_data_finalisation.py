@@ -75,32 +75,66 @@ def get_exit_status_and_next_grade(data):
     data['next_grade'] = data.groupby(['ident'])['c_cir'].transform('last')
     data.loc[data.next_grade == data.c_cir_2011, ['next_grade']] = None
     data_spell = data[(data['c_cir'] == data['c_cir_2011']) | (data['indicat_ch_grade'])]
-    data_spell = data_spell.groupby('ident')['annee'].max().reset_index().rename(columns = {'annee':'last_y_observed_in_grade'})
+    data_spell = data_spell.groupby('ident')['annee'].max().reset_index().rename(
+        columns = {'annee':'last_y_observed_in_grade'}
+        )
     data_spell['first_y_in_next_grade'] = data_spell['last_y_observed_in_grade'] + 1
     data_merged = data.merge(data_spell, on = 'ident')
     data_merged = data_merged.query('annee <= first_y_in_next_grade')
     data_merged.loc[data_merged.first_y_in_next_grade == 2016, ['first_y_in_next_grade']] = None
-#    data.loc[data['right_censored'] == True, ['last_y_observed_in_grade']] = -1
     return data_merged
 
 
 def get_var_duree_min_duree_max(data):
     """ Create var indicating duration min and max (if known) in grade """
     data['annee_min_entree_dans_grade'] = data.groupby('ident')['annee'].transform('first').astype(int) + 1
-    data.loc[(data['annee_min_entree_dans_grade'] == 2003) & (data['c_cir'] != 'autre'), ['annee_min_entree_dans_grade']] = -1
+    print data.query('ident == 3086')
+    data['c_cir_bef'] = data.groupby('ident')['annee'].transform('first')
+    print data
+    stop
+    data.loc[
+        (data['annee_min_entree_dans_grade'] == 2003) & (data['c_cir_bef'] != 'autre'), ['annee_min_entree_dans_grade']
+        ] = -1
     data_ambiguite = data.query('ambiguite == True')
-    data_ambiguite['annee_max_entree_dans_grade'] = data_ambiguite.groupby('ident')['annee'].transform('last').astype(int) + 1
+    data_ambiguite['annee_max_entree_dans_grade'] = data_ambiguite.groupby(
+        'ident'
+        )['annee'].transform('last').astype(int) + 1
     data_ambiguite = data_ambiguite[['ident', 'annee_max_entree_dans_grade']].drop_duplicates()
     data = data.merge(data_ambiguite, on = 'ident', how = 'outer')
     data['annee_max_entree_dans_grade'] = data['annee_max_entree_dans_grade'].fillna(-1)
     data.loc[data['annee_max_entree_dans_grade'] == -1, ['annee_max_entree_dans_grade']] = data[
         'annee_min_entree_dans_grade'
         ]
+    print data.query('ident == 3086')
     assert len(data.query('(left_censored == True) & (annee_min_entree_dans_grade != 1)') == 0)
     data['duree_min'] = data['last_y_observed_in_grade'] - data['annee_max_entree_dans_grade'] + 1
     data.loc[data['annee_max_entree_dans_grade'] == -1, ['duree_min']] = -1
     data['duree_max'] = data['last_y_observed_in_grade'] - data['annee_min_entree_dans_grade'] + 1
     data.loc[data['annee_min_entree_dans_grade'] == -1, ['duree_max']] = -1
+
+    assert len(data['duree_max'] == -1) == len(data['left_censored'] == True)
+    assert not data.query(
+        '(ambiguite == True) & (annee_min_entree_dans_grade == -1)'
+        ).duree_min.equals(data['duree_max'])
+    assert len(data.query(
+        '(left_censored == False) & (duree_min == -1)'
+        )) == 0
+    assert len(data.query(
+        '(left_censored == False) & (duree_max == -1)'
+        )) == 0
+    return data
+
+
+def filter_on_etat(data):
+    data_group = data.query(
+        '(etat != 1) & (annee != annee_min_entree_dans_grade - 1) & (annee != last_y_observed_in_grade)'
+        )[['ident', 'annee']].rename(columns = {'annee':'annee_etat_diff_activite'})
+    data_merge = data.merge(data_group, on = 'ident', how = 'outer')
+    data_merge['annee_etat_diff_activite'] = data_merge['annee_etat_diff_activite'].fillna(5000)
+    ident_to_del = data_merge.query(
+        '(etat == 1) & (annee > annee_etat_diff_activite)'
+        ).ident.unique()
+    data = data[~data['ident'].isin(ident_to_del)]
     return data
 
 
@@ -109,7 +143,8 @@ def main(data_bef_2011_path, output_filename):
     data_merged_w_censoring = get_censoring(data_merged)
     data_merged_w_censoring_and_exit = get_exit_status_and_next_grade(data_merged_w_censoring)
     data_merged_w_censoring_and_exit_and_durations = get_var_duree_min_duree_max(data_merged_w_censoring_and_exit)
-    data_merged_w_censoring_and_exit_and_durations.to_csv(
+    data_clean = filter_on_etat(data_merged_w_censoring_and_exit_and_durations)
+    data_clean.to_csv(
         os.path.join(output_directory_path, "clean_data_finalisation", output_filename))
 
 
@@ -117,7 +152,7 @@ if __name__ == '__main__':
     data_bef_2011_path = os.path.join(
         output_directory_path,
         "imputation",
-        "data_2003_2011_new_method_4.csv"
+        "data_2003_2011_5.csv"
         )
     main(data_bef_2011_path, "data_ATT_2002_2015_redef_var.csv")
 

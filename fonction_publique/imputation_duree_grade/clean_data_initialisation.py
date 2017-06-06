@@ -366,10 +366,22 @@ def clean_careers(data, corps, ib_manquant_a_exclure, generation_min, grilles):
         ident_to_del = data.query('ib == -1').ident.unique()
         data = data[~data['ident'].isin(ident_to_del)]
         tracking.append([r'IB manquant entre 2003 et 2015', len(data.ident.unique())])
-    data.head()
     idents_to_keep_on_grilles_in_2011 = merge_careers_with_grilles(data, grilles, 2011).ident.unique()
     data = data[data['ident'].isin(idents_to_keep_on_grilles_in_2011)]
     tracking.append([r'Rattaché à une grille en 2011', len(data.ident.unique())])
+    # data pas de retour
+    data_c_cir_2011 = data.query('annee == 2011')[['ident', 'c_cir']].rename(
+        columns = {'c_cir':'c_cir_2011'})
+    data = data.merge(data_c_cir_2011, on = 'ident', how = 'outer')
+    data_c_cir_diff_2011_aft_2011 = data.query('(annee > 2010) & (c_cir != c_cir_2011)')[['ident','annee']].rename(
+        columns = {'annee':'annee_c_cir_diff_c_cir_2011'})
+    data_merge = data.merge(data_c_cir_diff_2011_aft_2011, on ='ident', how ='outer')
+    data_merge['annee_c_cir_diff_c_cir_2011'] = data_merge['annee_c_cir_diff_c_cir_2011'].fillna(5000)
+    ident_to_del = data_merge.query(
+        '(annee > 2010) & (annee > annee_c_cir_diff_c_cir_2011) & (c_cir == c_cir_2011)').ident.unique()
+    print ident_to_del
+    data = data[~data['ident'].isin(ident_to_del)]
+    tracking.append([r'Sans sortie/retour du grade de 2011', len(data.ident.unique())])
     tracking = pd.DataFrame(tracking)
     print tracking.to_latex()
     return data

@@ -99,73 +99,73 @@ Returns:
      dataframe de résultats pour les individus ayant changé de grade entre 2007 et 2011
      dataframe de résultats pour les individus n'ayant pas changé de grade entre 2007 et 2011
 """
-
-data_carrieres = pd.read_csv(os.path.join(
-    output_directory_path,
-    "select_data",
-    "corpsAT_1995.csv"
-    )).query('annee > 2001')
-data_carrieres_clean = clean_careers(data_carrieres, 'ATT', True, 1960, grilles)
-data_carrieres_with_indicat_grade_chg = []  # Redefined at the end of the loop
-annees = list(reversed(range(2003, 2012)))
-data_a_utiliser_pour_annee_precedente = None
-for annee in annees:
-    if annee == 2011:
-        data_annee = merge_careers_with_grilles(data_carrieres_clean, grilles, annee)
-    else:
-        data_annee = merge_careers_with_grilles(data_a_utiliser_pour_annee_precedente, grilles, annee)
-    data_annee = clean_careers_annee_annee_bef(
-        data_annee,
-        data_carrieres,
-        annee,
-        'adjoints techniques territoriaux',
-        )
-    cas_uniques_annee_et_annee_bef = get_career_transitions_uniques_annee_annee_bef(data_annee, annee)
-    cas_uniques_with_indic_grade_change = get_indicatrice_chgmt_grade_annee_annee_bef(
-        cas_uniques_annee_et_annee_bef,
-        True,
-        annee,
-        grilles,
-        table_corresp_grade_corps
-        )
-    assert len(cas_uniques_annee_et_annee_bef) <= len(cas_uniques_with_indic_grade_change)
-    data_annee_with_indic_grade_change = map_transitions_uniques_annee_annee_bef_to_data(
-        cas_uniques_with_indic_grade_change,
-        data_annee,
-        annee
-        )
-    if annee == 2003:
-        data_carrieres_with_indicat_grade_chg.append(data_annee_with_indic_grade_change)
-    else:
-        data_a_storer = get_careers_chgmt_grade_annee_annee_bef(
-            data_annee_with_indic_grade_change,
-            False,
+def main():
+    data_carrieres = pd.read_csv(os.path.join(
+        output_directory_path,
+        "select_data",
+        "corpsAT_1995.csv"
+        )).query('annee > 2001')
+    data_carrieres_clean = clean_careers(data_carrieres, 'ATT', True, 1960, grilles)
+    data_carrieres_with_indicat_grade_chg = []  # Redefined at the end of the loop
+    annees = list(reversed(range(2003, 2012)))
+    data_a_utiliser_pour_annee_precedente = None
+    for annee in annees:
+        if annee == 2011:
+            data_annee = merge_careers_with_grilles(data_carrieres_clean, grilles, annee)
+        else:
+            data_annee = merge_careers_with_grilles(data_a_utiliser_pour_annee_precedente, grilles, annee)
+        data_annee = clean_careers_annee_annee_bef(
+            data_annee,
+            data_carrieres,
             annee,
+            'adjoints techniques territoriaux',
             )
-        data_carrieres_with_indicat_grade_chg.append(data_a_storer)
-        data_a_utiliser_pour_annee_precedente = get_careers_chgmt_grade_annee_annee_bef(
-            data_annee_with_indic_grade_change,
+        cas_uniques_annee_et_annee_bef = get_career_transitions_uniques_annee_annee_bef(data_annee, annee)
+        cas_uniques_with_indic_grade_change = get_indicatrice_chgmt_grade_annee_annee_bef(
+            cas_uniques_annee_et_annee_bef,
             True,
+            annee,
+            grilles,
+            table_corresp_grade_corps
+            )
+        assert len(cas_uniques_annee_et_annee_bef) <= len(cas_uniques_with_indic_grade_change)
+        data_annee_with_indic_grade_change = map_transitions_uniques_annee_annee_bef_to_data(
+            cas_uniques_with_indic_grade_change,
+            data_annee,
             annee
             )
+        if annee == 2003:
+            data_carrieres_with_indicat_grade_chg.append(data_annee_with_indic_grade_change)
+        else:
+            data_a_storer = get_careers_chgmt_grade_annee_annee_bef(
+                data_annee_with_indic_grade_change,
+                False,
+                annee,
+                )
+            data_carrieres_with_indicat_grade_chg.append(data_a_storer)
+            data_a_utiliser_pour_annee_precedente = get_careers_chgmt_grade_annee_annee_bef(
+                data_annee_with_indic_grade_change,
+                True,
+                annee
+                )
 
-data = pd.concat(data_carrieres_with_indicat_grade_chg).reset_index().drop_duplicates()
-assert len(data.reset_index().ident.unique()) == len(data_carrieres_clean.ident.unique())
+    data = pd.concat(data_carrieres_with_indicat_grade_chg).reset_index().drop_duplicates()
+    assert len(data.reset_index().ident.unique()) == len(data_carrieres_clean.ident.unique())
 
-del data['corps_NETNEH_y']
-data_fin = data.sort_values(['ident', 'date_effet_grille'])
-data_fin = data.drop_duplicates(data_fin.columns.difference(['date_effet_grille', 'max_mois', 'min_mois']), keep = 'last')
-assert len(data_fin.reset_index().ident.unique()) == len(data_carrieres_clean.ident.unique())
+    del data['corps_NETNEH_y']
+    data_fin = data.sort_values(['ident', 'date_effet_grille'])
+    data_fin = data.drop_duplicates(data_fin.columns.difference(['date_effet_grille', 'max_mois', 'min_mois']), keep = 'last')
+    assert len(data_fin.reset_index().ident.unique()) == len(data_carrieres_clean.ident.unique())
 
-data_fin.to_csv(os.path.join(
-    output_directory_path,
-    'imputation',
-    'temp_data_2003_2011_new_method_4.csv'))
+    data_fin.to_csv(os.path.join(
+        output_directory_path,
+        'imputation',
+        'temp_data_2003_2011_5.csv'))
 
 data_path = (os.path.join(
     output_directory_path,
     'imputation',
-    'temp_data_2003_2011_new_method_4.csv'))
+    'temp_data_2003_2011_5.csv'))
 
 data_career = pd.read_csv(data_path)
 del data_career['Unnamed: 0']
@@ -213,6 +213,6 @@ data_career.to_csv(
     os.path.join(
         output_directory_path,
         "imputation",
-        "data_2003_2011_new_method_4.csv"
+        "data_2003_2011_5.csv"
         )
     )
