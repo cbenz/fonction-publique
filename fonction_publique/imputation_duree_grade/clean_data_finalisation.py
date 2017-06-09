@@ -8,19 +8,14 @@ Created on Wed May 31 10:20:44 2017
 import os
 import pandas as pd
 from fonction_publique.base import output_directory_path, grilles
-from clean_data_initialisation import clean_careers
+from clean_data_initialisation import clean_careers, get_echelon_after_2011_from_c_cir
 
 
-def merge_data_bef_aft_2011(data_bef_2011_path):
+def merge_data_bef_aft_2011(data_bef_2011_path, data_careers, data_aft_2011_w_echelon):
     """ Merge data before 2011 and after 2011, clean data types and add generation group var """
-    data_carrieres = pd.read_csv(os.path.join(
-        output_directory_path,
-        "select_data",
-        "corpsAT_1995.csv",
-        )).query('annee > 2001')
-    data_carrieres_clean = clean_careers(data_carrieres, 'ATT', True, 1960, grilles)
-    data_aft_2011 = data_carrieres_clean.query('annee > 2010')
     data_bef_2011 = pd.read_csv(data_bef_2011_path)
+    ident_keep = data_bef_2011.ident.unique().tolist()
+    data_aft_2011 = data_aft_2011_w_echelon[data_aft_2011_w_echelon['ident'].isin(ident_keep)]
     del data_bef_2011['corps_NETNEH']
     time_invarying_var = data_aft_2011[['ident', 'an_aff', 'sexe', 'generation']].drop_duplicates()
     data_bef_2011 = data_bef_2011.merge(time_invarying_var, on = ['ident'])
@@ -29,7 +24,9 @@ def merge_data_bef_aft_2011(data_bef_2011_path):
         to_replace='ES', value=55555, inplace=False
         ).astype(float).astype(int)
     del data['etat']
-    data_etat = data_carrieres_clean.query('annee > 2001')[['ident', 'annee', 'etat']]
+    data_etat = data_careers.query('annee > 2001')[['ident', 'annee', 'etat4']].rename(
+        columns = {'etat4':'etat'}
+        )
     data = data.merge(data_etat, on = ['ident', 'annee'], how = 'inner')
     data['generation_group'] = data['generation'].apply(str).str[2:3]
     data['generation_group'] = data['generation_group'].astype('category')
@@ -68,6 +65,20 @@ def get_censoring(data):
     return data
 
 
+def get_bef_grade(data):
+    data = data.sort_values(['ident', 'annee'])
+    data['last_y_in_grade_bef'] = data.groupby('ident')['annee'].transform('first')
+    data_grade_bef = data.query('(annee == last_y_in_grade_bef) & (ambiguite == False) & (indicat_ch_grade == True)')[[
+        'ident', 'c_cir'
+        ]].rename(
+            columns = {"c_cir": "grade_bef"}
+            )
+    data = data.merge(data_grade_bef, on = 'ident', how = 'outer')
+    data['grade_bef'] = data['grade_bef'].fillna(-1)
+    assert len(data.query('left_censored == True')) == len(data.query('grade_bef == -1'))
+    return data
+
+
 def get_exit_status_and_next_grade(data):
     """ Create var indicating exit status and next grade, if known """
     data['exit_status'] = (data['c_cir'] != data['c_cir_2011']) & (data['annee'] > 2010).astype(bool)
@@ -88,13 +99,8 @@ def get_exit_status_and_next_grade(data):
 def get_var_duree_min_duree_max(data):
     """ Create var indicating duration min and max (if known) in grade """
     data['annee_min_entree_dans_grade'] = data.groupby('ident')['annee'].transform('first').astype(int) + 1
-    print data.query('ident == 3086')
-    data['c_cir_bef'] = data.groupby('ident')['annee'].transform('first')
-    print data
-    stop
-    data.loc[
-        (data['annee_min_entree_dans_grade'] == 2003) & (data['c_cir_bef'] != 'autre'), ['annee_min_entree_dans_grade']
-        ] = -1
+    data.loc[data['left_censored'] == True, ['annee_min_entree_dans_grade']] = -1
+
     data_ambiguite = data.query('ambiguite == True')
     data_ambiguite['annee_max_entree_dans_grade'] = data_ambiguite.groupby(
         'ident'
@@ -105,13 +111,15 @@ def get_var_duree_min_duree_max(data):
     data.loc[data['annee_max_entree_dans_grade'] == -1, ['annee_max_entree_dans_grade']] = data[
         'annee_min_entree_dans_grade'
         ]
-    print data.query('ident == 3086')
+    print data.query('ident == 2664')
+    print data.query('ident == 3878965')
+    print data.query('ident == 647')
     assert len(data.query('(left_censored == True) & (annee_min_entree_dans_grade != 1)') == 0)
+    assert len(data.groupby('ident')['annee_max_entree_dans_grade'].value_counts()) == len(data.ident.unique())
     data['duree_min'] = data['last_y_observed_in_grade'] - data['annee_max_entree_dans_grade'] + 1
     data.loc[data['annee_max_entree_dans_grade'] == -1, ['duree_min']] = -1
     data['duree_max'] = data['last_y_observed_in_grade'] - data['annee_min_entree_dans_grade'] + 1
     data.loc[data['annee_min_entree_dans_grade'] == -1, ['duree_max']] = -1
-
     assert len(data['duree_max'] == -1) == len(data['left_censored'] == True)
     assert not data.query(
         '(ambiguite == True) & (annee_min_entree_dans_grade == -1)'
@@ -138,14 +146,41 @@ def filter_on_etat(data):
     return data
 
 
+def filter_on_echelon(data):
+    ident_to_del = data.query('(echelon == -1) & (annee > 2010)').ident.unique()
+    print len(ident_to_del)
+    data = data[~data['ident'].isin(ident_to_del)]
+    return data
+
+
 def main(data_bef_2011_path, output_filename):
-    data_merged = merge_data_bef_aft_2011(data_bef_2011_path)
+    data_aft_2011_w_echelon = get_echelon_after_2011_from_c_cir(
+        pd.read_csv(os.path.join(
+            output_directory_path,
+            "select_data",
+            "corpsAT_1995.csv",
+            )).query('annee > 2001'),
+        grades_2011 = ['TTH1', 'TTH2', 'TTH3', 'TTH4', 'STH1', 'STH2', 'STH3', 'STH4'],
+        )
+    data_merged = merge_data_bef_aft_2011(
+        data_bef_2011_path, pd.read_csv(os.path.join(
+            output_directory_path,
+            "select_data",
+            "corpsAT_1995.csv",
+            )).query('annee > 2001'),
+        data_aft_2011_w_echelon
+        )
     data_merged_w_censoring = get_censoring(data_merged)
-    data_merged_w_censoring_and_exit = get_exit_status_and_next_grade(data_merged_w_censoring)
+    data_merged_w_censoring_and_grade_bef = get_bef_grade(data_merged_w_censoring)
+    data_merged_w_censoring_and_exit = get_exit_status_and_next_grade(data_merged_w_censoring_and_grade_bef)
     data_merged_w_censoring_and_exit_and_durations = get_var_duree_min_duree_max(data_merged_w_censoring_and_exit)
+    print len(data_merged_w_censoring_and_exit_and_durations.ident.unique())
     data_clean = filter_on_etat(data_merged_w_censoring_and_exit_and_durations)
-    data_clean.to_csv(
-        os.path.join(output_directory_path, "clean_data_finalisation", output_filename))
+    print len(data_merged_w_censoring_and_exit_and_durations.ident.unique())
+    data_clean_bis = filter_on_echelon(data_clean)
+    print len(data_clean_bis.ident.unique())
+#    data_clean_bis.to_csv(
+#        os.path.join(output_directory_path, "clean_data_finalisation", output_filename))
 
 
 if __name__ == '__main__':
@@ -154,6 +189,6 @@ if __name__ == '__main__':
         "imputation",
         "data_2003_2011_5.csv"
         )
-    main(data_bef_2011_path, "data_ATT_2002_2015_redef_var.csv")
+    main(data_bef_2011_path, "data_ATT_2002_2015_2.csv")
 
 

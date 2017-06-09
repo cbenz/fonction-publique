@@ -34,6 +34,7 @@ from clean_data_initialisation import (
     clean_careers,
     clean_grilles_pre_ATT,
     get_grilles_en_effet,
+    get_possible_grilles,
     )
 from fonction_publique.base import (
     asset_path,
@@ -81,44 +82,6 @@ corresp_grilles_ATT_et_pre_ATT = pd.read_csv(os.path.join(grilles_path, "neg_gra
 grilles_pre_ATT = pd.read_table(
     os.path.join(grilles_path, 'grilles_fonction_publique/neg_pour_ipp.txt')
     )
-
-
-def get_possible_grilles(c_cir_now, annee, grilles, table_corresp_grade_corps):
-    grilles = clean_grille(grilles, False, table_corresp_grade_corps)
-    date_effet_grille_bef = grilles[
-        (grilles['code_grade_NETNEH'] == c_cir_now) &
-        (grilles['date_effet_grille'] <= pd.datetime(annee - 1, 12, 31))
-        ].date_effet_grille.max()
-    # TODO: include changement de date d'effet
-    if annee == 2009:
-        list_date_effet_grille_bef = [date_effet_grille_bef]
-        date_effet_grille_bef_precedente = grilles[
-            (grilles['code_grade_NETNEH'] == c_cir_now) &
-            (grilles['date_effet_grille'] < date_effet_grille_bef)
-            ].date_effet_grille.max()
-        list_date_effet_grille_bef.append(date_effet_grille_bef_precedente)
-        grille_c_cir_now = grilles[
-            (grilles['code_grade_NETNEH'] == c_cir_now) &
-            (grilles['date_effet_grille'].isin(list_date_effet_grille_bef))
-            ]
-    elif annee == 2007:
-        grilles_fusionnees_en_c_cir_now = get_grilles_en_effet(c_cir_now, 2006)
-        grilles_c_cir_2006 = grilles[
-            (grilles['code_grade_NETNEH'] == c_cir_now) &
-            (grilles['date_effet_grille'] == date_effet_grille_bef)
-            ]
-        grille_c_cir_now = grilles_fusionnees_en_c_cir_now.append(grilles_c_cir_2006)
-    elif annee == 2006:
-        grille_c_cir_now = get_grilles_en_effet(c_cir_now, 2006).append(
-            get_grilles_en_effet(c_cir_now, 2005))
-    elif annee < 2006:
-        grille_c_cir_now = get_grilles_en_effet(c_cir_now, annee)
-    else:
-        grille_c_cir_now = grilles[
-            (grilles['code_grade_NETNEH'] == c_cir_now) &
-            (grilles['date_effet_grille'] == date_effet_grille_bef)
-            ]
-    return grille_c_cir_now
 
 
 def get_indicatrice_chgmt_grade_annee_annee_bef(
@@ -169,6 +132,7 @@ def get_indicatrice_chgmt_grade_annee_annee_bef(
         assert annee_ == annee
         # TODO: Loop over transition = (ib_bef, c_cir_now, annee)  annee = annee finale
         c_cir_now = str(c_cir)
+        c_cir_now_lower = 'TTH{}'.format(int(c_cir_now[-1:]) - 1)
         ib_bef = int(ib_bef)
         grille_c_cir_now = get_possible_grilles(c_cir_now, annee, grilles, table_corresp_grade_corps)
         assert ib_bef not in(['NaN', -1])
@@ -176,30 +140,81 @@ def get_indicatrice_chgmt_grade_annee_annee_bef(
 
         # Changement de grade sur
         if len(grille_c_cir_now_inter_ib_bef) == 0:
-            cas_uniques_with_indic_chgmt_grade.append(format_output(
-                c_cir_now = c_cir_now,
-                ib_bef = ib_bef,
-                c_cir_bef_predit = "autre",
-                nombre_de_grades_possibles_before = 1,
-                ambiguite_before = False,
-                indicat_ch_grade_before = True,
-                annee = annee,
-                echelon = None,
-                min_mois = None,
-                max_mois = None,
-                date_effet_grille = None,
-                corps = None,
-                ))
+            if c_cir_now == 'TTH1':
+                cas_uniques_with_indic_chgmt_grade.append(format_output(
+                    c_cir_now = c_cir_now,
+                    ib_bef = ib_bef,
+                    c_cir_bef_predit = "autre",
+                    nombre_de_grades_possibles_before = 1,
+                    ambiguite_before = False,
+                    indicat_ch_grade_before = True,
+                    annee = annee,
+                    echelon = None,
+                    min_mois = None,
+                    max_mois = None,
+                    date_effet_grille = None,
+                    corps = None,
+                    ))
+            else:
+                grille_c_cir_now_lower = get_possible_grilles(
+                    c_cir_now_lower,
+                    annee,
+                    grilles,
+                    table_corresp_grade_corps,
+                    ).query(
+                        'ib == {}'.format(ib_bef)
+                        )[[
+                        'code_grade_NETNEH',
+                        'date_effet_grille',
+                        'echelon',
+                        'min_mois',
+                        'max_mois',
+                        'moy_mois',
+                        'corps_NETNEH',
+                        ]]
+                if len(grille_c_cir_now_lower) == 0:
+                    cas_uniques_with_indic_chgmt_grade.append(format_output(
+                        c_cir_now = c_cir_now,
+                        ib_bef = ib_bef,
+                        c_cir_bef_predit = "autre",
+                        nombre_de_grades_possibles_before = 1,
+                        ambiguite_before = False,
+                        indicat_ch_grade_before = True,
+                        annee = annee,
+                        echelon = None,
+                        min_mois = None,
+                        max_mois = None,
+                        date_effet_grille = None,
+                        corps = None,
+                        ))
+                else:
+                    date_effet_grille_max = grille_c_cir_now_lower.date_effet_grille.unique().max()
+                    grille_c_cir_now_lower = grille_c_cir_now_lower.query(
+                        'date_effet_grille == @date_effet_grille_max'
+                        )
+                    cas_uniques_with_indic_chgmt_grade.append(format_output(
+                        c_cir_now = c_cir_now,
+                        ib_bef = ib_bef,
+                        c_cir_bef_predit = c_cir_now_lower,
+                        nombre_de_grades_possibles_before = 1,
+                        ambiguite_before = False,
+                        indicat_ch_grade_before = True,
+                        annee = annee,
+                        echelon = grille_c_cir_now_lower['echelon'].values.astype(int)[0],
+                        min_mois = grille_c_cir_now_lower['min_mois'].values.astype(int)[0],
+                        max_mois = grille_c_cir_now_lower['max_mois'].values.astype(int)[0],
+                        date_effet_grille = grille_c_cir_now_lower['date_effet_grille'].values[0],
+                        corps = grille_c_cir_now_lower['corps_NETNEH'].values.astype(str)[0],
+                        ))
 
         else:
             if transit_intra_corps:
                 if c_cir_now != 'TTH1':
-                    c_cir_now_lower = 'TTH{}'.format(int(c_cir_now[-1:]) - 1)
                     grille_c_cir_now_lower = get_possible_grilles(
                         c_cir_now_lower,
                         annee,
                         grilles,
-                        table_corresp_grade_corps
+                        table_corresp_grade_corps,
                         )
                     grades_possibles_bef = grille_c_cir_now_lower.query(
                         'ib == {}'.format(ib_bef)
@@ -210,9 +225,8 @@ def get_indicatrice_chgmt_grade_annee_annee_bef(
                         'min_mois',
                         'max_mois',
                         'moy_mois',
-                        'corps_NETNEH'
+                        'corps_NETNEH',
                         ]]
-
                     if len(grades_possibles_bef) != 0:
                         grades_possibles = grades_possibles_bef.append(
                             pd.DataFrame([c_cir_now,
@@ -230,7 +244,7 @@ def get_indicatrice_chgmt_grade_annee_annee_bef(
                                     3:'min_mois',
                                     4:'max_mois',
                                     5:'moy_mois',
-                                    6:'corps_NETNEH'
+                                    6:'corps_NETNEH',
                                     }))
                         rang_grade_possible = 1
                         for index, row in grades_possibles.iterrows():
@@ -249,6 +263,7 @@ def get_indicatrice_chgmt_grade_annee_annee_bef(
                                 date_effet_grille = row["date_effet_grille"],
                                 corps = row["corps_NETNEH"]
                                 ))
+
                     else:
                         cas_uniques_with_indic_chgmt_grade.append(format_output(
                             c_cir_now = c_cir_now,
@@ -294,6 +309,13 @@ def get_indicatrice_chgmt_grade_annee_annee_bef(
     assert (cas_uniques_w_indic_df.query("(not(ambiguite)) & (c_cir != 'TTH1')").groupby(
         ['annee', 'ib_bef', 'c_cir']
         )['c_cir_bef_predit'].count() == 1).all()
+
+    c_cir_bef_predits = (cas_uniques_w_indic_df.query(
+            '(indicat_ch_grade == True) & (ambiguite == False)').c_cir_bef_predit
+            .value_counts(dropna = False)
+            .index.tolist()
+            )
+    assert 'TTH1' in c_cir_bef_predits
     return cas_uniques_w_indic_df
 
 
