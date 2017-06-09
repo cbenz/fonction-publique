@@ -104,8 +104,6 @@ def clean_grille(grilles, short, table_corresp_grade_corps):
         grilles = grilles
     return grilles
 
-#data = data_carrieres
-#data_merge = merge_careers_with_grilles(data, grilles, 2011)
 
 def clean_grilles_pre_ATT(grilles_pre_ATT, short, table_corresp_grade_corps):
     """
@@ -126,10 +124,12 @@ def clean_grilles_pre_ATT(grilles_pre_ATT, short, table_corresp_grade_corps):
     """
     grade_NEG_bef_TTH1 = [27, 35, 391, 625, 769]
     grade_NEG_bef_769 = [32, 36, 37]
+    grade_NEG_bef_26 = [30]
+    grade_NEG_bef_25 = [29]
     grade_NEG_bef_TTH2 = [26, 34, 626]
     grade_NEG_bef_TTH3 = [25, 33, 627]
     grade_NEG_bef_TTH4 = [157, 156, 628]
-    grades_NEG_bef_ATT = grade_NEG_bef_TTH1 + grade_NEG_bef_TTH2 + grade_NEG_bef_TTH3 + grade_NEG_bef_TTH4 + grade_NEG_bef_769
+    grades_NEG_bef_ATT = grade_NEG_bef_TTH1 + grade_NEG_bef_TTH2 + grade_NEG_bef_TTH3 + grade_NEG_bef_TTH4 + grade_NEG_bef_769 + grade_NEG_bef_26 + grade_NEG_bef_25
     grades_NEG_bef_ATT = map(str, grades_NEG_bef_ATT)
     grilles_pre_ATT = grilles_pre_ATT[grilles_pre_ATT['code_grade_NEG'].isin(grades_NEG_bef_ATT)]
     grilles_pre_ATT['CodeEmploiGrade_neg'] = grilles_pre_ATT['code_grade_NEG'].str.zfill(4)
@@ -157,6 +157,8 @@ def clean_grilles_pre_ATT(grilles_pre_ATT, short, table_corresp_grade_corps):
         "0036":"agent d'entretien",
         "0037":"agent d'entretien",
         "0032":"conducteur",
+        "0030":"conducteur",
+        "0029":"garagiste",
         }
     grilles_pre_ATT_w_corps['corps_pre_2006_impute_par_IPP'] = grilles_pre_ATT_w_corps[
         'CodeEmploiGrade_neg'
@@ -179,6 +181,8 @@ def clean_grilles_pre_ATT(grilles_pre_ATT, short, table_corresp_grade_corps):
         "0036":"TTH1",
         "0037":"TTH1",
         "0032":"TTH1",
+        "0030":"TTH2",
+        "0029":"TTH3",
         }
     grilles_pre_ATT_w_corps['grade_aft_2006'] = grilles_pre_ATT_w_corps[
         'CodeEmploiGrade_neg'
@@ -249,6 +253,60 @@ def get_grilles_en_effet(grade_2006, annee):
         )
     return grilles_completes_des_grades_de_2005
 
+
+def get_possible_grilles(c_cir_now, annee, grilles, table_corresp_grade_corps):
+    grilles = clean_grille(grilles, False, table_corresp_grade_corps)
+    date_effet_grille_bef = grilles[
+        (grilles['code_grade_NETNEH'] == c_cir_now) &
+        (grilles['date_effet_grille'] <= pd.datetime(annee - 1, 12, 31))
+        ].date_effet_grille.max()
+    # TODO: include changement de date d'effet
+    if annee >= 2011:
+        date_effet_grille = grilles[
+            (grilles['code_grade_NETNEH'] == c_cir_now) &
+            (grilles['date_effet_grille'] <= pd.datetime(annee, 12, 31))
+            ].date_effet_grille.max()
+        list_date_effet_grille = [date_effet_grille]
+        date_effet_grille_bef = grilles[
+            (grilles['code_grade_NETNEH'] == c_cir_now) &
+            (grilles['date_effet_grille'] < date_effet_grille)
+            ].date_effet_grille.max()
+        list_date_effet_grille.append(date_effet_grille_bef)
+        grille_c_cir_now = grilles[
+            (grilles['code_grade_NETNEH'] == c_cir_now) &
+            (grilles['date_effet_grille'].isin(list_date_effet_grille))
+            ]
+    elif annee == 2009:
+        list_date_effet_grille_bef = [date_effet_grille_bef]
+        date_effet_grille_bef_precedente = grilles[
+            (grilles['code_grade_NETNEH'] == c_cir_now) &
+            (grilles['date_effet_grille'] < date_effet_grille_bef)
+            ].date_effet_grille.max()
+        list_date_effet_grille_bef.append(date_effet_grille_bef_precedente)
+        grille_c_cir_now = grilles[
+            (grilles['code_grade_NETNEH'] == c_cir_now) &
+            (grilles['date_effet_grille'].isin(list_date_effet_grille_bef))
+            ]
+    elif annee == 2007:
+        grilles_fusionnees_en_c_cir_now = get_grilles_en_effet(c_cir_now, 2006)
+        grilles_c_cir_2006 = grilles[
+            (grilles['code_grade_NETNEH'] == c_cir_now) &
+            (grilles['date_effet_grille'] == date_effet_grille_bef)
+            ]
+        grille_c_cir_now = grilles_fusionnees_en_c_cir_now.append(grilles_c_cir_2006)
+    elif annee == 2006:
+        grille_c_cir_now = get_grilles_en_effet(c_cir_now, 2006).append(
+            get_grilles_en_effet(c_cir_now, 2005))
+    elif annee < 2006:
+        grille_c_cir_now = get_grilles_en_effet(c_cir_now, annee)
+    else:
+        grille_c_cir_now = grilles[
+            (grilles['code_grade_NETNEH'] == c_cir_now) &
+            (grilles['date_effet_grille'] == date_effet_grille_bef)
+            ]
+    return grille_c_cir_now
+
+
 def merge_careers_with_grilles(data, grilles, annee):
     """
     Pour chaque année, entre l'année de début d'observation pour l'imputation de la durée déjà passée dans le grade
@@ -270,8 +328,9 @@ def merge_careers_with_grilles(data, grilles, annee):
         donnée de carrière pour annee == annee avec chaque agent positionné sur une grille, et toutes les variables
         de cette grille
     """
-    if annee == 2011:
+    if annee >= 2011:
         data = data.query('annee == {}'.format(annee)).rename(columns = {"ib4": "ib"})
+        data = data.rename(columns = {'echelon':'echelon_CNRACL'})
         uniques_c_cir = data.c_cir.unique().tolist()
         list_c_cir_dates_obs_effet = []
         grilles = clean_grille(grilles, False, table_corresp_grade_corps)
@@ -304,6 +363,85 @@ def merge_careers_with_grilles(data, grilles, annee):
     else:
         data_with_info_grilles = data.reset_index()
     return data_with_info_grilles
+
+
+data_carrieres = pd.read_csv(os.path.join(
+        output_directory_path,
+        "select_data",
+        "corpsAT_1995.csv"
+        )).query('annee > 2001')
+
+
+def get_echelon_after_2011_from_c_cir(data_carrieres,
+        grades_2011 = ['TTH1', 'TTH2', 'TTH3', 'TTH4', 'STH1', 'STH2', 'STH3', 'STH4']
+        ):
+    grade_by_stagiaire_2011 = {
+         "STH1": "TTH1",
+         "STH2": "TTH2",
+         "STH3":"TTH3",
+         "STH4":"TTH4",
+         }
+    data = data_carrieres.query('annee > 2010').copy()
+    # L'indice brut du dernier trimestre est gardé
+    data.rename(columns = dict(ib4 = 'ib'), inplace = True)
+    if grades_2011 is not None:
+        data = data.query('c_cir in @grades_2011')
+        data = data.replace(dict(c_cir = grade_by_stagiaire_2011))
+
+    cas_uniques_with_echelon = list()
+    for annee in range(2011, 2015 + 1):
+        empty_count = 0
+        weight_by_cas_unique = (data
+            .query('annee == @annee')
+            .groupby(['c_cir', 'ib'])['ident'].count()
+            )
+        cas_uniques = (data
+            .query('annee == @annee')[['c_cir', 'ib']]
+            .drop_duplicates()
+            .set_index(['c_cir', 'ib'])
+            )
+        for (c_cir, ib), row in cas_uniques.iterrows():
+
+            grille_possible = (get_possible_grilles(c_cir, annee, grilles, table_corresp_grade_corps)
+                .query('ib == {}'.format(ib))
+                )
+            if grille_possible.empty:
+                echelon = -1
+                min_mois = -1
+                max_mois = -1
+                empty_count += weight_by_cas_unique[c_cir, ib]
+
+            else:
+                if len(grille_possible) > 1:
+                    date_effet_max = grille_possible.date_effet_grille.unique().max()
+                    grille_possible = grille_possible.query('date_effet_grille == @date_effet_max')
+                else:
+                    grille_possible = grille_possible
+                assert len(grille_possible) == 1
+
+                echelon = grille_possible.echelon.values.astype(str)[0]
+                min_mois = grille_possible.min_mois.values.astype(int)[0]
+                max_mois = grille_possible.max_mois.values.astype(int)[0]
+            cas_uniques_with_echelon.append([annee, c_cir, ib, echelon, min_mois, max_mois])
+
+        print("annee {}, empty_count = {} for {} cas_unique ({} %)".format(
+            annee,
+            empty_count,
+            len(data.query('annee == @annee').ident.unique()),
+            100 * empty_count/len(data.query('annee == @annee').ident.unique())
+            ))
+    #
+    cas_uniques = pd.DataFrame(
+        cas_uniques_with_echelon,
+        columns = ['annee', 'c_cir', 'ib', 'echelon', 'min_mois', 'max_mois'],
+        )
+    cas_uniques['echelon'] = cas_uniques['echelon'].replace({'ES':55555}).astype(int)
+    assert not cas_uniques[['c_cir', 'ib', 'annee']].duplicated().any()
+    data = data.merge(cas_uniques, on = ['c_cir', 'ib', 'annee'])
+    return data[
+        ['ident',  'annee', 'c_cir', 'statut', 'ib', 'echelon4', 'etat4', 'generation',
+            'sexe', 'an_aff', 'echelon', 'min_mois', 'max_mois']
+        ].rename(columns = dict(echelon4 = 'echelon_CNRACL', etat4 = 'etat'))
 
 
 def clean_careers(data, corps, ib_manquant_a_exclure, generation_min, grilles):
@@ -366,10 +504,22 @@ def clean_careers(data, corps, ib_manquant_a_exclure, generation_min, grilles):
         ident_to_del = data.query('ib == -1').ident.unique()
         data = data[~data['ident'].isin(ident_to_del)]
         tracking.append([r'IB manquant entre 2003 et 2015', len(data.ident.unique())])
-    data.head()
     idents_to_keep_on_grilles_in_2011 = merge_careers_with_grilles(data, grilles, 2011).ident.unique()
     data = data[data['ident'].isin(idents_to_keep_on_grilles_in_2011)]
     tracking.append([r'Rattaché à une grille en 2011', len(data.ident.unique())])
+    # data pas de retour
+    data_c_cir_2011 = data.query('annee == 2011')[['ident', 'c_cir']].rename(
+        columns = {'c_cir':'c_cir_2011'})
+    data = data.merge(data_c_cir_2011, on = 'ident', how = 'outer')
+    data_c_cir_diff_2011_aft_2011 = data.query('(annee > 2010) & (c_cir != c_cir_2011)')[['ident','annee']].rename(
+        columns = {'annee':'annee_c_cir_diff_c_cir_2011'})
+    data_merge = data.merge(data_c_cir_diff_2011_aft_2011, on ='ident', how ='outer')
+    data_merge['annee_c_cir_diff_c_cir_2011'] = data_merge['annee_c_cir_diff_c_cir_2011'].fillna(5000)
+    ident_to_del = data_merge.query(
+        '(annee > 2010) & (annee > annee_c_cir_diff_c_cir_2011) & (c_cir == c_cir_2011)').ident.unique()
+    print ident_to_del
+    data = data[~data['ident'].isin(ident_to_del)]
+    tracking.append([r'Sans sortie/retour du grade de 2011', len(data.ident.unique())])
     tracking = pd.DataFrame(tracking)
     print tracking.to_latex()
     return data
