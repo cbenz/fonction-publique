@@ -34,7 +34,13 @@ config.ini
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
+
+
+#
 fonction_publique/assets/grilles_fonction_publique/grilles.h5
 fonction_publique/assets/grilles_fonction_publique/grilles_old.h5
 fonction_publique/assets/grilles_fonction_publique/Grilles_avec_DateEffet_fin.csv
 fonction_publique/tags
+
+#
+fonction_publique/ecrits/**/*.pdf
