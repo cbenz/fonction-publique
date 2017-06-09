@@ -43,4 +43,4 @@ fonction_publique/assets/grilles_fonction_publique/Grilles_avec_DateEffet_fin.cs
 fonction_publique/tags
 
 #
-fonction_publique/ecrits/modelisation_carriere/*/*.pdf
+fonction_publique/ecrits/**/*.pdf
