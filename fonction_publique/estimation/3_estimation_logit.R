@@ -21,10 +21,10 @@ data_est$I_both = ifelse(data_est$time >= data_est$D_choice & data_est$echelon >
 data_est$c_cir = factor(data_est$c_cir)
 
 
-#### I. Estimation ####
+#### I. Binary model ####
 
 
-## I.1 Binary model ####
+## I.1 Estimation ####
 
 tr.log1 <- glm(exit_status2 ~ 1,
                data=data_est ,x=T,family=binomial("logit"))
@@ -42,7 +42,23 @@ tr.log5 <- glm(exit_status2 ~ sexe + factor(generation_group) + factor(c_cir_201
                  I_echelon + I_grade+ I_echelon:I_grade,
                data=data_est ,x=T,family=binomial("logit"))
 
+## I.2 Simulation ####
 
+## I.2.1 2015 ##
+
+data_learning1 = data_est
+
+
+
+
+
+
+# Ages observés
+aliq_obs  <- as.numeric(tapply(base2$t_liquid*base2$age, base2$rang, FUN = max) ) 
+pliq_obs  <- as.numeric(tapply(base2$t_liquid*base2$pension, base2$rang, FUN = max) )  
+TRliq_obs <- as.numeric(tapply(base2$t_liquid*base2$TR, base2$rang, FUN = max) ) 
+# Ages simulés
+base2$yhat1<-predict(tr.log6,base2,type = "response")    # Calcul des yhat 
 
 
 #### Estimations 
