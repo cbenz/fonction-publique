@@ -6,8 +6,16 @@
 ################ Estimation by logit ################
 
 
+
+source(paste0(wd, "0_initialisation.R"))
+datasets = load_and_clean(data_path, "data_ATT_2002_2015.csv")
+data_id = datasets[[1]]
+data_max = datasets[[2]]
+data_min = datasets[[3]]
+
+
 data_est = data_min
-data_est = data_est[which(data_est$left_censored == F & data_est$annee >= 2013 & data_est$annee <= 2014),]
+data_est = data_est[which(data_est$left_censored == F & data_est$annee >= 2011 & data_est$annee <= 2014),]
 
 
 tirage<-function(var)
@@ -62,7 +70,7 @@ tr.log6 <- glm(exit_status2 ~ sexe + factor(generation_group) + factor(c_cir_201
 ## I.2 Simulation ####
 
 ## I.2.1 2015 ##
-data_learning = data_est[which(data_est$annee == 2014),]
+data_learning = data_est[which(data_est$annee < 2014),]
 data_test     = data_est[which(data_est$annee == 2014),]
 
 model <- glm(exit_status2 ~ sexe + factor(generation_group) + factor(c_cir_2011) + an_aff + echelon +
@@ -97,7 +105,7 @@ data_test     = data_est[which(is.element(data_est$ident, list_test)),]
 model <- glm(exit_status2 ~ sexe + factor(generation_group) + factor(c_cir_2011) + time + an_aff + echelon +
                I_echelon + I_grade+ I_echelon:I_grade,,
              data=data_learning ,x=T, family=binomial("logit"))
-
+exp(coef(model))
 
 ### Predicted exit date
 data_test$yhat1    <- predict(model, data_test, type = "response") 
@@ -118,6 +126,10 @@ predicted_exit = tapply(data_test$annee*data_test$exit_hat,     data_test$ident,
 table(observed_exit)
 table(predicted_exit)
 
+
+# ROC in 2011
+data_check = data_test[which(data_test$annee == 2011),]
+table(data_check$exit_hat, data_check$exit_status2)
 
 # Observed/predicted survival between 2011 and 2015
 annee <- seq(2011, 2015, 1)

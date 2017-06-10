@@ -6,11 +6,24 @@
 ######## Descriptive statistics ########
 
 
+source(paste0(wd, "0_initialisation.R"))
+datasets = load_and_clean(data_path, "data_ATT_2002_2015_2.csv")
+data_id = datasets[[1]]
+data_max = datasets[[2]]
+data_min = datasets[[3]]
+
+
+datasets = load_and_clean(data_path, "data_ATT_2002_2015.csv")
+data_id_old = datasets[[1]]
+data_max_old = datasets[[2]]
+data_min_old = datasets[[3]]
 
 
 ######## I. Descriptive statistics ########
 
 ## I.1 Sample description ####
+
+
 
 
 ## I.2 Censoring ####
@@ -107,8 +120,8 @@ hazard_by_distance = function(data, save = F, type = "choix", colors = c("blue",
     hazards[3,v]  = length(which(data$dist_both  == values[v] & data$exit_status2 == 1))/length(which(data$dist_both  == values[v]))
   }
   
-  
-  plot(values,rep(NA,length(values)),ylim=c(0,1),ylab="Hazard rate",xlab="Distance to threshold")
+  limy = c(0, max(hazards, na.rm = T))
+  plot(values,rep(NA,length(values)),ylim=limy,ylab="Hazard rate",xlab="Distance to threshold")
   lines(values, hazards[1,], col = colors[1], lwd = 3)
   lines(values, hazards[2,], col =  colors[2], lwd = 3)
   lines(values, hazards[3,], col =  colors[3], lwd = 3)
@@ -118,11 +131,11 @@ hazard_by_distance = function(data, save = F, type = "choix", colors = c("blue",
 }  
 
 subdata = data_min
-hazard_by_distance(data = subdata[which(subdata$left_censored == F & subdata$echelon != -1),])
-hazard_by_distance(data = subdata[which(subdata$left_censored == F & subdata$echelon != -1 & subdata$c_cir_2011 == "TTH1"),])
-hazard_by_distance(data = subdata[which(subdata$left_censored == F & subdata$echelon != -1 & subdata$c_cir_2011 == "TTH2"),])
-hazard_by_distance(data = subdata[which(subdata$left_censored == F & subdata$echelon != -1 & subdata$c_cir_2011 == "TTH3"),])
-
+subdata = subdata[which(subdata$left_censored == F),]
+hazard_by_distance(data = subdata)
+hazard_by_distance(data = subdata[which(subdata$c_cir_2011 == "TTH1"),])
+hazard_by_distance(data = subdata[which(subdata$c_cir_2011 == "TTH2"),])
+hazard_by_distance(data = subdata[which(subdata$c_cir_2011 == "TTH3"),], title = " TTH3")
 
 # Variantes durée pour tth1 et tth2
 subdata2 = subdata

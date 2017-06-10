@@ -115,48 +115,6 @@ data_id$time_max2 = data_id$max_duration_in_grade2 + data_id$duration_in_grade_f
 
 
 
-distrib_an_aff = function(data)
-{
-years = seq(2001, 2011, 1)
-freq = numeric(length(years))
-for (y in 1:length(years)){freq[y] = length(which(data$an_aff == years[y]))/ length(data$an_aff)}  
-return(freq)
-}  
-  
-x = seq(2001, 2011, 1)
-tth1 = distrib_an_aff(data_id[which(data_id$c_cir_2011 == "TTH1"),])
-tth2 = distrib_an_aff(data_id[which(data_id$c_cir_2011 == "TTH2"),])
-tth3 = distrib_an_aff(data_id[which(data_id$c_cir_2011 == "TTH3"),])
-tth4 = distrib_an_aff(data_id[which(data_id$c_cir_2011 == "TTH4"),])
-layout(matrix(c(1,2,3,4), nrow=2, ncol=2, byrow=TRUE), heights=c(3,3))
-par(mar=c(3,4,2,0.2))
-barplot  (tth1,ylab="Part des effectifs du grade",xlab="Année d'affiliation", main = "TTH1",  
-          names.arg=years, col = "darkcyan")
-barplot  (tth2,ylab="Part des effectifs du grade",xlab="Année d'affiliation", main = "TTH2",  
-          names.arg=years, col = "darkcyan")
-barplot  (tth3,ylab="Part des effectifs du grade",xlab="Année d'affiliation", main = "TTH3",  
-          names.arg=years, col = "darkcyan")
-barplot  (tth4,ylab="Part des effectifs du grade",xlab="Année d'affiliation", main = "TTH4",  
-          names.arg=years, col = "darkcyan")
-
-
-  lines(x,exit_rate_mro[a,]         ,col=n_col[1],lwd=3)
-  lines(x,exit_rate_mro_ci_sup[a,]  ,col=n_col[1],lwd=2,lty=2)
-  lines(x,exit_rate_mro_ci_inf[a,]  ,col=n_col[1],lwd=2,lty=2)
-  lines(x,exit_rate_nomro[a,]       ,col=n_col[2],lwd=3)
-  lines(x,exit_rate_nomro_ci_sup[a,],col=n_col[2],lwd=2,lty=2)
-  lines(x,exit_rate_nomro_ci_inf[a,],col=n_col[2],lwd=2,lty=2)
-  abline(v=2003, lwd=2)
-  abline(v=2010, lwd=2)
-}
-
-
-
-
-filename = paste0(data_path,"clean_data_finalisation/data_ATT_2002_2015.csv")
-
-
-
 
 table(data_id$right_censoring[which(data_id$grade_de_2011 == "TTH1")], data_id$max_duration_grade2[which(data_id$grade_de_2011 == "TTH1")])
 

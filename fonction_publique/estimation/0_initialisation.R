@@ -7,71 +7,67 @@
 # Tidy data for estimation
 
 
-
-
-## Packages ####
-
-#install.packages("OIsurv");install.packages("rms");install.packages("emuR");install.packages("RColorBrewer");install.packages("RcmdrPlugin");install.packages("flexsurv")
-library(OIsurv)
-library(rms)
-library(emuR)
-library(RColorBrewer)
-library(RcmdrPlugin.survival)
-library(flexsurv)
-
-
-# Chargement de la base
-#filename = paste0(data_path,"clean_data_finalisation/data_ATT_2002_2015.csv")
-filename = paste0(data_path,"clean_data_finalisation/data_ATT_2002_2015_2.csv")
-data_long = read.csv(filename)
-
-
-## Variable creation ####
-
-# Format bolean                     
-to_bolean = c("indicat_ch_grade", "ambiguite", "right_censored", "left_censored", "exit_status")
-data_long[, to_bolean] <- sapply(data_long[, to_bolean], as.logical)
-
-# Corrections (to move to .py)
-data_long$echelon[which(data_long$echelon == 55555)] = 12
-
-# Exit_status
-data_long$annee_exit = ave(data_long$annee, data_long$ident, FUN = max) 
-data_long$exit_status2 = ifelse(data_long$annee == data_long$annee_exit,1, 0)
-data_long$exit_status2[data_long$right_censored] = 0
-
-# Variables creation
-data_long$observed  = ifelse(data_long$right_censored == 1, 0, 1) 
-data_long$echelon_2011 = ave(data_long$echelon*(data_long$annee == 2011), data_long$ident, FUN = max)
-data_long$time_spent_in_grade_max  = data_long$annee - data_long$annee_min_entree_dans_grade + 1
-data_long$time_spent_in_grade_min  = data_long$annee - data_long$annee_max_entree_dans_grade + 1
-
-## Institutional parameters (question: default value?)
-# Grade duration
-data_long$D_exam = 20
-data_long$D_exam[which(data_long$c_cir_2011 == "TTH1")] = 3
-data_long$D_choice = 20
-data_long$D_choice[which(data_long$c_cir_2011 == "TTH1")] = 10
-data_long$D_choice[which(data_long$c_cir_2011 == "TTH2")] = 6
-data_long$D_choice[which(data_long$c_cir_2011 == "TTH3")] = 5
-
-# Echelon (default = ?)
-data_long$E_exam = 12
-data_long$E_exam[which(data_long$c_cir_2011 == "TTH1")] = 4
-data_long$E_choice = 12
-data_long$E_choice[which(data_long$c_cir_2011 == "TTH1")] = 7
-data_long$E_choice[which(data_long$c_cir_2011 == "TTH2")] = 5
-data_long$E_choice[which(data_long$c_cir_2011 == "TTH3")] = 6
-
-
-## Data for estimations ####
-
-# One line per year of observation (min and max)
-data_min = data_long[which(data_long$annee >= data_long$annee_min_entree_dans_grade),]
-data_min$time = data_min$time_spent_in_grade_max 
-data_max = data_long[which(data_long$annee >= data_long$annee_max_entree_dans_grade),]
-data_max$time = data_max$time_spent_in_grade_min
-
-# One line per ident data
-data_id = data_long[!duplicated(data_long$ident),]
-
+load_and_clean = function(data_path, dataname)
+{
+  # Chargement de la base
+  # dataname = "data_ATT_2002_2015.csv"
+  filename = paste0(data_path, dataname)
+  data_long = read.csv(filename)
+  
+  
+  ## Variable creation ####
+  
+  # Format bolean                     
+  to_bolean = c("indicat_ch_grade", "ambiguite", "right_censored", "left_censored", "exit_status")
+  data_long[, to_bolean] <- sapply(data_long[, to_bolean], as.logical)
+  
+  # Corrections (to move to .py)
+  data_long$echelon[which(data_long$echelon == 55555)] = 12
+  
+  # Exit_status
+  data_long$annee_exit = ave(data_long$annee, data_long$ident, FUN = max) 
+  data_long$exit_status2 = ifelse(data_long$annee == data_long$annee_exit,1, 0)
+  data_long$exit_status2[data_long$right_censored] = 0
+  
+  # Variables creation
+  data_long$observed  = ifelse(data_long$right_censored == 1, 0, 1) 
+  data_long$echelon_2011 = ave(data_long$echelon*(data_long$annee == 2011), data_long$ident, FUN = max)
+  data_long$time_spent_in_grade_max  = data_long$annee - data_long$annee_min_entree_dans_grade + 1
+  data_long$time_spent_in_grade_min  = data_long$annee - data_long$annee_max_entree_dans_grade + 1
+  
+  ## Institutional parameters (question: default value?)
+  # Grade duration
+  data_long$D_exam = 20
+  data_long$D_exam[which(data_long$c_cir_2011 == "TTH1")] = 3
+  data_long$D_choice = 20
+  data_long$D_choice[which(data_long$c_cir_2011 == "TTH1")] = 10
+  data_long$D_choice[which(data_long$c_cir_2011 == "TTH2")] = 6
+  data_long$D_choice[which(data_long$c_cir_2011 == "TTH3")] = 5
+  
+  # Echelon (default = ?)
+  data_long$E_exam = 12
+  data_long$E_exam[which(data_long$c_cir_2011 == "TTH1")] = 4
+  data_long$E_choice = 12
+  data_long$E_choice[which(data_long$c_cir_2011 == "TTH1")] = 7
+  data_long$E_choice[which(data_long$c_cir_2011 == "TTH2")] = 5
+  data_long$E_choice[which(data_long$c_cir_2011 == "TTH3")] = 6
+  
+  
+  ## Data for estimations ####
+  
+  # One line per year of observation (min and max)
+  data_min = data_long[which(data_long$annee >= data_long$annee_min_entree_dans_grade),]
+  data_min$time = data_min$time_spent_in_grade_max 
+  data_max = data_long[which(data_long$annee >= data_long$annee_max_entree_dans_grade),]
+  data_max$time = data_max$time_spent_in_grade_min
+  
+  ## Corrections (to move to .py)
+  pb_ech = unique(data_max$ident[which(data_max$echelon == -1 & data_max$annee > 2010)])
+  data_max = data_max[which(!is.element(data_max$ident, pb_ech)),]
+  data_min = data_min[which(!is.element(data_min$ident, pb_ech)),]
+  
+  # One line per ident data
+  data_id = data_long[!duplicated(data_long$ident),]
+  
+  return(list(data_id, data_max, data_min))
+}  

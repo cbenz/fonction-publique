@@ -57,7 +57,7 @@ to_bolean = c("indicat_ch_grade", "ambiguite", "right_censored", "left_censored"
 data_long[, to_bolean] <- sapply(data_long[, to_bolean], as.logical)
                      
 # Variables creation
-data_long$observed  = ifelse(data_long$right_censored == 1, 0, 1) 
+data_long$observed  = ifelse(data_long$right_censored == 1, 0, 1)
 data_long$echelon_2011 = ave(data_long$echelon*(data_long$annee == 2011), data_long$ident, FUN = max)
 data_long$time_spent_in_grade_max  = data_long$annee - data_long$annee_min_entree_dans_grade + 1
 data_long$time_spent_in_grade_min  = data_long$annee - data_long$annee_max_entree_dans_grade + 1
@@ -84,20 +84,14 @@ data_long$E_choice[which(data_long$c_cir_2011 == "TTH3")] = 6
 ## 0.3 data for estimations ####
 
 # One line per year of observation (min and max)
-
-# One line per year of observation (min and max)
 data_min = data_long[which(data_long$annee >= data_long$annee_min_entree_dans_grade),]
 data_min$time = data_min$time_spent_in_grade_max 
 data_max = data_long[which(data_long$annee >= data_long$annee_max_entree_dans_grade),]
 data_max$time = data_max$time_spent_in_grade_min
 
-## Corrections (to move to .py)
-pb_ech = unique(data_max$ident[which(data_max$echelon == -1)])
-data_max = data_max[-which(is.element(data_max$ident, pb_ech)),]
-data_min = data_min[-which(is.element(data_min$ident, pb_ech)),]
-
 # One line per ident data
 data_id = data_long[!duplicated(data_long$ident),]
+
 
 
 ######## I. Descriptive statistics ########
@@ -122,10 +116,14 @@ mean_right_by_ech <- aggregate(data_id$right, by = list(data_id$echelon_2011), F
 
 ## I.3 Survival and hazard ####
 
-### I.3.1 Survival by grade ####
 
-hazard_by_duree = function(data, save = F, sample)
+
+### I.2.1 Survival by grade ####
+
+
+hazard_by_duree = function(data, save = F, sample, time = 'time_spent_in_grade_max')
 {
+  data$time = data[, time]
   grade = seq(1, max(data$time))
   hazard = numeric(length(grade))
   for (g in 1:length(grade))
@@ -136,20 +134,20 @@ hazard_by_duree = function(data, save = F, sample)
   title(paste0("hazard rate by duration in grade ", sample))
 }  
 
-hazard_by_duree(data = data_min[which(data_min$c_cir_2011 == "TTH1" & data_min$left_censored == F),],  sample = "TTH1")
-hazard_by_duree(data = data_max[which(data_max$c_cir_2011 == "TTH1" & data_max$left_censored == F),],  sample = "TTH1")
+hazard_by_duree(data = data_long[which(data_long$c_cir_2011 == "TTH1" & data_long$left_censored == F),],  sample = "TTH1", time = "time_spent_in_grade_min")
+hazard_by_duree(data = data_long[which(data_long$c_cir_2011 == "TTH1" & data_long$left_censored == F),],  sample = "TTH1", time = "time_spent_in_grade_max")
 
-hazard_by_duree(data = data_min[which(data_min$c_cir_2011 == "TTH2" & data_min$left_censored == F),],  sample = "TTH2")
-hazard_by_duree(data = data_max[which(data_max$c_cir_2011 == "TTH2" & data_max$left_censored == F),],  sample = "TTH2")
+hazard_by_duree(data = data_long[which(data_long$c_cir_2011 == "TTH2" & data_long$left_censored == F),],  sample = "TTH2", time = "time_spent_in_grade_min")
+hazard_by_duree(data = data_long[which(data_long$c_cir_2011 == "TTH2" & data_long$left_censored == F),],  sample = "TTH2", time = "time_spent_in_grade_max")
 
-hazard_by_duree(data = data_min[which(data_min$c_cir_2011 == "TTH3" & data_min$left_censored == F),],  sample = "TTH3")
-hazard_by_duree(data = data_max[which(data_max$c_cir_2011 == "TTH3" & data_max$left_censored == F),],  sample = "TTH3")
+hazard_by_duree(data = data_long[which(data_long$c_cir_2011 == "TTH3" & data_long$left_censored == F),],  sample = "TTH3", time = "time_spent_in_grade_min")
+hazard_by_duree(data = data_long[which(data_long$c_cir_2011 == "TTH3" & data_long$left_censored == F),],  sample = "TTH3", time = "time_spent_in_grade_max")
 
-hazard_by_duree(data = data_min[which(data_min$c_cir_2011 == "TTH4" & data_min$left_censored == F),],  sample = "TTH4")
-hazard_by_duree(data = data_max[which(data_max$c_cir_2011 == "TTH4" & data_max$left_censored == F),],  sample = "TTH4")
+hazard_by_duree(data = data_long[which(data_long$c_cir_2011 == "TTH4" & data_long$left_censored == F),],  sample = "TTH4", time = "time_spent_in_grade_min")
+hazard_by_duree(data = data_long[which(data_long$c_cir_2011 == "TTH4" & data_long$left_censored == F),],  sample = "TTH4", time = "time_spent_in_grade_max")
 
 
-### I.3.2 Survival by echelon ####
+### I.2.2 Survival by echelon ####
 
 hazard_by_ech = function(data, save = F, sample)
 {
@@ -163,72 +161,14 @@ plot(ech, hazard)
 title(paste0("Hazard rate by echelon ", sample))
 }  
 
-hazard_by_ech(data = data_max,  sample = "All")
-hazard_by_ech(data = data_max[which(data_max$c_cir_2011 == "TTH1"& data_max$left_censored == F),],  sample = "TTH1")
-hazard_by_ech(data = data_max[which(data_max$c_cir_2011 == "TTH2"& data_max$left_censored == F),],  sample = "TTH2")
-hazard_by_ech(data = data_max[which(data_max$c_cir_2011 == "TTH3"& data_max$left_censored == F),],  sample = "TTH3")
-hazard_by_ech(data = data_max[which(data_max$c_cir_2011 == "TTH4"& data_max$left_censored == F),],  sample = "TTH4")
-
-hazard_by_ech(data = data_min,  sample = "All")
-hazard_by_ech(data = data_min[which(data_min$c_cir_2011 == "TTH1"& data_min$left_censored == F),],  sample = "TTH1")
-hazard_by_ech(data = data_min[which(data_min$c_cir_2011 == "TTH2"& data_min$left_censored == F),],  sample = "TTH2")
-hazard_by_ech(data = data_min[which(data_min$c_cir_2011 == "TTH3"& data_min$left_censored == F),],  sample = "TTH3")
-hazard_by_ech(data = data_min[which(data_min$c_cir_2011 == "TTH4"& data_min$left_censored == F),],  sample = "TTH4")
+hazard_by_ech(data = data_long,  sample = "All")
+hazard_by_ech(data = data_long[which(data_long$c_cir_2011 == "TTH1"& data_long$left_censored == F),],  sample = "TTH1")
+hazard_by_ech(data = data_long[which(data_long$c_cir_2011 == "TTH2"& data_long$left_censored == F),],  sample = "TTH2")
+hazard_by_ech(data = data_long[which(data_long$c_cir_2011 == "TTH3"& data_long$left_censored == F),],  sample = "TTH3")
+hazard_by_ech(data = data_long[which(data_long$c_cir_2011 == "TTH4"& data_long$left_censored == F),],  sample = "TTH4")
 
 
-## I.3.3 Distance to threshold ####
-
-
-hazard_by_distance = function(data, save = F, type = "choix", colors = c("blue", "red", "darkgreen"), title = "")
-{
-  if (type == "choix"){data$cond_grade = data$D_choice ; data$cond_ech = data$E_choice}
-  if (type == "exam") {data$cond_grade = data$D_exam ; data$cond_ech = data$E_exam}
-  
-  data$dist_grade =  data$time  - data$cond_grade
-  data$dist_echelon = data$echelon - data$cond_ech
-  data$dist_both = pmin(data$dist_grade, data$dist_echelon)
-
-  values = (min(min(data$dist_grade), min(data$dist_echelon), min(data$dist_both)):
-              min(max(data$dist_grade), max(data$dist_echelon), max(data$dist_both)))
-  hazards = matrix(ncol = length(values), nrow = 3)
-  
-  for (v in 1:length(values))
-  {
-    hazards[1,v]  = length(which(data$dist_grade  == values[v] & data$exit_status2 == 1))/length(which(data$dist_grade  == values[v]))
-    hazards[2,v]  = length(which(data$dist_echelon  == values[v] & data$exit_status2 == 1))/length(which(data$dist_echelon  == values[v]))
-    hazards[3,v]  = length(which(data$dist_both  == values[v] & data$exit_status2 == 1))/length(which(data$dist_both  == values[v]))
-  }
-  
-
-  plot(values,rep(NA,length(values)),ylim=c(0,1),ylab="Hazard rate",xlab="Distance to threshold")
-  lines(values, hazards[1,], col = colors[1], lwd = 3)
-  lines(values, hazards[2,], col =  colors[2], lwd = 3)
-  lines(values, hazards[3,], col =  colors[3], lwd = 3)
-  legend("topleft", legend = (c("Grade", "Echelon", "Both")), col = colors, lty = 1, lwd = 3)
-  title(paste0("Hazard rate distance to thresholds", title))
-  
-}  
-  
-subdata = data_min
-hazard_by_distance(data = subdata[which(subdata$left_censored == F & subdata$echelon != -1),])
-hazard_by_distance(data = subdata[which(subdata$left_censored == F & subdata$echelon != -1 & subdata$c_cir_2011 == "TTH1"),])
-hazard_by_distance(data = subdata[which(subdata$left_censored == F & subdata$echelon != -1 & subdata$c_cir_2011 == "TTH2"),])
-hazard_by_distance(data = subdata[which(subdata$left_censored == F & subdata$echelon != -1 & subdata$c_cir_2011 == "TTH3"),])
-
-
-# Variantes durée pour tth1 et tth2
-subdata2 = subdata
-obs_grade = which(subdata2$c_cir_2011 == "TTH1" | subdata2$c_cir_2011 == "TTH2")
-subdata2$time[obs_grade] = subdata2$annee[obs_grade]  - subdata2$an_aff[obs_grade] +1
-hazard_by_distance(data = subdata2[which(subdata2$left_censored == F & subdata2$echelon != -1 & subdata2$c_cir_2011 == "TTH1"),])
-
-
-hazard_by_distance(data = subdata[which(subdata$left_censored == F & subdata$echelon != -1 & subdata$c_cir_2011 == "TTH2"),], title = " TTH2\n (duree dans le grade)")
-hazard_by_distance(data = subdata2[which(subdata2$left_censored == F & subdata2$echelon != -1 & subdata2$c_cir_2011 == "TTH2"),], title = " TTH2\n (duree dans le corps)")
-
-
-
-## I.4 KM estimation ####
+## I.2.3 KM estimation ####
 
 subdata = data_id[which(data_id$left_censored == F),]
 subdata$time = subdata$duree_min
@@ -286,7 +226,6 @@ plot_comp_fit_param = function(data, save = F, grade = "all")
   legend("bottomleft", legend = c("KM", "Exp", "Loglog", "Gen. gamma", "Weibull", "Gompertz"), col = c("black",colors), lty = 1)
 }  
 
-plot_comp_fit_param(data_id)
 plot_comp_fit_param(data_id, grade = "TTH1")
 plot_comp_fit_param(data_id, grade = "TTH2")
 plot_comp_fit_param(data_id, grade = "TTH3")
@@ -310,8 +249,8 @@ detach(data_TTH3)
 ## II.3.1  0/1 Treatment ####
 
 data = data_max[which(data_max$left_censored == F & data_max$c_cir_2011 == "TTH3"),]
-data = data_max[which(data_max$left_censored == F & data_max$echelon != - 1),]
-data = data_min[which(data_min$left_censored == F),]
+data = data_max[which(data_max$left_censored == F),]
+data = data_min[which(data_max$left_censored == F),]
 
 # Start/stop
 data$start = data$time - 1
@@ -320,8 +259,6 @@ data$stop = data$time
 # Distance variables
 data$I_echelon = ifelse(data$echelon >= data$E_choice, 1, 0) 
 data$I_grade = ifelse(data$time >= data$D_choice, 1, 0) 
-data$dist_an_aff = data$annee - data$an_aff +1 
-data$I_grade[which(data$c_cir_2011 == "TTH2")] = ifelse(data$dist_an_aff[which(data$c_cir_2011 == "TTH2")] >= data$D_choice[which(data$c_cir_2011 == "TTH2")], 1, 0) 
 data$I_both = ifelse(data$time >= data$D_choice & data$echelon >= data$E_choice, 1, 0) 
 
 data$c_cir = factor(data$c_cir)
@@ -335,7 +272,12 @@ coxph.fit3 = coxph(Surv(start, stop, exit_status2) ~  sexe + factor(generation_g
 coxph.fit4 = coxph(Surv(start, stop, exit_status2) ~  sexe + factor(generation_group) + c_cir_2011 +  I_grade*I_echelon,
                    data=data)
 
-
+coxph.fit1 = coxph(Surv(start, stop, exit_status2) ~  sexe + factor(generation_group) +  I_echelon,
+                   data=data)
+coxph.fit2 = coxph(Surv(start, stop, exit_status2) ~  sexe + factor(generation_group) +  I_grade,
+                   data=data)
+coxph.fit3 = coxph(Surv(start, stop, exit_status2) ~  sexe + factor(generation_group) +  I_both,
+                   data=data)
 
 ##### II.3.2  Distance to threshold dummies (Chetty) #######
 
@@ -366,124 +308,18 @@ for(d in unique(data$dist_grade)) {
   else if  (d>0){data[paste("dist_grade_p",d,sep="")] <- ifelse(data$dist_grade==d,1,0)}
 }
 
-
-
-
-list_id = data$ident
-list_learning = sample(list_id, ceiling(length(list_id)/2))
-list_test = setdiff(list_id, list_learning)
-data_learning = data[which(is.element(data$ident, list_learning)),]
-data_test     = data[which(is.element(data$ident, list_test)),]
-
-
 coxph.fit1 = coxph(Surv(start, stop, exit_status2) ~  sexe + generation_group + c_cir_2011 +
                      dist_echelon_m3 + dist_echelon_m2 + dist_echelon_m1 + dist_echelon_0 + 
                      dist_echelon_p1 + dist_echelon_p2 + dist_echelon_p3 + dist_echelon_p4,
-                   data=data_learning)
+                   data=data)
 
 coxph.fit2 = coxph(Surv(start, stop, exit_status2) ~  sexe + generation_group +
                      dist_grade_m3 + dist_grade_m2 + dist_grade_m1 + dist_grade_0 + 
                      dist_grade_p1 + dist_grade_p2 + dist_grade_p3 + dist_grade_p4,
-                   data=data_learning)
-
-
-data_test$pred = predict(coxph.fit2, newdata=data_test, type = "lp")
-
-
-
-## II.4  Parametric estimation with time-dependent variables ####
-
-
-
-
-data = data_min[which(data_min$left_censored == F),]
-data_id = data_id[which(data_id$left_censored == F),]
-data_id$time = data_id$duree_max
-
-
-
-
-srFit_exp <- flexsurvreg(Surv(start, stop, exit_status2) ~  sexe + generation_group +
-                           dist_grade_m3 + dist_grade_m2 + dist_grade_m1 + dist_grade_0 + 
-                           dist_grade_p1 + dist_grade_p2 + dist_grade_p3 + dist_grade_p4,
-                         data=data_learning, dist = "exponential")
-
-
+                   data=data)
 
 
 
 ######## III. Simulations ########
-
-
-# Start/stop
-data$start = data$time - 1
-data$stop = data$time 
-
-# Distance variables
-data$I_echelon = ifelse(data$echelon >= data$E_choice, 1, 0) 
-data$I_grade = ifelse(data$time >= data$D_choice, 1, 0) 
-data$dist_an_aff = data$annee - data$an_aff +1 
-data$I_grade[which(data$c_cir_2011 == "TTH2")] = ifelse(data$dist_an_aff[which(data$c_cir_2011 == "TTH2")] >= data$D_choice[which(data$c_cir_2011 == "TTH2")], 1, 0) 
-data$I_both = ifelse(data$time >= data$D_choice & data$echelon >= data$E_choice, 1, 0) 
-data$c_cir = factor(data$c_cir)
-
-
-list_id = data$ident
-list_learning = sample(list_id, ceiling(length(list_id)/2))
-list_test = setdiff(list_id, list_learning)
-data_learning = data[which(is.element(data$ident, list_learning)),]
-data_test     = data[which(is.element(data$ident, list_test)),]
-
-
-coxph.fit1 = coxph(Surv(start, stop, exit_status2) ~  sexe + factor(generation_group) + c_cir_2011,
-                   data=data_learning)
-coxph.fit2 = coxph(Surv(start, stop, exit_status2) ~  sexe + factor(generation_group) + c_cir_2011 +  I_echelon,
-                   data=data_learning)
-coxph.fit3 = coxph(Surv(start, stop, exit_status2) ~  sexe + factor(generation_group) + c_cir_2011 +  I_grade,
-                   data=data_learning)
-coxph.fit4 = coxph(Surv(start, stop, exit_status2) ~  sexe + factor(generation_group) + c_cir_2011 +  I_grade*I_echelon,
-                   data=data_learning)
-
-
-data_id$time = data_id$duree_min
-surv <- Surv(data_id$time, data_id$observed)
-KMfit <- survfit(surv ~ 1)
-coxfit1 = survfit(coxph.fit1)
-coxfit2 = survfit(coxph.fit2)
-coxfit3 = survfit(coxph.fit3)
-coxfit4 = survfit(coxph.fit4)
-
-
-
-# Set up for ggplot
-km <- rep("KM", length(KMfit$time))
-km_df <- data.frame(KMfit$time,KMfit$surv,km)
-names(km_df) <- c("Time","Surv","Model")
-
-cox1 <- rep("Cox1",length(coxfit1$time))
-cox_df1 <- data.frame(coxfit1$time,coxfit1$surv,cox1)
-names(cox_df1) <- c("Time","Surv","Model")
-cox2 <- rep("Cox2",length(coxfit2$time))
-cox_df2 <- data.frame(coxfit2$time,coxfit2$surv,cox2)
-names(cox_df2) <- c("Time","Surv","Model")
-cox3 <- rep("Cox3",length(coxfit3$time))
-cox_df3 <- data.frame(coxfit4$time,coxfit3$surv,cox3)
-names(cox_df3) <- c("Time","Surv","Model")
-cox4 <- rep("Cox4",length(coxfit4$time))
-cox_df4 <- data.frame(coxfit4$time,coxfit4$surv,cox4)
-names(cox_df4) <- c("Time","Surv","Model")
-
-plot_df <- rbind(km_df,cox_df1,cox_df2, cox_df3, cox_df4)
-
-p <- ggplot(plot_df, aes(x = Time, y = Surv, color = Model))
-p + geom_line() + ggtitle("Comparison of Survival Curves") 
-
-
-
-
-sim = predict(coxph.fit4, newdata=data_learning, type = "lp")
-data_learning$pred = predict(coxph.fit4, newdata=data_learning, type = "lp")
-
-
 
 
