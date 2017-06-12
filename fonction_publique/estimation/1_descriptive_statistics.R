@@ -6,22 +6,15 @@
 ######## Descriptive statistics ########
 
 
-source(paste0(wd, "0_initialisation.R"))
+source(paste0(wd, "0_work_on_data.R"))
 datasets = load_and_clean(data_path, "data_ATT_2002_2015_2.csv")
 data_id = datasets[[1]]
 data_max = datasets[[2]]
 data_min = datasets[[3]]
 
 
-datasets = load_and_clean(data_path, "data_ATT_2002_2015.csv")
-data_id_old = datasets[[1]]
-data_max_old = datasets[[2]]
-data_min_old = datasets[[3]]
 
-
-######## I. Descriptive statistics ########
-
-## I.1 Sample description ####
+## I. Sample description ####
 
 
 
@@ -41,66 +34,55 @@ mean_right_by_time <- aggregate(data_id$right, by = list(data_id$annee_min_entre
 mean_right_by_ech <- aggregate(data_id$right, by = list(data_id$echelon_2011), FUN=mean)    
 
 
-## I.3 Survival and hazard ####
 
-### I.3.1 Survival by grade ####
+## II. Graphical evidence on exit grade ####
 
-hazard_by_duree = function(data, save = F, sample)
+### II.1 Functions ####
+
+# Hazard by duration in grade
+hazard_by_duree = function(data, save = F)
 {
-  grade = seq(1, max(data$time))
-  hazard = numeric(length(grade))
+  grade = seq(1, 12)
+  hazard   = numeric(length(grade))
+  effectif = numeric(length(grade))
+  
   for (g in 1:length(grade))
   {
-    hazard[g] =   length(which(data$time ==  grade[g] & data$exit_status2 == 1))/length(which(data$time == grade[g]))
+  hazard[g]   = length(which(data$time ==  grade[g] & data$exit_status2 == 1))/length(which(data$time == grade[g]))
+  effectif[g] = length(which(data$time == grade[g]))
   }  
-  plot(grade, hazard)
-  title(paste0("hazard rate by duration in grade ", sample))
+  par(mar = c(5,5,2,5))
+  plot(grade, hazard, type ="l", lwd = 3, xlab = "Duration in grade", ylab = "Hazard rate", col = "darkcyan")
+  par(new = T)
+  plot(grade, effectif, type ="l", lty = 2, lwd = 2, , axes=F, xlab=NA, ylab=NA)
+  axis(side = 4)
+  mtext(side = 4, line = 3, 'Effectifs')
 }  
 
-hazard_by_duree(data = data_min[which(data_min$c_cir_2011 == "TTH1" & data_min$left_censored == F),],  sample = "TTH1")
-hazard_by_duree(data = data_max[which(data_max$c_cir_2011 == "TTH1" & data_max$left_censored == F),],  sample = "TTH1")
-
-hazard_by_duree(data = data_min[which(data_min$c_cir_2011 == "TTH2" & data_min$left_censored == F),],  sample = "TTH2")
-hazard_by_duree(data = data_max[which(data_max$c_cir_2011 == "TTH2" & data_max$left_censored == F),],  sample = "TTH2")
-
-hazard_by_duree(data = data_min[which(data_min$c_cir_2011 == "TTH3" & data_min$left_censored == F),],  sample = "TTH3")
-hazard_by_duree(data = data_max[which(data_max$c_cir_2011 == "TTH3" & data_max$left_censored == F),],  sample = "TTH3")
-
-hazard_by_duree(data = data_min[which(data_min$c_cir_2011 == "TTH4" & data_min$left_censored == F),],  sample = "TTH4")
-hazard_by_duree(data = data_max[which(data_max$c_cir_2011 == "TTH4" & data_max$left_censored == F),],  sample = "TTH4")
-
-
-### I.3.2 Survival by echelon ####
-
-hazard_by_ech = function(data, save = F, sample)
+# Hazard by echelon
+hazard_by_ech = function(data, save = F)
 {
   ech = 1:12
   hazard = numeric(length(ech))
+  effectif = numeric(length(ech))
   for (e in 1:length(ech))
   {
-    hazard[e] =   length(which(data$echelon == ech[e] & data$exit_status2 == 1))/length(which(data$echelon == ech[e]))
+  hazard[e] =   length(which(data$echelon == ech[e] & data$exit_status2 == 1))/length(which(data$echelon == ech[e]))
+  effectif[e] = length(which(data$echelon == ech[e]))
   }  
-  plot(ech, hazard)
-  title(paste0("Hazard rate by echelon ", sample))
+
+  par(mar = c(5,5,2,5))
+  plot(ech, hazard, type ="l", lwd = 3, xlab = "Echelon", ylab = "Hazard rate", col = "darkcyan")
+  par(new = T)
+  plot(ech, effectif, type ="l", lty = 2, lwd = 2, , axes=F, xlab=NA, ylab=NA)
+  axis(side = 4)
+  mtext(side = 4, line = 3, 'Effectifs')
 }  
 
-hazard_by_ech(data = data_max,  sample = "All")
-hazard_by_ech(data = data_max[which(data_max$c_cir_2011 == "TTH1"& data_max$left_censored == F),],  sample = "TTH1")
-hazard_by_ech(data = data_max[which(data_max$c_cir_2011 == "TTH2"& data_max$left_censored == F),],  sample = "TTH2")
-hazard_by_ech(data = data_max[which(data_max$c_cir_2011 == "TTH3"& data_max$left_censored == F),],  sample = "TTH3")
-hazard_by_ech(data = data_max[which(data_max$c_cir_2011 == "TTH4"& data_max$left_censored == F),],  sample = "TTH4")
-
-hazard_by_ech(data = data_min,  sample = "All")
-hazard_by_ech(data = data_min[which(data_min$c_cir_2011 == "TTH1"& data_min$left_censored == F),],  sample = "TTH1")
-hazard_by_ech(data = data_min[which(data_min$c_cir_2011 == "TTH2"& data_min$left_censored == F),],  sample = "TTH2")
-hazard_by_ech(data = data_min[which(data_min$c_cir_2011 == "TTH3"& data_min$left_censored == F),],  sample = "TTH3")
-hazard_by_ech(data = data_min[which(data_min$c_cir_2011 == "TTH4"& data_min$left_censored == F),],  sample = "TTH4")
 
 
-## I.3.3 Distance to threshold ####
-
-
-hazard_by_distance = function(data, save = F, type = "choix", colors = c("blue", "red", "darkgreen"), title = "")
+# Distance to thresholds
+hazard_by_distance = function(data, save = F, type = "choix", colors = c("black", "grey", "darkcyan"))
 {
   if (type == "choix"){data$cond_grade = data$D_choice ; data$cond_ech = data$E_choice}
   if (type == "exam") {data$cond_grade = data$D_exam ; data$cond_ech = data$E_exam}
@@ -122,50 +104,122 @@ hazard_by_distance = function(data, save = F, type = "choix", colors = c("blue",
   
   limy = c(0, max(hazards, na.rm = T))
   plot(values,rep(NA,length(values)),ylim=limy,ylab="Hazard rate",xlab="Distance to threshold")
-  lines(values, hazards[1,], col = colors[1], lwd = 3)
-  lines(values, hazards[2,], col =  colors[2], lwd = 3)
-  lines(values, hazards[3,], col =  colors[3], lwd = 3)
-  legend("topleft", legend = (c("Grade", "Echelon", "Both")), col = colors, lty = 1, lwd = 3)
-  title(paste0("Hazard rate distance to thresholds", title))
-  
+  lines(values, hazards[1,], col = colors[1], lwd = 3, lty = 2)
+  lines(values, hazards[2,], col =  colors[2], lwd = 3, lty = 2)
+  lines(values, hazards[3,], col =  colors[3], lwd = 4)
+  legend("bottomright", legend = c("Grade", "Echelon", "Double"),lty = c(2,2,1) , col = colors, lwd = 3)
 }  
 
+
+### II.2 Outputs ####
+
+
+### II.2.1 TTH1 ####
 subdata = data_min
-subdata = subdata[which(subdata$left_censored == F),]
+subdata = subdata[which(subdata$left_censored == F & subdata$c_cir_2011 == "TTH1"),]
+hazard_by_duree(data = subdata)
+hazard_by_ech(data = subdata)
 hazard_by_distance(data = subdata)
-hazard_by_distance(data = subdata[which(subdata$c_cir_2011 == "TTH1"),])
-hazard_by_distance(data = subdata[which(subdata$c_cir_2011 == "TTH2"),])
-hazard_by_distance(data = subdata[which(subdata$c_cir_2011 == "TTH3"),], title = " TTH3")
 
-# Variantes durée pour tth1 et tth2
+pdf(paste0(fig_path,"hazard_by_duree_TTH1.pdf"))
+hazard_by_duree(data = subdata)
+abline(v = 3)
+abline(v = 10)
+dev.off()
+
+pdf(paste0(fig_path,"hazard_by_ech_TTH1.pdf"))
+hazard_by_ech(data = subdata)
+abline(v = 4)
+abline(v = 7)
+dev.off()
+
+# Variantes durée aff
 subdata2 = subdata
-obs_grade = which(subdata2$c_cir_2011 == "TTH1" | subdata2$c_cir_2011 == "TTH2")
-subdata2$time[obs_grade] = subdata2$annee[obs_grade]  - subdata2$an_aff[obs_grade] +1
-hazard_by_distance(data = subdata2[which(subdata2$left_censored == F & subdata2$echelon != -1 & subdata2$c_cir_2011 == "TTH1"),])
+subdata2$time = subdata2$annee - subdata2$an_aff +1
+pdf(paste0(fig_path,"hazard_by_duree_TTH1_bis.pdf"))
+hazard_by_duree(data = subdata2)
+abline(v = 3)
+abline(v = 10)
+dev.off()
 
 
-hazard_by_distance(data = subdata[which(subdata$left_censored == F & subdata$echelon != -1 & subdata$c_cir_2011 == "TTH2"),], title = " TTH2\n (duree dans le grade)")
-hazard_by_distance(data = subdata2[which(subdata2$left_censored == F & subdata2$echelon != -1 & subdata2$c_cir_2011 == "TTH2"),], title = " TTH2\n (duree dans le corps)")
+### II.2.2 TTH2 ####
+
+subdata = data_min
+subdata = subdata[which(subdata$left_censored == F & subdata$c_cir_2011 == "TTH2"),]
+hazard_by_duree(data = subdata)
+hazard_by_ech(data = subdata)
+hazard_by_distance(data = subdata)
+
+pdf(paste0(fig_path,"hazard_by_duree_TTH2.pdf"))
+hazard_by_duree(data = subdata)
+abline(v = 6)
+dev.off()
+
+pdf(paste0(fig_path,"hazard_by_ech_TTH2.pdf"))
+hazard_by_ech(data = subdata)
+abline(v = 5)
+dev.off()
+
+# Variantes durée aff
+subdata2 = subdata
+subdata2$time = subdata2$annee - subdata2$an_aff +1
+pdf(paste0(fig_path,"hazard_by_duree_TTH2_bis.pdf"))
+hazard_by_duree(data = subdata2)
+abline(v = 6)
+dev.off()
+pdf(paste0(fig_path,"hazard_by_dist_TTH2_bis.pdf"))
+hazard_by_distance(data = subdata2)
+abline(v = 0)
+dev.off()
 
 
 
-## I.4 KM estimation ####
 
-subdata = data_id[which(data_id$left_censored == F),]
-subdata$time = subdata$duree_min
+### II.2.2 TTH3 ####
 
-# All
-surv_all <- Surv(subdata$time, subdata$observed)
-fit_all <- survfit(surv_all ~ 1)
-plot(fit_all, main="Overall survival function \n (Kaplan-Meier estimates)",
-     xlab="time", ylab="Survival probability")
 
-# By grade
-surv1  = survfit(Surv(time, observed) ~ c_cir_2011, data = subdata) 
-plot(surv1, main="Overall survival function \n (Kaplan-Meier estimates)",
-     xlab="time", ylab="Survival probability",
-     lty = c(1,2,2,1), col = c("black", "grey50","black", "grey50"), lwd = 3)
-legend("topright", ncol = 2, legend = c("TTH1", "TTH2", "TTH3", "TTH4"), col = c("black", "grey50","black", "grey50"),  lty = c(1,2,2,1), lwd = 3)
+subdata = data_min
+subdata = subdata[which(subdata$left_censored == F & subdata$c_cir_2011 == "TTH3"),]
+hazard_by_duree(data = subdata)
+hazard_by_ech(data = subdata)
+hazard_by_distance(data = subdata)
 
+pdf(paste0(fig_path,"hazard_by_duree_TTH3.pdf"))
+hazard_by_duree(data = subdata)
+abline(v = 5)
+dev.off()
+
+pdf(paste0(fig_path,"hazard_by_ech_TTH3.pdf"))
+hazard_by_ech(data = subdata)
+abline(v = 6)
+dev.off()
+
+pdf(paste0(fig_path,"hazard_by_dist_TTH3.pdf"))
+hazard_by_distance(data = subdata)
+abline(v = 0)
+dev.off()
+
+
+### II.2.2 TTH4 ####
+
+subdata = data_min
+subdata = subdata[which(subdata$left_censored == F & subdata$c_cir_2011 == "TTH4"),]
+hazard_by_duree(data = subdata)
+hazard_by_ech(data = subdata)
+hazard_by_distance(data = subdata)
+
+pdf(paste0(fig_path,"hazard_by_duree_TTH4.pdf"))
+hazard_by_duree(data = subdata)
+abline(v = 5)
+dev.off()
+
+pdf(paste0(fig_path,"hazard_by_ech_TTH4.pdf"))
+hazard_by_ech(data = subdata)
+abline(v = 6)
+dev.off()
+
+
+### II.2.5 All ####
 
 

@@ -63,11 +63,13 @@ load_and_clean = function(data_path, dataname)
   
   ## Corrections (to move to .py)
   pb_ech = unique(data_max$ident[which(data_max$echelon == -1 & data_max$annee > 2010)])
+  print(paste0(length(pb_ech),"  individus supprimés"))
   data_max = data_max[which(!is.element(data_max$ident, pb_ech)),]
   data_min = data_min[which(!is.element(data_min$ident, pb_ech)),]
   
   # One line per ident data
   data_id = data_long[!duplicated(data_long$ident),]
+  data_id = data_id[which(!is.element(data_id$ident, pb_ech)),]
   
   return(list(data_id, data_max, data_min))
 }  
