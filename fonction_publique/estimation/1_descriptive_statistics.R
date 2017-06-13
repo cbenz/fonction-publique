@@ -34,13 +34,39 @@ mean_right_by_time <- aggregate(data_id$right, by = list(data_id$annee_min_entre
 mean_right_by_ech <- aggregate(data_id$right, by = list(data_id$echelon_2011), FUN=mean)    
 
 
+## 1.3 Année d'affilation ####
+
+subdata = data_id[which(data_id$left_censored == F),]
+time = 2001:2011
+prop_entry = matrix(ncol = length(time), nrow = 5)
+for (t in 1:length(time))
+{
+prop_entry[1,t] = length(which(subdata$an_aff == time[t]))/length(subdata$an_aff)  
+prop_entry[2,t] = length(which(subdata$an_aff == time[t] & subdata$c_cir_2011 == "TTH1"))/length(subdata$an_aff[which(subdata$c_cir_2011 == "TTH1")])    
+prop_entry[3,t] = length(which(subdata$an_aff == time[t] & subdata$c_cir_2011 == "TTH2"))/length(subdata$an_aff[which(subdata$c_cir_2011 == "TTH2")])    
+prop_entry[4,t] = length(which(subdata$an_aff == time[t] & subdata$c_cir_2011 == "TTH3"))/length(subdata$an_aff[which(subdata$c_cir_2011 == "TTH3")])    
+prop_entry[5,t] = length(which(subdata$an_aff == time[t] & subdata$c_cir_2011 == "TTH4"))/length(subdata$an_aff[which(subdata$c_cir_2011 == "TTH4")])    
+}  
+
+pdf(paste0(fig_path,"distrib_an_aff.pdf"))
+layout(matrix(c(1,2,3,4), nrow=2,ncol=2, byrow=TRUE), heights=c(3,3))
+par(mar=c(2.5,4.1,1.3,0.2))
+barplot(prop_entry[2,],ylab="Proportion d'entrée",xlab="Année", col = "darkcyan", names.arg = time, main = "TTH1")
+barplot(prop_entry[3,],ylab="Proportion d'entrée",xlab="Année", col = "darkcyan", names.arg = time, main = "TTH2")
+barplot(prop_entry[4,],ylab="Proportion d'entrée",xlab="Année", col = "darkcyan", names.arg = time, main = "TTH3")
+barplot(prop_entry[5,],ylab="Proportion d'entrée",xlab="Année", col = "darkcyan", names.arg = time, main = "TTH4")
+dev.off()
+
+
+
+
 
 ## II. Graphical evidence on exit grade ####
 
 ### II.1 Functions ####
 
 # Hazard by duration in grade
-hazard_by_duree = function(data, save = F)
+hazard_by_duree = function(data, save = F, corps = F)
 {
   grade = seq(1, 12)
   hazard   = numeric(length(grade))
@@ -52,7 +78,8 @@ hazard_by_duree = function(data, save = F)
   effectif[g] = length(which(data$time == grade[g]))
   }  
   par(mar = c(5,5,2,5))
-  plot(grade, hazard, type ="l", lwd = 3, xlab = "Duration in grade", ylab = "Hazard rate", col = "darkcyan")
+  xlabel = ifelse(corps, "Duration in corps", "Duration in grade")
+  plot(grade, hazard, type ="l", lwd = 3, xlab = xlabel, ylab = "Hazard rate", col = "darkcyan")
   par(new = T)
   plot(grade, effectif, type ="l", lty = 2, lwd = 2, , axes=F, xlab=NA, ylab=NA)
   axis(side = 4)
@@ -165,7 +192,7 @@ dev.off()
 subdata2 = subdata
 subdata2$time = subdata2$annee - subdata2$an_aff +1
 pdf(paste0(fig_path,"hazard_by_duree_TTH2_bis.pdf"))
-hazard_by_duree(data = subdata2)
+hazard_by_duree(data = subdata2, corps = T)
 abline(v = 6)
 dev.off()
 pdf(paste0(fig_path,"hazard_by_dist_TTH2_bis.pdf"))
