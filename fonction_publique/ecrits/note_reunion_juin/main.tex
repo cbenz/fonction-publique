@@ -58,11 +58,54 @@
 
 La présente note est un support pour la présentation du jeudi 15 juin. Elle suit donc le cheminement des slides, tout en renvoyant à leur contenu pour la présentation des résultats. 
 
-
-
-
 % Section I: principe général 
 \section{Complétion de la durée dans le grade}
+\subsection{Motivation}
+
+On souhaite prédire le changement de grade de chaque agent. Le changement de grade est notamment autorisé après que l'agent ait remplit des conditions de durée passée dans son grade. Ces durées minimales légales ouvrant l'accès au changement de grade varient entre 3 ans et 10 ans. Nous observons seulement le grade des agents sur une période de 5 ans, de 2011 à 2015. Cette fenêtre d'observation est trop étroite pour que l'on puisse identifier des agents de tous les grades ayant rempli la condition de durée dans le grade leur permettant de changer de grade. C'est pourquoi on met en place une procédure permettant d'imputer une durée dans le grade.\\
+\indent D'autres conditions de changement de grade existent, telles que des conditions de dépassement d'échelon. Par exemple, le dépassement de l'échelon 5 dans le grade TTH2 est nécéssaire pour accéder au grade TTH3. On impute donc un échelon à chaque agent pour chaque année entre 2002 et 2011.\\
+\indent Ces conditions d'échelon et de durées passées dans le grade pourraient être plus ou moins déterminantes selon le grade précédent de chaque agent. On cherche donc à imputer un grade précédent l'entrée dans le grade à chaque agent, s'il existe.
+
+\subsection{Sélection de l'échantillon}
+
+\textit{Slides 3}\\
+
+On sélectionne les agents qui sont Adjoints Techniques Territoriaux en 2011. On choisit ce corps pour deux raisons : ce corps est le corps le plus peuplé de la FPT et de la FPH et c'est pour ce corps qu'on a la meilleure qualité de donnée. On se limite aux agents étant dans ce corps pour la première année d'observations complètes, 2011, afin de réduire le nombre de cas pour lesquels il faudra inférer une position sur les grilles l'année précédente, 2010. On exclut les agents nés avant 1960 afin de ne pas considérer les sorties de grade vers la retraite. On ne prend également pas en considération les carrières des agents qui exhibent des incohérences sur une ou plusieurs périodes (code grade non renseigné alors que l'agent est en activité ou trajectoire de changement de grade non-autorisée).
+
+\subsection{Description de la méthode d'imputation}
+
+\textit{Slide 4}\\
+
+On veut utiliser l'Indice Brut (IB) des agents avant 2011, ainsi que la dernière position connue de l'agent sur une grille (i.e son corps, son grade et son échelon en 2011) afin de savoir si l'agent a changé de grade ou non entre chaque année et année précédente (on pourra raffiner en regardant des changements infra annuels), et donc identifier son année d'entrée dans le grade.
+L'idée générale est de regarder si l'IB de chaque agent à t-1 est présent sur la grille du grade de l'agent à t, en prenant en compte d'éventuels changement de grille. Cette procédure est implémentée en Python.\\
+
+Plus précisément :
+\begin{itemize} 
+	\item Si l'IB à t-1 de l'agent n'est pas présent sur la grille de son grade à t (en vigueur à t-1), on conclue directement que l'agent a changé de grade entre t-1 et t. On ne réitère pas la procédure sur cet agent, puisque seul le changement de grade nous intéresse. 
+	
+	\item Si l'IB de l'agent à t-1 est présent sur la grille de son grade à t et n'est pas présent sur la grille du grade précédent hiérarchiquement son grade à t, on conclue que l'agent n'a pas changé de grade entre t-1 et t. On réitère la procédure sur cet agent pour toutes les années où il ne change pas de grade. On fait une hypothèse ici en ne cherchant pas l'IB de l'agent sur la grille de l'ensemble des grades de tous les corps. On suppose que les transitions possibles dans les cas autres que le premier cas se font à l'intérieur du corps, et qu'il est uniquement possible de passer d'un grade au grade immédiatement supérieur à l'intérieur du corps.
+	\item Si l'IB de l'agent à t-1 est présent sur la grille de son grade à t et sur une autre grille de son corps à t, on conclue que l'agent a changé de grade ou n'a pas changé de grade entre t-1 et t, on garde les deux cas possibles en attribuant à cette prédiction le statut "ambigu". On réitère la procédure sur les cas classés ambigus qui prédisent que l'agent reste dans son grade. On garde l'hypothèse que dans les cas autres que le premier cas, les transitions se font à l'intérieur du corps, et qu'il est uniquement possible de passer d'un grade au grade immédiatement supérieur à l'intérieur du corps.
+\end{itemize}
+
+Notons que si le grade de l'agent à t est le premier grade du corps (TTH1), aucune transition depuis le corps arrivant dans ce grade n'est possible. L'ensemble des agents arrivant en TTH1 entrent dans la fonction publique ou viennent d'un autre corps que celui des ATT. Si l'agent est à t dans un grade autre que TTH1, on détermine s'il vient du grade précédent hiérarchiquement son grade à t ou s'il vient d'un autre corps.\\
+
+Par ailleurs, notons que la procédure prend en compte des retards potentiels d'un an dans l'application de réformes des grilles (en particulier pour l'année 2006, année de création du corps des ATT).\\
+
+Enfin, il importe de constater qu'il y a incertitude sur le grade de certains agents-années. Cette incertitude est due aux chevauchements de grilles : un IB peut être à la fois présent sur une grille du grade TTH1 et sur une grille du grade TTH2 par exemple. Pour la grande majorité des agents, cette incertitude n'existe pas ou existe sur une ou deux années. Pour une minorité d'agents, il n'est pas possible de savoir en 2002 s'ils ont effectivement changé de grade entre 2002 et 2011 ou pas.\\
+
+\subsection{Résultats}
+
+\textit{Slides 5-12}\\
+
+Comme expliqué dans la section précédente, les hypothèses faites sur les changements de grade nous permettent d'imputer une année d'entrée dans le grade de façon certaine dans la grande majorité des cas.\\
+
+Les pics d'entrée dans le grade après un IB nul recoupent nos statistiques descriptives sur l'année d'affiliation des agents, même si certains pics d'entrée restent inexpliqués. nous avons constaté une grande amélioration dans la régularité de ces graphiques après avoir pris en compte les retards potentiels dans l'application des réformes.
+
+\subsection{Prochaines étapes}
+
+On pourrait envisager de renouveller la procédure avec un pas trimestriel.
+Par ailleurs, il serait bon de tester l'imputation en prenant comme année de départ l'année 2015 et en comparant entrées dans le grade prédites et observées entre 2011 et 2014.
+Il s'agirait enfin de généraliser le programme afin de pouvoir compléter les carrières des agents d'autres corps que celui des ATT.
 
 \section{L'impact des conditions institutionnelles: analyse graphique}
 
