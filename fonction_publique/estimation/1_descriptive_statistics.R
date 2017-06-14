@@ -7,7 +7,7 @@
 
 
 source(paste0(wd, "0_work_on_data.R"))
-datasets = load_and_clean(data_path, "data_ATT_2002_2015_2.csv")
+datasets = load_and_clean("M:/CNRACL/output/clean_data_finalisation", "/data_ATT_2002_2015_2.csv")
 data_id = datasets[[1]]
 data_max = datasets[[2]]
 data_min = datasets[[3]]
@@ -17,7 +17,11 @@ data_min = datasets[[3]]
 ## I. Sample description ####
 
 ## I.1 Sample  ####
-
+data_id <- 
+  
+table_censoring = matrix(ncol = 5, nrow = 2)
+colnames(table_count) = c("All", "TTH1","TTH2", "TTH3", "TTH4")
+rownames(table_count) = c('\\Number of agents', "\\% share of ATT population")
 
 ## I.2 Censoring ####
 
@@ -40,6 +44,8 @@ print(xtable(table_censoring,align="lccccc",nrow = nrow(table), ncol=ncol(table_
       sanitize.text.function=identity,size="\\footnotesize", 
       only.contents=F, include.colnames = T)
 
+
+figpath = "Q:/CNRACL/Slides/Graphiques"
 
 ## 1.3 Année d'affilation ####
 
@@ -88,7 +94,7 @@ hazard_by_duree = function(data, save = F, corps = F)
   xlabel = ifelse(corps, "Duration in corps", "Duration in grade")
   plot(grade, hazard, type ="l", lwd = 3, xlab = xlabel, ylab = "Hazard rate", col = "darkcyan")
   par(new = T)
-  plot(grade, effectif, type ="l", lty = 2, lwd = 2, , axes=F, xlab=NA, ylab=NA)
+  plot(grade, effectif, type ="l", lty = 2, lwd = 2, axes=F, xlab=NA, ylab=NA)
   axis(side = 4)
   mtext(side = 4, line = 3, 'Effectifs')
   legend("topleft", legend = c("Hazard", "Nb obs."), lwd = 3, lty = c(1,3), col = c("darkcyan", "black"), cex = 1.1)
@@ -110,7 +116,7 @@ hazard_by_ech = function(data, save = F)
   par(mar = c(5,5,2,5))
   plot(ech, hazard, type ="l", lwd = 3, xlab = "Echelon", ylab = "Hazard rate", col = "darkcyan")
   par(new = T)
-  plot(ech, effectif, type ="l", lty = 2, lwd = 2, , axes=F, xlab=NA, ylab=NA)
+  plot(ech, effectif, type ="l", lty = 2, lwd = 2, axes=F, xlab=NA, ylab=NA)
   axis(side = 4)
   mtext(side = 4, line = 3, 'Effectifs')
   legend("topleft", legend = c("Hazard", "Nb obs."), lwd = 3, lty = c(1,3), col = c("darkcyan", "black"), cex = 1.1)

@@ -1,6 +1,14 @@
+library(OIsurv)
+library(rms)
+library(emuR)
+library(RColorBrewer)
+library(RcmdrPlugin.survival)
+library(flexsurv)
 
-
-
+data <- load_and_clean("M:/CNRACL/output/clean_data_finalisation/", "data_ATT_2002_2015_2.csv")
+data_id <- data[[1]]
+data_max <- data[[2]]
+data_min <- data[[3]]
 
 
 ######## Estimation survival ########
@@ -53,39 +61,117 @@ plot_comp_fit_param = function(data, save = F, grade = "all")
   legend("bottomleft", legend = c("KM", "Exp", "Loglog", "Gen. gamma", "Weibull", "Gompertz"), col = c("black",colors), lty = 1)
 }  
 
-plot_comp_fit_param(data_id)
-plot_comp_fit_param(data_id, grade = "TTH1")
-plot_comp_fit_param(data_id, grade = "TTH2")
-plot_comp_fit_param(data_id, grade = "TTH3")
-plot_comp_fit_param(data_id, grade = "TTH4")
+plot_comp_fit_param(subdata)
+plot_comp_fit_param(subdata, grade = "TTH1")
+plot_comp_fit_param(subdata, grade = "TTH2")
+plot_comp_fit_param(subdata, grade = "TTH3")
+plot_comp_fit_param(subdata, grade = "TTH4")
 
 
 
 ## III  Cox PH ####
 
 ## III.1  Cox PH with time-fixed variable ####
-attach(data_TTH3)
+subdata_TTH3 <- subdata[which(subdata$c_cir_2011 == "TTH3"),]
+subdata_TTH3$I_echelon <- as.numeric(subdata_TTH3$echelon == 6)
+attach(subdata_TTH3)
 
-my.surv   <- Surv(time_max, observed)
-coxph.fit1 <- coxph(my.surv ~ sexe + as.factor(generation_group), method="breslow") #sexe +
+my.surv   <- Surv(duree_min, observed)
+coxph.fit1 <- coxph(my.surv ~ sexe + as.factor(generation_group) + echelon + is_echelon_6, method="breslow") #sexe +
 coxph.fit3 <- coxph(my.surv ~ sexe +  as.factor(generation_group), method="efron")
 
-plot(survfit(coxph.fit1), ylim=c(0, 1), xlab="Year",ylab="Proportion in grade")
-
-detach(data_TTH3)
-
+# Tests des résidus de Schoenfeld, vérification de l'hypothèse pas d'impact des cov dépendant du temps
+# H0: beta = beta(t) H1: beta != beta(t)
+res.c1 =cox.zph(coxph.fit1) # vérifiée à 5% pour toutes les variables sauf échelon, qui a un impact qui dépend du temps
 
 ## III.2  Cox PH with time-dependent variables ####
 
 ## III.2.1  0/1 Treatment ####
 
-data = data_max[which(data_max$left_censored == F & data_max$c_cir_2011 == "TTH3"),]
-data = data_max[which(data_max$left_censored == F & data_max$echelon != - 1),]
-data = data_min[which(data_min$left_censored == F),]
-
+# Adding a time-dependent covariate: echelon >= 6
 # Start/stop
-data$start = data$time - 1
-data$stop = data$time 
+# get duration to arrival in échelon 6
+TTH3_long <- data_max[which(data_max$c_cir_2011 == 'TTH3'),]
+TTH3_long <- TTH3_long[which(TTH3_long$left_censored == F),]
+TTH3_long <- TTH3_long[which(TTH3_long$echelon == 6),]
+time_min_in_ech_6 <- aggregate(TTH3_long$annee, by = list(TTH3_long$ident), min)
+colnames(time_min_in_ech_6)[1] <- "ident"
+colnames(time_min_in_ech_6)[2] <- "annee"
+TTH3_long <- merge(TTH3_long, time_min_in_ech_6, by = c("ident", "annee"))
+TTH3_long$duration_to_arrival_in_echelon_6 <- TTH3_long$annee - TTH3_long$annee_max_entree_dans_grade + 1
+
+time_max <- aggregate(subdata_TTH3$duree_min, by = list(subdata_TTH3$ident), max)
+colnames(time_max)[1] <- "ident"
+colnames(time_max)[2] <- "end_duree_min"
+
+to_merge <- merge(subdata_TTH3, TTH3_long, by = "ident")
+to_merge <- subset(to_merge, select=c("ident", "duration_to_arrival_in_echelon_6"))
+subdata_TTH3 <- merge(subdata_TTH3, to_merge, by = "ident", all = TRUE)
+
+subdata_TTH3 <- merge(subdata_TTH3, time_max, by = "ident", all = TRUE)
+
+
+subdata_TTH3 <- subset(
+  subdata_TTH3,
+  select = c('ident', 'sexe', 'generation_group', 'an_aff', 'duree_min', 'duration_to_arrival_in_echelon_6', 'right_censored')
+  )
+new_subdata_TTH3$right_censored = as.numeric(new_subdata_TTH3$right_censored)
+new_subdata_TTH3$event_reach_duration_5 = as.numeric()
+new_subdata_TTH3 <- subdata_TTH3
+new_subdata_TTH3$duration_to_arrival_in_grade_condition <- ifelse(new_subdata_TTH3$duree_min >= 5, 5, NA)
+attach(new_subdata_TTH3)
+new_subdata_TTH3 <- tmerge(new_subdata_TTH3, subdata_TTH3, id = ident, tstop = duree_min)
+new_subdata_TTH3 <- tmerge(new_subdata_TTH3, subdata_TTH3, id = ident, event_reach_ech_6 = event(duration_to_arrival_in_echelon_6))
+new_subdata_TTH3 <- tmerge(new_subdata_TTH3, subdata_TTH3, id = ident, event_reach_duration_5 = event(duration_to_arrival_in_grade_condition))
+new_subdata_TTH3$exit <- ifelse(new_subdata_TTH3$tstop == new_subdata_TTH3$duree_min & new_subdata_TTH3$right_censored != 1, 1, 0)
+
+new_subdata_TTH3 <- new_subdata_TTH3[which(new_subdata_TTH3$generation_group != 9),]
+
+cox_time_varying <- coxph(
+  formula = Surv(tstart, tstop, exit) ~ sexe + factor(generation_group) + event_reach_ech_6 + event_reach_duration_5 + event_reach_ech_6*event_reach_duration_5 + cluster(ident), data = new_subdata_TTH3
+  )
+summary(cox_time_varying)
+
+
+# Checking the PH assumption
+zp <- cox.zph(cox_time_varying, transform = function(time) log(time + 20)) # on voit que l'indicatrice échelon >= 6 a un effet non-indépendant du temps significatif
+plot(zp[5])
+abline(0,0, col = 2)
+abline(h = zp$coef[5], col = 3, lwd = 2, lty = 2)
+
+plot(zp[1])
+abline(0,0, col = 2)
+abline(h = zp$coef[1], col = 3, lwd = 2, lty = 2)
+
+plot(zp[2])
+abline(0,0, col = 2)
+abline(h = zp$coef[2], col = 3, lwd = 2, lty = 2)
+
+plot(zp[3])
+abline(0,0, col = 2)
+abline(h = zp$coef[3], col = 3, lwd = 2, lty = 2)
+
+plot(zp[4])
+abline(0,0, col = 2)
+abline(h = zp$coef[4], col = 3, lwd = 2, lty = 2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Distance variables
 data$I_echelon = ifelse(data$echelon >= data$E_choice, 1, 0) 
@@ -104,6 +190,10 @@ coxph.fit3 = coxph(Surv(start, stop, exit_status2) ~  sexe + factor(generation_g
                    data=data)
 coxph.fit4 = coxph(Surv(start, stop, exit_status2) ~  sexe + factor(generation_group) + c_cir_2011 +  I_grade*I_echelon,
                    data=data)
+
+
+
+
 
 ## III.2.2  Distance to threshold dummies (Chetty) #######
 
