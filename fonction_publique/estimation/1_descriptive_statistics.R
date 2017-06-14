@@ -1,5 +1,5 @@
 
-
+library(xtable)
 
 
 
@@ -17,11 +17,17 @@ data_min = datasets[[3]]
 ## I. Sample description ####
 
 ## I.1 Sample  ####
-data_id <- 
-  
-table_censoring = matrix(ncol = 5, nrow = 2)
+table_count = matrix(ncol = 5, nrow = 2)
+table_count[1,1] = length(unique(data_id$ident))
+table_count[2,1] = 100
+table_count[1,2:5] = format(round(as.data.frame(table(data_id$c_cir_2011))[1:4,2]))
+table_count[2, 2:5] = format(round(as.data.frame(table(data_id$c_cir_2011))[1:4,2]/length(unique(data_id$ident))*100,1),1)
 colnames(table_count) = c("All", "TTH1","TTH2", "TTH3", "TTH4")
 rownames(table_count) = c('\\Number of agents', "\\% share of ATT population")
+
+print(xtable(table_count,align="lccccc",nrow = nrow(table), ncol=ncol(table_censoring)+1, byrow=T, digits = 3),
+      sanitize.text.function=identity,size="\\footnotesize", 
+      only.contents=F, include.colnames = T)
 
 ## I.2 Censoring ####
 
