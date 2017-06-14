@@ -58,6 +58,7 @@
 
 La présente note est un support pour la présentation du jeudi 15 juin. Elle suit donc le cheminement des slides, tout en renvoyant à leur contenu pour la présentation des résultats. 
 
+
 % Section I: principe général 
 \section{Complétion de la durée dans le grade}
 \subsection{Motivation}
@@ -109,12 +110,63 @@ Il s'agirait enfin de généraliser le programme afin de pouvoir compléter les 
 
 \section{L'impact des conditions institutionnelles: analyse graphique}
 
-\section{L'approche par modèles de durée}
+Nous illustrons l'impact des conditions de changement de grade sur les probabilité de changement de grade. Nous présentons l'effet des conditions séparément puis ensemble. La ligne représente le seuil institutionnel. 
 
-\section{Approche par logit}
+\paragraph{TTH3:} Effet marqué et clair des conditions.
+
+\paragraph{TTH2:} Pas d'effet de la condition de durée dans le grade, mais cela est logique car pour ce grade il s'agit d'une condition de durée passée dans le corps. Dont ne nous disposons malheureusement pas. Nous faisons l'approximation suivante: durée dans le corps = année courante - année d'affiliation. Ce faisant nous trouvons bien un effet de la condition de durée, ainsi que de la condition d'échelon. 
+
+\paragraph{TTH4:} Pas de pics, et pas de conditions, ce qui est cohérent. 
+ 
+\paragraph{TTH1:} Les pics aux seuils n'apparaissent pas clairement. Pour la condition de grade, les pics apparaissent mieux quand on redéfini l'année d'entrée dans le grade à partir de l'année d'affiliation. Cela pourrait suggérer un problème dans l'étape d'imputation. 
+Pour la condition d'échelon le pic n'apparait pas non plus. Il est par ailleurs impossible de représenter les deux conditions sur le même plan comme pour les autres grades car il y a deux seuils (au choix, examen pro). 
+
+
+
+\section{Estimation}
+
+\subsection*{Modèles de durée:} 
+
+Nous avions d'abord envisagé d'estimer la sortie de grade par modèle de durée. Nous avons rencontré plusieurs difficultés de fond, parmi lesquelles: 
+
+\begin{enumerate}
+\item Forte censure à droite (bias)
+\item Troncature à gauche (sélection)
+\item Estimations de modèle avec des \og time changing \fg{} et \og time varying \fg{} variables. 
+\item Difficulté pour simuler les sorties de grade à partir des estimations. 
+\end{enumerate}
+
+Ces différentes raisons, en particulier la dernière, nous ont conduit à nous rabattre vers un modèle logit bivarié. Un retour sur les modèles de durée n'est pas exclu. 
+
+\subsection*{Logit} 
+
+Nous estimons un modèle logit dont la variable expliquée est la sortie du grade et les variables explicatives principales le grade, la durée dans le grade (simple et carré), et les indicatrices d'atteinte des conditions institutionnelles. 
+
+Plusieurs spécifications sont testés, avec ou sans contrôles, effets de durée dans le grade ou effet des seuils institutionnels. 
+L'effet est du sens attendu pour la promotion au choix, mais pas pour la promotion par examen professionnel. 
+
+L'effet des seuils institutionnels semble important en magnitude. 
+
+\section{Simulation}
+
+
+\subsection*{Test d'adéquation} 
+
+Nous utilisons ensuite les coefficients estimés pour prédire les comportements. L'idée est de se rapprocher le plus possible d'un cadre de microsimulation. Le test utilisé à ce stade n'est sans doute pas satisfaisant: nous comparons les départs prédits et observés à l'année initiale 2011. 
+
+Un test plus exigeant serait la simulation de toute la dynamique des sorties de grade entre 2011 et 2014. Mais pour cela, il faut modéliser l'évolution contrefactuelle des échelons, car l'échelon intervient dans les variables explicatives du modèle. Pour les individus qui sont sortis du grade en 2011, mais que la simulation ne fait pas partir en 2011, nous aurions besoin de re-calculer la probabilité de sortie pour cet individu en 2012. Une règle simple de modélisation serait l'application de la durée min/max/moyenne pour projeter. Mais cela nécessite une analyse plus fine de la durée effectivement passée en échelon au préalable. 
+
+Diverses comparaisons entre départs observés et prédits sont implémentés: nombre moyen de départ, compte des erreurs et des bonnes prédictions, 
+
+\subsection*{Résultats}
+
+La prédiction donne des très bons résultats à la fois pour les modèles avec effet temporel et pour les modèles avec les variables de conditions. L'ajout des conditions n'améliore pas le fit du modèle. 
+
+Toutefois, le test utilisé pour l'instant n'est sans doute pas assez exigeant.  
 
 \section{Conclusion et prochaines étapes}
 
+Voir slides. 
 
 
 \end{document}
