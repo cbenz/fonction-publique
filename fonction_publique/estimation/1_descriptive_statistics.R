@@ -17,15 +17,48 @@ data_min = datasets[[3]]
 ## I. Sample description ####
 
 ## I.1 Sample  ####
-table_count = matrix(ncol = 5, nrow = 2)
-table_count[1,1] = length(unique(data_id$ident))
-table_count[2,1] = 100
-table_count[1,2:5] = format(round(as.data.frame(table(data_id$c_cir_2011))[1:4,2]))
-table_count[2, 2:5] = format(round(as.data.frame(table(data_id$c_cir_2011))[1:4,2]/length(unique(data_id$ident))*100,1),1)
+table_count <- matrix(ncol = 5, nrow = 2)
+table_count[1,1] <- length(unique(data_id$ident))
+table_count[2,1] <- 100
+table_count[1,2:5] <- format(round(as.data.frame(table(data_id$c_cir_2011))[1:4,2]))
+table_count[2, 2:5] <- format(round(as.data.frame(table(data_id$c_cir_2011))[1:4,2]/length(unique(data_id$ident))*100,1),1)
 colnames(table_count) = c("All", "TTH1","TTH2", "TTH3", "TTH4")
 rownames(table_count) = c('\\Number of agents', "\\% share of ATT population")
 
 print(xtable(table_count,align="lccccc",nrow = nrow(table), ncol=ncol(table_censoring)+1, byrow=T, digits = 3),
+      sanitize.text.function=identity,size="\\footnotesize", 
+      only.contents=F, include.colnames = T)
+
+data <- read.csv(paste0("M:/CNRACL/output/clean_data_finalisation", "/data_ATT_2002_2015_2.csv"))
+data_id_bis <- data[!duplicated(data[,"ident"]),]
+table_count_grade_next = matrix(ncol = 6, nrow = 2)
+table_count_grade_next[1,1] = length(unique(data_id_bis$ident))
+table_count_grade_next[2,1] = 100
+table_count_grade_next[1,2:6] = format(round(as.data.frame(table(data_id_bis$grade_bef))[1:5,2]))
+table_count_grade_next[2, 2:6] = format(round(as.data.frame(table(data_id_bis$grade_bef))[1:5,2]/length(unique(data_id_bis$ident))*100,1),1)
+colnames(table_count_grade_next) = c("All", "missing", "other", "TTH1","TTH2", "TTH3")
+rownames(table_count_grade_next) = c('\\Number of agents', "\\% share of ATT population")
+
+data_1st_y <- data[which(data$annee == data$last_y_in_grade_bef),]
+data_1st_y_autre <- data_1st_y[which(data_1st_y$c_cir == "autre"),]
+data_1st_y_autre_ib_null <- data_1st_y[which(data_1st_y$ib == 0),]
+print(dim(data_1st_y_autre_ib_null))
+
+data_last_y <- data[which(data$annee == data$first_y_in_next_grade),]
+
+print(xtable(table_count_grade_next,align="lcccccc",nrow = nrow(table), ncol=ncol(table_count_grade_next)+1, byrow=T, digits = 3),
+      sanitize.text.function=identity,size="\\footnotesize", 
+      only.contents=F, include.colnames = T)
+
+table_count_grade_next = matrix(ncol = 6, nrow = 2)
+table_count_grade_next[1,1] = length(unique(data$ident))
+table_count_grade_next[2,1] = 100
+table_count_grade_next[1,2:6] = format(round(as.data.frame(table(data$grade_bef))[1:5,2]))
+table_count_grade_next[2, 2:6] = format(round(as.data.frame(table(data$grade_bef))[1:5,2]/length(unique(data$ident))*100,1),1)
+colnames(table_count_grade_next) = c("All", "missing", "other", "TTH1","TTH2", "TTH3")
+rownames(table_count_grade_next) = c('\\Number of agents', "\\% share of ATT population")
+
+print(xtable(table_count_grade_next,align="lcccccc",nrow = nrow(table), ncol=ncol(table_count_grade_next)+1, byrow=T, digits = 3),
       sanitize.text.function=identity,size="\\footnotesize", 
       only.contents=F, include.colnames = T)
 
