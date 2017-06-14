@@ -16,7 +16,7 @@ data_min = datasets[[3]]
 
 ## I. Sample description ####
 
-
+## I.1 Sample  ####
 
 
 ## I.2 Censoring ####
@@ -27,11 +27,18 @@ data_id$left = as.numeric(data_id$left_censored)
 mean_right <- aggregate(data_id$right, by = list(data_id$c_cir_2011), FUN=mean)    
 mean_left  <- aggregate(data_id$left,  by = list(data_id$c_cir_2011), FUN=mean)    
 
-# Censoring by time spent in 2011 
-mean_right_by_time <- aggregate(data_id$right, by = list(data_id$annee_min_entree_dans_grade), FUN=mean)    
+table_censoring = matrix(ncol = 5, nrow = 2)
+table_censoring[1,1] = mean(data_id$right)
+table_censoring[1,2:5] = mean_right$x
+table_censoring[2,1] = mean(data_id$left)
+table_censoring[2,2:5] = mean_left$x
 
-# Censoring by echelon
-mean_right_by_ech <- aggregate(data_id$right, by = list(data_id$echelon_2011), FUN=mean)    
+colnames(table_censoring) = c("All", "TTH1","TTH2", "TTH3", "TTH4")
+rownames(table_censoring) = c('\\% right-censored', "\\% left-censored")
+
+print(xtable(table_censoring,align="lccccc",nrow = nrow(table), ncol=ncol(table_censoring)+1, byrow=T, digits = 3),
+      sanitize.text.function=identity,size="\\footnotesize", 
+      only.contents=F, include.colnames = T)
 
 
 ## 1.3 Année d'affilation ####
@@ -84,6 +91,8 @@ hazard_by_duree = function(data, save = F, corps = F)
   plot(grade, effectif, type ="l", lty = 2, lwd = 2, , axes=F, xlab=NA, ylab=NA)
   axis(side = 4)
   mtext(side = 4, line = 3, 'Effectifs')
+  legend("topleft", legend = c("Hazard", "Nb obs."), lwd = 3, lty = c(1,3), col = c("darkcyan", "black"), cex = 1.1)
+  
 }  
 
 # Hazard by echelon
@@ -104,6 +113,7 @@ hazard_by_ech = function(data, save = F)
   plot(ech, effectif, type ="l", lty = 2, lwd = 2, , axes=F, xlab=NA, ylab=NA)
   axis(side = 4)
   mtext(side = 4, line = 3, 'Effectifs')
+  legend("topleft", legend = c("Hazard", "Nb obs."), lwd = 3, lty = c(1,3), col = c("darkcyan", "black"), cex = 1.1)
 }  
 
 
@@ -150,14 +160,14 @@ hazard_by_distance(data = subdata)
 
 pdf(paste0(fig_path,"hazard_by_duree_TTH1.pdf"))
 hazard_by_duree(data = subdata)
-abline(v = 3)
-abline(v = 10)
+abline(v = 3, lwd = 3)
+abline(v = 10, lwd = 3)
 dev.off()
 
 pdf(paste0(fig_path,"hazard_by_ech_TTH1.pdf"))
 hazard_by_ech(data = subdata)
-abline(v = 4)
-abline(v = 7)
+abline(v = 4, lwd = 3)
+abline(v = 7, lwd = 3)
 dev.off()
 
 # Variantes durée aff
@@ -165,8 +175,8 @@ subdata2 = subdata
 subdata2$time = subdata2$annee - subdata2$an_aff +1
 pdf(paste0(fig_path,"hazard_by_duree_TTH1_bis.pdf"))
 hazard_by_duree(data = subdata2)
-abline(v = 3)
-abline(v = 10)
+abline(v = 3, lwd = 3)
+abline(v = 10, lwd = 3)
 dev.off()
 
 
@@ -180,12 +190,12 @@ hazard_by_distance(data = subdata)
 
 pdf(paste0(fig_path,"hazard_by_duree_TTH2.pdf"))
 hazard_by_duree(data = subdata)
-abline(v = 6)
+abline(v = 6, lwd = 3)
 dev.off()
 
 pdf(paste0(fig_path,"hazard_by_ech_TTH2.pdf"))
 hazard_by_ech(data = subdata)
-abline(v = 5)
+abline(v = 5, lwd = 3)
 dev.off()
 
 # Variantes durée aff
@@ -193,11 +203,11 @@ subdata2 = subdata
 subdata2$time = subdata2$annee - subdata2$an_aff +1
 pdf(paste0(fig_path,"hazard_by_duree_TTH2_bis.pdf"))
 hazard_by_duree(data = subdata2, corps = T)
-abline(v = 6)
+abline(v = 6, lwd = 3)
 dev.off()
 pdf(paste0(fig_path,"hazard_by_dist_TTH2_bis.pdf"))
 hazard_by_distance(data = subdata2)
-abline(v = 0)
+abline(v = 0, lwd = 3)
 dev.off()
 
 
@@ -214,12 +224,12 @@ hazard_by_distance(data = subdata)
 
 pdf(paste0(fig_path,"hazard_by_duree_TTH3.pdf"))
 hazard_by_duree(data = subdata)
-abline(v = 5)
+abline(v = 5, lwd = 3)
 dev.off()
 
 pdf(paste0(fig_path,"hazard_by_ech_TTH3.pdf"))
 hazard_by_ech(data = subdata)
-abline(v = 6)
+abline(v = 6, lwd = 3)
 dev.off()
 
 pdf(paste0(fig_path,"hazard_by_dist_TTH3.pdf"))
@@ -238,12 +248,10 @@ hazard_by_distance(data = subdata)
 
 pdf(paste0(fig_path,"hazard_by_duree_TTH4.pdf"))
 hazard_by_duree(data = subdata)
-abline(v = 5)
 dev.off()
 
 pdf(paste0(fig_path,"hazard_by_ech_TTH4.pdf"))
 hazard_by_ech(data = subdata)
-abline(v = 6)
 dev.off()
 
 
