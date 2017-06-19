@@ -385,7 +385,8 @@ def get_echelon_after_2011_from_c_cir(data_carrieres,
     # L'indice brut du dernier trimestre est gardé
     data.rename(columns = dict(ib4 = 'ib'), inplace = True)
     if grades_2011 is not None:
-        data = data.query('c_cir in @grades_2011')
+        idents_keep = data.query('(c_cir in @grades_2011) & (annee == 2011)').ident.unique().tolist()
+        data = data.query('ident in @idents_keep')
         data = data.replace(dict(c_cir = grade_by_stagiaire_2011))
 
     cas_uniques_with_echelon = list()
