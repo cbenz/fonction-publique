@@ -410,7 +410,6 @@ def get_echelon_after_2011_from_c_cir(data_carrieres,
                 echelon = -1
                 min_mois = -1
                 max_mois = -1
-                empty_count += weight_by_cas_unique[c_cir, ib]
 
             else:
                 if len(grille_possible) > 1:
