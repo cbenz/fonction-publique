@@ -63,7 +63,7 @@ La présente note est un support pour la présentation du jeudi 15 juin. Elle su
 \section{Complétion de la durée dans le grade}
 \subsection{Motivation}
 
-On souhaite prédire le changement de grade de chaque agent. Ainsi, un changement de grade ne peut intervenir qu'une fois que l'agent a remplit des conditions de durée passée dans son grade. Ces durées minimales légales ouvrant l'accès au changement de grade varient entre 3 ans et 10 ans. Or nous n'observons seulement le grade des agents sur une période de 5 ans, de 2011 à 2015. Cette fenêtre d'observation est trop étroite pour que l'on puisse identifier des agents de tous les grades ayant rempli la condition de durée dans le grade leur permettant de changer de grade. Il est donc nécessaire de mettre en place une procédure permettant d'imputer une durée dans le grade sur une plus grande période.\\
+On souhaite prédire le changement de grade de chaque agent. Ainsi, un changement de grade ne peut intervenir qu'une fois que l'agent a remplit des conditions de durée passée dans son grade. Ces durées minimales légales ouvrant l'accès au changement de grade varient entre 3 ans et 10 ans. Or, nous observons seulement le grade des agents sur une période de 5 ans, de 2011 à 2015. Cette fenêtre d'observation est trop étroite pour que l'on puisse identifier des agents de tous les grades ayant rempli la condition de durée dans le grade leur permettant de changer de grade. Il est donc nécessaire de mettre en place une procédure permettant d'imputer une durée dans le grade sur une plus grande période.\\
 \indent D'autres conditions de changement de grade existent, telles que des conditions de franchissement d'échelon. Par exemple, le franchissement de l'échelon 5 dans le grade TTH2 est nécessaire pour accéder au grade TTH3. On impute donc un échelon à chaque agent pour chaque année entre 2002 et 2011.\\
 \indent Ces conditions d'échelon et de durées passées dans le grade pourraient être plus ou moins déterminantes selon le grade précédent de chaque agent. On cherche donc à imputer à chaque agent, s'il y a lieu, le grade précédent l'entrée dans le grade courant.
 
@@ -71,7 +71,7 @@ On souhaite prédire le changement de grade de chaque agent. Ainsi, un changemen
 
 \textit{Diapositive 3}\\
 
-On sélectionne les agents qui sont Adjoints Techniques Territoriaux en 2011. Ce corps est retenu pour deux raisons : il est le corps le plus peuplé de la FPT et de la FPH et il est celui présentant la meilleure qualité de donnée. Seuls agents présents dans ce corps pour la première année d'observations complètes, c.-à-d.~2011, sont retenus afin de réduire le nombre de cas pour lesquels il faudra inférer une position sur les grilles l'année précédente, c.-à-d.~2010. Sont exclus les agents nés avant 1960 afin de ne pas considérer les sorties en retraite. Ne sont également pas prise en considération les carrières des agents qui exhibent des incohérences sur une ou plusieurs périodes (code grade non renseigné alors que l'agent est en activité ou trajectoire de changement de grade non-autorisée).
+On sélectionne les agents qui sont Adjoints Techniques Territoriaux en 2011. Ce corps est retenu pour deux raisons : il est le corps le plus peuplé de la FPT et de la FPH et il est celui présentant la meilleure qualité de donnée. Seuls les agents présents dans ce corps pour la première année d'observations complètes, c.-à-d.~2011, sont retenus afin de réduire le nombre de cas pour lesquels il faudra inférer une position sur les grilles l'année précédente, c.-à-d.~2010. Sont exclus les agents nés avant 1960 afin de ne pas considérer les sorties en retraite. Ne sont également pas prises en considération les carrières des agents qui exhibent des incohérences sur une ou plusieurs périodes (code grade non renseigné alors que l'agent est en activité ou trajectoire de changement de grade non-autorisée).
 
 \subsection{Description de la méthode d'imputation}
 
@@ -92,7 +92,7 @@ Notons que si le grade de l'agent à t est le premier grade du corps (TTH1), auc
 
 Par ailleurs, notons que la procédure prend en compte des retards potentiels d'un an dans l'application de réformes des grilles (en particulier pour l'année 2006, année de création du corps des ATT).\\
 
-Enfin, il importe de note qu'il subsiste une incertitude sur le grade de certains agents-années. Cette incertitude est due aux chevauchements de grilles. En effet, un IB peut être à la fois présent sur une grille du grade TTH1 et sur une grille du grade TTH2 par exemple. Pour la grande majorité des agents, cette incertitude n'existe pas ou subsiste sur une ou deux années. Pour une minorité d'agents, il n'est pas possible de savoir en 2002 s'ils ont effectivement changé de grade entre 2002 et 2011 ou pas.\\
+Enfin, il importe de noter qu'il subsiste une incertitude sur le grade de certains agents-années. Cette incertitude est due aux chevauchements de grilles. En effet, un IB peut être à la fois présent sur une grille du grade TTH1 et sur une grille du grade TTH2 par exemple. Pour la grande majorité des agents, cette incertitude n'existe pas ou subsiste sur une ou deux années. Pour une minorité d'agents, il n'est pas possible de savoir en 2002 s'ils ont effectivement changé de grade entre 2002 et 2011 ou pas.\\
 
 \subsection{Résultats}
 
@@ -110,15 +110,15 @@ Il s'agirait enfin de généraliser le programme afin de pouvoir compléter les 
 
 \section{L'impact des conditions institutionnelles: analyse graphique}
 
-Nous illustrons l'impact des conditions de changement de grade sur les probabilité de changement de grade. Nous présentons l'effet des conditions séparément puis ensemble. La ligne représente le seuil institutionnel. 
+Nous illustrons l'impact des conditions de changement de grade sur les probabilités de changement de grade. Nous présentons l'effet des conditions séparément puis ensemble. La ligne représente le seuil institutionnel. 
 
 \paragraph{TTH3:} Effet marqué et clair des conditions.
 
-\paragraph{TTH2:} Pas d'effet de la condition de durée dans le grade, mais cela est logique car pour ce grade il s'agit d'une condition de durée passée dans le corps. Dont ne nous disposons malheureusement pas. Nous faisons l'approximation suivante: durée dans le corps = année courante - année d'affiliation. Ce faisant nous trouvons bien un effet de la condition de durée, ainsi que de la condition d'échelon. 
+\paragraph{TTH2:} Pas d'effet de la condition de durée dans le grade, mais cela est logique car pour ce grade il s'agit d'une condition de durée passée dans le corps. Dont ne nous disposons malheureusement pas. Nous faisons l'approximation suivante: durée dans le corps = année courante - année d'affiliation. Ce faisant nous trouvons bien un effet de la condition de durée dans le corps, ainsi que de la condition d'échelon. 
 
 \paragraph{TTH4:} Pas de pics, et pas de conditions, ce qui est cohérent. 
  
-\paragraph{TTH1:} Les pics aux seuils n'apparaissent pas clairement. Pour la condition de grade, les pics apparaissent mieux quand on redéfini l'année d'entrée dans le grade à partir de l'année d'affiliation. Cela pourrait suggérer un problème dans l'étape d'imputation. 
+\paragraph{TTH1:} Les pics aux seuils n'apparaissent pas clairement. Pour la condition de grade, les pics apparaissent mieux quand on redéfinit l'année d'entrée dans le grade à partir de l'année d'affiliation. Cela pourrait suggérer un problème dans l'étape d'imputation. 
 Pour la condition d'échelon le pic n'apparait pas non plus. Il est par ailleurs impossible de représenter les deux conditions sur le même plan comme pour les autres grades car il y a deux seuils (au choix, examen pro). 
 
 
@@ -141,7 +141,7 @@ Ces différentes raisons, en particulier la dernière, nous ont conduit à nous 
 
 Nous estimons un modèle logit dont la variable expliquée est la sortie du grade et les variables explicatives principales le grade, la durée dans le grade (simple et carré), et les indicatrices d'atteinte des conditions institutionnelles. 
 
-Plusieurs spécifications sont testés, avec ou sans contrôles, effets de durée dans le grade ou effet des seuils institutionnels. 
+Plusieurs spécifications sont testées, avec ou sans contrôles, effets de durée dans le grade ou effet des seuils institutionnels. 
 L'effet est du sens attendu pour la promotion au choix, mais pas pour la promotion par examen professionnel. 
 
 L'effet des seuils institutionnels semble important en magnitude.  % TODO pas clair significatif ? important ?  

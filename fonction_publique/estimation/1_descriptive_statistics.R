@@ -1,5 +1,5 @@
 
-
+library(xtable)
 
 
 
@@ -7,7 +7,7 @@
 
 
 source(paste0(wd, "0_work_on_data.R"))
-datasets = load_and_clean(data_path, "data_ATT_2002_2015_2.csv")
+datasets = load_and_clean("M:/CNRACL/output/clean_data_finalisation", "/data_ATT_2002_2015_2.csv")
 data_id = datasets[[1]]
 data_max = datasets[[2]]
 data_min = datasets[[3]]
@@ -17,7 +17,50 @@ data_min = datasets[[3]]
 ## I. Sample description ####
 
 ## I.1 Sample  ####
+table_count <- matrix(ncol = 5, nrow = 2)
+table_count[1,1] <- length(unique(data_id$ident))
+table_count[2,1] <- 100
+table_count[1,2:5] <- format(round(as.data.frame(table(data_id$c_cir_2011))[1:4,2]))
+table_count[2, 2:5] <- format(round(as.data.frame(table(data_id$c_cir_2011))[1:4,2]/length(unique(data_id$ident))*100,1),1)
+colnames(table_count) = c("All", "TTH1","TTH2", "TTH3", "TTH4")
+rownames(table_count) = c('\\Number of agents', "\\% share of ATT population")
 
+print(xtable(table_count,align="lccccc",nrow = nrow(table), ncol=ncol(table_censoring)+1, byrow=T, digits = 3),
+      sanitize.text.function=identity,size="\\footnotesize", 
+      only.contents=F, include.colnames = T)
+
+data <- read.csv(paste0("M:/CNRACL/output/clean_data_finalisation", "/data_ATT_2002_2015_2.csv"))
+data_id_bis <- data[!duplicated(data[,"ident"]),]
+table_count_grade_next = matrix(ncol = 6, nrow = 2)
+table_count_grade_next[1,1] = length(unique(data_id_bis$ident))
+table_count_grade_next[2,1] = 100
+table_count_grade_next[1,2:6] = format(round(as.data.frame(table(data_id_bis$grade_bef))[1:5,2]))
+table_count_grade_next[2, 2:6] = format(round(as.data.frame(table(data_id_bis$grade_bef))[1:5,2]/length(unique(data_id_bis$ident))*100,1),1)
+colnames(table_count_grade_next) = c("All", "missing", "other", "TTH1","TTH2", "TTH3")
+rownames(table_count_grade_next) = c('\\Number of agents', "\\% share of ATT population")
+
+data_1st_y <- data[which(data$annee == data$last_y_in_grade_bef),]
+data_1st_y_autre <- data_1st_y[which(data_1st_y$c_cir == "autre"),]
+data_1st_y_autre_ib_null <- data_1st_y[which(data_1st_y$ib == 0),]
+print(dim(data_1st_y_autre_ib_null))
+
+data_last_y <- data[which(data$annee == data$first_y_in_next_grade),]
+
+print(xtable(table_count_grade_next,align="lcccccc",nrow = nrow(table), ncol=ncol(table_count_grade_next)+1, byrow=T, digits = 3),
+      sanitize.text.function=identity,size="\\footnotesize", 
+      only.contents=F, include.colnames = T)
+
+table_count_grade_next = matrix(ncol = 6, nrow = 2)
+table_count_grade_next[1,1] = length(unique(data$ident))
+table_count_grade_next[2,1] = 100
+table_count_grade_next[1,2:6] = format(round(as.data.frame(table(data$grade_bef))[1:5,2]))
+table_count_grade_next[2, 2:6] = format(round(as.data.frame(table(data$grade_bef))[1:5,2]/length(unique(data$ident))*100,1),1)
+colnames(table_count_grade_next) = c("All", "missing", "other", "TTH1","TTH2", "TTH3")
+rownames(table_count_grade_next) = c('\\Number of agents', "\\% share of ATT population")
+
+print(xtable(table_count_grade_next,align="lcccccc",nrow = nrow(table), ncol=ncol(table_count_grade_next)+1, byrow=T, digits = 3),
+      sanitize.text.function=identity,size="\\footnotesize", 
+      only.contents=F, include.colnames = T)
 
 ## I.2 Censoring ####
 
@@ -40,6 +83,8 @@ print(xtable(table_censoring,align="lccccc",nrow = nrow(table), ncol=ncol(table_
       sanitize.text.function=identity,size="\\footnotesize", 
       only.contents=F, include.colnames = T)
 
+
+figpath = "Q:/CNRACL/Slides/Graphiques"
 
 ## 1.3 Année d'affilation ####
 
@@ -88,7 +133,7 @@ hazard_by_duree = function(data, save = F, corps = F)
   xlabel = ifelse(corps, "Duration in corps", "Duration in grade")
   plot(grade, hazard, type ="l", lwd = 3, xlab = xlabel, ylab = "Hazard rate", col = "darkcyan")
   par(new = T)
-  plot(grade, effectif, type ="l", lty = 2, lwd = 2, , axes=F, xlab=NA, ylab=NA)
+  plot(grade, effectif, type ="l", lty = 2, lwd = 2, axes=F, xlab=NA, ylab=NA)
   axis(side = 4)
   mtext(side = 4, line = 3, 'Effectifs')
   legend("topleft", legend = c("Hazard", "Nb obs."), lwd = 3, lty = c(1,3), col = c("darkcyan", "black"), cex = 1.1)
@@ -110,7 +155,7 @@ hazard_by_ech = function(data, save = F)
   par(mar = c(5,5,2,5))
   plot(ech, hazard, type ="l", lwd = 3, xlab = "Echelon", ylab = "Hazard rate", col = "darkcyan")
   par(new = T)
-  plot(ech, effectif, type ="l", lty = 2, lwd = 2, , axes=F, xlab=NA, ylab=NA)
+  plot(ech, effectif, type ="l", lty = 2, lwd = 2, axes=F, xlab=NA, ylab=NA)
   axis(side = 4)
   mtext(side = 4, line = 3, 'Effectifs')
   legend("topleft", legend = c("Hazard", "Nb obs."), lwd = 3, lty = c(1,3), col = c("darkcyan", "black"), cex = 1.1)
