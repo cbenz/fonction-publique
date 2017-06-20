@@ -183,8 +183,11 @@ def main(data_bef_2011_path, output_filename):
         data_merged_w_filter_on_echelon_etat_when_in_grade
         )
     print len(data_merged_w_filter_on_echelon_etat_when_in_grade_when_exit_status.ident.unique())
-#    data_clean_bis.to_csv(
-#        os.path.join(output_directory_path, "clean_data_finalisation", output_filename))
+    data_merged_w_filter_on_echelon_etat_when_in_grade_when_exit_status.to_csv(
+        os.path.join(output_directory_path,
+                     "clean_data_finalisation",
+                     "data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat.csv"
+                     ))
 
 
 if __name__ == '__main__':
