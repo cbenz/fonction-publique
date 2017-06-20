@@ -7,7 +7,7 @@ library(xtable)
 
 
 source(paste0(wd, "0_work_on_data.R"))
-datasets = load_and_clean("M:/CNRACL/output/clean_data_finalisation", "/data_ATT_2002_2015_2.csv")
+datasets = load_and_clean("M:/CNRACL/output/clean_data_finalisation", "/data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat.csv")
 data_id = datasets[[1]]
 data_max = datasets[[2]]
 data_min = datasets[[3]]
@@ -130,12 +130,12 @@ hazard_by_duree = function(data, save = F, corps = F)
   effectif[g] = length(which(data$time == grade[g]))
   }  
   par(mar = c(5,5,2,5))
-  xlabel = ifelse(corps, "Duration in corps", "Duration in grade")
+  xlabel = ifelse(corps, "Duration in section", "Duration in rank")
   plot(grade, hazard, type ="l", lwd = 3, xlab = xlabel, ylab = "Hazard rate", col = "darkcyan")
   par(new = T)
   plot(grade, effectif, type ="l", lty = 2, lwd = 2, axes=F, xlab=NA, ylab=NA)
   axis(side = 4)
-  mtext(side = 4, line = 3, 'Effectifs')
+  mtext(side = 4, line = 3, 'Nb obs.')
   legend("topleft", legend = c("Hazard", "Nb obs."), lwd = 3, lty = c(1,3), col = c("darkcyan", "black"), cex = 1.1)
   
 }  
@@ -153,11 +153,11 @@ hazard_by_ech = function(data, save = F)
   }  
 
   par(mar = c(5,5,2,5))
-  plot(ech, hazard, type ="l", lwd = 3, xlab = "Echelon", ylab = "Hazard rate", col = "darkcyan")
+  plot(ech, hazard, type ="l", lwd = 3, xlab = "Level", ylab = "Hazard rate", col = "darkcyan")
   par(new = T)
   plot(ech, effectif, type ="l", lty = 2, lwd = 2, axes=F, xlab=NA, ylab=NA)
   axis(side = 4)
-  mtext(side = 4, line = 3, 'Effectifs')
+  mtext(side = 4, line = 3, 'Nb. obs')
   legend("topleft", legend = c("Hazard", "Nb obs."), lwd = 3, lty = c(1,3), col = c("darkcyan", "black"), cex = 1.1)
 }  
 
@@ -189,7 +189,7 @@ hazard_by_distance = function(data, save = F, type = "choix", colors = c("black"
   lines(values, hazards[1,], col = colors[1], lwd = 3, lty = 2)
   lines(values, hazards[2,], col =  colors[2], lwd = 3, lty = 2)
   lines(values, hazards[3,], col =  colors[3], lwd = 4)
-  legend("bottomright", legend = c("Grade", "Echelon", "Double"),lty = c(2,2,1) , col = colors, lwd = 3)
+  legend("bottomright", legend = c("Rank", "Level", "Both"),lty = c(2,2,1) , col = colors, lwd = 3)
 }  
 
 
@@ -279,7 +279,7 @@ dev.off()
 
 pdf(paste0(fig_path,"hazard_by_dist_TTH3.pdf"))
 hazard_by_distance(data = subdata)
-abline(v = 0)
+abline(v = 0, lwd = 3)
 dev.off()
 
 

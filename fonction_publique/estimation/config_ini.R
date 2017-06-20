@@ -7,8 +7,8 @@ git_path =  'U:/Projets/CNRACL/fonction-publique/fonction_publique/'
 wd =  'U:/Projets/CNRACL/fonction-publique/fonction_publique/estimation/'
 
 
-fig_path = "Q:/CNRACL/Slides/Graphiques/"
-tab_path = "Q:/CNRACL/Slides/Graphiques/"
+fig_path = "Q:/CNRACL/Slides/2017_06_IMA/Graphiques/"
+tab_path = "Q:/CNRACL/Slides/2017_06_IMA/Graphiques/"
 
 #install.packages("OIsurv");install.packages("rms");install.packages("emuR");install.packages("RColorBrewer");
 # install.packages("RcmdrPlugin");install.packages("flexsurv"); install.packages("mfx") ; install.packages("texreg")

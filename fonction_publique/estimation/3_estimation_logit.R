@@ -85,120 +85,77 @@ data_est$duration_bef_unique_threshold2C = data_est$time^2*(1-data_est$I_unique_
 ## I.1 Estimation ####
 
 
-log1 <- glm(exit_status2 ~ c_cir_2011 +  I_bothE + I_bothC,
-            data=data_est,x=T,family=binomial("logit"))
-
-
-log2 <- glm(exit_status2 ~c_cir_2011 +  I_bothE + I_bothC + 
-              sexe + ,
-            data=data_est,x=T,family=binomial("logit"))
-
-log3 <- glm(exit_status2 ~c_cir_2011 +  I_bothE + I_bothC + 
-              sexe + generation_group + 
-              duration + duration2 ,
-            data=data_est,x=T,family = binomial("logit"))
-
-log4 <- glm(exit_status2 ~c_cir_2011 +I_bothE + I_bothC + 
-              sexe + generation_group + 
-              duration + duration2 + echelon,
-            data=data_est,x=T,family=binomial("logit"))
-
-log5 <- glm(exit_status2 ~c_cir_2011 +I_bothE + I_bothC + 
-              sexe + generation_group + 
-              duration_bef+  duration_aft + 
-              echelon_bef + echelon_aft,
-            data=data_est[data_test$c_cir != "TTH1"],x=T,family=binomial("logit"))
-
-
-model1 <- glm(exit_status2 ~ c_cir_2011 +  duration + duration2 + sexe,
+model1 <- glm(exit_status2 ~  I_unique_threshold,
               data=data_est,x=T,family=binomial("logit"))
 
-# model2 <- glm(exit_status2 ~ c_cir_2011 + I_bothC + I_bothE + sexe,
-#               data=data_est,x=T,family=binomial("logit"))
-# 
-# model3 <- glm(exit_status2 ~ c_cir_2011 + I_bothC + I_bothE + sexe + duration + duration2 + sexe,
-#               data=data_est,x=T,family=binomial("logit"))
-
-model4 <- glm(exit_status2 ~ c_cir_2011 + I_unique_threshold + sexe,
+model2 <- glm(exit_status2 ~ I_unique_threshold +  c_cir_2011 + sexe,
               data=data_est,x=T,family=binomial("logit"))
 
-model4b <- glm(exit_status2 ~ c_cir_2011 + I_unique_threshold + duration_aft_unique_threshold + duration_bef_unique_threshold + sexe,
+model3 <- glm(exit_status2 ~ I_unique_threshold  + c_cir_2011 + sexe + 
+                duration_aft_unique_threshold + duration_bef_unique_threshold,
                data=data_est,x=T,family=binomial("logit"))
 
-model5 <- glm(exit_status2 ~ c_cir_2011 + I_unique_thresholdC + sexe,
+model4 <- glm(exit_status2 ~ I_unique_threshold  + c_cir_2011 + sexe + 
+                duration_aft_unique_threshold +  duration_aft_unique_threshold2 + 
+                duration_bef_unique_threshold +  duration_bef_unique_threshold2,
               data=data_est,x=T,family=binomial("logit"))
 
-model5b <- glm(exit_status2 ~ c_cir_2011 + I_unique_thresholdC + duration_aft_unique_thresholdC + duration_bef_unique_thresholdC + sexe,
-               data=data_est,x=T,family=binomial("logit"))
+model5 <- glm(exit_status2 ~ c_cir_2011 + sexe + 
+                duration_aft_unique_threshold +  duration_aft_unique_threshold2 + 
+                duration + duration2,
+              data=data_est,x=T,family=binomial("logit"))
+
+
+me1 <- logitmfx(exit_status2 ~  I_unique_threshold,
+                data=data_est, atmean = F)
+
+me2 <- logitmfx(exit_status2 ~ I_unique_threshold +  c_cir_2011 + sexe,
+                data=data_est, atmean = F)
+
+me3 <- logitmfx(exit_status2 ~ I_unique_threshold  + c_cir_2011 + sexe + 
+                  duration_bef_unique_threshold + duration_aft_unique_threshold,
+                data=data_est, atmean = F)
+
+me4 <- logitmfx(exit_status2 ~ I_unique_threshold  + c_cir_2011 + sexe + 
+                duration_bef_unique_threshold +  duration_bef_unique_threshold2+
+                duration_aft_unique_threshold +  duration_aft_unique_threshold2,
+                data=data_est, atmean = F)
+
+me5 <- logitmfx(exit_status2 ~  c_cir_2011 + sexe + 
+                  duration + duration2,
+                data=data_est, atmean = F)
 
 ## Before/after
-l1 <- extract.glm2(log1, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
-l2 <- extract.glm2(log2, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
-l3 <- extract.glm2(log3, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
-l4 <- extract.glm2(log4, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
-l5 <- extract.glm2(log5, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
+l1 <- extract.glm2(model1, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
+l2 <- extract.glm2(model2, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
+l3 <- extract.glm2(model3, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
+l4 <- extract.glm2(model4, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
+l5 <- extract.glm2(model4, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
+
+lme1 <- extract(me1, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
+lme2 <- extract(me2, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
+lme3 <- extract(me3, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
+lme4 <- extract(me4, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
+lme5 <- extract(me5, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
 
 
-list_models <- list(l1, l2, l3, l4)
-# name.map <- list("I_gradeC"="\\$\mathbb{1}_{{cond.grade1}}\\$","I_gradeE"="\\$\mathbb{1}_{{cond.grade2}}\\$",
-#                  "I_echC"="\\$\mathbb{1}_{{cond.ech1}}\\$","I_echE"="\\$\mathbb{1}_{{cond.ech2}}\\$",
-#                  "I_echC"="\\$\mathbb{1}_{{cond.ech1}}\\$","I_echE"="\\$\mathbb{1}_{{cond.ech2}}\\$")
-# oldnames <- all.varnames.dammit(list_models) 
-omit_var = paste0("(Intercept)|sexeM|generation_group7|generation_group8|generation_group9|",
-                  "echelon|an_aff")               
 
-print(texreg(list_models,
+names = c("I_threshold", "Rank 2", "Rank 3", "Rank 4", "sexe = M", "duration_bef", "duration_bef2","duration_aft",
+          "duration_aft2", "duration", "duration2")
+
+list_models    <- list(l1, l2, l3, l4, l5)
+list_models_me <- list(lme2, lme4, lme5)
+
+print(texreg(list_models_me,
              caption.above=F, 
              float.pos = "!ht",
-             digit=2,
+             digit=3,
              only.content= T,
              stars = c(0.01, 0.05, 0.1),
+             custom.coef.names=names,
              #custom.coef.names=ror$ccn,  omit.coef=ror$oc, reorder.coef=ror$rc,
-             omit.coef = omit_var,
+             #omit.coef = omit_var,
              booktabs=T), only.contents = T)
-
-
-
-## I.2 Interpretation ####
-log5 <- glm(exit_status2 ~ sexe +generation_group + c_cir_2011 + 
-              duration + duration2 + echelon + an_aff + 
-              I_echC + I_gradeC+ I_echC:I_gradeC +
-              I_echE + I_gradeE+ I_echE:I_gradeE,
-            data=data_est ,x=T,family=binomial("logit"))
-mfx1log5 <- logitmfx(exit_status2 ~ sexe +generation_group + c_cir_2011 + 
-                       duration + duration2 + echelon + an_aff + 
-                       I_echC + I_gradeC+ I_echC:I_gradeC +
-                       I_echE + I_gradeE+ I_echE:I_gradeE,
-                     data=data_est, atmean = T)
-mfx2log5 <- logitmfx(exit_status2 ~ sexe +generation_group + c_cir_2011 + 
-                       duration + duration2 + echelon + an_aff + 
-                       I_echC + I_gradeC+ I_echC:I_gradeC +
-                       I_echE + I_gradeE+ I_echE:I_gradeE,
-                     data=data_est, atmean = F)
-
-names = variable.names(log5)
-var  = c("sexeM", "generation_group7", "generation_group8", "c_cir_2011TTH2", "c_cir_2011TTH3", "c_cir_2011TTH4", 
-         "I_echC:I_gradeC", "I_echE:I_gradeE") 
-index_var = which(is.element(names, var))
-
-coef1 = coef(log5)[index_var]
-odd = exp(coef(log5)[index_var])
-me1 = mfx1log5$mfxest[index_var-1]
-me2 = mfx2log5$mfxest[index_var-1]
-
-
-table = matrix(ncol = length(index_var), nrow = 4)
-table[1,] = coef1
-table[2,] = odd
-table[3,] = me1
-table[4,] = me2
-colnames(table) = c("Homme", "G = 1970s", "G = 1980s", "TTH2", "TTH3", "TTH4", "I_echC:I_gradeC", "I_echE:I_gradeE")
-rownames(table) = c('Coefficient', "Odd ratio", "Marginal effect", "Average partial effect")
-
-print(xtable(table,align="lcccccccc",nrow = nrow(table), ncol=ncol(table)+1, byrow=T, digits = 3),
-      sanitize.text.function=identity,size="\\footnotesize", 
-      only.contents=F, include.colnames = T)
-
 
 
 ## I.2 Simulation ####
@@ -217,28 +174,24 @@ data_test1     = data_test[which(data_test$annee == 2011),]
 model0 <- glm(exit_status2 ~  1,
               data=data_learning1 ,x=T,family=binomial("logit"))
 
-model1 <- glm(exit_status2 ~ sexe + generation_group + c_cir_2011,
-              data=data_learning1 ,x=T,family=binomial("logit"))
+model1 <- glm(exit_status2 ~ I_unique_threshold  + c_cir_2011 + sexe + 
+                duration_aft_unique_threshold +  duration_aft_unique_threshold2 + 
+                duration_bef_unique_threshold +  duration_bef_unique_threshold2,
+              data=data_est,x=T,family=binomial("logit"))
 
-model3 <- glm(exit_status2 ~ sexe + generation_group + c_cir_2011  + echelon + an_aff+ 
+model2 <- glm(exit_status2 ~ c_cir_2011 + sexe + 
                 duration + duration2,
-              data=data_learning1 ,x=T,family=binomial("logit"))
-
-model4 <- glm(exit_status2 ~ sexe + generation_group + c_cir_2011 + 
-                duration + duration2 + echelon + an_aff + 
-                I_echC + I_gradeC+ I_echC:I_gradeC +
-                I_echE + I_gradeE+ I_echE:I_gradeE,
-              data=data_learning1 ,x=T,family=binomial("logit"))
+              data=data_est,x=T,family=binomial("logit"))
 
 # Simulated exit
 data_test1$yhat0     <- predict(model0, data_test1,type = "response") 
 data_test1$yhat1     <- predict(model1, data_test1,type = "response") 
 data_test1$yhat2     <- predict(model2, data_test1,type = "response") 
-data_test1$yhat3     <- predict(model3, data_test1,type = "response") 
+#data_test1$yhat3     <- predict(model3, data_test1,type = "response") 
 data_test1$exit_hat0 <- as.numeric(lapply(data_test1$yhat0 , tirage))
 data_test1$exit_hat1 <- as.numeric(lapply(data_test1$yhat1 , tirage))
 data_test1$exit_hat2 <- as.numeric(lapply(data_test1$yhat2 , tirage))
-data_test1$exit_hat3 <- as.numeric(lapply(data_test1$yhat3 , tirage))
+#data_test1$exit_hat3 <- as.numeric(lapply(data_test1$yhat3 , tirage))
 
 
 
@@ -280,8 +233,8 @@ print(xtable(table_fit,align="lcccc",nrow = nrow(table_fit), ncol=ncol(table_fit
 
 ## Fit by grade
 
-table_by_grade = matrix(ncol = 5, nrow = 5)
-for (m in 1:5)
+table_by_grade = matrix(ncol = 4, nrow = 5)
+for (m in 1:4)
 {
   if (m == 1){data_test1$exit = data_test1$exit_status2}  
   if (m == 2){data_test1$exit = data_test1$exit_hat0}  
@@ -298,9 +251,9 @@ for (m in 1:5)
 }
 
 
-colnames(table_by_grade) = c('Observed', 'Null model', 'Controls1', 'Controls2', 'Full model')
+colnames(table_by_grade) = c('Observed', 'Null model', 'Model 2', 'Model 3')
 rownames(table_by_grade) = c("All", "TTH1", "TTH2", "TTH3", "TTH4")
-print(xtable(table_by_grade,align="lccccc",nrow = nrow(table_by_grade), 
+print(xtable(table_by_grade,align="lcccc",nrow = nrow(table_by_grade), 
              ncol=ncol(table_fit_by_grade)+1, byrow=T, digits = 3),
       sanitize.text.function=identity,size="\\footnotesize",
       only.contents=F, include.colnames = T)
@@ -311,8 +264,8 @@ print(xtable(table_by_grade,align="lccccc",nrow = nrow(table_by_grade),
 data_test1$age = data_test1$annee - data_test1$generation
 data_test1$femme =ifelse(data_test1$sexe == "F", 1, 0)
 
-table_movers = matrix(ncol = 5, nrow = 11)
-for (m in 1:5)
+table_movers = matrix(ncol = 4, nrow = 11)
+for (m in 1:4)
 {
   if (m == 1){data_test1$exit = data_test1$exit_status2}  
   if (m == 2){data_test1$exit = data_test1$exit_hat0}  
@@ -333,7 +286,7 @@ rownames(table_movers) = c("Prop of exit", "Mean age", "\\% women", "\\% TTTH1",
                            "Mean ib", "Q1 ib", "Median ib", "Q3 ib")
 
 
-print(xtable(table_movers,align="lccccc",nrow = nrow(table_movers), 
+print(xtable(table_movers,align="lcccc",nrow = nrow(table_movers), 
              ncol=ncol(table_movers)+1, byrow=T, digits = 0),
       sanitize.text.function=identity,size="\\footnotesize", hline.after = c(0, 2, 4),
       only.contents=F, include.colnames = T)
