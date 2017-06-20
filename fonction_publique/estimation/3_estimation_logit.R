@@ -28,12 +28,14 @@ data_est$time2[grade_modif] = data_est$dist_an_aff[grade_modif]
 
 # Distance variables
 data_est$I_echC = ifelse(data_est$echelon >= data_est$E_choice, 1, 0) 
-data_est$I_gradeC   = ifelse(data_est$time >= data_est$D_choice, 1, 0) 
-data_est$I_gradeC   = ifelse(data_est$time >= data_est$D_choice, 1, 0) 
+data_est$I_gradeC   = ifelse(data_est$time2 >= data_est$D_choice, 1, 0) 
+data_est$I_gradeC   = ifelse(data_est$time2 >= data_est$D_choice, 1, 0) 
 
+data_est$I_bothC =  ifelse(data_est$I_echC ==1 &  data_est$I_gradeC == 1, 1, 0) 
 
-data_est$I_echE = ifelse(data_est$echelon >= data_est$E_exam & data_est$c_cir_2011 == "TTH1", 1, 0) 
+data_est$I_echE     = ifelse(data_est$echelon >= data_est$E_exam & data_est$c_cir_2011 == "TTH1", 1, 0) 
 data_est$I_gradeE   = ifelse(data_est$time2 >= data_est$D_exam & data_est$c_cir_2011 == "TTH1", 1, 0) 
+data_est$I_bothE    = ifelse(data_est$I_echE ==1 &  data_est$I_gradeE == 1, 1, 0) 
 
 
 data_est$c_cir = factor(data_est$c_cir)
@@ -48,35 +50,24 @@ data_est$c_cir_2011 = factor(data_est$c_cir_2011)
 
 ## I.1 Estimation ####
 
-log1 <- glm(exit_status2 ~ sexe + generation_group + c_cir_2011 + echelon + an_aff + 
+
+log1 <- glm(exit_status2 ~c_cir_2011 +  I_bothE + I_bothC,
+            data=data_est,x=T,family=binomial("logit"))
+
+
+log2 <- glm(exit_status2 ~c_cir_2011 +  I_bothE + I_bothC + 
+              sexe + generation_group,
+            data=data_est,x=T,family=binomial("logit"))
+
+log3 <- glm(exit_status2 ~c_cir_2011 +  I_bothE + I_bothC + 
+              sexe + generation_group + 
               duration + duration2 ,
-            data=data_est ,x=T,family=binomial("logit"))
+            data=data_est,x=T,family=binomial("logit"))
 
-log2 <- glm(exit_status2 ~  I_echC + I_gradeC+ I_echC:I_gradeC + 
-              I_echE + I_gradeE+ I_echE:I_gradeE,
-            data=data_est ,x=T,family=binomial("logit"))
-
-log3 <- glm(exit_status2 ~ sexe +generation_group + c_cir_2011 +  echelon + an_aff + 
-              I_echC + I_gradeC+ I_echC:I_gradeC +
-              I_echE + I_gradeE+ I_echE:I_gradeE,
-            data=data_est ,x=T,family=binomial("logit"))
-
-log4 <- glm(exit_status2 ~ sexe +generation_group + c_cir_2011 +  echelon + an_aff + 
-              duration + duration2 + 
-              I_echC + I_gradeC+ I_echC:I_gradeC +
-              I_echE + I_gradeE+ I_echE:I_gradeE,
-            data=data_est ,x=T,family=binomial("logit"))
-
-
-
-
-log3 <- glm(exit_status2 ~   I_echC + I_gradeC+ I_echC:I_gradeC,
-            data=data_est[data_est$c_cir_2011 == "TTH1", ] ,x=T,family=binomial("logit"))
-
-log3 <- glm(exit_status2 ~ sexe +generation_group +   echelon + an_aff + 
-              I_echC + I_gradeC+ I_echC:I_gradeC +
-              I_echE + I_gradeE+ I_echE:I_gradeE,
-            data=data_est[data_est$c_cir_2011 == "TTH1", ] ,x=T,family=binomial("logit"))
+log4 <- glm(exit_status2 ~c_cir_2011 +  I_bothE + I_bothC + 
+              sexe + generation_group + 
+              duration + duration2 + echelon,
+            data=data_est,x=T,family=binomial("logit"))
 
 
 
@@ -160,7 +151,7 @@ data_test     = data_est[which(is.element(data_est$ident, list_test)),]
 
 
 ## 2011 ####
-data_learning1 = data_learning[which(data_test$annee == 2011),]
+data_learning1 = data_learning[which(data_test$annee >= 2011),]
 data_test1     = data_test[which(data_test$annee == 2011),]
 
 model0 <- glm(exit_status2 ~  1,
