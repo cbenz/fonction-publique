@@ -35,39 +35,66 @@ data_est$I_bothC =  ifelse(data_est$I_echC ==1 &  data_est$I_gradeC == 1, 1, 0)
 
 data_est$I_echE     = ifelse(data_est$echelon >= data_est$E_exam & data_est$c_cir_2011 == "TTH1", 1, 0) 
 data_est$I_gradeE   = ifelse(data_est$time2 >= data_est$D_exam & data_est$c_cir_2011 == "TTH1", 1, 0) 
+
 data_est$I_bothE    = ifelse(data_est$I_echE ==1 &  data_est$I_gradeE == 1, 1, 0) 
 
 
 data_est$c_cir = factor(data_est$c_cir)
 
-data_est$duration = data_est$time
-data_est$duration2 = data_est$time^2 
+
 
 data_est$generation_group = factor(data_est$generation_group)
 data_est$c_cir_2011 = factor(data_est$c_cir_2011)
+
+
+data_est$age  = data_est$annee - data_est$generation
+data_est$age2 = data_est$age*data_est$age
+
+
+data_est$echelon_bef = data_est$echelon*data_est$I_bothC
+data_est$echelon_aft = data_est$echelon*(1-data_est$I_bothC)
+
+data_est$duration  = data_est$time
+data_est$duration2 = data_est$time^2
+
+data_est$duration_aft  = data_est$time*data_est$I_bothC
+data_est$duration_aft2 = data_est$time^2*data_est$I_bothC
+
+data_est$duration_bef  = data_est$time*(1-data_est$I_bothC)
+data_est$duration_bef2 = data_est$time^2*(1-data_est$I_bothC)
 
 #### I. Binary model ####
 
 ## I.1 Estimation ####
 
 
-log1 <- glm(exit_status2 ~c_cir_2011 +  I_bothE + I_bothC,
+log1 <- glm(exit_status2 ~ c_cir_2011 +  I_bothE + I_bothC,
             data=data_est,x=T,family=binomial("logit"))
 
 
 log2 <- glm(exit_status2 ~c_cir_2011 +  I_bothE + I_bothC + 
-              sexe + generation_group,
+              sexe + ,
             data=data_est,x=T,family=binomial("logit"))
 
 log3 <- glm(exit_status2 ~c_cir_2011 +  I_bothE + I_bothC + 
               sexe + generation_group + 
               duration + duration2 ,
-            data=data_est,x=T,family=binomial("logit"))
+            data=data_est,x=T,family = binomial("logit"))
 
-log4 <- glm(exit_status2 ~c_cir_2011 +  I_bothE + I_bothC + 
+log4 <- glm(exit_status2 ~c_cir_2011 +I_bothE + I_bothC + 
               sexe + generation_group + 
               duration + duration2 + echelon,
             data=data_est,x=T,family=binomial("logit"))
+
+
+
+log5 <- glm(exit_status2 ~c_cir_2011 +I_bothE + I_bothC + 
+              sexe + generation_group + 
+              duration_bef+  duration_aft + 
+              echelon_bef + echelon_aft,
+            data=data_est[data_test$c_cir != "TTH1"],x=T,family=binomial("logit"))
+
+
 
 
 
