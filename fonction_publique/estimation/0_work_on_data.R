@@ -51,9 +51,7 @@ load_and_clean = function(data_path, dataname)
   data_long$E_choice[which(data_long$c_cir_2011 == "TTH2")] = 5
   data_long$E_choice[which(data_long$c_cir_2011 == "TTH3")] = 6
   
-  
   ## Data for estimations ####
-  
   data_long = data_long[which(data_long$annee <= data_long$last_y_observed_in_grade),]
   
   # One line per year of observation (min and max)

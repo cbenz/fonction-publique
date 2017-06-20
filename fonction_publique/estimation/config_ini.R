@@ -21,7 +21,7 @@ library(flexsurv)
 
 library(mfx)
 library(texreg)
-
+library(xtable)
 
 
 
@@ -105,3 +105,52 @@ mfx2<- function(modform,dist,data,boot=1000,digits=3){
   colnames(res2) <- c("marginal.effect","standard.error","z.ratio")  
   return(res2)
 }
+
+
+extract.glm2 = function (model, include.aic = TRUE, include.bic = TRUE, include.loglik = TRUE, 
+          include.deviance = TRUE, include.nobs = TRUE, ...) 
+{
+  s <- summary(model, ...)
+  coefficient.names <- rownames(s$coef)
+  coefficients <- s$coef[, 1]
+  standard.errors <- s$coef[, 2]
+  significance <- s$coef[, 4]
+  aic <- round(AIC(model))
+  bic <- round(BIC(model))
+  lik <- logLik(model)[1]
+  dev <- deviance(model)
+  n <- nobs(model)
+  gof <- numeric()
+  gof.names <- character()
+  gof.decimal <- logical()
+  if (include.aic == TRUE) {
+    gof <- c(gof, aic)
+    gof.names <- c(gof.names, "AIC")
+    gof.decimal <- c(gof.decimal, TRUE)
+  }
+  if (include.bic == TRUE) {
+    gof <- c(gof, bic)
+    gof.names <- c(gof.names, "BIC")
+    gof.decimal <- c(gof.decimal, TRUE)
+  }
+  if (include.loglik == TRUE) {
+    gof <- c(gof, lik)
+    gof.names <- c(gof.names, "Log Likelihood")
+    gof.decimal <- c(gof.decimal, TRUE)
+  }
+  if (include.deviance == TRUE) {
+    gof <- c(gof, dev)
+    gof.names <- c(gof.names, "Deviance")
+    gof.decimal <- c(gof.decimal, TRUE)
+  }
+  if (include.nobs == TRUE) {
+    gof <- c(gof, n)
+    gof.names <- c(gof.names, "Num. obs.")
+    gof.decimal <- c(gof.decimal, FALSE)
+  }
+  tr <- createTexreg(coef.names = coefficient.names, coef = coefficients, 
+                     se = standard.errors, pvalues = significance, gof.names = gof.names, 
+                     gof = gof, gof.decimal = gof.decimal)
+  return(tr)
+}
+
