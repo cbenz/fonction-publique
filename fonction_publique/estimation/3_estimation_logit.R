@@ -4,8 +4,8 @@
 
 
 ################ Estimation by logit ################
-
-
+wd = "C:/Users/l.degalle/CNRACL/fonction-publique/fonction_publique/estimation/"
+data_path = "M:/CNRACL/output/clean_data_finalisation/"
 
 source(paste0(wd, "0_work_on_data.R"))
 datasets = load_and_clean(data_path, "data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat.csv")
@@ -31,21 +31,18 @@ data_est$I_echC = ifelse(data_est$echelon >= data_est$E_choice, 1, 0)
 data_est$I_gradeC   = ifelse(data_est$time2 >= data_est$D_choice, 1, 0) 
 data_est$I_gradeC   = ifelse(data_est$time2 >= data_est$D_choice, 1, 0) 
 
-data_est$I_bothC =  ifelse(data_est$I_echC ==1 &  data_est$I_gradeC == 1, 1, 0) 
+data_est$I_bothC =  ifelse(data_est$I_echC ==1 &  data_est$I_gradeC == 1, 1, 0)
+
 
 data_est$I_echE     = ifelse(data_est$echelon >= data_est$E_exam & data_est$c_cir_2011 == "TTH1", 1, 0) 
 data_est$I_gradeE   = ifelse(data_est$time2 >= data_est$D_exam & data_est$c_cir_2011 == "TTH1", 1, 0) 
 
 data_est$I_bothE    = ifelse(data_est$I_echE ==1 &  data_est$I_gradeE == 1, 1, 0) 
 
-
 data_est$c_cir = factor(data_est$c_cir)
-
-
 
 data_est$generation_group = factor(data_est$generation_group)
 data_est$c_cir_2011 = factor(data_est$c_cir_2011)
-
 
 data_est$age  = data_est$annee - data_est$generation
 data_est$age2 = data_est$age*data_est$age
@@ -62,6 +59,26 @@ data_est$duration_aft2 = data_est$time^2*data_est$I_bothC
 
 data_est$duration_bef  = data_est$time*(1-data_est$I_bothC)
 data_est$duration_bef2 = data_est$time^2*(1-data_est$I_bothC)
+
+# Create unique threshold
+grade_modif_bis = which(data_est$c_cir_2011 == "TTH1")
+data_est$I_unique_threshold = data_est$I_bothC
+data_est$I_unique_threshold[grade_modif_bis] = data_est$I_bothE[grade_modif_bis]
+
+data_est$duration_aft_unique_threshold  = data_est$time*data_est$I_unique_threshold
+data_est$duration_aft_unique_threshold2 = data_est$time^2*data_est$I_unique_threshold
+
+data_est$duration_bef_unique_threshold  = data_est$time*(1-data_est$I_unique_threshold)
+data_est$duration_bef_unique_threshold2 = data_est$time^2*(1-data_est$I_unique_threshold)
+
+data_est$I_unique_thresholdC = data_est$I_bothC
+data_est$I_unique_thresholdC[grade_modif_bis] = data_est$I_bothC[grade_modif_bis]
+
+data_est$duration_aft_unique_thresholdC  = data_est$time*data_est$I_unique_thresholdC
+data_est$duration_aft_unique_threshold2C = data_est$time^2*data_est$I_unique_thresholdC
+
+data_est$duration_bef_unique_thresholdC  = data_est$time*(1-data_est$I_unique_thresholdC)
+data_est$duration_bef_unique_threshold2C = data_est$time^2*(1-data_est$I_unique_thresholdC)
 
 #### I. Binary model ####
 
@@ -86,8 +103,6 @@ log4 <- glm(exit_status2 ~c_cir_2011 +I_bothE + I_bothC +
               duration + duration2 + echelon,
             data=data_est,x=T,family=binomial("logit"))
 
-
-
 log5 <- glm(exit_status2 ~c_cir_2011 +I_bothE + I_bothC + 
               sexe + generation_group + 
               duration_bef+  duration_aft + 
@@ -95,8 +110,26 @@ log5 <- glm(exit_status2 ~c_cir_2011 +I_bothE + I_bothC +
             data=data_est[data_test$c_cir != "TTH1"],x=T,family=binomial("logit"))
 
 
+model1 <- glm(exit_status2 ~ c_cir_2011 +  duration + duration2 + sexe,
+              data=data_est,x=T,family=binomial("logit"))
 
+# model2 <- glm(exit_status2 ~ c_cir_2011 + I_bothC + I_bothE + sexe,
+#               data=data_est,x=T,family=binomial("logit"))
+# 
+# model3 <- glm(exit_status2 ~ c_cir_2011 + I_bothC + I_bothE + sexe + duration + duration2 + sexe,
+#               data=data_est,x=T,family=binomial("logit"))
 
+model4 <- glm(exit_status2 ~ c_cir_2011 + I_unique_threshold + sexe,
+              data=data_est,x=T,family=binomial("logit"))
+
+model4b <- glm(exit_status2 ~ c_cir_2011 + I_unique_threshold + duration_aft_unique_threshold + duration_bef_unique_threshold + sexe,
+               data=data_est,x=T,family=binomial("logit"))
+
+model5 <- glm(exit_status2 ~ c_cir_2011 + I_unique_thresholdC + sexe,
+              data=data_est,x=T,family=binomial("logit"))
+
+model5b <- glm(exit_status2 ~ c_cir_2011 + I_unique_thresholdC + duration_aft_unique_thresholdC + duration_bef_unique_thresholdC + sexe,
+               data=data_est,x=T,family=binomial("logit"))
 
 ## Before/after
 l1 <- extract.glm2(log1, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
