@@ -2,9 +2,9 @@
 ##  Paths ####
 
 rm(list = ls()); gc()
-data_path = "M:/CNRACL/output/clean_data_finalisation/"
-git_path =  'U:/Projets/CNRACL/fonction-publique/fonction_publique/'
-wd =  'U:/Projets/CNRACL/fonction-publique/fonction_publique/estimation/'
+data_path = "/Users/simonrabate/Desktop/data/CNRACL/output/"
+git_path =  '/Users/simonrabate/Desktop/IPP/CNRACL'
+wd =  '/Users/simonrabate/Desktop/IPP/CNRACL/fonction_publique/estimation/'
 
 
 fig_path = "Q:/CNRACL/Slides/2017_06_IMA/Graphiques/"

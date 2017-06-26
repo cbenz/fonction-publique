@@ -4,8 +4,6 @@
 
 
 ################ Estimation by logit ################
-wd = "C:/Users/l.degalle/CNRACL/fonction-publique/fonction_publique/estimation/"
-data_path = "M:/CNRACL/output/clean_data_finalisation/"
 
 source(paste0(wd, "0_work_on_data.R"))
 datasets = load_and_clean(data_path, "data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat.csv")
@@ -291,6 +289,28 @@ print(xtable(table_movers,align="lcccc",nrow = nrow(table_movers),
       sanitize.text.function=identity,size="\\footnotesize", hline.after = c(0, 2, 4),
       only.contents=F, include.colnames = T)
 
+
+
+#### II. Multivariate  ####
+
+varlist = c("ident", "annee", "sexe", "generation_group",  "an_aff", "c_cir_2011",
+            "ib", "echelon", "time",
+            "exit_status2", "next_grade",
+            "I_unique_threshold")
+            #"duration_bef_unique_threshold", "duration_bef_unique_threshold2",
+            #"duration_aft_unique_threshold", "duration_aft_unique_threshold2")
+datam = data_est[, varlist]
+datam$next_grade = as.character(datam$next_grade)
+datam$c_cir_2011 = as.character(datam$c_cir_2011)
+
+datam$next_year = ifelse(datam$exit_status2 == 0, "same", "oth")
+list = which(datam$next_year == "oth" & is.element(datam$next_grade, c("TTH1", "TTH2", "TTH3", "TTH4")))
+datam$next_year[list] = "next"  
+
+estim = mlogit.data(datam, shape = "wide", choice = "next_year")
+
+mlog1 = mlogit(next_year ~ 0 | I_unique_threshold, data = estim, reflevel = "same")
+summary(mlog1)
 
 
 

@@ -7,7 +7,7 @@ library(xtable)
 
 
 source(paste0(wd, "0_work_on_data.R"))
-datasets = load_and_clean("M:/CNRACL/output/clean_data_finalisation", "/data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat.csv")
+datasets = load_and_clean(datapath, "/data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat.csv")
 data_id = datasets[[1]]
 data_max = datasets[[2]]
 data_min = datasets[[3]]
@@ -86,7 +86,7 @@ print(xtable(table_censoring,align="lccccc",nrow = nrow(table), ncol=ncol(table_
 
 figpath = "Q:/CNRACL/Slides/Graphiques"
 
-## 1.3 Année d'affilation ####
+## 1.3 Annee d'affilation ####
 
 subdata = data_id[which(data_id$left_censored == F),]
 time = 2001:2011
@@ -103,10 +103,10 @@ prop_entry[5,t] = length(which(subdata$an_aff == time[t] & subdata$c_cir_2011 ==
 pdf(paste0(fig_path,"distrib_an_aff.pdf"))
 layout(matrix(c(1,2,3,4), nrow=2,ncol=2, byrow=TRUE), heights=c(3,3))
 par(mar=c(2.5,4.1,1.3,0.2))
-barplot(prop_entry[2,],ylab="Proportion d'entrée",xlab="Année", col = "darkcyan", names.arg = time, main = "TTH1")
-barplot(prop_entry[3,],ylab="Proportion d'entrée",xlab="Année", col = "darkcyan", names.arg = time, main = "TTH2")
-barplot(prop_entry[4,],ylab="Proportion d'entrée",xlab="Année", col = "darkcyan", names.arg = time, main = "TTH3")
-barplot(prop_entry[5,],ylab="Proportion d'entrée",xlab="Année", col = "darkcyan", names.arg = time, main = "TTH4")
+barplot(prop_entry[2,],ylab="Proportion d'entr?e",xlab="Ann?e", col = "darkcyan", names.arg = time, main = "TTH1")
+barplot(prop_entry[3,],ylab="Proportion d'entr?e",xlab="Ann?e", col = "darkcyan", names.arg = time, main = "TTH2")
+barplot(prop_entry[4,],ylab="Proportion d'entr?e",xlab="Ann?e", col = "darkcyan", names.arg = time, main = "TTH3")
+barplot(prop_entry[5,],ylab="Proportion d'entr?e",xlab="Ann?e", col = "darkcyan", names.arg = time, main = "TTH4")
 dev.off()
 
 
@@ -215,7 +215,7 @@ abline(v = 4, lwd = 3)
 abline(v = 7, lwd = 3)
 dev.off()
 
-# Variantes durée aff
+# Variantes dur?e aff
 subdata2 = subdata
 subdata2$time = subdata2$annee - subdata2$an_aff +1
 pdf(paste0(fig_path,"hazard_by_duree_TTH1_bis.pdf"))
@@ -243,7 +243,7 @@ hazard_by_ech(data = subdata)
 abline(v = 5, lwd = 3)
 dev.off()
 
-# Variantes durée aff
+# Variantes dur?e aff
 subdata2 = subdata
 subdata2$time = subdata2$annee - subdata2$an_aff +1
 pdf(paste0(fig_path,"hazard_by_duree_TTH2_bis.pdf"))
