@@ -1,17 +1,34 @@
 
 ##  Paths ####
-
 rm(list = ls()); gc()
+
+place = "IPP_S"
+#place = "home_S"
+
+if (place == "home_S")
+{  
 data_path = "/Users/simonrabate/Desktop/data/CNRACL/output/"
 git_path =  '/Users/simonrabate/Desktop/IPP/CNRACL'
 wd =  '/Users/simonrabate/Desktop/IPP/CNRACL/fonction_publique/estimation/'
-
-
 fig_path = "Q:/CNRACL/Slides/2017_06_IMA/Graphiques/"
 tab_path = "Q:/CNRACL/Slides/2017_06_IMA/Graphiques/"
+}
+
+if (place == "IPP_S")
+{  
+data_path = "M:/CNRACL/output/clean_data_finalisation/"
+git_path =  'U:/Projets/CNRACL/fonction-publique/fonction_publique/'
+wd =  'U:/Projets/CNRACL/fonction-publique/fonction_publique/estimation/'
+fig_path = "Q:/CNRACL/Slides/2017_06_IMA/Graphiques/"
+tab_path = "Q:/CNRACL/Slides/2017_06_IMA/Graphiques/"
+}
+
+
+
 
 #install.packages("OIsurv");install.packages("rms");install.packages("emuR");install.packages("RColorBrewer");
 # install.packages("RcmdrPlugin");install.packages("flexsurv"); install.packages("mfx") ; install.packages("texreg")
+# ; install.packages("mlogit")
 library(OIsurv)
 library(rms)
 library(emuR)

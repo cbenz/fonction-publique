@@ -296,9 +296,9 @@ print(xtable(table_movers,align="lcccc",nrow = nrow(table_movers),
 varlist = c("ident", "annee", "sexe", "generation_group",  "an_aff", "c_cir_2011",
             "ib", "echelon", "time",
             "exit_status2", "next_grade",
-            "I_unique_threshold")
-            #"duration_bef_unique_threshold", "duration_bef_unique_threshold2",
-            #"duration_aft_unique_threshold", "duration_aft_unique_threshold2")
+            "I_unique_threshold",
+            "duration_bef_unique_threshold", "duration_bef_unique_threshold2",
+            "duration_aft_unique_threshold", "duration_aft_unique_threshold2")
 datam = data_est[, varlist]
 datam$next_grade = as.character(datam$next_grade)
 datam$c_cir_2011 = as.character(datam$c_cir_2011)
@@ -309,8 +309,14 @@ datam$next_year[list] = "next"
 
 estim = mlogit.data(datam, shape = "wide", choice = "next_year")
 
+
 mlog1 = mlogit(next_year ~ 0 | I_unique_threshold, data = estim, reflevel = "same")
+
+mlog2 = mlogit(next_year ~ 0 | I_unique_threshold + c_cir_2011 + sexe + 
+                 duration_aft_unique_threshold +  duration_aft_unique_threshold2 + 
+                 duration_bef_unique_threshold +  duration_bef_unique_threshold2, data = estim, reflevel = "same")
 summary(mlog1)
+summary(mlog2)
 
 
 
