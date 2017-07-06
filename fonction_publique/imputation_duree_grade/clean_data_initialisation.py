@@ -49,10 +49,10 @@ careers_asset_path = os.path.join(
 
 # Chargement des données de carrières, des tables de grilles et de la table de correspondances des grades et des corps :
 # (utile uniquement pour tester les fonctions de ce fichier indépendamment de imputations_2007_2011.py)
-data_carrieres = pd.read_csv(os.path.join(careers_asset_path, "corpsAT_2007.csv"))
-grilles = pd.read_hdf(os.path.join(grilles_path, 'grilles_fonction_publique/grilles_old.h5'))
-grilles_supp = pd.read_csv(os.path.join(grilles_path, "neg_grades_supp.csv"), delimiter = ';')
-table_corresp_grade_corps = pd.read_csv(os.path.join(grilles_path, 'corresp_neg_netneh.csv'), delimiter = ';')
+#data_carrieres = pd.read_csv(os.path.join(careers_asset_path, "corpsAT_2007.csv"))
+#grilles = pd.read_hdf(os.path.join(grilles_path, 'grilles_fonction_publique/grilles_old.h5'))
+#grilles_supp = pd.read_csv(os.path.join(grilles_path, "neg_grades_supp.csv"), delimiter = ';')
+#table_corresp_grade_corps = pd.read_csv(os.path.join(grilles_path, 'corresp_neg_netneh.csv'), delimiter = ';')
 
 
 def clean_grille(grilles, short, table_corresp_grade_corps):
@@ -98,7 +98,7 @@ def clean_grille(grilles, short, table_corresp_grade_corps):
 
     if short:
         grilles = grilles[
-            ['c_cir', 'date_effet_grille']
+            ['c_cir', 'date_effet_grille', 'annee_effet']
             ].drop_duplicates()
     else:
         grilles = grilles

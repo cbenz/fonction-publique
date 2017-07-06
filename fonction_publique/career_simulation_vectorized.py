@@ -147,6 +147,7 @@ class AgentFpt:
         dataframe = self.dataframe
 
         if date_effet_legislation_change_variable_name is not None:
+            # Initialize date_effet_legislation_change_variable_name to "-infinity"
             self.dataframe[date_effet_legislation_change_variable_name] = pd.Timestamp.max.floor('D')
 
         grades = dataframe.grade.unique()  # TODO: use a cache for this
@@ -166,7 +167,7 @@ class AgentFpt:
                 (grade_filtered_grille.date_effet_grille >= min_dates_effet_grille)
                 ]
             for echelon in echelons:  # Only changing echlons
-                if not ((dataframe.echelon == echelon) & (dataframe.grade)).any():
+                if not ((dataframe.echelon == echelon) & (dataframe.grade == grade)).any():
                     continue  # We skip the echelons not present in the dataframe
                 dates_effet_grille = dataframe.loc[
                     (dataframe.echelon == echelon) & (dataframe.grade == grade),
@@ -178,7 +179,9 @@ class AgentFpt:
                         (dataframe.grade == grade) &
                         (dataframe[start_date_effet_variable_name] == date_effet_grille),
                         'duree_echelon_grille_initiale'
-                        ].squeeze()
+                        ].unique()
+                    assert len(duree) == 1
+                    duree = duree[0]
 
                     durees_by_date = date_effet_filtered_grille.loc[
                         (date_effet_filtered_grille.date_effet_grille >= date_effet_grille) &
@@ -191,9 +194,15 @@ class AgentFpt:
                         ].set_index('date_effet_grille', drop = True)
 
                     if [duree] != durees_by_date[duree_str].unique().tolist():
-                        date_prochaine_reforme_grille = durees_by_date.loc[
-                            durees_by_date[duree_str] != duree,
-                            ].index.min()
+                        try:
+                            date_prochaine_reforme_grille = durees_by_date.loc[
+                                durees_by_date[duree_str] != duree,
+                                ].index.min()
+                        except ValueError as error:
+                            print(durees_by_date[duree_str])
+                            print(duree)
+                            raise(error)
+
                         dataframe.loc[
                             (dataframe.echelon == echelon) &
                             (dataframe.grade == grade) &
@@ -239,7 +248,6 @@ class AgentFpt:
             start_variable_name = "date_effet_grille_en_cours",
             next_variable_name = 'next_grille_date_effet'
             )
-
         self.compute_echelon_duree(
             date_effet_variable_name = 'date_effet_grille_en_cours',
             duree_variable_name = 'duree_echelon_grille_initiale'
