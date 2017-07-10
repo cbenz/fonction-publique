@@ -105,6 +105,14 @@ class AgentFpt:
         grade_filtered_grille = self.grille.loc[
             self.grille.code_grade.isin(grades)
             ]
+#        dataframe = dataframe.rename(columns = {
+#            "echelon_max_at_date_effet_grille_en_cours_x": "echelon_max_at_date_effet_grille_en_cours",
+#            "echelon_max_at_date_effet_grille_en_cours2_x":"echelon_max_at_date_effet_grille_en_cours2"}
+#        )
+#        dataframe = dataframe.rename(
+#            columns = {"echelon_max_at_date_effet_grille_en_cours_y":"echelon_max_at_date_effet_grille_en_cours"}
+#            )
+#        print dataframe.columns
         for grade in grades:
             clean_dates_effet_grille = dataframe.loc[
                 dataframe.grade == grade,
@@ -135,6 +143,7 @@ class AgentFpt:
                         selected_entries & (dataframe.echelon == echelon),
                         duree_variable_name,
                         ] = duree
+                    print dataframe
                     dataframe.loc[
                         selected_entries & (dataframe.echelon == dataframe[echelon_max_variable_name]),
                         duree_variable_name,
@@ -174,12 +183,15 @@ class AgentFpt:
                     start_date_effet_variable_name
                     ]
                 for date_effet_grille in dates_effet_grille:
+                    print dataframe.columns
                     duree = dataframe.loc[
                         (dataframe.echelon == echelon) &
                         (dataframe.grade == grade) &
                         (dataframe[start_date_effet_variable_name] == date_effet_grille),
                         'duree_echelon_grille_initiale'
                         ].unique()
+                    if len(duree) == 0:
+                        duree = [0]
                     assert len(duree) == 1
                     duree = duree[0]
 
@@ -231,6 +243,7 @@ class AgentFpt:
         assert date_effet_grille != 'date_effet_grille'
         assert date_effet_grille in dataframe, '{} is not present in dataframe which columns are {}'.format(
             date_effet_grille, dataframe.columns)
+
         dataframe = dataframe.merge(
             echelon_max_by_grille,
             how = 'left',
@@ -277,18 +290,18 @@ class AgentFpt:
             start_date_variable_name = 'period',
             duree_variable_name = 'duree_effective_echelon')
 
-    def complete(self, date_observation = None):
+    def complete(self, date_observation = None, end_date = None):
 
         if date_observation is None:
             date_observation = 'period'
             log.info('date_observation is none. Using period')
 
-        dataframe = self.dataframe.loc[~self.dataframe.ident.isin([2, 8])].copy()  # TOOD remove this
-        # We select the quarter starting after the oldest date
+        assert end_date is not None
+       # We select the quarter starting after the oldest date
         start_date = (
             dataframe[date_observation].min() + pd.tseries.offsets.QuarterEnd() + pd.tseries.offsets.MonthBegin(n=1)
             ).floor('D')
-        end_date = pd.Timestamp("2020-01-01").floor('D')
+
         quarters_range = pd.date_range(start = start_date, end = end_date, freq = 'Q')
         result = pd.DataFrame()
         for quarter_date in quarters_range:
@@ -316,11 +329,15 @@ class AgentFpt:
         next_dataframe.echelon += 1  # TODO deal with str echelon
         return next_dataframe
 
-    def compute_result(self):
+    def compute_result(self, end_date = None, test = False):
         iteration = 0
         while not self.dataframe.empty:
             self.compute_all()
-            self.complete()
+            if test:
+                self.dataframe = self.dataframe.loc[~self.dataframe.ident.isin([2, 8])].copy()  # TOOO remove this
+                end_date = pd.Timestamp("2020-01-01").floor('D')
+
+            self.complete(end_date = end_date, test = False)
             self.dataframe = self.next().copy()
             iteration += 1
 
@@ -380,7 +397,6 @@ def get_duree_str_from_speed(speed):
 
 def _set_dates_effet(dataframe, date_observation = None, start_variable_name = None,
         next_variable_name = None, grille = None):
-
     assert start_variable_name is not None
     if date_observation is None:
         date_observation = 'period'
@@ -417,7 +433,7 @@ def _set_dates_effet(dataframe, date_observation = None, start_variable_name = N
                 start_variable_name,
                 ] = start_date
 
-            if previous_start_date and next_variable_name is not None:
+            if previous_start_date and next_variable_name is not None: # pervious_start_date set at None line 424
                 settled_grille = (
                     (dataframe.grade == grade) &
                     (dataframe.date_effet_grille_en_cours >= previous_start_date) &
@@ -427,7 +443,6 @@ def _set_dates_effet(dataframe, date_observation = None, start_variable_name = N
                     settled_grille,
                     next_variable_name,
                     ] = start_date
-
             previous_start_date = start_date
 
     # assert start_variable_name in dataframe.columns

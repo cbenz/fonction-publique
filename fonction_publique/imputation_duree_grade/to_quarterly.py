@@ -35,7 +35,7 @@ def reshape_wide_to_long(data):
     data = data[[
        'ident', 'annee',
        u'c_cir_2011', u'right_censored', u'left_censored',
-       u'last_y_in_grade_bef', u'grade_bef', u'exit_status', u'next_grade',
+       u'last_y_in_grade_bef', u'grade_bef', u'exit_status', u'next_grade', 'next_grade_corrected',
        u'last_y_observed_in_grade', u'first_y_in_next_grade',
        u'annee_min_entree_dans_grade', u'annee_max_entree_dans_grade',
        u'duree_min', u'duree_max'
@@ -83,7 +83,7 @@ def correct_quarterly_echelon_for_last_quarters_in_grade(data_long_w_echelon_IPP
        u'ident',
        u'annee', u'quarter', u'first_y_in_next_grade',
        u'exit_status', u'generation', u'last_y_observed_in_grade',
-       u'libemploi', u'left_censored', u'last_y_in_grade_bef',
+       u'libemploi', u'left_censored', 'next_grade_corrected', u'last_y_in_grade_bef',
        u'next_grade', u'duree_min', u'grade_bef', u'right_censored',
        u'c_cir_2011', u'duree_max', u'sexe', u'statut', u'an_aff',
        u'annee_min_entree_dans_grade', u'annee_max_entree_dans_grade',
@@ -214,7 +214,7 @@ def def_data_input_to_complete_echelon_trajectory(data_long_w_echelon_IPP_w_quar
 data = pd.read_csv(os.path.join(
     output_directory_path,
     "clean_data_finalisation",
-    "data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat.csv")
+    "data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat_grade_corrected.csv")
     ).query('annee > 2010')
 del data['Unnamed: 0']
 data_long = reshape_wide_to_long(data)
@@ -222,95 +222,15 @@ data_long_w_echelon_IPP = impute_quarterly_echelon(data_long, grilles)
 data_long_w_echelon_IPP_corrected = correct_quarterly_echelon_for_last_quarters_in_grade(
     data_long_w_echelon_IPP, grilles
     )
-
-
-print data_long_w_echelon_IPP_corrected.query(
-    '(annee == 2011) & (quarter == 1) & (right_censored == False)'
-    ).groupby(['c_cir_2011'])['next_grade'].value_counts(dropna = False).rename(
-    columns = {"next_grade": "next_grade_count"}).reset_index().rename(
-        columns = {0:"count"}
-        ).query('count > 100').reset_index()[['c_cir_2011', 'next_grade', 'count']].to_latex()
-
-
-
-import matplotlib.pyplot as plt
-from __future__ import division
-import numpy as np
-
-
-save_path = "C:\Users\l.degalle\CNRACL\fonction-publique\fonction_publique\ecrits\descriptive statistics multinomial\Figures
-
-
-def plot_frequency_next_grade():
-    for grade in ['TTH1', 'TTH2', 'TTH3', 'TTH4']:
-        data_grade = []
-        for annee in range(2011, 2015):
-            data_annee = data_long_w_echelon_IPP_corrected.query(
-                "(last_y_observed_in_grade == @annee) & (right_censored == False) & (c_cir_2011 == @grade) & (annee == last_y_observed_in_grade) & (quarter == 4)"
-                ).next_grade.value_counts().reset_index().rename(
-                        columns = {'index':'next_grade', 'next_grade':'count'}
-                        )
-            data_annee['share'] = data_annee['count'] / data_annee['count'].sum()
-            data_annee = data_annee.sort_values(by = 'share', ascending = False)
-            data_annee['cum_share'] = data_annee['share'].cumsum()
-            data_annee['last_y_obs'] = annee
-            data_annee_more_90_percent = data_annee.query('cum_share <= 0.9')
-            fig, ax = plt.subplots()
-            plt.plot(data_annee_more_90_percent.share, 'ro', color = 'blue')
-            labels = data_annee_more_90_percent.next_grade.values
-            ax.set_xticks(np.arange(len(labels)))
-            (markerline, stemlines, baseline) = ax.stem(
-                    data_annee_more_90_percent.share,
-                    color = 'blue'
-                    )
-            plt.setp(baseline, visible=False)
-            ax.xaxis.set_ticklabels(data_annee_more_90_percent.next_grade.values)
-            plt.savefig(os.path.join(
-                project_path, 'ecrits\\descriptivestatisticsmultinomial\\Figures', '{}{}.pdf'
-                ).format(grade, annee), format='pdf', dpi=1200)
-
-# Look whether grade transitions go give same next echelon
-
-data_long_w_echelon_IPP_corrected.groupby(['c_cir_2011', 'next_grade'])[']
-
-
-
-
-
-
-
-#print data_long_w_echelon_IPP_corrected.query(
-#    '(annee == 2011) & (last_y_observed_in_grade == 2012) & (quarter == 1) & (right_censored == False)'
-#    ).groupby(['c_cir_2011'])['next_grade'].value_counts(dropna = False).rename(
-#    columns = {"next_grade": "next_grade_count"}).reset_index().rename(
-#        columns = {0:"count"}
-#        ).query('count > 100').reset_index()[['c_cir_2011', 'next_grade', 'count']].to_latex()
-#
-#print data_long_w_echelon_IPP_corrected.query(
-#    '(annee == 2011) & (last_y_observed_in_grade == 2013) & (quarter == 1) & (right_censored == False)'
-#    ).groupby(['c_cir_2011'])['next_grade'].value_counts(dropna = False).rename(
-#    columns = {"next_grade": "next_grade_count"}).reset_index().rename(
-#        columns = {0:"count"}
-#        ).query('count > 100').reset_index()[['c_cir_2011', 'next_grade', 'count']].to_latex()
-#
-#print data_long_w_echelon_IPP_corrected.query(
-#    '(annee == 2011) & (last_y_observed_in_grade == 2014) & (quarter == 1) & (right_censored == False)'
-#    ).groupby(['c_cir_2011'])['next_grade'].value_counts(dropna = False).rename(
-#    columns = {"next_grade": "next_grade_count"}).reset_index().rename(
-#        columns = {0:"count"}
-#        ).query('count > 100').reset_index()[['c_cir_2011', 'next_grade', 'count']].to_latex()
-
-#data_long_w_echelon_IPP_w_quarter_of_exit = get_quarter_of_grade_exit(data_long_w_echelon_IPP_corrected, grilles)
-#data_input_complete_echelon_trajectory = def_data_input_to_complete_echelon_trajectory(
-#    data_long_w_echelon_IPP_w_quarter_of_exit
-#    )
-
-
-
-
-#data_grouped = data_long_w_echelon_IPP_w_quarter_of_exit.groupby('ident')[
-#    'echelon_IPP_modif_y_after_exit'
-#    ].value_counts(dropna = False).rename(columns = {"echelon_IPP_modif_y_after_exit": 'echelon_count'}).reset_index()
-#
-#data_grouped_by_ident = data_grouped.ident.value_counts() # 3867 agents sur 97763 n'ont qu'un échelon renseigné
-
+data_long_w_echelon_IPP_corrected_and_quarter_of_exit = get_quarter_of_grade_exit(
+    data_long_w_echelon_IPP_corrected,
+    grilles
+    )
+data_input2 = def_data_input_to_complete_echelon_trajectory(data_long_w_echelon_IPP_corrected_and_quarter_of_exit).head(50)
+grilles['code_grade'] = grilles['code_grade'].astype(int)
+grilles = grilles[grilles['code_grade'].isin([792, 793, 794, 795])].copy()
+grilles['echelon'] = grilles['echelon'].astype(int)
+agents = AgentFpt(data_input2)
+agents.set_grille(grilles)
+agents.compute_all()
+agents.compute_result(end_date = pd.Timestamp(2015,01,01))

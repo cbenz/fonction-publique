@@ -237,6 +237,9 @@ def test_next():
 
 agents = AgentFpt(df)
 agents.set_grille(grille_adjoint_technique)
-agents.compute_all()
+agents.compute_result()
 
-agents2 = agents
+#
+#agents2 = AgentFpt(pd.DataFrame(agents.next()))
+#agents2.set_grille(grille_adjoint_technique)
+#agents2.compute_all()

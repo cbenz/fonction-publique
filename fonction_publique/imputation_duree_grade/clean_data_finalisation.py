@@ -86,8 +86,19 @@ def get_exit_status_and_next_grade(data):
     """ Create var indicating exit status and next grade, if known """
     data['exit_status'] = (data['c_cir'] != data['c_cir_2011']) & (data['annee'] > 2010).astype(bool)
     data = data.sort_values(['ident', 'annee'])
+
     data['next_grade'] = data.groupby(['ident'])['c_cir'].transform('last')
     data.loc[data.next_grade == data.c_cir_2011, ['next_grade']] = None
+
+    data_get_next_grade_corrected = data.query('(c_cir != c_cir_2011) & (annee > 2011)').copy().sort_values(
+        ['ident', 'annee'], ascending = True
+        )
+    data_get_next_grade_corrected['next_grade_corrected'] = data_get_next_grade_corrected.groupby(['ident'])[
+        'c_cir'
+        ].transform('first')
+    data_get_next_grade_corrected = data_get_next_grade_corrected[['ident', 'next_grade_corrected']].drop_duplicates()
+    data = data.merge(data_get_next_grade_corrected, on = ['ident'], how = 'left')
+
     data_spell = data[(data['c_cir'] == data['c_cir_2011']) | (data['indicat_ch_grade'])]
     data_spell = data_spell.groupby('ident')['annee'].max().reset_index().rename(
         columns = {'annee':'last_y_observed_in_grade'}
@@ -172,6 +183,7 @@ def main(data_bef_2011_path, output_filename):
         )
     data_merged_w_censoring = get_censoring(data_merged)
     data_merged_w_censoring_and_grade_bef = get_bef_grade(data_merged_w_censoring)
+
     data_merged_w_censoring_and_exit = get_exit_status_and_next_grade(data_merged_w_censoring_and_grade_bef)
     data_merged_w_censoring_and_exit_and_durations = get_var_duree_min_duree_max(data_merged_w_censoring_and_exit)
     print len(data_merged_w_censoring_and_exit_and_durations.ident.unique())
@@ -186,17 +198,17 @@ def main(data_bef_2011_path, output_filename):
     data_merged_w_filter_on_echelon_etat_when_in_grade_when_exit_status.to_csv(
         os.path.join(output_directory_path,
                      "clean_data_finalisation",
-                     "data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat.csv"
+                     "data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat_grade_corrected.csv"
                      ))
 
 
-if __name__ == '__main__':
+#if __name__ == '__main__':
     data_bef_2011_path = os.path.join(
         output_directory_path,
         "imputation",
         "data_2003_2011_6.csv"
         )
-    main(data_bef_2011_path, "data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat.csv")
+#    main(data_bef_2011_path, "data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat.csv")
 
 
 x = pd.read_csv(os.path.join(output_directory_path, "clean_data_finalisation", "data_ATT_2002_2015_solve_exit_other.csv"))
