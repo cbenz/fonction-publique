@@ -7,7 +7,7 @@ library(xtable)
 
 
 source(paste0(wd, "0_work_on_data.R"))
-datasets = load_and_clean(datapath, "/data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat.csv")
+datasets = load_and_clean(data_path, "/data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat_grade_corrected.csv")
 data_id = datasets[[1]]
 data_max = datasets[[2]]
 data_min = datasets[[3]]
@@ -118,15 +118,19 @@ dev.off()
 ### II.1 Functions ####
 
 # Hazard by duration in grade
-hazard_by_duree = function(data, save = F, corps = F)
+hazard_by_duree = function(data, save = F, corps = F, type_exit = "")
 {
   grade = seq(1, 12)
   hazard   = numeric(length(grade))
   effectif = numeric(length(grade))
   
+  data$exit = data$exit_status2
+  if (type_exit == "in_corps") {data$exit[which(data$next_year == "exit_oth")] = 0}
+  if (type_exit == "out_corps"){data$exit[which(data$next_year == "exit_next")] = 0}
+  
   for (g in 1:length(grade))
   {
-  hazard[g]   = length(which(data$time ==  grade[g] & data$exit_status2 == 1))/length(which(data$time == grade[g]))
+  hazard[g]   = length(which(data$time ==  grade[g] & data$exit == 1))/length(which(data$time == grade[g]))
   effectif[g] = length(which(data$time == grade[g]))
   }  
   par(mar = c(5,5,2,5))
@@ -137,18 +141,23 @@ hazard_by_duree = function(data, save = F, corps = F)
   axis(side = 4)
   mtext(side = 4, line = 3, 'Nb obs.')
   legend("topleft", legend = c("Hazard", "Nb obs."), lwd = 3, lty = c(1,3), col = c("darkcyan", "black"), cex = 1.1)
-  
 }  
 
 # Hazard by echelon
-hazard_by_ech = function(data, save = F)
+hazard_by_ech = function(data, save = F, type_exit = "")
 {
   ech = 1:12
   hazard = numeric(length(ech))
   effectif = numeric(length(ech))
+  
+  data$exit = data$exit_status2
+  if (type_exit == "in_corps") {data$exit[which(data$next_year == "exit_oth")] = 0}
+  if (type_exit == "out_corps"){data$exit[which(data$next_year == "exit_next")] = 0}
+  
+  
   for (e in 1:length(ech))
   {
-  hazard[e] =   length(which(data$echelon == ech[e] & data$exit_status2 == 1))/length(which(data$echelon == ech[e]))
+  hazard[e] =   length(which(data$echelon == ech[e] & data$exit == 1))/length(which(data$echelon == ech[e]))
   effectif[e] = length(which(data$echelon == ech[e]))
   }  
 
@@ -164,10 +173,15 @@ hazard_by_ech = function(data, save = F)
 
 
 # Distance to thresholds
-hazard_by_distance = function(data, save = F, type = "choix", colors = c("black", "grey", "darkcyan"))
+hazard_by_distance = function(data, save = F, type = "choix", type_exit = "", colors = c("black", "grey", "darkcyan"))
 {
   if (type == "choix"){data$cond_grade = data$D_choice ; data$cond_ech = data$E_choice}
   if (type == "exam") {data$cond_grade = data$D_exam ; data$cond_ech = data$E_exam}
+  
+  data$exit = data$exit_status2
+  if (type_exit == "in_corps") {data$exit[which(data$next_year == "exit_oth")] = 0}
+  if (type_exit == "out_corps"){data$exit[which(data$next_year == "exit_next")] = 0}
+  
   
   data$dist_grade =  data$time  - data$cond_grade
   data$dist_echelon = data$echelon - data$cond_ech
@@ -179,9 +193,9 @@ hazard_by_distance = function(data, save = F, type = "choix", colors = c("black"
   
   for (v in 1:length(values))
   {
-    hazards[1,v]  = length(which(data$dist_grade  == values[v] & data$exit_status2 == 1))/length(which(data$dist_grade  == values[v]))
-    hazards[2,v]  = length(which(data$dist_echelon  == values[v] & data$exit_status2 == 1))/length(which(data$dist_echelon  == values[v]))
-    hazards[3,v]  = length(which(data$dist_both  == values[v] & data$exit_status2 == 1))/length(which(data$dist_both  == values[v]))
+    hazards[1,v]  = length(which(data$dist_grade  == values[v] & data$exit == 1))/length(which(data$dist_grade  == values[v]))
+    hazards[2,v]  = length(which(data$dist_echelon  == values[v] & data$exit == 1))/length(which(data$dist_echelon  == values[v]))
+    hazards[3,v]  = length(which(data$dist_both  == values[v] & data$exit == 1))/length(which(data$dist_both  == values[v]))
   }
   
   limy = c(0, max(hazards, na.rm = T))
@@ -264,7 +278,12 @@ dev.off()
 subdata = data_min
 subdata = subdata[which(subdata$left_censored == F & subdata$c_cir_2011 == "TTH3"),]
 hazard_by_duree(data = subdata)
+hazard_by_duree(data = subdata, type_exit =  "in_corps")
+hazard_by_duree(data = subdata, type_exit =  "out_corps")
 hazard_by_ech(data = subdata)
+hazard_by_ech(data = subdata, type_exit =  "in_corps")
+hazard_by_ech(data = subdata, type_exit =  "out_corps")
+
 hazard_by_distance(data = subdata)
 
 pdf(paste0(fig_path,"hazard_by_duree_TTH3.pdf"))
@@ -300,6 +319,61 @@ hazard_by_ech(data = subdata)
 dev.off()
 
 
-### II.2.5 All ####
+### III. Next grade ###
+
+compute_transitions_next <- function(data, grade)
+{
+  data = data[which(data$c_cir_2011 == grade & data$annee == 2011),]
+  table_exit = numeric(12)
+  # % in each possible next_year
+  table_exit[1] = round(length(which(data$next_year == "no_exit"))*100/length(data$next_year),2)
+  table_exit[2] = round(length(which(data$next_year == "exit_next"))*100/length(data$next_year),2)
+  table_exit[3] = round(length(which(data$next_year == "exit_oth"))*100/length(data$next_year),2)
+  # From other known neg
+  data_exit_oth = data[which(data$next_year == "exit_oth"), ]
+  t = as.data.frame(table(data_exit_oth$next_grade)*100/length(data_exit_oth$next_grade))
+  t = t[order(-t$Freq),]
+  for (n in 1:4){
+  table_exit[3+2*n-1] = toString(t[n,1])
+  table_exit[3+2*n] = round(t[n,2],2)
+  }
+  table_exit[12] = length(which(t$Freq >0))
+  return(table_exit)
+}
+  
+  
+table1 = compute_transitions_next(data_min, "TTH1")
+table2 = compute_transitions_next(data_min, "TTH2")
+table3 = compute_transitions_next(data_min, "TTH3")
+table4 = compute_transitions_next(data_min, grade = "TTH4")
+  
+table = cbind(table1, table2, table3, table4)
+
+colnames(table) <-  c("TTH1", "TTH2", "TTH3", "TTH4")
+rownames(table) <-  c("\\% no exit", "\\% exit next", "\\% exit oth",
+                      "\\hfill 1st oth grade ", "\\hfill  \\% 1st oth", 
+                      "\\hfill 2nd oth grade ", "\\hfill  \\% 2nd oth", 
+                      "\\hfill 3rd oth grade ", "\\hfill  \\% 3rd oth", 
+                      "\\hfill 4th oth grade ", "\\hfill  \\% 4th oth", 
+                       "Nb oth grades")
+
+as.numeric(table[c(1,2,3,5,7,9,11), ]) <- as.numeric(table[c(1,2,3,5,7,9,11), ])
+
+print(xtable(table),
+      sanitize.text.function=identity,size="\\footnotesize")
+
+
+### IV. Divers ###
+
+
+### Changement indice 
+data = data_min[which(data_min$annee <= 2014),]
+mean(data$var_ib[which(data$next_year == "no_exit")])
+mean(data$var_ib[which(data$next_year == "exit_next")])
+mean(data$var_ib[which(data$next_year == "exit_oth")])
+
+
+
+
 
 

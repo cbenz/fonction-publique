@@ -8,19 +8,21 @@ place = "IPP_S"
 if (place == "home_S")
 {  
 data_path = "/Users/simonrabate/Desktop/data/CNRACL/output/"
+save_data_path = "/Users/simonrabate/Desktop/data/CNRACL/simulation/"
 git_path =  '/Users/simonrabate/Desktop/IPP/CNRACL'
 wd =  '/Users/simonrabate/Desktop/IPP/CNRACL/fonction_publique/estimation/'
-fig_path = "Q:/CNRACL/Slides/2017_06_IMA/Graphiques/"
-tab_path = "Q:/CNRACL/Slides/2017_06_IMA/Graphiques/"
+fig_path = "Q:/CNRACL/Slides/2017_07_CDC/Graphiques/"
+tab_path = "Q:/CNRACL/Slides/2017_07_CDC/Graphiques/"
 }
 
 if (place == "IPP_S")
 {  
 data_path = "M:/CNRACL/output/clean_data_finalisation/"
+save_data_path = "M:/CNRACL/simulation/"
 git_path =  'U:/Projets/CNRACL/fonction-publique/fonction_publique/'
 wd =  'U:/Projets/CNRACL/fonction-publique/fonction_publique/estimation/'
-fig_path = "Q:/CNRACL/Slides/2017_06_IMA/Graphiques/"
-tab_path = "Q:/CNRACL/Slides/2017_06_IMA/Graphiques/"
+fig_path = "Q:/CNRACL/Slides/2017_07_CDC/Graphiques/"
+tab_path = "Q:/CNRACL/Slides/2017_07_CDC/Graphiques/"
 }
 
 
@@ -35,13 +37,19 @@ library(emuR)
 library(RColorBrewer)
 library(RcmdrPlugin.survival)
 library(flexsurv)
-
 library(mfx)
 library(texreg)
 library(xtable)
+library(mlogit)
 
 
-
+shift1<-function(x){
+  stopifnot(is.numeric(x))
+  out<-NULL
+  abs_shift_by=1
+  out<-c(tail(x,-abs_shift_by),rep(NA,abs_shift_by))
+  out
+}
 
 tirage<-function(var)
 {
