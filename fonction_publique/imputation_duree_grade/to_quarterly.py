@@ -254,9 +254,10 @@ if __name__ == '__main__':
     grilles['code_grade'] = grilles['code_grade'].astype(int)
     grilles = grilles[grilles['code_grade'].isin([792, 793, 794, 795])].copy()
     grilles['echelon'] = grilles['echelon'].astype(int)
-    data_input2 = get_data(rebuild = False)
+    grilles['echelon'] = grilles['echelon'].replace([500000], -2)
+    data_input2 = get_data(rebuild = False).query("ident == 1763")
     agents = AgentFpt(data_input2)
     agents.set_grille(grilles)
-    agents.compute_result(end_date = pd.Timestamp(2050, 01, 01))
+    agents.compute_result(end_date = pd.Timestamp(2020, 01, 01))
 
     agents.result

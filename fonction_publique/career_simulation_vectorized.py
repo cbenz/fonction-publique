@@ -289,7 +289,7 @@ class AgentFpt:
             start_date_variable_name = 'period',
             duree_variable_name = 'duree_effective_echelon')
 
-    def complete(self, date_observation = None, end_date = None):
+    def fill(self, date_observation = None, end_date = None):
         dataframe = self.dataframe
 
         if date_observation is None:
@@ -310,9 +310,31 @@ class AgentFpt:
                 (dataframe[date_observation] <= quarter_begin) &
                 (quarter_date <= (dataframe.date_finale_dans_echelon + pd.tseries.offsets.MonthEnd())),
                 [date_observation, 'echelon', 'ident', 'grade']
-                ]
+                ].copy()
             df['quarter'] = quarter_date
-            result = pd.concat([result, df])
+
+            df_echelon_terminal = dataframe.loc[
+                (dataframe[date_observation] <= quarter_begin), # &
+                #(quarter_date > (dataframe.date_finale_dans_echelon + pd.tseries.offsets.MonthEnd())),
+                [date_observation, 'echelon', 'ident', 'grade']
+                ].copy()
+            echelon_max = compute_echelon_max(
+                    grilles = self.grille, at_date = quarter_date, echelon_max_variable_name = 'echelon_max')
+            # print echelon_max
+            df_echelon_terminal  = df_echelon_terminal.merge(
+                echelon_max[['code_grade', 'echelon_max']],
+                left_on = 'grade',
+                right_on = 'code_grade',
+                )
+            df_echelon_terminal = df_echelon_terminal.query('echelon == echelon_max').dropna().drop_duplicates().copy()
+            del df_echelon_terminal['echelon_max']
+            del df_echelon_terminal['code_grade']
+            df_echelon_terminal['quarter'] = quarter_date
+            #print df_echelon_terminal.sort_values(['ident', 'quarter'])
+            print df_echelon_terminal
+            result = pd.concat([result, df, df_echelon_terminal])
+            #print result.sort_values(['ident', 'echelon'])
+
         self.result = pd.concat([self.result, result])
         return result
 
@@ -331,11 +353,12 @@ class AgentFpt:
                 self.dataframe = self.dataframe.loc[~self.dataframe.ident.isin([2, 8])].copy()  # TOOO remove this
                 end_date = pd.Timestamp("2020-01-01").floor('D')
 
-            self.complete(end_date = end_date)
+            self.fill(end_date = end_date)
             self.test_dataframe(iteration)
             self.dataframe = self.next().copy()
             self.test_dataframe(iteration)
             iteration += 1
+
 
     def next(self):
         '''Remove from dataframe all agents that have reached their ultimate echelon'''
@@ -397,9 +420,16 @@ def compute_changing_echelons_by_grade(grilles = None, start_date = None, speed 
     return echelons_by_grade
 
 
-def compute_echelon_max(grilles = None, start_date = None, echelon_max_variable_name = None):
-    if start_date is not None:
-        grilles = grilles.query('date_effet_grille >= start_date')
+def compute_echelon_max(grilles = None, start_date = None, at_date = None, echelon_max_variable_name = None):
+
+    if at_date is not None:
+        assert start_date is None
+        df = (grilles
+            .query('date_effet_grille <= @at_date')
+            .groupby(['code_grade', 'echelon']).agg({'date_effet_grille': np.min}).reset_index()
+            )
+    elif start_date is not None:
+        grilles = grilles.query('date_effet_grille >= @start_date')
 
     df = grilles.groupby(['date_effet_grille', 'code_grade'])['echelon'].max()
     df.name = echelon_max_variable_name

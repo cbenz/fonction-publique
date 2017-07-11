@@ -224,7 +224,7 @@ def test_result():
     agents = AgentFpt(df)
     agents.set_grille(grille_adjoint_technique)
     agents.compute_all()
-    result = agents.complete()
+    result = agents.fill()
     print result
     print agents.dataframe
     print result.loc[result.ident == 0]
@@ -237,8 +237,8 @@ def test_next():
 
 agents = AgentFpt(df)
 agents.set_grille(grille_adjoint_technique)
-agents.compute_result(end_date = pd.Timestamp("2050-01-01").floor('D'))
-
+agents.compute_result(end_date = pd.Timestamp("2040-01-01").floor('D'))
+print agents.result
 #
 #agents2 = AgentFpt(pd.DataFrame(agents.next()))
 #agents2.set_grille(grille_adjoint_technique)
