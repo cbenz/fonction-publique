@@ -291,32 +291,99 @@ print(xtable(table_movers,align="lcccc",nrow = nrow(table_movers),
 
 
 
-#### II. Multivariate  ####
+#### II. Multivariate simple  ####
 
 varlist = c("ident", "annee", "sexe", "generation_group",  "an_aff", "c_cir_2011",
             "ib", "echelon", "time",
-            "exit_status2", "next_grade",
-            "I_unique_threshold",
+            "exit_status2", "next_grade","next_year",
+            "I_unique_threshold", "duration","duration2",
             "duration_bef_unique_threshold", "duration_bef_unique_threshold2",
             "duration_aft_unique_threshold", "duration_aft_unique_threshold2")
 datam = data_est[, varlist]
-datam$next_grade = as.character(datam$next_grade)
 datam$c_cir_2011 = as.character(datam$c_cir_2011)
 
-datam$next_year = ifelse(datam$exit_status2 == 0, "same", "oth")
-list = which(datam$next_year == "oth" & is.element(datam$next_grade, c("TTH1", "TTH2", "TTH3", "TTH4")))
-datam$next_year[list] = "next"  
+
+## II.1 Estimation ####
 
 estim = mlogit.data(datam, shape = "wide", choice = "next_year")
 
 
-mlog1 = mlogit(next_year ~ 0 | I_unique_threshold, data = estim, reflevel = "same")
+mlog1 = mlogit(next_year ~ 0 | I_unique_threshold, data = estim, reflevel = "no_exit")
 
 mlog2 = mlogit(next_year ~ 0 | I_unique_threshold + c_cir_2011 + sexe + 
                  duration_aft_unique_threshold +  duration_aft_unique_threshold2 + 
-                 duration_bef_unique_threshold +  duration_bef_unique_threshold2, data = estim, reflevel = "same")
+                 duration_bef_unique_threshold +  duration_bef_unique_threshold2, data = estim, reflevel = "no_exit")
 summary(mlog1)
 summary(mlog2)
 
 
+## II.2 Simulation ####
 
+list_id = unique(datam$ident)
+list_learning = sample(list_id, ceiling(length(list_id)/2))
+list_test = setdiff(list_id, list_learning)
+data_learning = datam[which(is.element(datam$ident, list_learning)),]
+data_test     = datam[which(is.element(datam$ident, list_test)),]
+
+
+## 2011 ####
+data_learning1 = data_learning[which(data_test$annee >= 2011),]
+estim  = mlogit.data(data_learning1, shape = "wide", choice = "next_year")
+
+data_test1     = data_test[which(data_test$annee == 2011),]
+predict = mlogit.data(data_test1, shape = "wide", choice = "next_year")
+
+mlog0 = mlogit(next_year ~ 0 | 1, data = estim, reflevel = "no_exit")
+mlog1 = mlogit(next_year ~ 0 | I_unique_threshold + c_cir_2011 + sexe + 
+                 duration_aft_unique_threshold +  duration_aft_unique_threshold2 + 
+                 duration_bef_unique_threshold +  duration_bef_unique_threshold2, 
+               data = estim, reflevel = "no_exit")
+mlog2 = mlogit(next_year ~ 0 | c_cir_2011 + sexe + duration + duration2, 
+               data = estim, reflevel = "no_exit")
+
+# Simulated exit
+
+predict_next_year <- function(p1,p2,p3)
+{
+n = sample(c("no_exit", "exit_next",  "exit_oth"), size = 1, prob = c(p1,p2,p3), replace = T)  
+return(n) 
+}  
+
+
+yhat0     <- predict(mlog0, predict,type = "response") 
+yhat1     <- predict(mlog1, predict,type = "response") 
+yhat2     <- predict(mlog2, predict,type = "response") 
+#data_test1$yhat3     <- predict(model3, data_test1,type = "response") 
+data_test1$exit_hat0  <- mapply(predict_next_year, yhat0[,1], yhat0[,2], yhat0[,3])
+data_test1$exit_hat1  <- mapply(predict_next_year, yhat1[,1], yhat1[,2], yhat1[,3])
+data_test1$exit_hat2  <- mapply(predict_next_year, yhat2[,1], yhat2[,2], yhat2[,3])
+
+## Output for Python
+data_test1$next_situation = data_test1$exit_hat1 
+data_test1$corps = "ATT"
+data_test1$grade = data_test1$c_cir
+
+data_simul_2011 = data_test1[, c("ident", "annee", "corps", "grade", "ib", "echelon", "next_situation")]
+write.csv(data_simul_2011, file = paste0(save_data_path, "data_simul_2011.csv"))
+
+
+
+
+#### III. Nested logit  ####
+
+### Hausman test IIA
+data("TravelMode",package="AER")
+TravelMode <- mlogit.data(TravelMode,choice="choice",shape="long",
+                          alt.var="mode",chid.var="individual")
+## Create a variable of income only for the air mode
+TravelMode$avinc <- with(TravelMode,(mode=='air')*income)
+## Estimate the model on all alternatives, with car as the base level
+## like in Greene's book.
+#x <- mlogit(choice~wait+gcost+avinc,TravelMode,reflevel="car")
+x <- mlogit(choice~wait+gcost+avinc,TravelMode)
+## Estimate the same model for ground modes only (the variable avinc
+## must be dropped because it is 0 for every observation
+g <- mlogit(choice~wait+gcost,TravelMode,reflevel="car",
+            alt.subset=c("car","bus","train"))
+## Compute the test
+hmftest(x,g)
