@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Jun 17 13:29:38 2017
-
-@author: l.degalle
 
 Goals:
     - imputer un échelon IPP de 2011 à 2015 avec un pas trimestriel
@@ -10,10 +7,14 @@ Goals:
     - créer une variable de sortie de grade trimestrielle
     - imputer un échelon contrefactuel aux agents qui quittent leur grade de 2011 entre 2011 et 2015
 """
+
+
+from __future__ import division
+
 import os
 import pandas as pd
 from fonction_publique.base import output_directory_path, grilles, table_corresp_grade_corps, project_path
-from clean_data_initialisation import clean_grille
+from fonction_publique.imputation_duree_grade.clean_data_initialisation import clean_grille
 from openfisca_core import periods
 from fonction_publique.base import asset_path, grilles
 from fonction_publique.career_simulation_vectorized import AgentFpt, compute_changing_echelons_by_grade
@@ -170,8 +171,8 @@ def get_quarter_of_grade_exit(data_long_w_echelon_IPP_corrected, grilles):
     return data_with_quarter_of_exit
 
 
-def def_data_input_to_complete_echelon_trajectory(data_long_w_echelon_IPP_w_quarter_of_exit):
-    data_last_echelon_observed = data_long_w_echelon_IPP_w_quarter_of_exit.query(
+def def_data_input_to_complete_echelon_trajectory(data_long_w_echelon_IPP_corrected_and_quarter_of_exit):
+    data_last_echelon_observed = data_long_w_echelon_IPP_corrected_and_quarter_of_exit.query(
         '(quarterly_exit_status == False) & (right_censored == False)'
         ).copy()
     data_last_echelon_observed[
@@ -185,15 +186,20 @@ def def_data_input_to_complete_echelon_trajectory(data_long_w_echelon_IPP_w_quar
         '(annee == last_y_observed_in_grade_corrected) & (quarter == last_quarter_observed_in_grade)'
         )
     data_input = data_input[['ident', 'echelon_IPP_modif_y_after_exit']]
-    data_input2 = data_long_w_echelon_IPP_w_quarter_of_exit.merge(
+    data_input2 = data_long_w_echelon_IPP_corrected_and_quarter_of_exit.merge(
         data_input, on = ['ident', 'echelon_IPP_modif_y_after_exit'], how = 'inner'
         ).query('quarterly_exit_status == False').copy()
     data_input2['first_y_in_last_echelon'] = data_input2.groupby('ident')['annee'].transform(min)
     data_input2 = data_input2.query('annee == first_y_in_last_echelon').copy()
     data_input2['first_quarter_in_last_echelon'] = data_input2.groupby('ident')['quarter'].transform(min)
     data_input2 = data_input2.query('quarter == first_quarter_in_last_echelon').copy()
-    data_input2 = data_input2[['ident', 'period', 'code_grade_NEG', 'echelon_IPP_modif_y_after_exit']].rename(
-        columns = {'code_grade_NEG':'grade', 'echelon_IPP_modif_y_after_exit':'echelon'})
+    print data_input2.head()
+    dict_codes_grades = {'TTH1':793, 'TTH2':794, 'TTH3':795, 'TTH4':796}
+    data_input2 = data_input2[['ident', 'period', 'c_cir_2011', 'echelon_IPP_modif_y_after_exit']].rename(
+        columns = {'echelon_IPP_modif_y_after_exit':'echelon'})
+    data_input2['grade'] = data_input2['c_cir_2011'].map(dict_codes_grades)
+    data_input2.grade = data_input2.grade.astype(int)
+    data_input2.echelon = data_input2.echelon.astype(int)
     return data_input2
 
 
@@ -211,26 +217,46 @@ def def_data_input_to_complete_echelon_trajectory(data_long_w_echelon_IPP_w_quar
 #            )
 #    return data
 
-data = pd.read_csv(os.path.join(
-    output_directory_path,
-    "clean_data_finalisation",
-    "data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat_grade_corrected.csv")
-    ).query('annee > 2010')
-del data['Unnamed: 0']
-data_long = reshape_wide_to_long(data)
-data_long_w_echelon_IPP = impute_quarterly_echelon(data_long, grilles)
-data_long_w_echelon_IPP_corrected = correct_quarterly_echelon_for_last_quarters_in_grade(
-    data_long_w_echelon_IPP, grilles
-    )
-data_long_w_echelon_IPP_corrected_and_quarter_of_exit = get_quarter_of_grade_exit(
-    data_long_w_echelon_IPP_corrected,
-    grilles
-    )
-data_input2 = def_data_input_to_complete_echelon_trajectory(data_long_w_echelon_IPP_corrected_and_quarter_of_exit).head(50)
-grilles['code_grade'] = grilles['code_grade'].astype(int)
-grilles = grilles[grilles['code_grade'].isin([792, 793, 794, 795])].copy()
-grilles['echelon'] = grilles['echelon'].astype(int)
-agents = AgentFpt(data_input2)
-agents.set_grille(grilles)
-agents.compute_all()
-agents.compute_result(end_date = pd.Timestamp(2015,01,01))
+
+def get_data(rebuild = False):
+    if rebuild or not(os.path.exists('data_input2.csv')):
+        data = pd.read_csv(os.path.join(
+            output_directory_path,
+            "clean_data_finalisation",
+            "data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat_grade_corrected.csv")
+            ).query('annee > 2010')
+        del data['Unnamed: 0']
+        data_long = reshape_wide_to_long(data)
+        data_long_w_echelon_IPP = impute_quarterly_echelon(data_long, grilles)
+        data_long_w_echelon_IPP_corrected = correct_quarterly_echelon_for_last_quarters_in_grade(
+            data_long_w_echelon_IPP, grilles
+            )
+        data_long_w_echelon_IPP_corrected_and_quarter_of_exit = get_quarter_of_grade_exit(
+            data_long_w_echelon_IPP_corrected,
+            grilles
+            )
+        data_input2 = def_data_input_to_complete_echelon_trajectory(
+            data_long_w_echelon_IPP_corrected_and_quarter_of_exit
+            ).query('(echelon != -1) & (echelon != 55555)').copy().head(50)
+        print('saving')
+        data_input2.dtypes
+        data_input2.to_csv('data_input2.csv')
+    else:
+        print('reading')
+        data_input2 = pd.read_csv('data_input2.csv')
+        print data_input2.dtypes
+    data_input2['period'] = pd.to_datetime(data_input2['period'])
+    return data_input2[['ident', 'period', 'grade', 'echelon']].copy()
+
+
+if __name__ == '__main__':
+
+    grilles['code_grade'] = grilles['code_grade'].astype(int)
+    grilles = grilles[grilles['code_grade'].isin([792, 793, 794, 795])].copy()
+    grilles['echelon'] = grilles['echelon'].astype(int)
+    data_input2 = get_data(rebuild = False)
+    agents = AgentFpt(data_input2)
+    agents.set_grille(grilles)
+    agents.compute_result(end_date = pd.Timestamp(2050, 01, 01))
+
+    agents.result
