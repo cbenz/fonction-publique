@@ -29,7 +29,7 @@ u <- par("usr")
 arrows(u[1], u[3], u[2]*0.9, u[3], xpd = TRUE, lwd = 3) 
 abline(v=5, lwd=3)
 abline(v=12, lwd=3)
-axis(1, at=c(5, 12 ),labels=c("2007","2015"),tck=0)
+axis(1, at=c(5, 12 ),labels=c("2011","2015"),tck=0)
 # Cas 1: entrée en sortie dans les années
 segments(x0= 6, x1=11, y0=35, y1=35,col=ncol[1],lwd=4,lty=1)
 text((11+6)/2,  35, labels="(1)", pos=3,col="black")
