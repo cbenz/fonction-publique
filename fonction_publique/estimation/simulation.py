@@ -1,47 +1,41 @@
+# -*- coding: utf-8 -*-
 import pandas as pd
 import numpy as np
-from fonction_publique.base import grilles
+import os
+from fonction_publique.base import grilles, output_directory_path
 
 grilles = grilles[grilles['code_grade_NETNEH'].isin(['TTM1', 'TTH1', 'TTH2', 'TTH3', 'TTH4'])]
+data_counterfactual_echelon_trajectory = pd.read_csv(
+    os.path.join(
+        output_directory_path,
+        'simulation_counterfactual_echelon',
+        'results_annuels.csv'
+        )
+    )
+del data_counterfactual_echelon_trajectory['Unnamed: 0']
 
-# Input: corps, grade, échelon, ib, position prédite entre autre, grade suivant dans corps, grade suivant hors corps
-agent_1 = [1, 2011, 'ATT', 'TTH1', 5, 201, 'exit_oth']
-agent_2 = [2, 2011, 'ATT', 'TTH3', 1, 201, 'exit_next']
-agent_3 = [3, 2011, 'ATT', 'TTH4', 2, 202, 'no_exit']
-agent_4 = [4, 2011, 'ATT', 'TTH3', 1, 198, 'exit_next']
-agent_5 = [5, 2011, 'ATT', 'TTH2', 3, 203, 'exit_next']
-agents = [agent_1, agent_2, agent_3, agent_4, agent_5]
-
-
-data = pd.DataFrame(agents, columns = ['ident', 'annee', 'corps', 'grade', 'echelon', 'ib', 'next_situation'])
-data['next_grade'] = None
-
-
-data_counterfactual_echelon_trajectory = pd.DataFrame() #to def
 
 def predict_next_period_grade_when_exit_to_other_corps(data):
     data.loc[(data['next_situation'] == 'exit_oth'), 'next_grade'] = "TTM1"
+    data['next_annee'] = data['annee'] + 1
     return data
 
 
-def predict_next_period_echelon_when_no_exit_of_grade(data):
+def predict_echelon_next_period_when_no_exit(data):
     data_no_exit = data.query("next_situation == 'no_exit'").copy()
     data_no_exit['next_grade'] = data_no_exit['grade']
+    data_no_exit['next_annee'] = data_no_exit['annee'] + 1
     data_no_exit = data_no_exit.merge(
-        data_counterfactual_echelon_trajectory, #
-        on = ['ident', 'annee'],
-        how = 'left'
+        data_counterfactual_echelon_trajectory[['ident', 'annee', 'echelon']].rename(
+            columns = {'annee':'next_annee', 'echelon':'next_echelon'}
+            ),
+        on = ['ident', 'next_annee'],
+        how = 'left',
         )
-    data_no_exit = data_no_exit.merge( #
-        grilles,
-        on = ['grade', 'annee', 'echelon'],
-        how = 'left'
-        ).rename(columns = {'ib':'next_ib'})
-    data_no_exit = data_no_exit[[data.columns, next_ib]]
     return data_no_exit
 
 
-def predict_echelon_next_period_when_exit_of_grade(data, grilles):
+def predict_echelon_next_period_when_exit(data, grilles):
     data_exit = data.query("next_situation != 'no_exit'").copy()
     data_exit.loc[(data_exit['next_situation'] == 'exit_next'), 'next_grade'] = [
         'TTH' + str(int(s[-1:]) + 1) for s in data_exit.query("next_situation == 'exit_next'")['grade'].copy()
@@ -55,35 +49,45 @@ def predict_echelon_next_period_when_exit_of_grade(data, grilles):
         ['ident']).agg({'ib_y': np.min}).reset_index()
     data_exit = data_exit.merge(data_exit_merged, on = ['ident'])
     data_exit = data_exit.merge(
-        grilles[['code_grade_NETNEH', 'ib', 'echelon']].rename(columns = {'ib':'ib_next', 'echelon':'echelon_next'}),
+        grilles[['code_grade_NETNEH', 'ib', 'echelon']].rename(columns = {'ib':'ib_next', 'echelon':'next_echelon'}),
         left_on = ['ib_y', 'next_grade'],
         right_on = ['ib_next', 'code_grade_NETNEH'],
         how = 'left')
     del data_exit['code_grade_NETNEH']
     del data_exit['ib_y']
-    data_exit['echelon_next'] = data_exit['echelon_next'].astype(int)
+    data_exit['next_echelon'] = data_exit['next_echelon'].astype(int)
     data_missing_echelon_next = data.query("next_situation != 'no_exit'")[~
         data.query("next_situation != 'no_exit'")['ident'].isin(
             data_exit.ident.unique().tolist()
             )
         ]
     data_missing_echelon_next['ib_next'] = 446
-    data_missing_echelon_next['echelon_next'] = 11 #tofix
+    data_missing_echelon_next['next_echelon'] = 11 #tofix
     assert (data_missing_echelon_next.grade.unique().tolist() == ['TTH4']) & (
             data_missing_echelon_next.next_grade.unique().tolist() == ['TTM1']
             )
     data_exit = data_exit.append(data_missing_echelon_next)
     return data_exit
 
-data_with_next_grade_when_exit_oth = predict_next_period_grade_when_exit_to_other_corps(data)
-data_with_next_echelon_when_exit_of_grade = predict_echelon_next_period_when_exit_of_grade(
-    data_with_next_grade_when_exit_oth, grilles
-    )
 
-data.query("next_situation != 'no_exit'")[~
-    data.query("next_situation != 'no_exit'")['ident'].isin(
-        data_with_next_echelon_when_exit_of_grade.ident.unique().tolist()
+def main(data):
+    del data['Unnamed: 0']
+    data_with_next_grade_when_exit_to_other = predict_next_period_grade_when_exit_to_other_corps(data)
+    data_with_next_echelon_when_no_exit = predict_echelon_next_period_when_no_exit(
+        data
         )
-    ]
+    data_with_next_echelon_when_exit = predict_echelon_next_period_when_exit(
+        data_with_next_grade_when_exit_to_other, grilles
+        )
+    results = data_with_next_echelon_when_no_exit.append(data_with_next_echelon_when_exit)
+    results = results[['ident', 'next_annee', 'next_grade', 'next_echelon']]
+    results['next_annee'] = results['next_annee'].astype(int)
+    results['ident'] = results['ident'].astype(int)
+    results['next_grade'] = results['next_grade'].astype(str)
+    results = results.rename(columns={col: col.replace('next_', '') for col in results.columns})
+    assert len(list(set(results.ident.unique()) - set(data.ident.unique()))) == 0
+    results.to_csv('M:/CNRACL/simulation/results_2011.csv')
 
-data = pd.read_csv('M:/CNRACL/simulation/data_simul_2011.csv')
+
+if __name__ == '__main__':
+    main(data = pd.read_csv('M:/CNRACL/simulation/data_simul_2011.csv'))
