@@ -16,7 +16,10 @@ del data_counterfactual_echelon_trajectory['Unnamed: 0']
 
 
 def predict_next_period_grade_when_exit_to_other_corps(data):
-    data.loc[(data['next_situation'] == 'exit_oth'), 'next_grade'] = "TTM1"
+    data.loc[
+        (data['next_situation'] == 'exit_oth') | (
+            (data['grade'] == 'TTH4') & (data['next_situation'] == 'exit_next')
+            ), 'next_grade'] = "TTM1"
     data['next_annee'] = data['annee'] + 1
     return data
 
@@ -61,6 +64,7 @@ def predict_echelon_next_period_when_exit(data, grilles):
             data_exit.ident.unique().tolist()
             )
         ]
+    print data_missing_echelon_next.grade.unique()
     data_missing_echelon_next['ib_next'] = 446
     data_missing_echelon_next['next_echelon'] = 11 #tofix
     assert (data_missing_echelon_next.grade.unique().tolist() == ['TTH4']) & (
@@ -70,7 +74,28 @@ def predict_echelon_next_period_when_exit(data, grilles):
     return data_exit
 
 
-def main(data):
+def get_ib(data, grilles):
+    grilles['echelon'] = grilles['echelon'].replace(['ES'], 55555).astype(int)
+    grilles_grouped = (grilles
+            .query('date_effet_grille <= 2012').copy()
+            .groupby(['code_grade_NETNEH', 'echelon']).agg({'date_effet_grille': np.min}).reset_index()
+            )
+    grilles_to_use = grilles_grouped.merge(
+        grilles,
+        on = ['code_grade_NETNEH', 'echelon', 'date_effet_grille'],
+        how = 'inner'
+        )
+    grilles_to_use['code_grade_NETNEH'] = grilles_to_use['code_grade_NETNEH'].astype(str)
+    data['grade'] = data['grade'].astype(str)
+    data_merged = data.merge(grilles_to_use[['code_grade_NETNEH', 'echelon', 'ib']],
+                      left_on = ['grade', 'echelon'],
+                      right_on = ['code_grade_NETNEH', 'echelon'],
+                      how = 'left'
+                      )[['ident', 'annee', 'grade', 'echelon', 'ib']]
+    return data_merged
+
+
+def main(data, results_filename, grilles):
     del data['Unnamed: 0']
     data_with_next_grade_when_exit_to_other = predict_next_period_grade_when_exit_to_other_corps(data)
     data_with_next_echelon_when_no_exit = predict_echelon_next_period_when_no_exit(
@@ -86,8 +111,14 @@ def main(data):
     results['next_grade'] = results['next_grade'].astype(str)
     results = results.rename(columns={col: col.replace('next_', '') for col in results.columns})
     assert len(list(set(results.ident.unique()) - set(data.ident.unique()))) == 0
-    results.to_csv('M:/CNRACL/simulation/results_2011.csv')
+    results = get_ib(results, grilles)
+    results.to_csv(os.path.join('M:/CNRACL/simulation/', results_filename))
 
 
 if __name__ == '__main__':
-    main(data = pd.read_csv('M:/CNRACL/simulation/data_simul_2011.csv'))
+    main(data = pd.read_csv('M:/CNRACL/simulation/data_simul_2011.csv'),
+         results_filename = 'results_2011.csv',
+         grilles = grilles
+         )
+
+
