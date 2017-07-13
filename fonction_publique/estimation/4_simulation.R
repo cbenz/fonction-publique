@@ -3,164 +3,293 @@
 
 
 
-################ Simulation by logit ################
+################ Simulation with multinomial logit ################
+
+
+# Simulation of trajectories based on estimation of the model. 
+# Two types of simulations: 
+#     i) Simulation of grade exit (2011 --> 2015)
+#     ii)  Simulation of next ib (2011 --> 2012)
 
 
 
+#### 0. Initialisation ####
+
+
+### Load data ###
+
+# Observed data for estimation
 source(paste0(wd, "0_work_on_data.R"))
 datasets = load_and_clean(data_path, "data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat.csv")
 data_id = datasets[[1]]
 data_max = datasets[[2]]
 data_min = datasets[[3]]
 
+data_est = data_min[which(data_min$annee == 2011),]
 
-data_est = data_min
+# Counterfactual data for simulation + merge for relevant variables
+echelon_cf = read.csv("M:/CNRACL/output/simulation_counterfactual_echelon/results_annuels.csv")
+data1 = echelon_cf[which(echelon_cf$annee >= 2011 & echelon_cf$annee < 2015), c("ident", "annee", "echelon", "c_cir")]
 
+data2 = data_min[which(data_min$annee == 2011), 
+                 c("ident", "time", "sexe", "an_aff", "left_censored", "generation_group", "c_cir_2011", "D_exam", "D_choice", "E_exam", "E_choice")]
+data_sim = merge(data1, data2, by = "ident")
+data_sim$time_2011 = data_sim$time 
+data_sim$time =  data_sim$time  + data_sim$annee - 2011
 
-#### 0. Initialisation ####
-
-
-# Variables creations (from 3_estimation : move to WOD?)
-data_est$dist_an_aff = data_est$annee - data_est$an_aff +1 
-grade_modif = which(data_est$c_cir_2011 == "TTH1" | data_est$c_cir_2011 == "TTH2")
-data_est$time2 = data_est$time
-data_est$time2[grade_modif] = data_est$dist_an_aff[grade_modif] 
-data_est$I_echC = ifelse(data_est$echelon >= data_est$E_choice, 1, 0) 
-data_est$I_gradeC   = ifelse(data_est$time2 >= data_est$D_choice, 1, 0) 
-data_est$I_gradeC   = ifelse(data_est$time2 >= data_est$D_choice, 1, 0) 
-data_est$I_bothC =  ifelse(data_est$I_echC ==1 &  data_est$I_gradeC == 1, 1, 0) 
-data_est$I_echE     = ifelse(data_est$echelon >= data_est$E_exam & data_est$c_cir_2011 == "TTH1", 1, 0) 
-data_est$I_gradeE   = ifelse(data_est$time2 >= data_est$D_exam & data_est$c_cir_2011 == "TTH1", 1, 0) 
-data_est$I_bothE    = ifelse(data_est$I_echE ==1 &  data_est$I_gradeE == 1, 1, 0) 
-data_est$c_cir = factor(data_est$c_cir)
-
-data_est$duration = data_est$time
-data_est$duration2 = data_est$time^2 
-
-data_est$duration  = data_est$time
-data_est$duration2 = data_est$time^2
-
-data_est$duration_aft  = data_est$time*data_est$I_bothC
-data_est$duration_aft2 = data_est$time^2*data_est$I_bothC
-
-data_est$duration_bef  = data_est$time*(1-data_est$I_bothC)
-data_est$duration_bef2 = data_est$time^2*(1-data_est$I_bothC)
-
-data_est$generation_group = factor(data_est$generation_group)
-data_est$c_cir_2011 = factor(data_est$c_cir_2011)
+data_sim = data_sim[order(data_sim$ident,data_sim$annee),]
 
 
-# Variable duree passée dans l'échelon. 
+#### Variable creations ####
 
-var = c("ident", "annee", "echelon", "c_cir")
-data_est = data_est[,var]
-
-data_est$a = 1
-data_est$dur_ech <- ave(data_est$a, list(data_est$ident, data_est$c_cir, data_est$echelon)  ,FUN=sum)
-
-
-
-
-data_est = data_est[which(data_est$left_censored == F & data_est$annee >= 2011 & data_est$annee <= 2014),]
-
-
-# Learning and test data
-list_id = unique(data_est$ident)
-list_learning = sample(list_id, ceiling(length(list_id)/2))
-list_test = setdiff(list_id, list_learning)
-data_learning = data_est[which(is.element(data_est$ident, list_learning)),]
-data_test     = data_est[which(is.element(data_est$ident, list_test)),]
-
-
-
-
-#### I. Counterfactual test data ####
-
-var = c("ident", "annee", "echelon")
-
-
-
-experiment %>% complete(nesting(name, trt), rep)
-
-
-all <- data_test[,var] %>% complete(nesting(ident), annee)
-
-all
-# We can use anti_join to figure out which observations are missing
-all %>% anti_join(experiment)
-# And use right_join to add in the appropriate missing values to the
-# original data
-experiment %>% right_join(all)
-# Or use the complete() short-hand*
-
-experiment %>% complete(nesting(name, trt), rep)
-
-
-#### II. Estimation ####
-
-
-
-log1 <- glm(exit_status2 ~ c_cir_2011 +  I_bothE + I_bothC,
-            data=data_est,x=T,family=binomial("logit"))
+create_variables <- function(data)
+{
+  data$dist_an_aff = data$annee - data$an_aff +1 
+  grade_modif = which(data$c_cir_2011 == "TTH1" | data$c_cir_2011 == "TTH2")
+  data$time2 = data$time
+  data$time2[grade_modif] = data$dist_an_aff[grade_modif] 
+  data$I_echC = ifelse(data$echelon >= data$E_choice, 1, 0) 
+  data$I_gradeC   = ifelse(data$time2 >= data$D_choice, 1, 0) 
+  data$I_gradeC   = ifelse(data$time2 >= data$D_choice, 1, 0) 
+  data$I_bothC =  ifelse(data$I_echC ==1 &  data$I_gradeC == 1, 1, 0) 
+  data$I_echE     = ifelse(data$echelon >= data$E_exam & data$c_cir_2011 == "TTH1", 1, 0) 
+  data$I_gradeE   = ifelse(data$time2 >= data$D_exam & data$c_cir_2011 == "TTH1", 1, 0) 
+  data$I_bothE    = ifelse(data$I_echE ==1 &  data$I_gradeE == 1, 1, 0) 
+  data$c_cir = factor(data$c_cir)
+  
+  data$duration = data$time
+  data$duration2 = data$time^2 
+  
+  data$duration  = data$time
+  data$duration2 = data$time^2
+  
+  data$duration_aft  = data$time*data$I_bothC
+  data$duration_aft2 = data$time^2*data$I_bothC
+  
+  data$duration_bef  = data$time*(1-data$I_bothC)
+  data$duration_bef2 = data$time^2*(1-data$I_bothC)
+  
+  data$generation_group = factor(data$generation_group)
+  data$c_cir_2011 = factor(data$c_cir_2011)
+  
+  # Unique threshold (first reached)
+  grade_modif_bis = which(data$c_cir_2011 == "TTH1")
+  data$I_unique_threshold = data$I_bothC
+  data$I_unique_threshold[grade_modif_bis] = data$I_bothE[grade_modif_bis]
+  
+  data$duration_aft_unique_threshold  = data$time*data$I_unique_threshold
+  data$duration_aft_unique_threshold2 = data$time^2*data$I_unique_threshold
+  
+  data$duration_bef_unique_threshold  = data$time*(1-data$I_unique_threshold)
+  data$duration_bef_unique_threshold2 = data$time^2*(1-data$I_unique_threshold)
+  
+  
+  return(data)
+}
+  
+data_est = create_variables(data_est)  
+data_sim = create_variables(data_sim)  
 
 
-log2 <- glm(exit_status2 ~c_cir_2011 +  I_bothE + I_bothC + 
-              sexe + ,
-            data=data_est,x=T,family=binomial("logit"))
-
-log3 <- glm(exit_status2 ~c_cir_2011 +  I_bothE + I_bothC + 
-              sexe + generation_group + 
-              duration + duration2 ,
-            data=data_est,x=T,family = binomial("logit"))
-
-log4 <- glm(exit_status2 ~c_cir_2011 +I_bothE + I_bothC + 
-              sexe + generation_group + 
-              duration + duration2 + echelon,
-            data=data_est,x=T,family=binomial("logit"))
+data_obs =  data_min[which(data_min$left_censored == F & data_min$annee <= 2014),]
+data_est =  data_est[which(data_est$left_censored == F),]
+data_sim =  data_sim[which(data_sim$left_censored == F  & data_sim$annee <= 2014),]
 
 
+### Functions ###
+predict_next_year <- function(p1,p2,p3)
+{
+n = sample(c("no_exit", "exit_next",  "exit_oth"), size = 1, prob = c(p1,p2,p3), replace = T)  
+return(n) 
+}  
 
-log5 <- glm(exit_status2 ~ I_bothE + I_bothC + 
-              sexe + #generation_group + 
-              duration_bef+  duration_aft + 
-              echelon_bef + echelon_aft,
-            data=data_est[which(data_est$c_cir == "TTH1"),],x=T,family=binomial("logit"))
+
+#### I. Estimation ####
 
 
-log5 <- glm(exit_status2 ~ I_bothC + 
-              sexe + c_cir_2011 +
-              duration_bef+duration_bef2+  duration_aft +duration_aft2 + 
-              echelon_bef + echelon_aft,
-            data=data_est,x=T,family=binomial("logit"))
-model0 <- glm(exit_status2 ~  1,
-              data=data_learning1 ,x=T,family=binomial("logit"))
+# Multinomial
+estim  = mlogit.data(data_est, shape = "wide", choice = "next_year")
 
-model1 <- glm(exit_status2 ~ sexe + generation_group + c_cir_2011,
-              data=data_learning1 ,x=T,family=binomial("logit"))
 
-model3 <- glm(exit_status2 ~ sexe + generation_group + c_cir_2011  + echelon + an_aff+ 
-                duration + duration2,
-              data=data_learning1 ,x=T,family=binomial("logit"))
+mlog0 = mlogit(next_year ~ 0 | 1, data = estim, reflevel = "no_exit")
+mlog1 = mlogit(next_year ~ 0 | c_cir_2011 + sexe + 
+                 duration + duration2, data = estim, reflevel = "no_exit")
+mlog2 = mlogit(next_year ~ 0 | I_unique_threshold + c_cir_2011 + sexe + 
+                 duration_bef_unique_threshold +  duration_aft_unique_threshold, 
+               data = estim, reflevel = "no_exit")
 
-model4 <- glm(exit_status2 ~ sexe + generation_group + c_cir_2011 + 
-                duration + duration2 + echelon + an_aff + 
-                I_echC + I_gradeC+ I_echC:I_gradeC +
-                I_echE + I_gradeE+ I_echE:I_gradeE,
-              data=data_learning1 ,x=T,family=binomial("logit"))
+summary(mlog1)
+summary(mlog2)
 
-# Simulated exit
-data_test1$yhat0     <- predict(model0, data_test1,type = "response") 
-data_test1$yhat1     <- predict(model1, data_test1,type = "response") 
-data_test1$yhat2     <- predict(model2, data_test1,type = "response") 
-data_test1$yhat3     <- predict(model3, data_test1,type = "response") 
-data_test1$exit_hat0 <- as.numeric(lapply(data_test1$yhat0 , tirage))
-data_test1$exit_hat1 <- as.numeric(lapply(data_test1$yhat1 , tirage))
-data_test1$exit_hat2 <- as.numeric(lapply(data_test1$yhat2 , tirage))
-data_test1$exit_hat3 <- as.numeric(lapply(data_test1$yhat3 , tirage))
+
+#### II. Prediction exit ####
+
+
+## II.1 Predicted exit ##
+
+adhoc <- sample(c("no_exit",   "exit_next", "exit_oth") ,nrow(data_sim),replace=TRUE, prob = c(0.2, 0.2, 0.6))
+data_sim$next_year <-adhoc
+data_predict  = mlogit.data(data_sim, shape = "wide", choice = "next_year")
+
+# Simulated exit (all years)
+yhat0     <- predict(mlog0, data_predict,type = "response") 
+yhat1     <- predict(mlog1, data_predict,type = "response") 
+yhat2     <- predict(mlog2, data_predict,type = "response") 
+data_sim$next_hat0  <- mapply(predict_next_year, yhat0[,1], yhat0[,2], yhat0[,3])
+data_sim$next_hat1  <- mapply(predict_next_year, yhat1[,1], yhat1[,2], yhat1[,3])
+data_sim$next_hat2  <- mapply(predict_next_year, yhat2[,1], yhat2[,2], yhat2[,3])
 
 
 
-## Output
+mean(yhat0[which(data_sim$I_unique_threshold == 1), 2])
+mean(yhat1[which(data_sim$I_unique_threshold == 1), 2])
+mean(yhat2[which(data_sim$I_unique_threshold == 1), 2])
+
+mean(yhat0[which(data_sim$I_unique_threshold == 1), 3])
+mean(yhat1[which(data_sim$I_unique_threshold == 1), 3])
+mean(yhat2[which(data_sim$I_unique_threshold == 1), 3])
+
+
+table(data_obs$next_year[which(data_obs$annee == 2011)])/length(data_obs$next_year[which(data_obs$annee == 2011)])
+table(data_sim$next_hat0[which(data_sim$annee == 2011)])/length(data_sim$next_hat0[which(data_sim$annee == 2011)])
+table(data_sim$next_hat2[which(data_sim$annee == 2011)])/length(data_sim$next_hat2[which(data_sim$annee == 2011)])
+
+# Exit date and route: obs vs. sim
+exit_year_obs  = numeric(length(unique(data_sim$ident)))
+exit_route_obs = numeric(length(unique(data_sim$ident)))
+exit_year_pred  = matrix(nrow = 3, ncol = length(unique(data_sim$ident)))
+exit_route_pred = matrix(nrow = 3, ncol = length(unique(data_sim$ident)))
+
+extract_exit = function(data, exit_var)
+{
+  data = data[, c("ident", "annee", exit_var)]
+  data$exit_var = data[, exit_var]
+  data$ind_exit      = ifelse(data$exit_var != "no_exit", 1, 0) 
+  data$ind_exit_cum  = ave(data$ind_exit, data$ident, FUN = cumsum)
+  data$ind_exit_cum2  = ave(data$ind_exit_cum, data$ident, FUN = cumsum)
+  data$ind_exit_cum2  = ave(data$ind_exit_cum, data$ident, FUN = cumsum)
+  data$ind_exit_tot   = ave(data$ind_exit, data$ident, FUN = sum)
+  ### PB  
+  data$ind_first_exit  = ifelse(data$ind_exit_cum2 == 1, 1, 0) 
+  data$year_exit = ave((data$ind_first_exit*data$annee), data$ident, FUN = max)
+  data$year_exit[which(data$year_exit == 0)] = 2014
+  data2 = data[which(data$annee == data$year_exit ),]
+  data2$year_exit[which(data2$ind_exit_tot == 0)] = 9999
+  
+  return(list(data2$year_exit, data2$exit_var))
+}  
+
+# Obs
+obs = extract_exit(data_obs, "next_year")
+exit_year_obs  = obs[[1]]
+exit_route_obs  = obs[[2]]
+
+# Sim
+for (d in 0:2){
+exit_var = paste0("next_hat", d)  
+print(exit_var)
+sim = extract_exit(data = data_sim, exit_var)
+exit_year_pred[(d+1), ]  = sim[[1]]
+exit_route_pred[(d+1), ] = sim[[2]]
+}
+
+
+### II.2 Comparison predicted vs. observed ###
+
+## Survival curve
+
+
+survival= function(sample, type_exit = "all", save = F, name = "")
+{
+  
+surv  = matrix(ncol = 5, nrow = 4)  
+list = sample
+for (y in 1:length(years))
+{
+  n = length(list)
+  surv[1, y] = (n - length(which(exit_year_obs[list] < years[y])))/n
+  surv[2, y] = (n - length(which(exit_year_pred[1, list]  < years[y])))/n
+  surv[3, y] = (n - length(which(exit_year_pred[2, list]  < years[y])))/n
+  surv[4, y] = (n - length(which(exit_year_pred[3, list]  < years[y])))/n  
+}
+# Plot
+years = 2011:2015
+colors = c("black", "darkcyan")
+limits = range(surv)
+plot(years,rep(NA,length(years)),ylim=limits, ylab="Survie dans le grade",xlab="Année")
+title(name)
+lines(years, surv[1,], col =  colors[1], lwd = 3, lty =1)
+lines(years, surv[2,], col =  colors[2], lwd = 3, lty = 2)
+lines(years, surv[3,], col =  colors[2], lwd = 4, lty = 3)
+lines(years, surv[4,], col =  colors[2], lwd = 4, lty =1)
+}
+
+datai= data_sim[which(data_sim$annee == 2011),]
+survival(sample = 1:ncol(exit_year_pred), type_exit = "all", save = F, name = "All")
+survival(sample = which(datai$c_cir_2011 == "TTH1"), type_exit = "all", save = F, name = "TTH1")
+survival(sample = which(datai$c_cir_2011 == "TTH2"), type_exit = "all", save = F, name = "TTH2")
+survival(sample = which(datai$c_cir_2011 == "TTH3"), type_exit = "all", save = F, name = "TTH3")
+survival(sample = which(datai$c_cir_2011 == "TTH4"), type_exit = "all", save = F, name = "TTH4")
+
+
+
+hazard= function(sample, type_exit = "all", save = F, name = "")
+{
+  haz  = matrix(ncol = 4, nrow = 4)  
+  list = sample
+  years = 2011:2014
+  
+  if (!is.element(type_exit, c("all", "exit_next", "exit_oth"))){print("wrong exit type"); return()}
+  
+  # All
+  if (type_exit == "all")
+  {
+  for (y in 1:length(years))
+  {
+    n = length(list)
+    haz[1, y] =  length(which(exit_year_obs[list] == years[y]))/length(which(exit_year_obs[list] >= years[y]))
+    haz[2, y] =  length(which(exit_year_pred[1, list] == years[y]))/length(which(exit_year_pred[1, list] >= years[y]))
+    haz[3, y] =  length(which(exit_year_pred[2, list] == years[y]))/length(which(exit_year_pred[2, list]  >= years[y]))
+    haz[4, y] =  length(which(exit_year_pred[3, list] == years[y]))/length(which(exit_year_pred[3, list ] >= years[y]))
+  }
+  }
+  else{
+    for (y in 1:length(years))
+    {
+      n = length(list)
+      haz[1, y] =  length(which(exit_year_obs[list] == years[y] & exit_route_obs[list] == type_exit))/length(which(exit_year_obs[list] >= (years[y])))
+      haz[2, y] =  length(which(exit_year_pred[1, list] == years[y] & exit_route_pred[1,list] == type_exit))/length(which(exit_year_pred[1, list] >= years[y])) 
+      haz[3, y] =  length(which(exit_year_pred[2, list] == years[y] & exit_route_pred[2,list] == type_exit))/length(which(exit_year_pred[2, list] >= years[y]))
+      haz[4, y] =  length(which(exit_year_pred[3, list] == years[y] & exit_route_pred[3,list] == type_exit))/length(which(exit_year_pred[3, list] >= years[y]))
+    }
+    
+  }
+  
+  # Plot
+  years = 2012:2015
+  colors = c("black", "darkcyan")
+  limits = range(haz)
+  plot(years,rep(NA,length(years)),ylim=limits, ylab="Hazard rate",xlab="Année")
+  title(name)
+  lines(years, haz[1,], col =  colors[1], lwd = 3, lty =1)
+  lines(years, haz[2,], col =  colors[2], lwd = 3, lty = 2)
+  lines(years, haz[3,], col =  colors[2], lwd = 4, lty = 3)
+  lines(years, haz[4,], col =  colors[2], lwd = 4, lty =1)
+}
+
+
+hazard(sample = 1:ncol(exit_year_pred), type_exit = "all", save = F, name = "All")
+hazard(sample = 1:ncol(exit_year_pred), type_exit = "exit_next", save = F, name = "All")
+hazard(sample = 1:ncol(exit_year_pred), type_exit = "exit_oth", save = F, name = "All")
+
+
+hazard(sample = 1:ncol(exit_year_pred), type_exit = "exit_next", save = F, name = "All")
+hazard(sample = 1:ncol(exit_year_pred), type_exit = "exit_oth", save = F, name = "All")
+
+
+
+
+
 
 ## ROC analysis
 table_fit = matrix(ncol = 4, nrow = 8)
@@ -215,7 +344,6 @@ for (m in 1:5)
   table_by_grade[5, m] = mean(data_test1$exit[which(data_test1$c_cir_2011 == "TTH4")])
 }
 
-
 colnames(table_by_grade) = c('Observed', 'Null model', 'Controls1', 'Controls2', 'Full model')
 rownames(table_by_grade) = c("All", "TTH1", "TTH2", "TTH3", "TTH4")
 print(xtable(table_by_grade,align="lccccc",nrow = nrow(table_by_grade), 
@@ -256,6 +384,8 @@ print(xtable(table_movers,align="lccccc",nrow = nrow(table_movers),
       sanitize.text.function=identity,size="\\footnotesize", hline.after = c(0, 2, 4),
       only.contents=F, include.colnames = T)
 
+
+#### II. Comparison ib ####
 
 
 

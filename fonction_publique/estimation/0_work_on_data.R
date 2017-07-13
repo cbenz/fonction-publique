@@ -20,7 +20,7 @@ load_and_clean = function(data_path, dataname)
   data_long[, to_bolean] <- sapply(data_long[, to_bolean], as.logical)
   
   # Corrections (to move to .py)
-  data_long$echelon[which(data_long$echelon == 55555)] = 12
+  #data_long$echelon[which(data_long$echelon == 55555)] = 12
   
   data_long$observed  = ifelse(data_long$right_censored == 1, 0, 1) 
   data_long$echelon_2011 = ave(data_long$echelon*(data_long$annee == 2011), data_long$ident, FUN = max)

@@ -2,9 +2,7 @@
 
 
 
-
-################ Estimation by logit ################
-
+################ Estimation by multinomial logit ################
 
 
 source(paste0(wd, "0_work_on_data.R"))
@@ -66,119 +64,128 @@ data_est$duration_bef_unique_threshold  = data_est$time*(1-data_est$I_unique_thr
 data_est$duration_bef_unique_threshold2 = data_est$time^2*(1-data_est$I_unique_threshold)
 
 
+
 #### I. Estimation ####
+# 
+# 
+ varlist = c("ident", "annee", "sexe", "generation_group",  "an_aff", "c_cir_2011",
+            "ib", "echelon", "time",
+            "exit_status2", "next_grade","next_year",
+            "I_unique_threshold", "duration","duration2",
+            "duration_bef_unique_threshold", "duration_bef_unique_threshold2",
+            "duration_aft_unique_threshold", "duration_aft_unique_threshold2")
 
+years = 2011:2014
+datam = data_est[which(is.element(data_est$annee, years)), varlist]
+datam$c_cir_2011 = as.character(datam$c_cir_2011)
 
-model1 <- glm(exit_status2 ~  I_unique_threshold,
-              data=data_est,x=T,family=binomial("logit"))
+# estim = mlogit.data(datam, shape = "wide", choice = "next_year")
+# 
+# 
+# mlog1 = mlogit(next_year ~ 0 | I_unique_threshold, data = estim, reflevel = "no_exit")
+# mlog2 = mlogit(next_year ~ 0 | I_unique_threshold + c_cir_2011 + sexe + 
+#                  duration_bef_unique_threshold +  duration_aft_unique_threshold, 
+#                data = estim, reflevel = "no_exit")
+# summary(mlog1)
+# summary(mlog2)
+# 
+# ## Before/after
+# l1 <- extract.mlogit(mlog1)
+# l2 <- extract.mlogit(mlog2)
+# 
+# names = c("I_threshold", "Rank 2", "Rank 3", "Rank 4", "sexe = M", "duration_bef", "duration_bef2","duration_aft",
+#           "duration_aft2", "duration", "duration2")
+# 
+# list_models    <- list(l1, l2)
+# 
+# 
+# 
+# print(texreg(list_models,
+#              caption.above=F, 
+#              float.pos = "!ht",
+#              digit=3,
+#              only.content= T,
+#              stars = c(0.01, 0.05, 0.1),
+#              #custom.coef.names=names,
+#              #custom.coef.names=ror$ccn,  omit.coef=ror$oc, reorder.coef=ror$rc,
+#              #omit.coef = omit_var,
+#              booktabs=T), only.contents = T)
+# 
 
-model2 <- glm(exit_status2 ~ I_unique_threshold +  c_cir_2011 + sexe,
-              data=data_est,x=T,family=binomial("logit"))
-
-model3 <- glm(exit_status2 ~ I_unique_threshold  + c_cir_2011 + sexe + 
-                duration_aft_unique_threshold + duration_bef_unique_threshold,
-               data=data_est,x=T,family=binomial("logit"))
-
-model4 <- glm(exit_status2 ~ I_unique_threshold  + c_cir_2011 + sexe + 
-                duration_aft_unique_threshold +  duration_aft_unique_threshold2 + 
-                duration_bef_unique_threshold +  duration_bef_unique_threshold2,
-              data=data_est,x=T,family=binomial("logit"))
-
-model5 <- glm(exit_status2 ~ c_cir_2011 + sexe + 
-                duration + duration2,
-              data=data_est,x=T,family=binomial("logit"))
-
-
-me1 <- logitmfx(exit_status2 ~  I_unique_threshold,
-                data=data_est, atmean = F)
-
-me2 <- logitmfx(exit_status2 ~ I_unique_threshold +  c_cir_2011 + sexe,
-                data=data_est, atmean = F)
-
-me3 <- logitmfx(exit_status2 ~ I_unique_threshold  + c_cir_2011 + sexe + 
-                  duration_bef_unique_threshold + duration_aft_unique_threshold,
-                data=data_est, atmean = F)
-
-me4 <- logitmfx(exit_status2 ~ I_unique_threshold  + c_cir_2011 + sexe + 
-                duration_bef_unique_threshold +  duration_bef_unique_threshold2+
-                duration_aft_unique_threshold +  duration_aft_unique_threshold2,
-                data=data_est, atmean = F)
-
-me5 <- logitmfx(exit_status2 ~  c_cir_2011 + sexe + 
-                  duration + duration2,
-                data=data_est, atmean = F)
-
-## Before/after
-l1 <- extract.glm2(model1, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
-l2 <- extract.glm2(model2, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
-l3 <- extract.glm2(model3, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
-l4 <- extract.glm2(model4, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
-l5 <- extract.glm2(model4, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
-
-lme1 <- extract(me1, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
-lme2 <- extract(me2, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
-lme3 <- extract(me3, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
-lme4 <- extract(me4, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
-lme5 <- extract(me5, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
-
-
-
-names = c("I_threshold", "Rank 2", "Rank 3", "Rank 4", "sexe = M", "duration_bef", "duration_bef2","duration_aft",
-          "duration_aft2", "duration", "duration2")
-
-list_models    <- list(l1, l2, l3, l4, l5)
-list_models_me <- list(lme2, lme4, lme5)
-
-print(texreg(list_models_me,
-             caption.above=F, 
-             float.pos = "!ht",
-             digit=3,
-             only.content= T,
-             stars = c(0.01, 0.05, 0.1),
-             custom.coef.names=names,
-             #custom.coef.names=ror$ccn,  omit.coef=ror$oc, reorder.coef=ror$rc,
-             #omit.coef = omit_var,
-             booktabs=T), only.contents = T)
+# TODO: reorder coeffs
 
 
 #### II Simulation ####
 
-list_id = unique(data_est$ident)
+
+#### II.1 Predictions ####
+
+
+list_id = unique(datam$ident)
 list_learning = sample(list_id, ceiling(length(list_id)/2))
 list_test = setdiff(list_id, list_learning)
-data_learning = data_est[which(is.element(data_est$ident, list_learning)),]
-data_test     = data_est[which(is.element(data_est$ident, list_test)),]
+data_learning = datam[which(is.element(datam$ident, list_learning)),]
+data_test     = datam[which(is.element(datam$ident, list_test)),]
 
 
 ## 2011 ####
-data_learning1 = data_learning[which(data_test$annee >= 2011),]
+data_learning1 = data_learning[which(data_learning$annee == 2011),]
+estim  = mlogit.data(data_learning1, shape = "wide", choice = "next_year")
+
 data_test1     = data_test[which(data_test$annee == 2011),]
+predict = mlogit.data(data_test1, shape = "wide", choice = "next_year")
 
-model0 <- glm(exit_status2 ~  1,
-              data=data_learning1 ,x=T,family=binomial("logit"))
-
-model1 <- glm(exit_status2 ~ I_unique_threshold  + c_cir_2011 + sexe + 
-                duration_aft_unique_threshold +  duration_aft_unique_threshold2 + 
-                duration_bef_unique_threshold +  duration_bef_unique_threshold2,
-              data=data_est,x=T,family=binomial("logit"))
-
-model2 <- glm(exit_status2 ~ c_cir_2011 + sexe + 
-                duration + duration2,
-              data=data_est,x=T,family=binomial("logit"))
+mlog0 = mlogit(next_year ~ 0 | 1, data = estim, reflevel = "no_exit")
+mlog1 = mlogit(next_year ~ 0 | c_cir_2011 + sexe + 
+                 duration + duration2, data = estim, reflevel = "no_exit")
+mlog2 = mlogit(next_year ~ 0 | I_unique_threshold + c_cir_2011 + sexe + 
+                 duration_bef_unique_threshold +  duration_aft_unique_threshold, 
+               data = estim, reflevel = "no_exit")
 
 # Simulated exit
-data_test1$yhat0     <- predict(model0, data_test1,type = "response") 
-data_test1$yhat1     <- predict(model1, data_test1,type = "response") 
-data_test1$yhat2     <- predict(model2, data_test1,type = "response") 
-#data_test1$yhat3     <- predict(model3, data_test1,type = "response") 
-data_test1$exit_hat0 <- as.numeric(lapply(data_test1$yhat0 , tirage))
-data_test1$exit_hat1 <- as.numeric(lapply(data_test1$yhat1 , tirage))
-data_test1$exit_hat2 <- as.numeric(lapply(data_test1$yhat2 , tirage))
-#data_test1$exit_hat3 <- as.numeric(lapply(data_test1$yhat3 , tirage))
+
+predict_next_year <- function(p1,p2,p3)
+{
+  n = sample(c("no_exit", "exit_next",  "exit_oth"), size = 1, prob = c(p1,p2,p3), replace = T)  
+  return(n) 
+}  
+
+
+yhat0     <- predict(mlog0, predict, type = "response") 
+yhat1     <- predict(mlog1, predict, type = "response") 
+yhat2     <- predict(mlog2, predict, type = "response") 
+
+data_test1$exit_hat0  <- mapply(predict_next_year, yhat0[,1], yhat0[,2], yhat0[,3])
+data_test1$exit_hat1  <- mapply(predict_next_year, yhat1[,1], yhat1[,2], yhat1[,3])
+data_test1$exit_hat2  <- mapply(predict_next_year, yhat2[,1], yhat2[,2], yhat2[,3])
+
+table(data_learning1$next_year)/length(data_learning1$next_year)
+table(data_test1$exit_hat0 )/length(data_test1$exit_hat0 )
+table(data_test1$exit_hat2)/length(data_test1$exit_hat2 )
 
 
 
-## Output
+## Output for Python
+data_test1$corps = "ATT"
+data_test1$grade = data_test1$c_cir
+data_test1$next_situation = NULL
+
+data_test1$next_situation = data_test1$exit_hat0
+data_simul_2011 = data_test1[, c("ident", "annee", "corps", "grade", "ib", "echelon", "next_situation")]
+write.csv(data_simul_2011, file = paste0(save_data_path, "data_simul_2011_m0.csv"))
+
+data_test1$next_situation = data_test1$exit_hat1
+data_simul_2011 = data_test1[, c("ident", "annee", "corps", "grade", "ib", "echelon", "next_situation")]
+write.csv(data_simul_2011, file = paste0(save_data_path, "data_simul_2011_m1.csv"))
+
+data_test1$next_situation = data_test1$exit_hat2
+data_simul_2011 = data_test1[, c("ident", "annee", "corps", "grade", "ib", "echelon", "next_situation")]
+write.csv(data_simul_2011, file = paste0(save_data_path, "data_simul_2011_m2.csv"))
+
+
+#### II.2 Adequacy analysis ####
+
+###  II.2.1 2011-2012 only ###
 
 ## ROC analysis
 table_fit = matrix(ncol = 4, nrow = 8)
@@ -274,3 +281,28 @@ print(xtable(table_movers,align="lcccc",nrow = nrow(table_movers),
       sanitize.text.function=identity,size="\\footnotesize", hline.after = c(0, 2, 4),
       only.contents=F, include.colnames = T)
 
+
+###  II.2.2 Survival analysis 2011-2014 ###
+
+
+
+
+
+#### III. Nested logit  ####
+
+### Hausman test IIA
+data("TravelMode",package="AER")
+TravelMode <- mlogit.data(TravelMode,choice="choice",shape="long",
+                          alt.var="mode",chid.var="individual")
+## Create a variable of income only for the air mode
+TravelMode$avinc <- with(TravelMode,(mode=='air')*income)
+## Estimate the model on all alternatives, with car as the base level
+## like in Greene's book.
+#x <- mlogit(choice~wait+gcost+avinc,TravelMode,reflevel="car")
+x <- mlogit(choice~wait+gcost+avinc,TravelMode)
+## Estimate the same model for ground modes only (the variable avinc
+## must be dropped because it is 0 for every observation
+g <- mlogit(choice~wait+gcost,TravelMode,reflevel="car",
+            alt.subset=c("car","bus","train"))
+## Compute the test
+hmftest(x,g)

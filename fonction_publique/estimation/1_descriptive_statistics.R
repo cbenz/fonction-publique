@@ -13,7 +13,6 @@ data_max = datasets[[2]]
 data_min = datasets[[3]]
 
 
-
 ## I. Sample description ####
 
 ## I.1 Sample  ####
@@ -373,7 +372,10 @@ mean(data$var_ib[which(data$next_year == "exit_next")])
 mean(data$var_ib[which(data$next_year == "exit_oth")])
 
 
+### Check tth4 partant avec ib > 7
+subdata = data_min[which(data_min$annee == 2011 & data_min$c_cir_2011 == "TTH4" & data_min$next_grade_corrected == "TTM1"  & data_min$exit_status2 ==1 & data_min$echelon >= 6),]
 
-
-
-
+list_ident = unique(subdata$ident)
+datasets = read.csv(file = paste0(data_path, "data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat_grade_corrected.csv"))
+data = datasets[which(is.element(datasets$ident, list_ident) & datasets$annee >= 2011),]
+table(data$echelon[which(data$annee == 2012)])
