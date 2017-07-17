@@ -24,6 +24,30 @@ observed = pd.read_csv(
 
 data = observed.merge(results, on = ['ident', 'annee', 'c_cir'], how = 'left')
 data = data.query('(echelon_observe != 55555) & (echelon_predit != 55555)').copy()
+
+data[['echelon_observe', 'echelon_predit']].describe().to_latex()
+
+bygrade = data.groupby('c_cir')
+bygrade = bygrade[['echelon_observe', 'echelon_predit']].describe().to_latex()
+
+byyear = data.groupby('annee')
+print byyear[['echelon_observe', 'echelon_predit']].describe().to_latex()
+
+idents_ech_12 = data.query('echelon_observe == 12').ident.unique().tolist()
+obs_idents_ech_12 = observed[observed['ident'].isin(idents_ech_12)]
+
+x = plt.figure()
+plt.hist(data['echelon_predit'].tolist(), label = u'Prédit', histtype = 'step', color = '#00cccc')
+plt.hist(data['echelon_observe'].tolist(), label = u'Observé', histtype = 'step', color =  '#008e9c')
+plt.legend(loc='upper right')
+plt.show()
+x.savefig(
+   "C:/Users/l.degalle/CNRACL/fonction-publique/fonction_publique/ecrits/Slides/2017_07_CDC/Graphiques/hist_echelon.pdf",
+   format = 'pdf'
+   )
+
+
+
 data['difference'] = abs(data.echelon_observe - data.echelon_predit)
 
 ##########

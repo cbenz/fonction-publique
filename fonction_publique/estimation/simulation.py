@@ -78,8 +78,7 @@ def get_ib(data, grilles):
     grilles['echelon'] = grilles['echelon'].replace(['ES'], 55555).astype(int)
     grilles_grouped = (grilles
             .query('date_effet_grille <= 2012').copy()
-            .groupby(['code_grade_NETNEH', 'echelon']).agg({'date_effet_grille': np.min}).reset_index()
-            )
+            ).groupby(['code_grade_NETNEH', 'echelon']).agg({'date_effet_grille': np.max}).reset_index()
     grilles_to_use = grilles_grouped.merge(
         grilles,
         on = ['code_grade_NETNEH', 'echelon', 'date_effet_grille'],
@@ -116,9 +115,10 @@ def main(data, results_filename, grilles):
 
 
 if __name__ == '__main__':
-    main(data = pd.read_csv('M:/CNRACL/simulation/data_simul_2011.csv'),
-         results_filename = 'results_2011.csv',
-         grilles = grilles
-         )
+    for model in ['_m0', '_m1', '_m2']:
+        main(data = pd.read_csv('M:/CNRACL/simulation/data_simul_2011{}.csv'.format(model)),
+             results_filename = 'results_2011{}.csv'.format(model),
+             grilles = grilles
+             )
 
 

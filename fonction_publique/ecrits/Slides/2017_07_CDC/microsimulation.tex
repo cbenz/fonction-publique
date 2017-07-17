@@ -354,7 +354,74 @@
 
 \end{frame}
 
+\begin{frame}
+\frametitle{Prédiction de l'échelon : méthode}
+\begin{itemize}
+\item Deux méthodes distinctes selon que l'agent \textbf{change de grade} ou qu'il \textbf{reste dans son grade}
+\end{itemize}
 
+	\textbf{1.} L'agent change de grade : \\
+	\begin{enumerate}
+	\item S'il change de corps, son $Grade_{t+1}$ prédit est celui vers lequel le plus grand nombre d'agents changeant de corps transitionnent sur la période 2011-2015 depuis $Grade_{t}$\\
+	\begin{footnotesize}
+		\begin{itemize}
+		\item Ce grade est le grade TTM1 pour tous les grades des ATT 
+		\item On pourrait plutôt tirer un $Grade_{t+1}$ dans la distribution empirique des grades d'accueil des agents changeant de corps depuis $Grade_{t}$
+	\end{itemize}
+	\end{footnotesize}
+	\item On le place ensuite à l'échelon \textbf{correspondant à l'IB immédiatement supérieur ou égal} à son $IB_t$ sur la grille du $Grade_{t+1}$ 
+	\end{enumerate}
+	
+	
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Prédiction de l'échelon : méthode}
+
+
+	\textbf{2.}  L'agent ne change pas de grade : il avance d'échelon selon la \textbf{durée minimale} d'avancement donnée par les grilles\\
+	\begin{itemize}
+		\item Les réformes de ces durées minimales sont prises en compte
+\begin{itemize}
+					\begin{footnotesize}
+			\item[] $\Rightarrow$ Les agents bénéficiant d'une réforme raccourcissant la durée légale qu'ils doivent passer dans l'échelon de telle sorte qu'ils ont déjà rempli cette nouvelle condition au moment de la réforme passent à leur échelon supérieur au moment de la réforme
+					\end{footnotesize}
+\end{itemize}
+		\item Les agents parvenus au dernier échelon de leur grille y restent jusqu'à la fin de la période de simulation désirée
+		\item La procédure est rapide et fonctionne quel que soit le grade
+	\end{itemize}
+
+	
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Prédiction de l'échelon : résultats}
+
+\begin{figure}
+	\vspace{-0.5cm}
+	\includegraphics[scale=0.8]{Graphiques/hist_echelon.pdf}
+\end{figure}
+
+
+\end{frame}
+
+
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Prédiction de l'échelon : améliorations}
+
+\begin{itemize}
+	\item On fait pour l'instant entrer les agents dans leur échelon de 2011 au dernier trimestre.\\
+	$\Rightarrow$ Imputer une durée déjà passée dans l'échelon de 2011
+	\item Utiliser des \textbf{moyennes empiriques} de durées passées dans chaque échelon au lieu des durées légales
+\end{itemize}
+
+
+\end{frame}
 
 \end{document}
 
