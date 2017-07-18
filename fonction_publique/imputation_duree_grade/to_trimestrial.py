@@ -238,40 +238,40 @@ from __future__ import division
 import numpy as np
 
 
-save_path = "C:\Users\l.degalle\CNRACL\fonction-publique\fonction_publique\ecrits\descriptive statistics multinomial\Figures
-
-
-def plot_frequency_next_grade():
-    for grade in ['TTH1', 'TTH2', 'TTH3', 'TTH4']:
-        data_grade = []
-        for annee in range(2011, 2015):
-            data_annee = data_long_w_echelon_IPP_corrected.query(
-                "(last_y_observed_in_grade == @annee) & (right_censored == False) & (c_cir_2011 == @grade) & (annee == last_y_observed_in_grade) & (quarter == 4)"
-                ).next_grade.value_counts().reset_index().rename(
-                        columns = {'index':'next_grade', 'next_grade':'count'}
-                        )
-            data_annee['share'] = data_annee['count'] / data_annee['count'].sum()
-            data_annee = data_annee.sort_values(by = 'share', ascending = False)
-            data_annee['cum_share'] = data_annee['share'].cumsum()
-            data_annee['last_y_obs'] = annee
-            data_annee_more_90_percent = data_annee.query('cum_share <= 0.9')
-            fig, ax = plt.subplots()
-            plt.plot(data_annee_more_90_percent.share, 'ro', color = 'blue')
-            labels = data_annee_more_90_percent.next_grade.values
-            ax.set_xticks(np.arange(len(labels)))
-            (markerline, stemlines, baseline) = ax.stem(
-                    data_annee_more_90_percent.share,
-                    color = 'blue'
-                    )
-            plt.setp(baseline, visible=False)
-            ax.xaxis.set_ticklabels(data_annee_more_90_percent.next_grade.values)
-            plt.savefig(os.path.join(
-                project_path, 'ecrits\\descriptivestatisticsmultinomial\\Figures', '{}{}.pdf'
-                ).format(grade, annee), format='pdf', dpi=1200)
-
-# Look whether grade transitions go give same next echelon
-
-data_long_w_echelon_IPP_corrected.groupby(['c_cir_2011', 'next_grade'])[']
+#save_path = "C:\Users\l.degalle\CNRACL\fonction-publique\fonction_publique\ecrits\descriptive statistics multinomial\Figures
+#
+#
+#def plot_frequency_next_grade():
+#    for grade in ['TTH1', 'TTH2', 'TTH3', 'TTH4']:
+#        data_grade = []
+#        for annee in range(2011, 2015):
+#            data_annee = data_long_w_echelon_IPP_corrected.query(
+#                "(last_y_observed_in_grade == @annee) & (right_censored == False) & (c_cir_2011 == @grade) & (annee == last_y_observed_in_grade) & (quarter == 4)"
+#                ).next_grade.value_counts().reset_index().rename(
+#                        columns = {'index':'next_grade', 'next_grade':'count'}
+#                        )
+#            data_annee['share'] = data_annee['count'] / data_annee['count'].sum()
+#            data_annee = data_annee.sort_values(by = 'share', ascending = False)
+#            data_annee['cum_share'] = data_annee['share'].cumsum()
+#            data_annee['last_y_obs'] = annee
+#            data_annee_more_90_percent = data_annee.query('cum_share <= 0.9')
+#            fig, ax = plt.subplots()
+#            plt.plot(data_annee_more_90_percent.share, 'ro', color = 'blue')
+#            labels = data_annee_more_90_percent.next_grade.values
+#            ax.set_xticks(np.arange(len(labels)))
+#            (markerline, stemlines, baseline) = ax.stem(
+#                    data_annee_more_90_percent.share,
+#                    color = 'blue'
+#                    )
+#            plt.setp(baseline, visible=False)
+#            ax.xaxis.set_ticklabels(data_annee_more_90_percent.next_grade.values)
+#            plt.savefig(os.path.join(
+#                project_path, 'ecrits\\descriptivestatisticsmultinomial\\Figures', '{}{}.pdf'
+#                ).format(grade, annee), format='pdf', dpi=1200)
+#
+## Look whether grade transitions go give same next echelon
+#
+#data_long_w_echelon_IPP_corrected.groupby(['c_cir_2011', 'next_grade'])[']
 
 
 
