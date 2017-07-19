@@ -38,20 +38,25 @@ def predict_echelon_next_period_when_no_exit(data):
     return data_no_exit
 
 
+
 def predict_echelon_next_period_when_exit(data, grilles):
     data_exit = data.query("next_situation != 'no_exit'").copy()
 
     data_exit.loc[(data_exit['next_situation'] == 'exit_next'), 'next_grade'] = [
         'TTH' + str(int(s[-1:]) + 1) for s in data_exit.query("next_situation == 'exit_next'")['grade'].copy()
         ]
-    grilles_in_effect = grilles.query("date_effet_grille <= 2011").groupby(
+    data_exit['next_grade'] = data_exit['next_grade'].replace(['TTH5'], 'TTM1')
+    grilles_in_effect = grilles.query("date_effet_grille <= 2012").groupby(
         ['code_grade_NETNEH']
         ).agg({'date_effet_grille': np.max}).reset_index()
     grilles = grilles.merge(grilles_in_effect, on = ['code_grade_NETNEH', 'date_effet_grille'], how = 'inner')
-    data_exit_merged = data_exit.merge(grilles, left_on = 'next_grade', right_on = 'code_grade_NETNEH', how = 'right')
-    data_exit_merged['echelon_y'] = data_exit_merged['echelon_y'].replace(['ES'], 55555).astype(int)
+    data_exit_merged = data_exit.merge(grilles, left_on = 'next_grade', right_on = 'code_grade_NETNEH', how = 'inner')
+    data_exit_merged['next_echelon'] = data_exit_merged['echelon_y'].replace(['ES'], 55555).astype(int)
+    data_exit_merged['echelon'] = data_exit_merged['echelon_x'].astype(int)
+    del data_exit_merged['echelon_x']
+    del data_exit_merged['echelon_y']
 
-    data_exit_echelon_pour_echelon = data_exit_merged.query("next_grade in ['TTH2', 'TTH3', 'TTM1']")
+    data_exit_echelon_pour_echelon = data_exit_merged.query("(next_grade != 'TTH4') & (echelon == next_echelon)")
     data_exit_ib_pour_ib = data_exit_merged.query("next_grade == 'TTH4'") # To generalize
 
     data_exit_ib_pour_ib = data_exit_ib_pour_ib.query('ib_y >= ib_x').groupby(
@@ -65,27 +70,29 @@ def predict_echelon_next_period_when_exit(data, grilles):
     del data_exit_with_ib_pour_ib['code_grade_NETNEH']
     del data_exit_with_ib_pour_ib['ib_y']
 
-    data_exit_with_echelon_pour_echelon = data_exit_echelon_pour_echelon.query('echelon_y == echelon_x').copy().rename(
-        columns = {"echelon_x":"echelon", "echelon_y":"next_echelon", "ib_x":"ib", "ib_y":"next_ib"}
-        )
-    data_exit_with_echelon_pour_echelon = data_exit_with_echelon_pour_echelon[data_exit_with_ib_pour_ib.columns]
+    data_exit_with_echelon_pour_echelon = data_exit_echelon_pour_echelon.query('echelon == next_echelon').copy().rename(
+        columns = {"ib_x":"ib", "ib_y":"next_ib"})
+    print len(data_exit_with_echelon_pour_echelon)
+    print len(data_exit_with_echelon_pour_echelon.ident.unique())
+    data_exit_with_echelon_pour_echelon_right_col = data_exit_with_echelon_pour_echelon[data_exit_with_ib_pour_ib.columns]
 
-    data_exit = data_exit_with_echelon_pour_echelon.append(data_exit_with_ib_pour_ib)
+    data_exit = data_exit_with_echelon_pour_echelon_right_col.append(data_exit_with_ib_pour_ib)
 
     data_exit['next_echelon'] = data_exit['next_echelon'].astype(int)
-    data_missing_echelon_next = data.query("next_situation != 'no_exit'")[~
-        data.query("next_situation != 'no_exit'")['ident'].isin(
-            data_exit.ident.unique().tolist()
-            )
-        ]
-    print data_missing_echelon_next.grade.unique()
-    data_missing_echelon_next['next_ib'] = 446
-    data_missing_echelon_next['next_echelon'] = 11 #tofix
-    assert (data_missing_echelon_next.grade.unique().tolist() == ['TTH4']) & (
-            data_missing_echelon_next.next_grade.unique().tolist() == ['TTM1']
-            )
-    data_exit = data_exit.append(data_missing_echelon_next)
-    assert len(data_exit.ident.unique()) == len(data.query("next_situation != 'no_exit'"))
+#    data_missing_echelon_next = data.query("next_situation != 'no_exit'")[~
+#        data.query("next_situation != 'no_exit'")['ident'].isin(
+#            data_exit.ident.unique().tolist()
+#            )
+#        ]
+#    print data_missing_echelon_next.grade.unique()
+#    data_missing_echelon_next['next_ib'] = 446
+#    data_missing_echelon_next['next_echelon'] = 11 #tofix
+#    assert (data_missing_echelon_next.grade.unique().tolist() == ['TTH4']) & (
+#            data_missing_echelon_next.next_grade.unique().tolist() == ['TTM1']
+#            )
+#    data_exit = data_exit.append(data_missing_echelon_next)
+    #assert len(data_exit.ident.unique()) == len(data.query("next_situation != 'no_exit'"))
+    print data_exit[~data_exit['ident'].isin(data.query("next_situation != 'no_exit'").ident.unique().tolist())]
     return data_exit
 
 
@@ -105,12 +112,13 @@ def get_ib(data, grilles):
                       left_on = ['grade', 'echelon'],
                       right_on = ['code_grade_NETNEH', 'echelon'],
                       how = 'left'
-                      )[['ident', 'annee', 'grade', 'echelon', 'ib']]
+                      )[['ident', 'annee', 'grade', 'echelon', 'ib', 'situation']]
     return data_merged
 
 
 def main(data, results_filename, grilles):
     del data['Unnamed: 0']
+    data = data.query('echelon != 55555').copy()
     data_with_next_grade_when_exit_to_other = predict_next_period_grade_when_exit_to_other_corps(data)
     data_with_next_echelon_when_no_exit = predict_echelon_next_period_when_no_exit(
         data
@@ -119,7 +127,8 @@ def main(data, results_filename, grilles):
         data_with_next_grade_when_exit_to_other, grilles
         )
     results = data_with_next_echelon_when_no_exit.append(data_with_next_echelon_when_exit)
-    results = results[['ident', 'next_annee', 'next_grade', 'next_echelon']]
+    assert len(results.query("(next_situation != 'no_exit') & (next_grade != 'TTH4') & (echelon != next_echelon)")) == 0
+    results = results[['ident', 'next_annee', 'next_grade', 'next_echelon', 'next_situation']]
     results['next_annee'] = results['next_annee'].astype(int)
     results['ident'] = results['ident'].astype(int)
     results['next_grade'] = results['next_grade'].astype(str)
@@ -136,5 +145,3 @@ if __name__ == '__main__':
              results_filename = 'results_2011{}.csv'.format(model),
              grilles = grilles
              )
-
-

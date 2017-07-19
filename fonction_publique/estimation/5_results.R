@@ -9,9 +9,9 @@ colnames(input) <- c('ident', 'grade_2011', 'echelon_2011', 'ib_2011')
 
 
 
-results_raw <- list(read.csv(paste0(asset_simulation_path, 'results_2011_m0.csv')),
-            read.csv(paste0(asset_simulation_path, 'results_2011_m1.csv')),
-            read.csv(paste0(asset_simulation_path, 'results_2011_m2.csv'))
+results_raw <- list(read.csv(paste0(asset_simulation_path, 'results_modif_regles_replacement/', 'results_2011_m0.csv')),
+            read.csv(paste0(asset_simulation_path, 'results_modif_regles_replacement/', 'results_2011_m1.csv')),
+            read.csv(paste0(asset_simulation_path, 'results_modif_regles_replacement/', 'results_2011_m2.csv'))
             )
 results_list <- c()
 it <- 1
@@ -19,9 +19,9 @@ model_names <- c("_m0", "_m1", "_m2")
 for (i in model_names)
   {
 
-  data <- read.csv(paste0(asset_simulation_path, 'results_2011', i, '.csv'))
-  data <- subset(data, select=c("ident", "grade", "echelon", "ib"))
-  colnames(data) <- c('ident', paste0('grade_2012', i), paste0('echelon_2012', i), paste0('ib_2012', i))
+  data <- read.csv(paste0(asset_simulation_path, 'results_modif_regles_replacement/', 'results_2011', i, '.csv'))
+  data <- subset(data, select=c("ident", "grade", "echelon", "ib", "situation"))
+  colnames(data) <- c('ident', paste0('grade_2012', i), paste0('echelon_2012', i), paste0('ib_2012', i), paste0('situation_2012', i))
   results_list[[it]] <- data
   it <- it+1
 }
@@ -64,12 +64,23 @@ data = data[which(data$ib_2011<=450), ]
 
 ### CHECKS
 
-l1 = which(as.character(data$grade_2011) != as.character(data$grade_2012_m1))
-l2 = which(as.character(data$grade_2011) == as.character(data$grade_2012_m1))
+l1 = which(as.character(data$grade_2011) != as.character(data$grade_2012_m1)) # index changement grade
+l2 = which(as.character(data$grade_2011) == as.character(data$grade_2012_m1)) # index reste grade
 table(data$ib_2012_obs[l1] - data$ib_2011[l1])
 table(data$ib_2012_m1[l1] - data$ib_2011[l1])
 table(data$ib_2012_obs[l2] - data$ib_2011[l2])
 table(data$ib_2012_m1[l2] - data$ib_2011[l2])
+
+table(data$var_ib_m0[which(data$grade_2011 == "TTH3" & data$grade_2012_m0 == "TTH4"  & data$grade_2012_obs == "TTH4" )])
+table(data$var_ib_m1[which(data$grade_2011 == "TTH3" & data$grade_2012_m1 == "TTH4"  & data$grade_2012_obs == "TTH4" )])
+table(data$var_ib_m2[which(data$grade_2011 == "TTH3" & data$grade_2012_m2 == "TTH4"  & data$grade_2012_obs == "TTH4" )])
+
+table(data$var_ech_m0[which(data$grade_2011 == "TTH1" & data$grade_2012_m0 == "TTH2"  & data$grade_2012_obs == "TTH2" )])
+table(data$var_ech_m0[which(data$grade_2011 == "TTH2" & data$grade_2012_m0 == "TTH3"  & data$grade_2012_obs == "TTH3" )])
+table(data$var_ech_m1[which(data$grade_2011 == "TTH1" & data$grade_2012_m1 == "TTH2"  & data$grade_2012_obs == "TTH2" )])
+table(data$var_ech_m1[which(data$grade_2011 == "TTH2" & data$grade_2012_m1 == "TTH3"  & data$grade_2012_obs == "TTH3" )])
+table(data$var_ech_m2[which(data$grade_2011 == "TTH1" & data$grade_2012_m2 == "TTH2"  & data$grade_2012_obs == "TTH2" )])
+table(data$var_ech_m2[which(data$grade_2011 == "TTH2" & data$grade_2012_m2 == "TTH3"  & data$grade_2012_obs == "TTH3" )])
 
 ## Masse des ib
 sum(data$ib_2012_obs)
@@ -94,6 +105,23 @@ d <- sum(data$ib_2012_m2[which(data$grade_2011 == data$grade_2012_m2)])
 (d-a)/a
 
 
+#### Check prediction grades
+
+length(which((data$grade_2012_m0 == data$grade_2012_obs) & (data$grade_2012_obs == data$grade_2011))) / length(which((data$grade_2012_obs == data$grade_2011)))
+length(which((data$grade_2012_m1 == data$grade_2012_obs) & (data$grade_2012_obs == data$grade_2011))) / length(which((data$grade_2012_obs == data$grade_2011)))
+length(which((data$grade_2012_m2 == data$grade_2012_obs) & (data$grade_2012_obs == data$grade_2011))) / length(which((data$grade_2012_obs == data$grade_2011)))
+
+length(which((data$grade_2012_m0 == data$grade_2012_obs) & (data$grade_2012_obs != data$grade_2011))) / length(which((data$grade_2012_obs != data$grade_2011))) #bad
+length(which((data$grade_2012_m1 == data$grade_2012_obs) & (data$grade_2012_obs != data$grade_2011))) / length(which((data$grade_2012_obs != data$grade_2011))) #bad
+length(which((data$grade_2012_m2 == data$grade_2012_obs) & (data$grade_2012_obs != data$grade_2011))) / length(which((data$grade_2012_obs != data$grade_2011))) #bad
+
+length(which((data$grade_2012_m0 == data$grade_2012_obs) & (data$grade_2012_obs != data$grade_2011) & (!(data$grade_2012_obs %in%  c('TTH2', 'TTH3', 'TTH4'))))) / length(which((data$grade_2012_obs != data$grade_2011) & (!(data$grade_2012_obs %in%  c('TTH2', 'TTH3', 'TTH4'))))) #bad
+length(which((data$grade_2012_m1 == data$grade_2012_obs) & (data$grade_2012_obs != data$grade_2011) & (!(data$grade_2012_obs %in%  c('TTH2', 'TTH3', 'TTH4'))))) / length(which((data$grade_2012_obs != data$grade_2011) & (!(data$grade_2012_obs %in%  c('TTH2', 'TTH3', 'TTH4'))))) #bad
+length(which((data$grade_2012_m2 == data$grade_2012_obs) & (data$grade_2012_obs != data$grade_2011) & (!(data$grade_2012_obs %in%  c('TTH2', 'TTH3', 'TTH4'))))) / length(which((data$grade_2012_obs != data$grade_2011) & (!(data$grade_2012_obs %in%  c('TTH2', 'TTH3', 'TTH4'))))) #bad
+
+length(which((data$grade_2012_m0 == data$grade_2012_obs) & (data$grade_2012_obs != data$grade_2011) & ((data$grade_2012_obs %in%  c('TTH2', 'TTH3', 'TTH4'))))) / length(which((data$grade_2012_obs != data$grade_2011) & ((data$grade_2012_obs %in%  c('TTH2', 'TTH3', 'TTH4'))))) #bad
+length(which((data$grade_2012_m1 == data$grade_2012_obs) & (data$grade_2012_obs != data$grade_2011) & ((data$grade_2012_obs %in%  c('TTH2', 'TTH3', 'TTH4'))))) / length(which((data$grade_2012_obs != data$grade_2011) & ((data$grade_2012_obs %in%  c('TTH2', 'TTH3', 'TTH4'))))) #bad
+length(which((data$grade_2012_m2 == data$grade_2012_obs) & (data$grade_2012_obs != data$grade_2011) & ((data$grade_2012_obs %in%  c('TTH2', 'TTH3', 'TTH4'))))) / length(which((data$grade_2012_obs != data$grade_2011) & ((data$grade_2012_obs %in%  c('TTH2', 'TTH3', 'TTH4'))))) #bad
 
 #### Comparison of IB distributions
 summary(subset(data, select=c("ib_2012_obs", "ib_2012_m0", "ib_2012_m1", "ib_2012_m2")))
@@ -101,6 +129,22 @@ plot (density(data$ib_2012_obs), col = 'red', ylim = c(0, 0.04), xlim = c(275, 4
 lines (density(data$ib_2012_m0), col = 'green')
 lines (density(data$ib_2012_m1), col = 'blue')
 lines (density(data$ib_2012_m2), col = 'black')
+
+obs <- data.frame(ib = data$ib_2012_obs)
+# m0 <- data.frame(ib = data$ib_2012_m0)
+# m1 <- data.frame(ib = data$ib_2012_m1)
+m2 <- data.frame(ib = data$ib_2012_m2)
+
+obs$model <- 'obs'
+#m0$model <- 'm0'
+#m1$model <- 'm1'
+m2$model <- 'm2'
+
+ib_predit <- rbind(obs, m2)
+ggplot(ib_predit, aes(ib, fill = model)) + geom_histogram(alpha = 0.5, binwidth = 2, aes(y = ..density..), position = 'identity')
+
+data_no_change <- data[which(data$grade_2011 == data$grade_2012_m2),]
+data <- data_no_change
 
 
 plot  (density(data$ib_2012_obs[which(data$grade_2011 == data$grade_2012_obs)]), col = 'red', xlim = c(275, 450))
@@ -182,7 +226,21 @@ summary(data$var_ib_m1[list_m1])
 summary(data$var_ib_obs[list_m2])
 summary(data$var_ib_m2[list_m2])
 
+summary(data$var_ib_obs[which(data$grade_2011 == "TTH1" & data$grade_2012_obs == "TTH2")])
+summary(data$var_ib_m0[which( data$grade_2011 == "TTH1"  & data$grade_2012_m0 == "TTH2"  & data$grade_2012_obs == "TTH2" )])
+summary(data$var_ib_m1[which( data$grade_2011 == "TTH1"  & data$grade_2012_m1 == "TTH2"  & data$grade_2012_obs == "TTH2" )])
+summary(data$var_ib_m2[which( data$grade_2011 == "TTH1"  & data$grade_2012_m2 == "TTH2"  & data$grade_2012_obs == "TTH2" )])
 
+summary(data$var_ib_obs[which(data$grade_2011 == "TTH2" & data$grade_2012_obs == "TTH3")])
+summary(data$var_ib_m0[which( data$grade_2011 == "TTH2"  & data$grade_2012_m0 == "TTH3"  & data$grade_2012_obs == "TTH3" )])
+summary(data$var_ib_m1[which( data$grade_2011 == "TTH2"  & data$grade_2012_m1 == "TTH3"  & data$grade_2012_obs == "TTH3" )])
+summary(data$var_ib_m2[which( data$grade_2011 == "TTH2"  & data$grade_2012_m2 == "TTH3"  & data$grade_2012_obs == "TTH3" )])
+
+
+# Echelon
+table(data$echelon_2011[which(data$grade_2011 == "TTH1" & data$grade_2012_obs == "TTH2")])
+table(data$var_ech_obs[which(data$grade_2011 == "TTH1" & data$grade_2012_obs == "TTH2")])
+table(data$var_ech_m2[which(data$grade_2011 == "TTH1"  & data$grade_2012_m2 == "TTH2" & data$grade_2012_obs == "TTH2")])
 
 
 # Diff ech
