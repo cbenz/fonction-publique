@@ -20,7 +20,7 @@
 
 # Observed data for estimation
 source(paste0(wd, "0_work_on_data.R"))
-datasets = load_and_clean(data_path, "data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat.csv")
+datasets = load_and_clean(data_path, "data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat_grade_corrected.csv")
 data_id = datasets[[1]]
 data_max = datasets[[2]]
 data_min = datasets[[3]]
@@ -31,8 +31,11 @@ data_est = data_min[which(data_min$annee == 2011),]
 echelon_cf = read.csv("M:/CNRACL/output/simulation_counterfactual_echelon/results_annuels.csv")
 data1 = echelon_cf[which(echelon_cf$annee >= 2011 & echelon_cf$annee < 2015), c("ident", "annee", "echelon", "c_cir")]
 
+data_min$I_2011 = ifelse(data_min$annee == 2011, 1, 0)
+data_min$ib_2011 = ave(data_min$I_2011*data_min$ib, data_min$iden, FUN = max)
 data2 = data_min[which(data_min$annee == 2011), 
-                 c("ident", "time", "sexe", "an_aff", "left_censored", "generation_group", "c_cir_2011", "D_exam", "D_choice", "E_exam", "E_choice")]
+                 c("ident", "time", "sexe", "an_aff", "left_censored", "generation_group", "c_cir_2011", "ib_2011",
+                   "D_exam", "D_choice", "E_exam", "E_choice")]
 data_sim = merge(data1, data2, by = "ident")
 data_sim$time_2011 = data_sim$time 
 data_sim$time =  data_sim$time  + data_sim$annee - 2011
@@ -112,17 +115,38 @@ estim  = mlogit.data(data_est, shape = "wide", choice = "next_year")
 
 
 mlog0 = mlogit(next_year ~ 0 | 1, data = estim, reflevel = "no_exit")
-mlog1 = mlogit(next_year ~ 0 | c_cir_2011 + sexe + 
-                 duration + duration2, data = estim, reflevel = "no_exit")
-mlog2 = mlogit(next_year ~ 0 | I_unique_threshold + c_cir_2011 + sexe + 
-                 duration_bef_unique_threshold +  duration_aft_unique_threshold, 
-               data = estim, reflevel = "no_exit")
+mlog1 = mlogit(next_year ~ 0 | c_cir_2011 + sexe 
+               + duration + duration2 
+               , data = estim, reflevel = "no_exit")
+mlog2 = mlogit(next_year ~ 0 | I_unique_threshold + c_cir_2011 + sexe  
+               +  duration_bef_unique_threshold +  duration_aft_unique_threshold 
+               , data = estim, reflevel = "no_exit")
 
 summary(mlog1)
 summary(mlog2)
 
 
-#### II. Prediction exit ####
+l1 <- extract.mlogit(mlog2, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
+
+
+
+list_models    <- list(l1)
+
+print(texreg(list_models,
+             caption.above=F, 
+             float.pos = "!ht",
+             digit=3,
+             only.content= T,
+             stars = c(0.01, 0.05, 0.1),
+             #custom.coef.names=names,
+             #custom.coef.names=ror$ccn,  omit.coef=ror$oc, reorder.coef=ror$rc,
+             #omit.coef = omit_var,
+             booktabs=T), only.contents = T)
+
+xtable(mlog2)
+
+
+#### II. Predictions ####
 
 
 ## II.1 Predicted exit ##
@@ -138,7 +162,6 @@ yhat2     <- predict(mlog2, data_predict,type = "response")
 data_sim$next_hat0  <- mapply(predict_next_year, yhat0[,1], yhat0[,2], yhat0[,3])
 data_sim$next_hat1  <- mapply(predict_next_year, yhat1[,1], yhat1[,2], yhat1[,3])
 data_sim$next_hat2  <- mapply(predict_next_year, yhat2[,1], yhat2[,2], yhat2[,3])
-
 
 
 mean(yhat0[which(data_sim$I_unique_threshold == 1), 2])
@@ -163,6 +186,7 @@ exit_route_pred = matrix(nrow = 3, ncol = length(unique(data_sim$ident)))
 extract_exit = function(data, exit_var)
 {
   data = data[, c("ident", "annee", exit_var)]
+  
   data$exit_var = data[, exit_var]
   data$ind_exit      = ifelse(data$exit_var != "no_exit", 1, 0) 
   data$ind_exit_cum  = ave(data$ind_exit, data$ident, FUN = cumsum)
@@ -194,14 +218,58 @@ exit_route_pred[(d+1), ] = sim[[2]]
 }
 
 
-### II.2 Comparison predicted vs. observed ###
+#### II.2 Prediction ib ####
+
+data_sim2  <- data_est
+data_predict  = mlogit.data(data_sim2, shape = "wide", choice = "next_year")
+
+
+yhat0     <- predict(mlog0, data_predict2, type = "response") 
+yhat1     <- predict(mlog1, data_predict2, type = "response") 
+yhat2     <- predict(mlog2, data_predict2, type = "response") 
+
+data_sim2$next_hat0  <- mapply(predict_next_year, yhat0[,1], yhat0[,2], yhat0[,3])
+data_sim2$next_hat1  <- mapply(predict_next_year, yhat1[,1], yhat1[,2], yhat1[,3])
+data_sim2$next_hat2  <- mapply(predict_next_year, yhat2[,1], yhat2[,2], yhat2[,3])
+
+
+mean(data_sim2$ib[which(data_sim2$next_year != "no_exit")])
+mean(data_sim2$ib[which(data_sim2$next_hat0 != "no_exit")])
+mean(data_sim2$ib[which(data_sim2$next_hat1 != "no_exit")])
+mean(data_sim2$ib[which(data_sim2$next_hat2 != "no_exit")])
+
+table(data_sim2$next_hat0)
+table(data_sim2$next_hat1)
+table(data_sim2$next_hat2)
+
+data_sim2$corps = "ATT"
+data_sim2$grade = data_sim2$c_cir
+data_sim2$next_situation = NULL
+
+data_sim2$next_situation = data_sim2$next_hat0
+data_simul_2011 = data_sim2[, c("ident", "annee", "corps", "grade", "ib", "echelon", "next_situation")]
+write.csv(data_simul_2011, file = paste0(save_data_path, "data_simul_2011_m0.csv"))
+
+data_sim2$next_situation = data_sim2$next_hat1
+data_simul_2011 = data_sim2[, c("ident", "annee", "corps", "grade", "ib", "echelon", "next_situation")]
+write.csv(data_simul_2011, file = paste0(save_data_path, "data_simul_2011_m1.csv"))
+
+data_sim2$next_situation = data_sim2$next_hat2
+data_simul_2011 = data_sim2[, c("ident", "annee", "corps", "grade", "ib", "echelon", "next_situation")]
+write.csv(data_simul_2011, file = paste0(save_data_path, "data_simul_2011_m2.csv"))
+
+
+
+### III. Comparison predicted vs. observed ###
+
+
+
+### III.1 Survival 2011-2014 ####
 
 ## Survival curve
-
-
 survival= function(sample, type_exit = "all", save = F, name = "")
 {
-  
+  years = 2011:2015
 surv  = matrix(ncol = 5, nrow = 4)  
 list = sample
 for (y in 1:length(years))
@@ -213,7 +281,7 @@ for (y in 1:length(years))
   surv[4, y] = (n - length(which(exit_year_pred[3, list]  < years[y])))/n  
 }
 # Plot
-years = 2011:2015
+
 colors = c("black", "darkcyan")
 limits = range(surv)
 plot(years,rep(NA,length(years)),ylim=limits, ylab="Survie dans le grade",xlab="Année")
@@ -222,10 +290,13 @@ lines(years, surv[1,], col =  colors[1], lwd = 3, lty =1)
 lines(years, surv[2,], col =  colors[2], lwd = 3, lty = 2)
 lines(years, surv[3,], col =  colors[2], lwd = 4, lty = 3)
 lines(years, surv[4,], col =  colors[2], lwd = 4, lty =1)
+legend("topright", legend = c("Obs", "m0", "m1", "m2"), col = c(colors[1], rep(colors[2], 3)), lty = c(1,2,3,1), lwd = 3)
 }
 
 datai= data_sim[which(data_sim$annee == 2011),]
-survival(sample = 1:ncol(exit_year_pred), type_exit = "all", save = F, name = "All")
+survival(sample = 1:ncol(exit_year_pred), type_exit = "all", save = F, name = "Tous")
+
+par(mfrow=c(2,2))
 survival(sample = which(datai$c_cir_2011 == "TTH1"), type_exit = "all", save = F, name = "TTH1")
 survival(sample = which(datai$c_cir_2011 == "TTH2"), type_exit = "all", save = F, name = "TTH2")
 survival(sample = which(datai$c_cir_2011 == "TTH3"), type_exit = "all", save = F, name = "TTH3")
@@ -278,13 +349,22 @@ hazard= function(sample, type_exit = "all", save = F, name = "")
 }
 
 
-hazard(sample = 1:ncol(exit_year_pred), type_exit = "all", save = F, name = "All")
-hazard(sample = 1:ncol(exit_year_pred), type_exit = "exit_next", save = F, name = "All")
-hazard(sample = 1:ncol(exit_year_pred), type_exit = "exit_oth", save = F, name = "All")
+hazard(sample = 1:ncol(exit_year_pred), type_exit = "all",       save = F, name = "All")
+hazard(sample = 1:ncol(exit_year_pred), type_exit = "exit_next", save = F, name = "Next grade")
+hazard(sample = 1:ncol(exit_year_pred), type_exit = "exit_oth",  save = F, name = "Exit corps")
 
 
-hazard(sample = 1:ncol(exit_year_pred), type_exit = "exit_next", save = F, name = "All")
-hazard(sample = 1:ncol(exit_year_pred), type_exit = "exit_oth", save = F, name = "All")
+hazard(sample = which(datai$c_cir == "TTH1"), type_exit = "all",       save = F, name = "All exits, TTH1")
+hazard(sample = which(datai$c_cir == "TTH2"), type_exit = "all",       save = F, name = "All exits, TTH2")
+hazard(sample = which(datai$c_cir == "TTH3"), type_exit = "all",       save = F, name = "All exits, TTH3")
+hazard(sample = which(datai$c_cir == "TTH4"), type_exit = "all",       save = F, name = "All exits, TTH4")
+
+hazard(sample = which(datai$c_cir == "TTH1"), type_exit = "exit_next", save = F, name = "Next grade")
+hazard(sample = which(datai$c_cir == "TTH2"), type_exit = "exit_next", save = F, name = "Next grade")
+hazard(sample = which(datai$c_cir == "TTH3"), type_exit = "exit_next", save = F, name = "Next grade")
+hazard(sample = which(datai$c_cir == "TTH4"), type_exit = "exit_next", save = F, name = "Next grade")
+
+hazard(sample = 1:ncol(exit_year_pred), type_exit = "exit_oth",  save = F, name = "All")
 
 
 
@@ -322,7 +402,6 @@ mdigit <- matrix(c(rep(0,(ncol(table_fit)+1)*2),rep(3,(ncol(table_fit)+1)*6)),nr
 print(xtable(table_fit,align="lcccc",nrow = nrow(table_fit), ncol=ncol(table_fit)+1, byrow=T, digits = mdigit),
       sanitize.text.function=identity,size="\\footnotesize", hline.after = c(0, 2, 4),
       only.contents=F, include.colnames = T)
-
 
 
 ## Fit by grade
@@ -385,7 +464,6 @@ print(xtable(table_movers,align="lccccc",nrow = nrow(table_movers),
       only.contents=F, include.colnames = T)
 
 
-#### II. Comparison ib ####
-
+### III.2 IB 2012 : obs. vs. sim ####
 
 

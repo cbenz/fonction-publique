@@ -7,6 +7,8 @@ input <- read.csv(paste0(asset_simulation_path, 'data_simul_2011_m0.csv'))
 input <- subset(input, select=c("ident", "grade", "echelon", "ib"))
 colnames(input) <- c('ident', 'grade_2011', 'echelon_2011', 'ib_2011')
 
+
+
 results_raw <- list(read.csv(paste0(asset_simulation_path, 'results_2011_m0.csv')),
             read.csv(paste0(asset_simulation_path, 'results_2011_m1.csv')),
             read.csv(paste0(asset_simulation_path, 'results_2011_m2.csv'))
@@ -32,32 +34,86 @@ colnames(observed) <- c('ident', 'grade_2012_obs', 'echelon_2012_obs', 'ib_2012_
 
 data <- merge(input, results, by = 'ident')
 data <- merge(data, observed, by = 'ident')
+
 data$difference_m0 <- abs(data$ib_2012_obs - data$ib_2012_m0)
 data$difference_m1 <- abs(data$ib_2012_obs - data$ib_2012_m1) 
 data$difference_m2 <- abs(data$ib_2012_obs - data$ib_2012_m2)
 
-# Comparaison of IB distributions
-summary(subset(data, select=c("ib_2012_obs", "ib_2012_m0", "ib_2012_m1", "ib_2012_m2")))
+data$var_ib_obs = data$ib_2012_obs - data$ib_2011
+data$var_ib_m0 = data$ib_2012_m0 - data$ib_2011
+data$var_ib_m1 = data$ib_2012_m1 - data$ib_2011
+data$var_ib_m2 = data$ib_2012_m2 - data$ib_2011
 
-plot (density(data$ib_2012_obs), col = 'red')
+data$var_ech_obs = data$echelon_2012_obs - data$echelon_2011
+data$var_ech_m0  = data$echelon_2012_m0 - data$echelon_2011
+data$var_ech_m1  = data$echelon_2012_m1 - data$echelon_2011
+data$var_ech_m2  = data$echelon_2012_m2 - data$echelon_2011
+
+
+data$grade_2011 = as.character(data$grade_2011)
+data$grade_2012_m0 =  as.character(data$grade_2012_m0)
+data$grade_2012_m1 =  as.character(data$grade_2012_m1)
+data$grade_2012_m2 =  as.character(data$grade_2012_m2)
+data$grade_2012_obs =  as.character(data$grade_2012_obs)
+
+
+
+
+# Filters for 
+data = data[which(data$ib_2011<=450), ]
+
+### CHECKS
+
+l1 = which(as.character(data$grade_2011) != as.character(data$grade_2012_m1))
+l2 = which(as.character(data$grade_2011) == as.character(data$grade_2012_m1))
+table(data$ib_2012_obs[l1] - data$ib_2011[l1])
+table(data$ib_2012_m1[l1] - data$ib_2011[l1])
+table(data$ib_2012_obs[l2] - data$ib_2011[l2])
+table(data$ib_2012_m1[l2] - data$ib_2011[l2])
+
+## Masse des ib
+sum(data$ib_2012_obs)
+(sum(data$ib_2012_m0) - sum(data$ib_2012_obs))/sum(data$ib_2012_obs)
+(sum(data$ib_2012_m1) - sum(data$ib_2012_obs))/sum(data$ib_2012_obs)
+(sum(data$ib_2012_m2) - sum(data$ib_2012_obs))/sum(data$ib_2012_obs)
+
+a <- sum(data$ib_2012_obs[which(data$grade_2011 != data$grade_2012_obs)])
+b <- sum(data$ib_2012_m0[which(data$grade_2011 != data$grade_2012_m0)])
+c <- sum(data$ib_2012_m1[which(data$grade_2011 != data$grade_2012_m1)])
+d <- sum(data$ib_2012_m2[which(data$grade_2011 != data$grade_2012_m2)])
+(b-a)/a
+(c-a)/a
+(d-a)/a
+
+a <- sum(data$ib_2012_obs[which(data$grade_2011 == data$grade_2012_obs)])
+b <- sum(data$ib_2012_m0[which(data$grade_2011 == data$grade_2012_m0)])
+c <- sum(data$ib_2012_m1[which(data$grade_2011 == data$grade_2012_m1)])
+d <- sum(data$ib_2012_m2[which(data$grade_2011 == data$grade_2012_m2)])
+(b-a)/a
+(c-a)/a
+(d-a)/a
+
+
+
+#### Comparison of IB distributions
+summary(subset(data, select=c("ib_2012_obs", "ib_2012_m0", "ib_2012_m1", "ib_2012_m2")))
+plot (density(data$ib_2012_obs), col = 'red', ylim = c(0, 0.04), xlim = c(275, 450))
 lines (density(data$ib_2012_m0), col = 'green')
 lines (density(data$ib_2012_m1), col = 'blue')
 lines (density(data$ib_2012_m2), col = 'black')
 
-data$grade_2011 <- factor(data$grade_2011, levels(data$grade_2012_obs))
-data_ne_change_pas_grade <- data[which(data$grade_2011 == data$grade_2012_obs),]
-summary(subset(data_ne_change_pas_grade, select=c("ib_2012_obs", "ib_2012_m0", "ib_2012_m1", "ib_2012_m2")))
-plot (density(data_change_grade$ib_2012_obs), col = 'red')
-lines (density(data_change_grade$ib_2012_m0), col = 'green')
-lines (density(data_change_grade$ib_2012_m1), col = 'blue')
-lines (density(data_change_grade$ib_2012_m2), col = 'black')
 
-data_change_grade <- data[which(data$grade_2011 != data$grade_2012_obs),]
-summary(subset(data_change_grade, select=c("ib_2012_obs", "ib_2012_m0", "ib_2012_m1", "ib_2012_m2")))
-plot (density(data_change_grade$ib_2012_obs), col = 'red')
-lines (density(data_change_grade$ib_2012_m0), col = 'green')
-lines (density(data_change_grade$ib_2012_m1), col = 'blue')
-lines (density(data_change_grade$ib_2012_m2), col = 'black')
+plot  (density(data$ib_2012_obs[which(data$grade_2011 == data$grade_2012_obs)]), col = 'red', xlim = c(275, 450))
+lines (density(data$ib_2012_m0[which(data$grade_2011 == data$grade_2012_m0)]), col = 'green')
+lines (density(data$ib_2012_m1[which(data$grade_2011 == data$grade_2012_m1)]), col = 'blue')
+lines (density(data$ib_2012_m2[which(data$grade_2011 == data$grade_2012_m2)]), col = 'black')
+
+plot  (density(data$ib_2012_obs[which(data$grade_2011 != data$grade_2012_obs)]), col = 'red', ylim = c(0, 0.025), xlim = c(275, 450),
+       main = "")
+lines (density(data$ib_2012_m0[which(data$grade_2011 != data$grade_2012_m0)]), col = 'green')
+lines (density(data$ib_2012_m1[which(data$grade_2011 != data$grade_2012_m1)]), col = 'blue')
+lines (density(data$ib_2012_m2[which(data$grade_2011 != data$grade_2012_m2)]), col = 'black')
+legend("topright", legend = c("Obs", "m0", "m1", "m2"), col = c('red', 'green', 'blue','black'), lty =1, lwd = 3)
 
 set.seed(123)
 brks <- with(data, quantile(ib_2011, probs = c(0, 0.25, 0.5, 0.75, 1)))
@@ -82,3 +138,56 @@ for (i in 1:4)
 
 # Comparison of distributions of IB differences
 summary(subset(data, select=c('difference_m0', 'difference_m1', 'difference_m2')))
+
+
+
+
+# 
+summary(subset(data, select=c("var_ib_obs", "var_ib_m0", "var_ib_m1", "var_ib_m2")))
+summary(data$var_ib_obs[which(data$grade_2011 != data$grade_2012_obs)])
+summary(data$var_ib_m0[which(data$grade_2011 != data$grade_2012_m0)])
+summary(data$var_ib_m1[which(data$grade_2011 != data$grade_2012_m1)])
+summary(data$var_ib_m2[which(data$grade_2011 != data$grade_2012_m2)])
+
+summary(data$var_ib_obs[which(data$grade_2011 != data$grade_2012_obs & data$grade_2011 == "TTH1")])
+summary(data$var_ib_m0[which(data$grade_2011 != data$grade_2012_m0   & data$grade_2011 == "TTH1")])
+summary(data$var_ib_m1[which(data$grade_2011 != data$grade_2012_m1   & data$grade_2011 == "TTH1")])
+summary(data$var_ib_m2[which(data$grade_2011 != data$grade_2012_m2   & data$grade_2011 == "TTH1")])
+
+summary(data$var_ib_obs[which(data$grade_2011 != data$grade_2012_obs & data$grade_2011 == "TTH2")])
+summary(data$var_ib_m0[which(data$grade_2011 != data$grade_2012_m0   & data$grade_2011 == "TTH2")])
+summary(data$var_ib_m1[which(data$grade_2011 != data$grade_2012_m1   & data$grade_2011 == "TTH2")])
+summary(data$var_ib_m2[which(data$grade_2011 != data$grade_2012_m2   & data$grade_2011 == "TTH2")])
+
+summary(data$var_ib_obs[which(data$grade_2011 != data$grade_2012_obs & data$grade_2011 == "TTH3")])
+summary(data$var_ib_m0[which(data$grade_2011 != data$grade_2012_m0   & data$grade_2011 == "TTH3")])
+summary(data$var_ib_m1[which(data$grade_2011 != data$grade_2012_m1   & data$grade_2011 == "TTH3")])
+summary(data$var_ib_m2[which(data$grade_2011 != data$grade_2012_m2   & data$grade_2011 == "TTH3")])
+
+summary(data$var_ib_obs[which(data$grade_2011 != data$grade_2012_obs & data$grade_2011 == "TTH4")])
+summary(data$var_ib_m0[which(data$grade_2011 != data$grade_2012_m0   & data$grade_2011 == "TTH4")])
+summary(data$var_ib_m1[which(data$grade_2011 != data$grade_2012_m1   & data$grade_2011 == "TTH4")])
+summary(data$var_ib_m2[which(data$grade_2011 != data$grade_2012_m2   & data$grade_2011 == "TTH4")])
+
+
+## Différence d'ib quand bon match
+list_m0 = which(data$grade_2011 != data$grade_2012_obs &  data$grade_2012_obs ==  data$grade_2012_m0)
+list_m1 = which(data$grade_2011 != data$grade_2012_obs &  data$grade_2012_obs ==  data$grade_2012_m1)
+list_m2 = which(data$grade_2011 != data$grade_2012_obs &  data$grade_2012_obs ==  data$grade_2012_m2)
+
+summary(data$var_ib_obs[list_m0])
+summary(data$var_ib_m0[list_m0])
+summary(data$var_ib_obs[list_m1])
+summary(data$var_ib_m1[list_m1])
+summary(data$var_ib_obs[list_m2])
+summary(data$var_ib_m2[list_m2])
+
+
+
+
+# Diff ech
+table(data$var_ech_obs[which(data$grade_2011 == data$grade_2012_obs)])/length(which(data$grade_2011 == data$grade_2012_obs))
+table(data$var_ech_m2[which(data$grade_2011 == data$grade_2012_m2)])/length(which(data$grade_2011 == data$grade_2012_m2))
+
+
+
