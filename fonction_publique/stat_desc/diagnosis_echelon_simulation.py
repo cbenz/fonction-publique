@@ -9,7 +9,8 @@ results = pd.read_csv(
     os.path.join(
         output_directory_path,
         'simulation_counterfactual_echelon',
-        'results_annuels.csv'
+        # 'results_annuels.csv',
+        'results_annuels_apres_modification_etat_initial.csv'
         )
     )[['ident', 'annee', 'c_cir', 'echelon']].rename(columns = {'echelon':'echelon_predit'})
 
@@ -22,7 +23,7 @@ observed = pd.read_csv(
     ).query('(annee > 2011) & (c_cir == c_cir_2011)').copy()[[
         'ident', 'annee', 'c_cir', 'echelon']].rename(columns = {'echelon':'echelon_observe'})
 
-data = observed.merge(results, on = ['ident', 'annee', 'c_cir'], how = 'left')
+data = observed.merge(results, on = ['ident', 'annee', 'c_cir'], how = 'inner')
 data = data.query('(echelon_observe != 55555) & (echelon_predit != 55555)').copy()
 
 data[['echelon_observe', 'echelon_predit']].describe().to_latex()
@@ -36,18 +37,30 @@ print byyear[['echelon_observe', 'echelon_predit']].describe().to_latex()
 idents_ech_12 = data.query('echelon_observe == 12').ident.unique().tolist()
 obs_idents_ech_12 = observed[observed['ident'].isin(idents_ech_12)]
 
-x = plt.figure()
-plt.hist(data['echelon_predit'].tolist(), label = u'Prédit', histtype = 'step', color = '#00cccc')
-plt.hist(data['echelon_observe'].tolist(), label = u'Observé', histtype = 'step', color =  '#008e9c')
+data = data.query("(c_cir == 'TTH4') & (annee == 2012)")
+bar_plot_data = pd.DataFrame()
+bar_plot_data['echelon_observe'] = data['echelon_observe'].value_counts().sort_index()
+bar_plot_data['echelon_predit'] = data['echelon_predit'].value_counts().sort_index()
+bar_plot_data.fillna(0).plot(kind = 'bar')
+
+BOUM
+fig = plt.figure()
+#ax1 = fig.add_subplot()
+x = plt.hist(data['echelon_predit'].values, label = u'Prédit', histtype = 'step', color = '#00cccc', bins = len(data['echelon_predit'].unique()))
+plt.hist(data['echelon_observe'].values, label = u'Observé', histtype = 'step', color =  '#008e9c', bins = len(data['echelon_observe'].unique()))
 plt.legend(loc='upper right')
 plt.show()
-x.savefig(
-   "C:/Users/l.degalle/CNRACL/fonction-publique/fonction_publique/ecrits/Slides/2017_07_CDC/Graphiques/hist_echelon.pdf",
+fig.savefig(
+   "C:/Users/l.degalle/CNRACL/fonction-publique/fonction_publique/ecrits/Slides/2017_07_CDC/Graphiques/hist_echelon2.pdf",
    format = 'pdf'
    )
 
 
 
+
+ax2 = data['echelon_observe'].value_counts().sort_index()
+plt.show()
+ax2.s
 data['difference'] = abs(data.echelon_observe - data.echelon_predit)
 
 ##########

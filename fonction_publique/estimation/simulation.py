@@ -40,6 +40,7 @@ def predict_echelon_next_period_when_no_exit(data):
 
 def predict_echelon_next_period_when_exit(data, grilles):
     data_exit = data.query("next_situation != 'no_exit'").copy()
+
     data_exit.loc[(data_exit['next_situation'] == 'exit_next'), 'next_grade'] = [
         'TTH' + str(int(s[-1:]) + 1) for s in data_exit.query("next_situation == 'exit_next'")['grade'].copy()
         ]
@@ -48,16 +49,29 @@ def predict_echelon_next_period_when_exit(data, grilles):
         ).agg({'date_effet_grille': np.max}).reset_index()
     grilles = grilles.merge(grilles_in_effect, on = ['code_grade_NETNEH', 'date_effet_grille'], how = 'inner')
     data_exit_merged = data_exit.merge(grilles, left_on = 'next_grade', right_on = 'code_grade_NETNEH', how = 'right')
-    data_exit_merged = data_exit_merged.query('ib_y >= ib_x').groupby(
+    data_exit_merged['echelon_y'] = data_exit_merged['echelon_y'].replace(['ES'], 55555).astype(int)
+
+    data_exit_echelon_pour_echelon = data_exit_merged.query("next_grade in ['TTH2', 'TTH3', 'TTM1']")
+    data_exit_ib_pour_ib = data_exit_merged.query("next_grade == 'TTH4'") # To generalize
+
+    data_exit_ib_pour_ib = data_exit_ib_pour_ib.query('ib_y >= ib_x').groupby(
         ['ident']).agg({'ib_y': np.min}).reset_index()
-    data_exit = data_exit.merge(data_exit_merged, on = ['ident'])
-    data_exit = data_exit.merge(
-        grilles[['code_grade_NETNEH', 'ib', 'echelon']].rename(columns = {'ib':'ib_next', 'echelon':'next_echelon'}),
+    data_exit_with_ib_pour_ib = data_exit.merge(data_exit_ib_pour_ib, on = ['ident'], how= 'inner')
+    data_exit_with_ib_pour_ib = data_exit_with_ib_pour_ib.merge(
+        grilles[['code_grade_NETNEH', 'ib', 'echelon']].rename(columns = {'ib':'next_ib', 'echelon':'next_echelon'}),
         left_on = ['ib_y', 'next_grade'],
-        right_on = ['ib_next', 'code_grade_NETNEH'],
+        right_on = ['next_ib', 'code_grade_NETNEH'],
         how = 'left')
-    del data_exit['code_grade_NETNEH']
-    del data_exit['ib_y']
+    del data_exit_with_ib_pour_ib['code_grade_NETNEH']
+    del data_exit_with_ib_pour_ib['ib_y']
+
+    data_exit_with_echelon_pour_echelon = data_exit_echelon_pour_echelon.query('echelon_y == echelon_x').copy().rename(
+        columns = {"echelon_x":"echelon", "echelon_y":"next_echelon", "ib_x":"ib", "ib_y":"next_ib"}
+        )
+    data_exit_with_echelon_pour_echelon = data_exit_with_echelon_pour_echelon[data_exit_with_ib_pour_ib.columns]
+
+    data_exit = data_exit_with_echelon_pour_echelon.append(data_exit_with_ib_pour_ib)
+
     data_exit['next_echelon'] = data_exit['next_echelon'].astype(int)
     data_missing_echelon_next = data.query("next_situation != 'no_exit'")[~
         data.query("next_situation != 'no_exit'")['ident'].isin(
@@ -65,12 +79,13 @@ def predict_echelon_next_period_when_exit(data, grilles):
             )
         ]
     print data_missing_echelon_next.grade.unique()
-    data_missing_echelon_next['ib_next'] = 446
+    data_missing_echelon_next['next_ib'] = 446
     data_missing_echelon_next['next_echelon'] = 11 #tofix
     assert (data_missing_echelon_next.grade.unique().tolist() == ['TTH4']) & (
             data_missing_echelon_next.next_grade.unique().tolist() == ['TTM1']
             )
     data_exit = data_exit.append(data_missing_echelon_next)
+    assert len(data_exit.ident.unique()) == len(data.query("next_situation != 'no_exit'"))
     return data_exit
 
 
@@ -111,7 +126,8 @@ def main(data, results_filename, grilles):
     results = results.rename(columns={col: col.replace('next_', '') for col in results.columns})
     assert len(list(set(results.ident.unique()) - set(data.ident.unique()))) == 0
     results = get_ib(results, grilles)
-    results.to_csv(os.path.join('M:/CNRACL/simulation/', results_filename))
+    results['grade'] = results['grade'].astype(str)
+    results.to_csv(os.path.join('M:/CNRACL/simulation/results_modif_regles_replacement', results_filename))
 
 
 if __name__ == '__main__':
