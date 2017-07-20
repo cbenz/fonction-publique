@@ -92,34 +92,34 @@ def get_data(rebuild = True):
         ]].copy().drop_duplicates()
 
 
-if __name__ == '__main__':
-    import logging
-    import sys
-    logging.basicConfig(level = logging.DEBUG, stream = sys.stdout)
-    data_input = get_data(rebuild = False)[[
-        'ident', 'period', 'grade', 'echelon'
-        ]]
-    data_input['period'] = pd.to_datetime(data_input['period'])
-    data_input = data_input.query('echelon != 55555').copy()
-    grilles['code_grade'] = grilles['code_grade'].astype(int)
-    grilles = grilles[grilles['code_grade'].isin([793, 794, 795, 796])].copy()
-    grilles['echelon'] = grilles['echelon'].replace(['ES'], -2).astype(int)
-    agents = AgentFpt(data_input, end_date = pd.Timestamp(2017, 01, 01))
-    agents.set_grille(grilles)
-    agents.compute_result()
-
-    resultats = agents.result
-    resultats_annuel = resultats[resultats['quarter'].astype(str).str.contains("-12-31")].copy()
-#    assert resultats_annuel.groupby('ident')['quarter'].count().unique() == 5
-    resultats_annuel['annee'] = pd.to_datetime(resultats_annuel['quarter']).dt.year
-    resultats_annuel['c_cir'] = resultats_annuel['grade'].map({793:'TTH1' ,794:'TTH2', 795:'TTH3', 796:'TTH4'})
-    del resultats_annuel['period']
-    del resultats_annuel['quarter']
-
-    resultats_annuel.to_csv(os.path.join(
-        output_directory_path,
-        'simulation_counterfactual_echelon',
-        'results_annuels_apres_modification_etat_initial.csv'
-        )
-    )
+#if __name__ == '__main__':
+#    import logging
+#    import sys
+#    logging.basicConfig(level = logging.DEBUG, stream = sys.stdout)
+#    data_input = get_data(rebuild = False)[[
+#        'ident', 'period', 'grade', 'echelon'
+#        ]]
+#    data_input['period'] = pd.to_datetime(data_input['period'])
+#    data_input = data_input.query('echelon != 55555').copy()
+#    grilles['code_grade'] = grilles['code_grade'].astype(int)
+#    grilles = grilles[grilles['code_grade'].isin([793, 794, 795, 796])].copy()
+#    grilles['echelon'] = grilles['echelon'].replace(['ES'], -2).astype(int)
+#    agents = AgentFpt(data_input, end_date = pd.Timestamp(2017, 01, 01))
+#    agents.set_grille(grilles)
+#    agents.compute_result()
+#
+#    resultats = agents.result
+#    resultats_annuel = resultats[resultats['quarter'].astype(str).str.contains("-12-31")].copy()
+##    assert resultats_annuel.groupby('ident')['quarter'].count().unique() == 5
+#    resultats_annuel['annee'] = pd.to_datetime(resultats_annuel['quarter']).dt.year
+#    resultats_annuel['c_cir'] = resultats_annuel['grade'].map({793:'TTH1' ,794:'TTH2', 795:'TTH3', 796:'TTH4'})
+#    del resultats_annuel['period']
+#    del resultats_annuel['quarter']
+#
+#    resultats_annuel.to_csv(os.path.join(
+#        output_directory_path,
+#        'simulation_counterfactual_echelon',
+#        'results_annuels_apres_modification_etat_initial.csv'
+#        )
+#    )
 
