@@ -23,6 +23,11 @@ observed = pd.read_csv(
     ).query('(annee > 2011) & (c_cir == c_cir_2011)').copy()[[
         'ident', 'annee', 'c_cir', 'echelon']].rename(columns = {'echelon':'echelon_observe'})
 
+
+
+622524
+
+
 data = observed.merge(results, on = ['ident', 'annee', 'c_cir'], how = 'inner')
 data = data.query('(echelon_observe != 55555) & (echelon_predit != 55555)').copy()
 

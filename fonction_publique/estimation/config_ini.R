@@ -27,7 +27,6 @@ tab_path = "Q:/CNRACL/Slides/2017_07_CDC/Graphiques/"
 
 
 
-
 #install.packages("OIsurv");install.packages("rms");install.packages("emuR");install.packages("RColorBrewer");
 # install.packages("RcmdrPlugin");install.packages("flexsurv"); install.packages("mfx") ; install.packages("texreg")
 # ; install.packages("mlogit")

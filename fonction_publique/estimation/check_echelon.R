@@ -8,7 +8,7 @@
 rm(list = ls()); gc()
 
 # path
-place = "ippS"
+place = "ippL"
 if (place == "ippS"){
   data_path = "M:/CNRACL/output/"
   git_path =  'U:/Projets/CNRACL/fonction-publique/fonction_publique/'
@@ -72,9 +72,12 @@ data_TTH1 = data_first[which(data_first$c_cir_2011 == "TTH1"),]
 data_TTH2 = data_first[which(data_first$c_cir_2011 == "TTH2"),]
 data_TTH3 = data_first[which(data_first$c_cir_2011 == "TTH3"),]
 
-data_TTH3 = data_first[which(data_first$c_cir_2011 == "TTH3" & data_first$next_grade == "TTH4"),]
+data_TTH3 = data_first[which(data_first$c_cir_2011 == "TTH3" & data_first$right_censored == TRUE),]
+data_TTH1 = data_first[which(data_first$c_cir_2011 == "TTH1" & data_first$exit_next == FALSE),]
+data_TTH2 = data_first[which(data_first$c_cir_2011 == "TTH2" & data_first$right_censored == TRUE),]
 
-subdata = data_TTH3
+
+subdata = data_TTH1
 dur_ech = seq(1:15)
 dist_dur_ech = matrix(ncol = length(dur_ech), nrow = 5)
 for (t in 1:length(dur_ech))
@@ -96,6 +99,7 @@ layout(matrix(c(1,2,3), nrow=1,ncol=3, byrow=TRUE))
 
 labels = c(NA, 6, NA, 12, NA, 18, NA, 24, NA, 30, NA, 36, NA, 42, NA)
 par(mar=c(5,4.1,2,0.2))
+barplot(dist_dur_ech[1,],ylab="",xlab="", col = col1, names.arg = labels, main = "Level == 1", font.axis = 2,cex.names = 1.3, cex.axis =  1)
 barplot(dist_dur_ech[2,],ylab="",xlab="", col = col2, names.arg = labels, main = "2<= Level <=3", font.axis = 2,cex.names = 1.3, cex.axis =  1)
 barplot(dist_dur_ech[3,],ylab="",xlab="Duration (in month)", col = col3, names.arg = labels, main = " 4<= Level <=6", font.axis = 2,cex.names = 1.3, cex.axis =  1, cex.lab = 1.5)
 subtitle("Duration (in month)")
