@@ -44,7 +44,7 @@ grilles_txt_path = os.path.join(
 
 grilles_hdf_path = os.path.join(
     grilles_path,
-    "grilles_old.h5",
+    "grilles.h5",
     )
 
 table_correspondance_corps_path = os.path.join(
@@ -54,10 +54,7 @@ table_correspondance_corps_path = os.path.join(
 
 grilles = pd.read_hdf(
     os.path.join(grilles_hdf_path),
-    dtypes = {
-        "code_grade_NEG":str}
     )
-
 
 # Directories paths:
 raw_directory_path = parser.get('data', 'raw')
