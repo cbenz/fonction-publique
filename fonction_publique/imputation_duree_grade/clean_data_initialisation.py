@@ -49,10 +49,10 @@ careers_asset_path = os.path.join(
 
 # Chargement des données de carrières, des tables de grilles et de la table de correspondances des grades et des corps :
 # (utile uniquement pour tester les fonctions de ce fichier indépendamment de imputations_2007_2011.py)
-data_carrieres = pd.read_csv(os.path.join(careers_asset_path, "corpsAT_2007.csv"))
-grilles = pd.read_hdf(os.path.join(grilles_path, 'grilles_fonction_publique/grilles_old.h5'))
-grilles_supp = pd.read_csv(os.path.join(grilles_path, "neg_grades_supp.csv"), delimiter = ';')
-table_corresp_grade_corps = pd.read_csv(os.path.join(grilles_path, 'corresp_neg_netneh.csv'), delimiter = ';')
+#data_carrieres = pd.read_csv(os.path.join(careers_asset_path, "corpsAT_2007.csv"))
+#grilles = pd.read_hdf(os.path.join(grilles_path, 'grilles_fonction_publique/grilles_old.h5'))
+#grilles_supp = pd.read_csv(os.path.join(grilles_path, "neg_grades_supp.csv"), delimiter = ';')
+#table_corresp_grade_corps = pd.read_csv(os.path.join(grilles_path, 'corresp_neg_netneh.csv'), delimiter = ';')
 
 
 def clean_grille(grilles, short, table_corresp_grade_corps):
@@ -98,7 +98,7 @@ def clean_grille(grilles, short, table_corresp_grade_corps):
 
     if short:
         grilles = grilles[
-            ['c_cir', 'date_effet_grille']
+            ['c_cir', 'date_effet_grille', 'annee_effet']
             ].drop_duplicates()
     else:
         grilles = grilles
@@ -385,7 +385,8 @@ def get_echelon_after_2011_from_c_cir(data_carrieres,
     # L'indice brut du dernier trimestre est gardé
     data.rename(columns = dict(ib4 = 'ib'), inplace = True)
     if grades_2011 is not None:
-        data = data.query('c_cir in @grades_2011')
+        idents_keep = data.query('(c_cir in @grades_2011) & (annee == 2011)').ident.unique().tolist()
+        data = data.query('ident in @idents_keep')
         data = data.replace(dict(c_cir = grade_by_stagiaire_2011))
 
     cas_uniques_with_echelon = list()
@@ -409,7 +410,6 @@ def get_echelon_after_2011_from_c_cir(data_carrieres,
                 echelon = -1
                 min_mois = -1
                 max_mois = -1
-                empty_count += weight_by_cas_unique[c_cir, ib]
 
             else:
                 if len(grille_possible) > 1:

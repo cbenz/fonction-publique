@@ -15,10 +15,15 @@ log = logging.getLogger(__name__)
 class AgentFpt:
     'common base class for all agent of French fonction publique'
 
-    def __init__(self, dataframe, grille = None):
+    def __init__(self, dataframe, grille = None, end_date = None):
+
+        assert set(dataframe.columns) == set(['ident', 'period', 'grade', 'echelon'])
+        for col in ['ident', 'grade', 'echelon']:
+            assert  np.issubdtype(dataframe[col].dtype, np.integer)
+        assert np.issubdtype(dataframe.period.dtype, np.datetime64), dataframe.period.dtype
+
         self.dataframe = dataframe
         self.ident = dataframe.ident
-        dataframe.period = pd.to_datetime(dataframe.period)
         self.period = dataframe.period
         self.grade = dataframe.grade
         self.echelon = dataframe.echelon
@@ -26,6 +31,8 @@ class AgentFpt:
         self.result = pd.DataFrame()
         if grille is not None:
             self.set_grille(grille)
+        if end_date is not None:
+            self.set_end_date(end_date)
 
     def compute_duree_effective_dans_echelon(self):
         dataframe = self.dataframe
@@ -36,11 +43,11 @@ class AgentFpt:
         duree_echelon_grille_finale = 'echelon_duration_with_grille_in_effect_at_end'
         duree_echelon_grille_initiale = 'duree_echelon_grille_initiale'
 
-        echelon_condition = (dataframe.echelon + 1) <= dataframe[echelon_max_variable_name]  # TODO echelon sera une str
-        condit_1 = (
+        echelon_inferieur_a_echelon_terminal = (dataframe.echelon + 1) <= dataframe[echelon_max_variable_name]  # TODO echelon sera une str
+        reforme_intervient_pendant_duree_donnee_par_grille_initiale = (
             dataframe.date_prochaine_reforme_grille < dataframe[date_fin_echelon_grille_initiale]
             )
-        condit_3 = (
+        reforme_raccourcit_duree_donnee_par_grille_initiale = (
             dataframe.period +
             dataframe[duree_echelon_grille_finale].values.astype("timedelta64[M]")
             ) < (
@@ -52,13 +59,13 @@ class AgentFpt:
             dataframe.date_prochaine_reforme_grille
             ) & ~dataframe.date_prochaine_reforme_grille.isnull()
 
-        duree_a = (
+        duree_jusque_reforme_qui_raccourcit_duree_donnee_par_grille_initiale = (
             dataframe.date_prochaine_reforme_grille - dataframe.period
             ).values.astype("timedelta64[M]") / np.timedelta64(1, 'M')
 
-        duree_b = dataframe[duree_echelon_grille_finale]
+        duree_donnee_par_grille_finale = dataframe[duree_echelon_grille_finale]
 
-        duree_c = dataframe[duree_echelon_grille_initiale]
+        duree_donnee_par_grille_initiale = dataframe[duree_echelon_grille_initiale]
 
         grades_from_dataframe = dataframe.grade.unique()  # TODO: use a cache for this
         grades_from_grilles = self.grille.code_grade.unique()
@@ -67,20 +74,23 @@ class AgentFpt:
         dataframe['duree_effective_echelon'] = np.where(
             dataframe.grade.isin(valid_grades),
             np.where(
-                echelon_condition,
+                echelon_inferieur_a_echelon_terminal,
                 np.where(
                     grille_change_during_period,
                     np.where(
-                        condit_1 & condit_3,
-                        duree_a,
-                        duree_b,
+                        reforme_intervient_pendant_duree_donnee_par_grille_initiale &
+                        reforme_raccourcit_duree_donnee_par_grille_initiale &
+                        (duree_donnee_par_grille_finale <= duree_jusque_reforme_qui_raccourcit_duree_donnee_par_grille_initiale),
+                        duree_jusque_reforme_qui_raccourcit_duree_donnee_par_grille_initiale,
+                        duree_donnee_par_grille_finale,
                         ),
-                    duree_c,
+                    duree_donnee_par_grille_initiale,
                     ),
-                np.inf,
+                (self.end_date - dataframe.period).values.astype("timedelta64[M]") / np.timedelta64(1, 'M'),
                 ),
             np.nan,
             )
+
 
     def set_dates_effet(self, date_observation = None, start_variable_name = "date_effet_grille_en_cours",
             next_variable_name = None):
@@ -147,6 +157,7 @@ class AgentFpt:
         dataframe = self.dataframe
 
         if date_effet_legislation_change_variable_name is not None:
+            # Initialize date_effet_legislation_change_variable_name to "-infinity"
             self.dataframe[date_effet_legislation_change_variable_name] = pd.Timestamp.max.floor('D')
 
         grades = dataframe.grade.unique()  # TODO: use a cache for this
@@ -166,7 +177,7 @@ class AgentFpt:
                 (grade_filtered_grille.date_effet_grille >= min_dates_effet_grille)
                 ]
             for echelon in echelons:  # Only changing echlons
-                if not ((dataframe.echelon == echelon) & (dataframe.grade)).any():
+                if not ((dataframe.echelon == echelon) & (dataframe.grade == grade)).any():
                     continue  # We skip the echelons not present in the dataframe
                 dates_effet_grille = dataframe.loc[
                     (dataframe.echelon == echelon) & (dataframe.grade == grade),
@@ -178,7 +189,11 @@ class AgentFpt:
                         (dataframe.grade == grade) &
                         (dataframe[start_date_effet_variable_name] == date_effet_grille),
                         'duree_echelon_grille_initiale'
-                        ].squeeze()
+                        ].unique()
+                    if len(duree) == 0:
+                        duree = [0]
+                    assert len(duree) == 1
+                    duree = duree[0]
 
                     durees_by_date = date_effet_filtered_grille.loc[
                         (date_effet_filtered_grille.date_effet_grille >= date_effet_grille) &
@@ -191,9 +206,15 @@ class AgentFpt:
                         ].set_index('date_effet_grille', drop = True)
 
                     if [duree] != durees_by_date[duree_str].unique().tolist():
-                        date_prochaine_reforme_grille = durees_by_date.loc[
-                            durees_by_date[duree_str] != duree,
-                            ].index.min()
+                        try:
+                            date_prochaine_reforme_grille = durees_by_date.loc[
+                                durees_by_date[duree_str] != duree,
+                                ].index.min()
+                        except ValueError as error:
+                            log.error(durees_by_date[duree_str])
+                            log.error(duree)
+                            raise(error)
+
                         dataframe.loc[
                             (dataframe.echelon == echelon) &
                             (dataframe.grade == grade) &
@@ -222,6 +243,7 @@ class AgentFpt:
         assert date_effet_grille != 'date_effet_grille'
         assert date_effet_grille in dataframe, '{} is not present in dataframe which columns are {}'.format(
             date_effet_grille, dataframe.columns)
+
         dataframe = dataframe.merge(
             echelon_max_by_grille,
             how = 'left',
@@ -237,9 +259,8 @@ class AgentFpt:
         self.set_dates_effet(
             date_observation = 'period',
             start_variable_name = "date_effet_grille_en_cours",
-            next_variable_name = 'next_grille_date_effet'
+            next_variable_name = 'date_prochaine_reforme_grille'
             )
-
         self.compute_echelon_duree(
             date_effet_variable_name = 'date_effet_grille_en_cours',
             duree_variable_name = 'duree_echelon_grille_initiale'
@@ -269,19 +290,20 @@ class AgentFpt:
             start_date_variable_name = 'period',
             duree_variable_name = 'duree_effective_echelon')
 
-    def complete(self, date_observation = None):
+    def fill(self, date_observation = None):
+        dataframe = self.dataframe
 
         if date_observation is None:
             date_observation = 'period'
             log.info('date_observation is none. Using period')
 
-        dataframe = self.dataframe.loc[~self.dataframe.ident.isin([2, 8])].copy()  # TOOD remove this
-        # We select the quarter starting after the oldest date
+        assert self.end_date is not None
+       # We select the quarter starting after the oldest date
         start_date = (
             dataframe[date_observation].min() + pd.tseries.offsets.QuarterEnd() + pd.tseries.offsets.MonthBegin(n=1)
             ).floor('D')
-        end_date = pd.Timestamp("2020-01-01").floor('D')
-        quarters_range = pd.date_range(start = start_date, end = end_date, freq = 'Q')
+
+        quarters_range = pd.date_range(start = start_date, end = self.end_date, freq = 'Q')
         result = pd.DataFrame()
         for quarter_date in quarters_range:
             quarter_begin = quarter_date - pd.tseries.offsets.QuarterBegin(startingMonth = 1)
@@ -289,18 +311,65 @@ class AgentFpt:
                 (dataframe[date_observation] <= quarter_begin) &
                 (quarter_date <= (dataframe.date_finale_dans_echelon + pd.tseries.offsets.MonthEnd())),
                 [date_observation, 'echelon', 'ident', 'grade']
-                ]
+                ].copy()
             df['quarter'] = quarter_date
+
             result = pd.concat([result, df])
+
         self.result = pd.concat([self.result, result])
         return result
+
+    def test_dataframe(self, iteration):
+#        problematic_cols = [col for col in self.dataframe.columns if col.endswith('_y')]
+#        print('iteration {}: {}'.format(iteration, problematic_cols))
+
+        print('iteration {}: {}'.format(iteration, self.dataframe))
+
+
+    def compute_result(self, test = False):
+        iteration = 0
+
+        while not self.dataframe.empty:
+            self.test_dataframe(iteration)
+            self.compute_all()
+            self.test_dataframe(iteration)
+            if test:
+                self.dataframe = self.dataframe.loc[~self.dataframe.ident.isin([2, 8])].copy()  # TOOO remove this
+                self.end_date = pd.Timestamp("2020-01-01").floor('D')
+
+            self.fill()
+            self.test_dataframe(iteration)
+            self.dataframe = self.next().copy()
+            self.test_dataframe(iteration)
+            iteration += 1
+
+#        df_echelon_terminal = dataframe.loc[
+#                (dataframe[date_observation] <= quarter_begin) &
+#                (quarter_date > (dataframe.date_finale_dans_echelon + pd.tseries.offsets.MonthEnd())),
+#                [date_observation, 'echelon', 'ident', 'grade']
+#                ].copy()
+#            echelon_max = compute_echelon_max(
+#                    grilles = self.grille, at_date = quarter_date, echelon_max_variable_name = 'echelon_max')
+#            print echelon_max
+#            df_echelon_terminal  = df_echelon_terminal.merge(
+#                echelon_max[['code_grade', 'echelon_max']],
+#                left_on = 'grade',
+#                right_on = 'code_grade',
+#                )
+#            df_echelon_terminal = df_echelon_terminal.query('echelon == echelon_max').dropna().drop_duplicates().copy()
+#            del df_echelon_terminal['echelon_max']
+#            del df_echelon_terminal['code_grade']
+#            df_echelon_terminal['quarter'] = quarter_date
+#            #print df_echelon_terminal.sort_values(['ident', 'quarter'])
+#            print df_echelon_terminal
+
 
     def next(self):
         '''Remove from dataframe all agents that have reached their ultimate echelon'''
         dataframe = self.dataframe
         next_dataframe = dataframe.loc[
             dataframe.date_finale_dans_echelon.notnull() & (
-                dataframe.date_finale_dans_echelon < pd.Timestamp.max.floor('D')
+                dataframe.date_finale_dans_echelon < self.end_date
                 ),
             ['ident', 'date_finale_dans_echelon', 'grade', 'echelon'],
             ].copy()
@@ -308,20 +377,25 @@ class AgentFpt:
         next_dataframe.echelon += 1  # TODO deal with str echelon
         return next_dataframe
 
-    def compute_result(self):
-        iteration = 0
-        while not self.dataframe.empty:
-            self.compute_all()
-            self.complete()
-            self.dataframe = self.next().copy()
-            iteration += 1
+    def set_end_date(self, end_date):
+        log.debug('Setting end_date to {}'.format(end_date))
+        # assert np.issubdtype(end_date, np.datetime64), "end_date type is {} and should be datetime64".format(end_date.dtype)
+        self.end_date = end_date
 
     def set_grille(self, grille = None):
         assert grille is not None
         assert 'code_grade' in grille
+        assert 'date_effet_grille' in grille
+        assert 'echelon' in grille
         assert 'max_mois' in grille
         assert 'min_mois' in grille
-        self.grille = grille
+        for col in ['code_grade', 'echelon', 'max_mois', 'min_mois']:
+            assert  np.issubdtype(grille[col].dtype, np.integer), "{} dtype is {} and should be integer".format(
+                col, grille[col].dtype)
+        assert np.issubdtype(grille.date_effet_grille.dtype, np.datetime64), \
+                "date_effet_grille dtype is {} and should be datetime64".format(grille.period.dtype)
+
+        self.grille = grille[['code_grade', 'date_effet_grille', 'echelon', 'max_mois', 'min_mois']].copy()
 
 
 def get_duree_echelon_from_grilles_dataframe(
@@ -334,7 +408,7 @@ def get_duree_echelon_from_grilles_dataframe(
     #        echelon, grade, date_effet)
     if duree.empty:
         log.info(
-            u"Pas d'echelon {} valide dans le grade {} a la date {}. Using NaN".format(
+            u"Pas d'echelon {} valide dans le grade {} dans la grille en effet à la date {}. Using NaN".format(
                 echelon, grade, date_effet)
             )
         return np.nan
@@ -353,9 +427,16 @@ def compute_changing_echelons_by_grade(grilles = None, start_date = None, speed 
     return echelons_by_grade
 
 
-def compute_echelon_max(grilles = None, start_date = None, echelon_max_variable_name = None):
-    if start_date is not None:
-        grilles = grilles.query('date_effet_grille >= start_date')
+def compute_echelon_max(grilles = None, start_date = None, at_date = None, echelon_max_variable_name = None):
+
+    if at_date is not None:
+        assert start_date is None
+        df = (grilles
+            .query('date_effet_grille <= @at_date')
+            .groupby(['code_grade', 'echelon']).agg({'date_effet_grille': np.min}).reset_index()
+            )
+    elif start_date is not None:
+        grilles = grilles.query('date_effet_grille >= @start_date')
 
     df = grilles.groupby(['date_effet_grille', 'code_grade'])['echelon'].max()
     df.name = echelon_max_variable_name
@@ -372,7 +453,6 @@ def get_duree_str_from_speed(speed):
 
 def _set_dates_effet(dataframe, date_observation = None, start_variable_name = None,
         next_variable_name = None, grille = None):
-
     assert start_variable_name is not None
     if date_observation is None:
         date_observation = 'period'
@@ -409,7 +489,7 @@ def _set_dates_effet(dataframe, date_observation = None, start_variable_name = N
                 start_variable_name,
                 ] = start_date
 
-            if previous_start_date and next_variable_name is not None:
+            if previous_start_date and next_variable_name is not None: # pervious_start_date set at None line 424
                 settled_grille = (
                     (dataframe.grade == grade) &
                     (dataframe.date_effet_grille_en_cours >= previous_start_date) &
@@ -419,7 +499,6 @@ def _set_dates_effet(dataframe, date_observation = None, start_variable_name = N
                     settled_grille,
                     next_variable_name,
                     ] = start_date
-
             previous_start_date = start_date
 
     # assert start_variable_name in dataframe.columns
