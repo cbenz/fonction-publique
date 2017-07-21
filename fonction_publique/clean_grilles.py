@@ -7,13 +7,14 @@ import logging
 import pandas as pd
 import numpy as np
 import os
-from fonction_publique.base import grilles_txt_path, grilles_hdf_path, table_correspondance_corps_path
+from fonction_publique.base import grilles_path, grilles_txt_path, grilles_hdf_path, table_correspondance_corps_path
 
 app_name = os.path.splitext(os.path.basename(__file__))[0]
 log = logging.getLogger(app_name)
 
 
-def clean_grille(force_rebuild = False):
+
+def clean_grille(force_rebuild = False, hdf_path = grilles_hdf_path):
     """ Extract relevant data from neg_pour_ipp.txt and change to convenient dtype then save to HDFStore."""
     if force_rebuild is True:
         grille = pd.read_table(
@@ -79,15 +80,15 @@ def clean_grille(force_rebuild = False):
                 })
         corresp_grade_corps['code_grade_NEG'] = [s.lstrip("0") for s in corresp_grade_corps['code_grade_NEG']]
         grille = grille.merge(corresp_grade_corps, on = 'code_grade_NEG', how = 'left')
-        grille.to_hdf(grilles_hdf_path, 'grilles', format = 'table', data_columns = True, mode = 'w')
+        grille.to_hdf(hdf_path, 'grilles', format = 'table', data_columns = True, mode = 'w')
         return True
     else:
-        if os.path.exists(grilles_hdf_path):
-            log.info('Using existing {}'.format(grilles_hdf_path))
+        if os.path.exists(hdf_path):
+            log.info('Using existing {}'.format(hdf_path))
             return True
         else:
-            grilles_hdf_path(force_rebuild = True)
+            clean_grille(force_rebuild = True, hdf_path = hdf_path)
 
 
 if __name__ == "__main__":
-     clean_grille(force_rebuild = True)
+     clean_grille(force_rebuild = True, hdf_path = os.path.join(grilles_path, 'grilles.h5'))
