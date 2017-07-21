@@ -13,7 +13,11 @@ data_max = datasets[[2]]
 data_min = datasets[[3]]
 
 
-## I. Sample description ####
+data_stat = data_min[which(data_min$left_censored == F),]
+
+
+
+####### I. Sample description #######
 
 ## I.1 Sample  ####
 table_count <- matrix(ncol = 5, nrow = 2)
@@ -83,36 +87,105 @@ print(xtable(table_censoring,align="lccccc",nrow = nrow(table), ncol=ncol(table_
       only.contents=F, include.colnames = T)
 
 
-figpath = "Q:/CNRACL/Slides/Graphiques"
 
-## 1.3 Annee d'affilation ####
 
-subdata = data_id[which(data_id$left_censored == F),]
-time = 2001:2011
-prop_entry = matrix(ncol = length(time), nrow = 5)
-for (t in 1:length(time))
+####### II. Hazard and surival analysis #######
+
+
+# II.1 Exit analysis ####
+
+extract_exit = function(data, exit_var)
 {
-prop_entry[1,t] = length(which(subdata$an_aff == time[t]))/length(subdata$an_aff)  
-prop_entry[2,t] = length(which(subdata$an_aff == time[t] & subdata$c_cir_2011 == "TTH1"))/length(subdata$an_aff[which(subdata$c_cir_2011 == "TTH1")])    
-prop_entry[3,t] = length(which(subdata$an_aff == time[t] & subdata$c_cir_2011 == "TTH2"))/length(subdata$an_aff[which(subdata$c_cir_2011 == "TTH2")])    
-prop_entry[4,t] = length(which(subdata$an_aff == time[t] & subdata$c_cir_2011 == "TTH3"))/length(subdata$an_aff[which(subdata$c_cir_2011 == "TTH3")])    
-prop_entry[5,t] = length(which(subdata$an_aff == time[t] & subdata$c_cir_2011 == "TTH4"))/length(subdata$an_aff[which(subdata$c_cir_2011 == "TTH4")])    
+  data = data[, c("ident", "annee", "c_cir_2011", exit_var)]
+  
+  data$exit_var = data[, exit_var]
+  data$ind_exit      = ifelse(data$exit_var != "no_exit", 1, 0) 
+  data$ind_exit_cum  = ave(data$ind_exit, data$ident, FUN = cumsum)
+  data$ind_exit_cum2  = ave(data$ind_exit_cum, data$ident, FUN = cumsum)
+  data$ind_exit_cum2  = ave(data$ind_exit_cum, data$ident, FUN = cumsum)
+  data$ind_exit_tot   = ave(data$ind_exit, data$ident, FUN = sum)
+  ### PB  
+  data$ind_first_exit  = ifelse(data$ind_exit_cum2 == 1, 1, 0) 
+  data$year_exit = ave((data$ind_first_exit*data$annee), data$ident, FUN = max)
+  data$year_exit[which(data$year_exit == 0)] = 2014
+  data2 = data[which(data$annee == data$year_exit ),]
+  data2$year_exit[which(data2$ind_exit_tot == 0)] = 9999
+  
+  data2 = data2[, c("ident", "c_cir_2011", "year_exit", "exit_var")]
+  return(data2)
 }  
 
-pdf(paste0(fig_path,"distrib_an_aff.pdf"))
-layout(matrix(c(1,2,3,4), nrow=2,ncol=2, byrow=TRUE), heights=c(3,3))
-par(mar=c(2.5,4.1,1.3,0.2))
-barplot(prop_entry[2,],ylab="Proportion d'entr?e",xlab="Ann?e", col = "darkcyan", names.arg = time, main = "TTH1")
-barplot(prop_entry[3,],ylab="Proportion d'entr?e",xlab="Ann?e", col = "darkcyan", names.arg = time, main = "TTH2")
-barplot(prop_entry[4,],ylab="Proportion d'entr?e",xlab="Ann?e", col = "darkcyan", names.arg = time, main = "TTH3")
-barplot(prop_entry[5,],ylab="Proportion d'entr?e",xlab="Ann?e", col = "darkcyan", names.arg = time, main = "TTH4")
-dev.off()
+compute_hazard= function(data, list, type_exit = "all")
+{
+  years = 2011:2014
+  haz  = numeric(length(years))
+  if (!is.element(type_exit, c("all", "exit_next", "exit_oth"))){print("wrong exit type"); return()}
+  n = length(list)
+  if (type_exit == "all")
+  {
+    for (y in 1:length(years)){
+      haz[y] =  length(which(data$year_exit[list] == years[y]))/
+        length(which(data$year_exit[list] >= years[y]))
+    }
+  }
+  else{
+    for (y in 1:length(years))
+    {
+      haz[y] =  length(which(data$year_exit[list] == years[y] & data$exit_var[list] == type_exit))/
+        length(which(data$year_exit[list] >= (years[y])))
+    }
+  }
+  return(haz)  
+}
+
+plot_hazards = function(hazard, colors, type, title)
+{
+  years = 2011:2014
+  limits = c(0, max(hazard))
+  plot(years,rep(NA,length(years)),ylim=limits, ylab="Hazard rate",xlab="Année")
+  title(title)
+  for (l in 1:nrow(hazard)){lines(years, hazard[l,], col =  colors[l], lwd = 3, lty = types[l])}  
+}
+
+data = extract_exit(data_stat, "next_year")
+
+list_TTH1 = which(data$c_cir_2011 == "TTH1")
+list_TTH2 = which(data$c_cir_2011 == "TTH2")
+list_TTH3 = which(data$c_cir_2011 == "TTH3")
+list_TTH4 = which(data$c_cir_2011 == "TTH4")
+
+types = c(1, 1, 2)
+routes = c("all", "exit_next", "exit_oth")
+colors = c("black", "darkcyan", "darkcyan")
+### All
+list = 1:length(data$ident)
+haz = matrix(ncol= length(2011:2014), nrow = 3)
+for (t in 1:length(routes)){haz[t,] = compute_hazard(data, list, type = routes[t])}
+plot_hazards(haz, colors, types, title = "Tous")
+### TTH1
+list = list_TTH1
+haz = matrix(ncol= length(2011:2014), nrow = 3)
+for (t in 1:length(routes)){haz[t,] = compute_hazard(data, list, type = routes[t])}
+plot_hazards(haz, colors, types, title = "TTH1")
+### TTH2
+list = list_TTH2
+haz = matrix(ncol= length(2011:2014), nrow = 3)
+for (t in 1:length(routes)){haz[t,] = compute_hazard(data, list, type = routes[t])}
+plot_hazards(haz, colors, types, title = "TTH2")
+### TTH3
+list = list_TTH3
+haz = matrix(ncol= length(2011:2014), nrow = 3)
+for (t in 1:length(routes)){haz[t,] = compute_hazard(data, list, type = routes[t])}
+plot_hazards(haz, colors, types, title = "TTH3")
+### TTH4
+list = list_TTH4
+haz = matrix(ncol= length(2011:2014), nrow = 3)
+for (t in 1:length(routes)){haz[t,] = compute_hazard(data, list, type = routes[t])}
+plot_hazards(haz, colors, types, title = "TTH4")
 
 
+# II.2 Effect of institutional threshold ####
 
-
-
-## II. Graphical evidence on exit grade ####
 
 ### II.1 Functions ####
 
@@ -363,6 +436,32 @@ print(xtable(table),
 
 
 ### IV. Divers ###
+
+
+
+##  Annee d'affilation ####
+
+subdata = data_id[which(data_id$left_censored == F),]
+time = 2001:2011
+prop_entry = matrix(ncol = length(time), nrow = 5)
+for (t in 1:length(time))
+{
+  prop_entry[1,t] = length(which(subdata$an_aff == time[t]))/length(subdata$an_aff)  
+  prop_entry[2,t] = length(which(subdata$an_aff == time[t] & subdata$c_cir_2011 == "TTH1"))/length(subdata$an_aff[which(subdata$c_cir_2011 == "TTH1")])    
+  prop_entry[3,t] = length(which(subdata$an_aff == time[t] & subdata$c_cir_2011 == "TTH2"))/length(subdata$an_aff[which(subdata$c_cir_2011 == "TTH2")])    
+  prop_entry[4,t] = length(which(subdata$an_aff == time[t] & subdata$c_cir_2011 == "TTH3"))/length(subdata$an_aff[which(subdata$c_cir_2011 == "TTH3")])    
+  prop_entry[5,t] = length(which(subdata$an_aff == time[t] & subdata$c_cir_2011 == "TTH4"))/length(subdata$an_aff[which(subdata$c_cir_2011 == "TTH4")])    
+}  
+
+pdf(paste0(fig_path,"distrib_an_aff.pdf"))
+layout(matrix(c(1,2,3,4), nrow=2,ncol=2, byrow=TRUE), heights=c(3,3))
+par(mar=c(2.5,4.1,1.3,0.2))
+barplot(prop_entry[2,],ylab="Proportion d'entrée",xlab="Année", col = "darkcyan", names.arg = time, main = "TTH1")
+barplot(prop_entry[3,],ylab="Proportion d'entrée",xlab="Année", col = "darkcyan", names.arg = time, main = "TTH2")
+barplot(prop_entry[4,],ylab="Proportion d'entrée",xlab="Année", col = "darkcyan", names.arg = time, main = "TTH3")
+barplot(prop_entry[5,],ylab="Proportion d'entrée",xlab="Année", col = "darkcyan", names.arg = time, main = "TTH4")
+dev.off()
+
 
 
 ### Changement indice 

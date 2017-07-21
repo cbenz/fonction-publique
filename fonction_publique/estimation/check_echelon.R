@@ -8,7 +8,7 @@
 rm(list = ls()); gc()
 
 # path
-place = "ippL"
+place = "ippS"
 if (place == "ippS"){
   data_path = "M:/CNRACL/output/"
   git_path =  'U:/Projets/CNRACL/fonction-publique/fonction_publique/'
@@ -72,6 +72,9 @@ data_TTH1 = data_first[which(data_first$c_cir_2011 == "TTH1"),]
 data_TTH2 = data_first[which(data_first$c_cir_2011 == "TTH2"),]
 data_TTH3 = data_first[which(data_first$c_cir_2011 == "TTH3"),]
 
+
+data_TTH1 = data_first[which(data_first$c_cir_2011 == "TTH1" & data_first$exit_next == FALSE),]
+
 data_TTH3 = data_first[which(data_first$c_cir_2011 == "TTH3" & data_first$right_censored == TRUE),]
 data_TTH1 = data_first[which(data_first$c_cir_2011 == "TTH1" & data_first$exit_next == FALSE),]
 data_TTH2 = data_first[which(data_first$c_cir_2011 == "TTH2" & data_first$right_censored == TRUE),]
@@ -111,4 +114,42 @@ test = data_TTH3
 indiv = test$ident[which(test$echelon == 7 & test$dur_ech == 6)][i]
 var = c("ident", "c_cir", "annee", "trim", "echelon", "ib4", "etat","last_y_observed_in_grade")
 View(data_long[which(data_long$ident == indiv),var])
+
+
+#### Check first transition for those entering the grade this year
+data = data_long[which(data_long$cumsum == 0),]
+data = data[which(data$c_cir_2011== 'TTH1' & data$an_aff == 2011),]
+data = data[-which(data$echelon == 0), ]
+
+data$a       <- 1
+data$dur_ech <- ave(data$a, data$ident ,FUN=sum)
+data = data[!duplicated(data$ident),]
+
+subdata = data
+dur_ech = seq(1:15)
+dist_dur_ech = matrix(ncol = length(dur_ech), nrow = 5)
+for (t in 1:length(dur_ech))
+{
+  dist_dur_ech[1,t] = length(which(subdata$dur_ech == dur_ech[t] & subdata$echelon == 1))/length(which(subdata$echelon == 1))
+  dist_dur_ech[2,t] = length(which(subdata$dur_ech == dur_ech[t] & subdata$echelon  >= 2 & subdata$echelon <= 3))/length(which(subdata$echelon  >= 2 & subdata$echelon <= 3))
+  dist_dur_ech[3,t] = length(which(subdata$dur_ech == dur_ech[t] & subdata$echelon  >= 4 & subdata$echelon <= 6))/length(which(subdata$echelon  >= 4 & subdata$echelon <= 6))  
+  dist_dur_ech[4,t] = length(which(subdata$dur_ech == dur_ech[t] & subdata$echelon  >= 7))/length(which(subdata$echelon  >= 7))
+}  
+layout(matrix(c(1,2,3), nrow=1,ncol=3, byrow=TRUE))
+labels = c(NA, 6, NA, 12, NA, 18, NA, 24, NA, 30, NA, 36, NA, 42, NA)
+par(mar=c(5,4.1,2,0.2))
+barplot(dist_dur_ech[1,],ylab="",xlab="", col = col1, names.arg = labels, main = "Level == 1", font.axis = 2,cex.names = 1.3, cex.axis =  1)
+barplot(dist_dur_ech[2,],ylab="",xlab="", col = col2, names.arg = labels, main = "2<= Level <=3", font.axis = 2,cex.names = 1.3, cex.axis =  1)
+barplot(dist_dur_ech[3,],ylab="",xlab="Duration (in month)", col = col3, names.arg = labels, main = " 4<= Level <=6", font.axis = 2,cex.names = 1.3, cex.axis =  1, cex.lab = 1.5)
+subtitle("Duration (in month)")
+barplot(dist_dur_ech[4,],ylab="",xlab="", col = col4, names.arg = labels, main = "Level >= 7", , font.axis = 2,cex.names = 1.3, cex.axis =  1)
+
+
+
+table(data$echelon[which(data$c_cir_2011== 'TTH1' & data$an_aff == 2011)])
+
+
+length(unique(data$ident))
+
+
 

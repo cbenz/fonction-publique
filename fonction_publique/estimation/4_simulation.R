@@ -32,7 +32,7 @@ echelon_cf = read.csv("M:/CNRACL/output/simulation_counterfactual_echelon/result
 data1 = echelon_cf[which(echelon_cf$annee >= 2011 & echelon_cf$annee < 2015), c("ident", "annee", "echelon", "c_cir")]
 
 data_min$I_2011 = ifelse(data_min$annee == 2011, 1, 0)
-data_min$ib_2011 = ave(data_min$I_2011*data_min$ib, data_min$iden, FUN = max)
+data_min$ib_2011 = ave(data_min$I_2011*data_min$ib, data_min$ident, FUN = max)
 data2 = data_min[which(data_min$annee == 2011), 
                  c("ident", "time", "sexe", "an_aff", "left_censored", "generation_group", "c_cir_2011", "ib_2011",
                    "D_exam", "D_choice", "E_exam", "E_choice")]
@@ -164,19 +164,6 @@ data_sim$next_hat1  <- mapply(predict_next_year, yhat1[,1], yhat1[,2], yhat1[,3]
 data_sim$next_hat2  <- mapply(predict_next_year, yhat2[,1], yhat2[,2], yhat2[,3])
 
 
-mean(yhat0[which(data_sim$I_unique_threshold == 1), 2])
-mean(yhat1[which(data_sim$I_unique_threshold == 1), 2])
-mean(yhat2[which(data_sim$I_unique_threshold == 1), 2])
-
-mean(yhat0[which(data_sim$I_unique_threshold == 1), 3])
-mean(yhat1[which(data_sim$I_unique_threshold == 1), 3])
-mean(yhat2[which(data_sim$I_unique_threshold == 1), 3])
-
-
-table(data_obs$next_year[which(data_obs$annee == 2011)])/length(data_obs$next_year[which(data_obs$annee == 2011)])
-table(data_sim$next_hat0[which(data_sim$annee == 2011)])/length(data_sim$next_hat0[which(data_sim$annee == 2011)])
-table(data_sim$next_hat2[which(data_sim$annee == 2011)])/length(data_sim$next_hat2[which(data_sim$annee == 2011)])
-
 # Exit date and route: obs vs. sim
 exit_year_obs  = numeric(length(unique(data_sim$ident)))
 exit_route_obs = numeric(length(unique(data_sim$ident)))
@@ -199,29 +186,29 @@ extract_exit = function(data, exit_var)
   data$year_exit[which(data$year_exit == 0)] = 2014
   data2 = data[which(data$annee == data$year_exit ),]
   data2$year_exit[which(data2$ind_exit_tot == 0)] = 9999
-  
-  return(list(data2$year_exit, data2$exit_var))
+  data2 = data[c("ident", "year_exit", "exit_var")]
+  return(data2)
 }  
 
 # Obs
 obs = extract_exit(data_obs, "next_year")
-exit_year_obs  = obs[[1]]
-exit_route_obs  = obs[[2]]
+exit_year_obs  = obs$year_exit
+exit_route_obs  = obs$exit_vars
 
 # Sim
 for (d in 0:2){
 exit_var = paste0("next_hat", d)  
 print(exit_var)
 sim = extract_exit(data = data_sim, exit_var)
-exit_year_pred[(d+1), ]  = sim[[1]]
-exit_route_pred[(d+1), ] = sim[[2]]
+exit_year_pred[(d+1), ]  = sim$year_exit
+exit_route_pred[(d+1), ] = sim$exit_var
 }
 
 
 #### II.2 Prediction ib ####
 
-data_sim2  <- data_est
-data_predict  = mlogit.data(data_sim2, shape = "wide", choice = "next_year")
+data_sim2  <- data_sim[which(data_sim$annee == 2011),]
+data_predict2  = mlogit.data(data_sim2, shape = "wide", choice = "next_year")
 
 
 yhat0     <- predict(mlog0, data_predict2, type = "response") 
@@ -233,10 +220,14 @@ data_sim2$next_hat1  <- mapply(predict_next_year, yhat1[,1], yhat1[,2], yhat1[,3
 data_sim2$next_hat2  <- mapply(predict_next_year, yhat2[,1], yhat2[,2], yhat2[,3])
 
 
-mean(data_sim2$ib[which(data_sim2$next_year != "no_exit")])
-mean(data_sim2$ib[which(data_sim2$next_hat0 != "no_exit")])
-mean(data_sim2$ib[which(data_sim2$next_hat1 != "no_exit")])
-mean(data_sim2$ib[which(data_sim2$next_hat2 != "no_exit")])
+mean(data_sim2$ib[which(data_sim2$next_year == "no_exit")])
+mean(data_sim2$ib[which(data_sim2$next_hat0 == "no_exit")])
+mean(data_sim2$ib[which(data_sim2$next_hat1 == "no_exit")])
+mean(data_sim2$ib[which(data_sim2$next_hat2 == "no_exit")])
+mean(data_sim2$ib[which(data_sim2$next_year == "no_exit")])
+mean(data_sim2$ib[which(data_sim2$next_hat0 == "no_exit")])
+mean(data_sim2$ib[which(data_sim2$next_hat1 == "no_exit")])
+mean(data_sim2$ib[which(data_sim2$next_hat2 == "no_exit")])
 
 table(data_sim2$next_hat0)
 table(data_sim2$next_hat1)
@@ -355,11 +346,15 @@ hazard(sample = 1:ncol(exit_year_pred), type_exit = "exit_oth",  save = F, name 
 
 
 hazard(sample = which(datai$c_cir == "TTH1"), type_exit = "all",       save = F, name = "All exits, TTH1")
+hazard(sample = which(datai$c_cir == "TTH1"), type_exit = "exit_next", save = F, name = "Next grade, TTH1")
+hazard(sample = which(datai$c_cir == "TTH1"), type_exit = "exit_oth",  save = F, name = "Next grade, TTH1")
+
+
 hazard(sample = which(datai$c_cir == "TTH2"), type_exit = "all",       save = F, name = "All exits, TTH2")
 hazard(sample = which(datai$c_cir == "TTH3"), type_exit = "all",       save = F, name = "All exits, TTH3")
 hazard(sample = which(datai$c_cir == "TTH4"), type_exit = "all",       save = F, name = "All exits, TTH4")
 
-hazard(sample = which(datai$c_cir == "TTH1"), type_exit = "exit_next", save = F, name = "Next grade")
+
 hazard(sample = which(datai$c_cir == "TTH2"), type_exit = "exit_next", save = F, name = "Next grade")
 hazard(sample = which(datai$c_cir == "TTH3"), type_exit = "exit_next", save = F, name = "Next grade")
 hazard(sample = which(datai$c_cir == "TTH4"), type_exit = "exit_next", save = F, name = "Next grade")
