@@ -99,16 +99,9 @@ data_est =  data_est[which(data_est$left_censored == F),]
 data_sim =  data_sim[which(data_sim$left_censored == F  & data_sim$annee <= 2014),]
 
 
-### Functions ###
-predict_next_year <- function(p1,p2,p3)
-{
-n = sample(c("no_exit", "exit_next",  "exit_oth"), size = 1, prob = c(p1,p2,p3), replace = T)  
-return(n) 
-}  
-
-
-#### I. Estimation ####
-
+adhoc <- sample(c("no_exit",   "exit_next", "exit_oth") ,nrow(data_sim),replace=TRUE, prob = c(0.2, 0.2, 0.6))
+data_sim$next_year <-adhoc
+data_predict  = mlogit.data(data_sim, shape = "wide", choice = "next_year")
 
 # Multinomial
 estim  = mlogit.data(data_est, shape = "wide", choice = "next_year")
@@ -126,49 +119,13 @@ summary(mlog1)
 summary(mlog2)
 
 
-l1 <- extract.mlogit(mlog2, include.aic = T, include.bic=F, include.loglik = F, include.deviance = F)
 
-
-
-list_models    <- list(l1)
-
-print(texreg(list_models,
-             caption.above=F, 
-             float.pos = "!ht",
-             digit=3,
-             only.content= T,
-             stars = c(0.01, 0.05, 0.1),
-             #custom.coef.names=names,
-             #custom.coef.names=ror$ccn,  omit.coef=ror$oc, reorder.coef=ror$rc,
-             #omit.coef = omit_var,
-             booktabs=T), only.contents = T)
-
-xtable(mlog2)
-
-
-#### II. Predictions ####
-
-
-## II.1 Predicted exit ##
-
-adhoc <- sample(c("no_exit",   "exit_next", "exit_oth") ,nrow(data_sim),replace=TRUE, prob = c(0.2, 0.2, 0.6))
-data_sim$next_year <-adhoc
-data_predict  = mlogit.data(data_sim, shape = "wide", choice = "next_year")
-
-# Simulated exit (all years)
-yhat0     <- predict(mlog0, data_predict,type = "response") 
-yhat1     <- predict(mlog1, data_predict,type = "response") 
-yhat2     <- predict(mlog2, data_predict,type = "response") 
-data_sim$next_hat0  <- mapply(predict_next_year, yhat0[,1], yhat0[,2], yhat0[,3])
-data_sim$next_hat1  <- mapply(predict_next_year, yhat1[,1], yhat1[,2], yhat1[,3])
-data_sim$next_hat2  <- mapply(predict_next_year, yhat2[,1], yhat2[,2], yhat2[,3])
-
-
-# Exit date and route: obs vs. sim
-exit_year_obs  = numeric(length(unique(data_sim$ident)))
-exit_route_obs = numeric(length(unique(data_sim$ident)))
-exit_year_pred  = matrix(nrow = 3, ncol = length(unique(data_sim$ident)))
-exit_route_pred = matrix(nrow = 3, ncol = length(unique(data_sim$ident)))
+### Functions ###
+predict_next_year <- function(p1,p2,p3)
+{
+n = sample(c("no_exit", "exit_next",  "exit_oth"), size = 1, prob = c(p1,p2,p3), replace = T)  
+return(n) 
+}  
 
 extract_exit = function(data, exit_var)
 {
@@ -190,19 +147,83 @@ extract_exit = function(data, exit_var)
   return(data2)
 }  
 
-# Obs
-obs = extract_exit(data_obs, "next_year")
-exit_year_obs  = obs$year_exit
-exit_route_obs  = obs$exit_vars
 
-# Sim
-for (d in 0:2){
-exit_var = paste0("next_hat", d)  
-print(exit_var)
-sim = extract_exit(data = data_sim, exit_var)
-exit_year_pred[(d+1), ]  = sim$year_exit
-exit_route_pred[(d+1), ] = sim$exit_var
-}
+
+
+
+list_models = list(mlog0, mlog1, mlog2)
+
+
+simulation_output1 <- function(list_models, data_obs, data_predict, save = F){
+# Simulation output 1: comparaison des sorties de grade (date, destination)
+# Input: base de prédiction et modèles. 
+# Output: 1) Hazard rates, 2) Tables fit (par grade, ib, année, etc)
+
+  # Checks:
+  if (nrow(data_obs)!=nrow(data_predict)){print("Problem"): stop()}
+  
+  ## I. Predictions 
+  
+  # Predicted status in next year 
+  for (m in 1:length(list_models))  
+  {
+  model = list_models[[m]]
+  prob     <- predict(model, data_predict,type = "response")   
+  next_hat <-  paste0("next_hat_", toString(m))  
+  data_sim[, next_hat] <- mapply(predict_next_year, prob[,1], prob[,2], prob[,3])
+  }  
+  
+  # Save year of exit and exit routes
+  exit_year  = matrix(nrow = length(list_models)+1, ncol = length(unique(data_sim$ident)))
+  exit_route = matrix(nrow = length(list_models)+1, ncol = length(unique(data_sim$ident)))
+
+  # Obs
+  obs = extract_exit(data_obs, "next_year")
+  exit_year[1,]  = obs$year_exit
+  exit_route[1,]  = obs$exit_vars
+  
+  # Sim
+  for (d in 0:2){
+    exit_var = paste0("next_hat", d)  
+    print(exit_var)
+    sim = extract_exit(data = data_sim, exit_var)
+    exit_year_pred[(d+1), ]  = sim$year_exit
+    exit_route_pred[(d+1), ] = sim$exit_var
+  }
+  
+  ## II. Ouputs
+
+  
+  
+
+  
+}  
+    
+
+simulation_output2 <- function(list_models, data_predict, save = F){
+  # Simulation output 2: comparaison des ib prédits et observés.
+  # Input: base de prédiction et modèles. 
+  # Output: 1) Distributions 2) Tables fit (par grade, ib, année, etc)
+  # TODO: gérer interface Python 
+  
+} 
+
+
+
+#### I. Estimation ####
+
+
+
+
+#### II. Predictions ####
+
+
+## II.1 Predicted exit ##
+
+
+# Simulated exit (all years)
+
+
 
 
 #### II.2 Prediction ib ####
