@@ -40,7 +40,6 @@ from fonction_publique.base import (
     asset_path,
     grilles_path,
     output_directory_path,
-    table_corresp_grade_corps,
     grilles
     )
 

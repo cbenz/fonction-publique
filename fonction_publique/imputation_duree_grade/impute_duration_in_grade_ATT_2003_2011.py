@@ -29,7 +29,6 @@ import pandas as pd
 from fonction_publique.base import (
     output_directory_path,
     grilles_path,
-    table_corresp_grade_corps,
     grilles,
     project_path,
     )
