@@ -26,34 +26,34 @@ project_path = os.path.join(
     'fonction_publique'
     )
 
-grilles_path = os.path.join(
+asset_path = os.path.join(
   project_path,
   'assets',
   )
 
-asset_path = os.path.join(
+grilles_path = os.path.join(
   project_path,
   'assets',
   'grilles_fonction_publique',
    )
 
-law_xls_path = os.path.join(
-    asset_path,
+grilles_txt_path = os.path.join(
+    grilles_path,
     "neg_pour_ipp.txt",
     )
 
-law_hdf_path = os.path.join(
-    asset_path,
+grilles_hdf_path = os.path.join(
+    grilles_path,
     "grilles.h5",
     )
 
-table_corresp_grade_corps = pd.read_csv(
-    os.path.join(grilles_path, 'corresp_neg_netneh.csv'),
-    delimiter = ';'
+table_correspondance_corps_path = os.path.join(
+    asset_path,
+    'corresp_neg_netneh.csv'
     )
 
 grilles = pd.read_hdf(
-    os.path.join(grilles_path, 'grilles_fonction_publique/grilles_old.h5')
+    os.path.join(grilles_hdf_path),
     )
 
 # Directories paths:
