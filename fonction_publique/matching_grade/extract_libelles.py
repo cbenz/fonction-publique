@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 """
 extract_libelle: save a dataframe with all the libellés of all the decennie,
 that will be matched in the grade_matching.py script.
@@ -69,6 +70,7 @@ def main(clean_data = False, debug = False):
         .drop_duplicates()
         )
     correspondance_libemploi_slug.to_hdf(correspondance_libemploi_slug_h5, 'correspondance_libemploi_slug')
+
 
 if __name__ == "__main__":
     sys.exit(main(clean_data = False, debug = False))
