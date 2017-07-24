@@ -6,6 +6,7 @@ config.ini
 *.pyc
 *.pyo
 *.h5
+*.zip
 
 # tex files
 *.aux
