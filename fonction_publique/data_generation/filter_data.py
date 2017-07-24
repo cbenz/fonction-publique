@@ -5,7 +5,6 @@ import os
 import pandas as pd
 from fonction_publique.base import grilles
 
-# I. Sample selection
 def read_data(data_path = 'M:/CNRACL/output/select_data', filename = 'corpsAT_1995.csv'):
     return pd.read_csv(
         os.path.join(data_path, filename),
@@ -47,7 +46,7 @@ def replace_interns_cir(data):
     data['c_cir'] = data['c_cir'].replace(interns_cir)
     return data
 
-
+# I. Sample selection
 def select_ATT_in_2011(data):
     ATT_cir = ['TTH1', 'TTH2', 'TTH3', 'TTH4']
     idents_keep = data.query('(annee == 2011) & (c_cir in @ATT_cir)').ident.unique()
@@ -66,8 +65,8 @@ def select_next_state_in_fonction_publique(data):
     data_after_2011['annee_exit'] = data_after_2011.groupby('ident')['annee'].transform(min)
     data_after_2011 = data_after_2011[['ident', 'annee_exit']].drop_duplicates()
     data = data.merge(data_after_2011, on = 'ident', how = 'left')
-    data['annee_exit'] = data['annee_exit'].fillna(-1).astype(int)
-    idents_keep = data.query('(annee == annee_exit) & (etat == 1)').ident.unique()
+    data['annee_exit'] = data['annee_exit'].fillna(9999).astype(int)
+    idents_keep = data.query('((annee == annee_exit) & (etat == 1)) | (annee_exit == 9999)').ident.unique()
     return data.query('ident in @idents_keep').copy()
 
 
@@ -82,13 +81,13 @@ def select_continuous_activity_state(data):
 
 
 # II. Data issues
-def select_positive_ib(data):
-    idents_del = data.query('(ib <= 0) & (annee >= annee_min_to_consider) & (annee < annee_exit)').ident.unique()
+def select_positive_ib(data): # compare with interval (entry in grade, exit)
+    idents_del = data.query('(ib <= 0) & (annee >= annee_min_to_consider) & (annee <= annee_exit)').ident.unique()
     return data.query('ident not in @idents_del').copy()
 
 
 def select_non_missing_c_cir(data):
-    data_after_2011 = data.query('(annee > 2011)  & (annee <= annee_exit)').copy()
+    data_after_2011 = data.query('(annee > 2011) & (annee <= annee_exit)').copy()
     idents_del = data_after_2011[data_after_2011['c_cir'].isnull()].ident.unique()
     return data.query('ident not in @idents_del').copy()
 
@@ -106,7 +105,7 @@ def select_no_decrease_in_ATT_rank(data):
     data_exit = data_exit.query("c_cir_2011 != 'TTH1'")
     for col in ['c_cir', 'c_cir_2011']:
         data_exit[col] = data_exit[col].str[3:].astype(int)
-    idents_del = data_exit.query('c_cir < c_cir_2011').ident.unique()
+    idents_del = data_exit.query('c_cir < c_cir_2011').copy().ident.unique()
     return data.query('ident not in @idents_del')
 
 
@@ -116,18 +115,18 @@ def select_no_decrease_in_ib(data):
     data_entered = data.query('annee >= annee_min_to_consider').copy().sort_values('annee', ascending = True)
     data_entered = data_entered.groupby('ident')['ib'].apply(list).reset_index()
     data_entered['non_decreasing'] = data_entered['ib'].apply(non_decreasing)
-    idents_del = data_entered.query('non_decreasing == False').ident.unique()
+    idents_del = data_entered.query('non_decreasing == False').copy().ident.unique()
     return data.query('ident not in @idents_del')
 
 
 def select_no_goings_and_comings_of_rank(data):
-    idents_del = data.query('(annee > annee_exit) & (c_cir == c_cir_2011)').ident.unique()
+    idents_del = data.query('(annee > annee_exit) & (c_cir == c_cir_2011)').copy().ident.unique()
     return data.query('ident not in @idents_del')
 
 
 # III. Add echelon variable / Merge with grilles
-def add_echelon_variable(data, grilles = grilles):
-    data_after_2011 = data.query('(annee >= 2011) & (annee <= annee_exit)').copy()
+def add_echelon_variable(data, grilles = grilles): #FIXME deal with late policy implementation
+    data_after_2011 = data.query('(annee >= 2011)').copy()
     cas_uniques_with_echelon = list()
     for annee in range(2011, 2015 + 1):
         cas_uniques = (data_after_2011
@@ -176,20 +175,20 @@ def select_non_special_level(data):
 
 # VI. Filters on echelon variable issues
 def select_non_missing_level(data):
-    idents_del = data.query('echelon == -1').ident.unique()
+    idents_del = data.query('(echelon == -1) & (annee <= annee_exit)').ident.unique()
     return data.query('ident not in @idents_del').copy()
 
 
-def select_no_level_jump(data):
-    data_after_2011 = data.query('(annee >= 2011) & (annee < annee_exit)').copy().sort_values('annee', ascending = True)
-    assert set(['TTH1', 'TTH2', 'TTH3', 'TTH4']) == set(data_after_2011['c_cir'].unique().tolist())
-    data_after_2011 = data_after_2011.groupby('ident')['echelon'].apply(set).reset_index()
-    data_after_2011['minimum'] = data_after_2011['echelon'].apply(lambda x: min(x)).astype(int)
-    data_after_2011['maximum'] = data_after_2011['echelon'].apply(lambda x: max(x)).astype(int)
-    data_after_2011['range'] = data_after_2011.apply(lambda x :set(range(x["minimum"], x["maximum"] + 1)), axis=1)
-    data_after_2011['no_level_jump'] = data_after_2011['echelon'] == data_after_2011['range']
-    idents_del = data_after_2011.query('no_level_jump == False').ident.unique()
-    return data.query('ident not in @idents_del').copy()
+#def select_no_level_jump(data):
+#    data_after_2011 = data.query('(annee >= 2011) & (annee < annee_exit)').copy().sort_values('annee', ascending = True)
+#    assert set(['TTH1', 'TTH2', 'TTH3', 'TTH4']) == set(data_after_2011['c_cir'].unique().tolist())
+#    data_after_2011 = data_after_2011.groupby('ident')['echelon'].apply(set).reset_index()
+#    data_after_2011['minimum'] = data_after_2011['echelon'].apply(lambda x: min(x)).astype(int)
+#    data_after_2011['maximum'] = data_after_2011['echelon'].apply(lambda x: max(x)).astype(int)
+#    data_after_2011['range'] = data_after_2011.apply(lambda x :set(range(x["minimum"], x["maximum"] + 1)), axis=1)
+#    data_after_2011['no_level_jump'] = data_after_2011['echelon'] == data_after_2011['range']
+#    idents_del = data_after_2011.query('no_level_jump == False').ident.unique()
+#    return data.query('ident not in @idents_del').copy()
 
 
 def main():
@@ -220,12 +219,12 @@ def main():
     tracking.append(['No special levels', len(data13.ident.unique())])
     data14 = select_non_missing_level(data13)
     tracking.append(['Non missing levels on I', len(data14.ident.unique())])
-    data15 = select_no_level_jump(data14)
-    tracking.append(['No echelon jump on min(I), max(I)-1', len(data15.ident.unique())])
+#    data15 = select_no_level_jump(data14)
+#    tracking.append(['No echelon jump on min(I), max(I)-1', len(data15.ident.unique())])
     tracking.append(['Definition of I', 'max(an_aff, 2003), min(2015, first year of exit)'])
     tracking = pd.DataFrame(tracking)
     print tracking.to_latex()
-    return data15
+    return data14
 
 if __name__ == "__main__":
     main()
