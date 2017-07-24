@@ -4,32 +4,28 @@ import os
 import pandas as pd
 from fonction_publique.base import get_careers, grilles
 
-save_path = 'M:/CNRACL/output/ATT_2011_2015'
 
-def select_ident(dataset, variable = 'c_cir', grilles = grilles):
+def select_ident(corps, dataset, grilles, variable):
     data_grade =  get_careers(variable = variable, data_path = dataset)
-    subset_by_corps = {}
-    for corps in ['adjoints techniques territoriaux']:
-        assert corps in grilles.corps_NEG, "NEG for the corps are not included in grilles_old.h5"
-        grilles = grilles.query('corps_NEG == @corps')
-        grades_keep = grilles.code_grade_NETNEH.unique().tolist()
-        for grade in grades_keep:
-            if grade in ['TTH1', 'TTH2', 'TTH3', 'TTH4']:
-                grades_keep.append('S' + grade[-3:]) # Include stagiaires
-        subset_ident = list(set(data_grade.ident[data_grade.c_cir.isin(grades_keep)]))
-        subset_by_corps[corps] = subset_ident
-    print subset_by_corps
+    subset_by_corps = dict()
+    print corps
+    assert corps in grilles.corps_NETNEH.unique().tolist(), "NETNEH for the corps are not included in grilles.h5"
+    grilles = grilles.query('corps_NETNEH in @corps').copy()
+    grades_keep = grilles.code_grade_NETNEH.unique().tolist()
+    for grade in grades_keep:
+        if grade in ['TTH1', 'TTH2', 'TTH3', 'TTH4']:
+            grades_keep.append('S' + grade[-3:]) # Include stagiaires
+    subset_ident = list(set(data_grade.ident[data_grade.c_cir.isin(grades_keep)]))
+    subset_by_corps[corps] = subset_ident
     return subset_by_corps
 
 
-def cleaning_data(
-    dataset,
-    subset_by_corps,
+def select_variables(
     corps,
+    dataset,
     first_year,
-    list_permanent_variables,
-    list_quaterly_variables,
-    list_yearly_variables
+    grilles,
+    subset_by_corps,
     ):
     subset_ident = subset_by_corps[corps]
     where = "ident in {}".format(subset_ident)
@@ -77,34 +73,30 @@ def cleaning_data(
 
 
 def main(
-    first_year = None,
-    list_corps = None,
     datasets = None,
-    list_permanent_variables = None,
-    list_quaterly_variables = None,
-    list_yearly_variables = None
+    first_year = None,
+    grilles = grilles,
+    list_corps = None,
+    save_path = None,
     ):
     data_merge_corps = {}
     for dataset in datasets:
         print("Processing data {}".format(dataset))
         for corps in list_corps:
             print("Processing corps {}".format(corps))
-            subset_by_corps = select_ident(dataset)
-            data_cleaned = cleaning_data(
+            subset_by_corps = select_ident(corps, dataset, grilles, 'c_cir')
+            data_cleaned = select_variables(
+                corps,
                 dataset,
+                first_year,
+                grilles,
                 subset_by_corps,
-                corps = corps,
-                first_year = first_year,
-                list_permanent_variables = list_permanent_variables,
-                list_quaterly_variables = list_quaterly_variables,
-                list_yearly_variables = list_yearly_variables,
                 )
             if dataset == datasets[0]:
                 data_merge_corps["data_corps_{}".format(corps)] = data_cleaned
             else:
                 data_merge = data_merge_corps["data_corps_{}".format(corps)].append(data_cleaned)
                 data_merge_corps["data_corps_{}".format(corps)] = data_merge
-
     for corps in list_corps:
         path = os.path.join(save_path,
                         "corps{}_{}.csv".format(corps, first_year)
@@ -117,15 +109,15 @@ def main(
 
 
 if __name__ == '__main__':
-#    logging.basicconfig(level = logging.info, stream = sys.stdout)
     main(
-    first_year = 2011,
-    list_corps =  ['adjoints techniques territoriaux'],
-    datasets = [
-        '1980_1999_carrieres.h5',
-        '1976_1979_carrieres.h5',
-        '1970_1975_carrieres.h5',
-        '1960_1965_carrieres.h5',
-        '1966_1969_carrieres.h5'
-        ]
-    )
+        datasets = [
+            '1960_1965_carrieres.h5',
+            '1966_1969_carrieres.h5',
+            '1970_1975_carrieres.h5',
+            '1976_1979_carrieres.h5',
+            '1980_1999_carrieres.h5',
+            ],
+        first_year = 2000,
+        list_corps =  ['adjoints techniques territoriaux'],
+        save_path = 'M:/CNRACL/output/select_data'
+        )
