@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jan 13 16:56:06 2017
-
-@author: s.rabate
-"""
-
-# -*- coding: utf-8 -*-
-"""
 Created on Fri Jan 13 11:12:12 2017
 
 @author: s.rabate

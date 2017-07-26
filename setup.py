@@ -9,7 +9,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'Fonction-Publique',
-    version = '0.3.2',
+    version = '0.3.3',
     author = 'IPP Team',
     author_email = 'mahdi.benjelloul@ipp.eu',
     classifiers = [
@@ -27,6 +27,7 @@ setup(
         'console_scripts': [
             'grade_matching=fonction_publique.matching_grade.grade_matching:main',
             'grade_matching_from_neg=fonction_publique.matching_grade.grade_matching_from_neg:main',
+            'clean_raw_carreer=fonction_publique.scripts.clean_raw_career:main'
             ],
         },
     data_files = [
