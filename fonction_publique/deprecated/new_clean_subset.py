@@ -13,7 +13,8 @@ def clean_subset(variable, period, quarterly):
     """ nettoie chaque variable pour en faire un df propre """
     subset_result = pd.DataFrame()
     subset = pd.read_csv('/home/benjello/openfisca/fonction-publique/junk_ib.csv', index_col = 0)
-    # Build a hierarchical index as in http://stackoverflow.com/questions/17819119/coverting-index-into-multiindex-hierachical-index-in-pandas
+    # Build a hierarchical index as in
+    # http://stackoverflow.com/questions/17819119/coverting-index-into-multiindex-hierachical-index-in-pandas
 
     for annee in period:
         if quarterly:
@@ -47,7 +48,8 @@ def clean_subset(variable, period, quarterly):
 def new_clean_subset(variable, period, quarterly):
     """ nettoie chaque variable pour en faire un df propre """
     subset = pd.read_csv('/home/benjello/openfisca/fonction-publique/junk_ib.csv', index_col = 0)
-    # Build a hierarchical index as in http://stackoverflow.com/questions/17819119/coverting-index-into-multiindex-hierachical-index-in-pandas
+    # Build a hierarchical index as in
+    # http://stackoverflow.com/questions/17819119/coverting-index-into-multiindex-hierachical-index-in-pandas
 
     def process_index(k):
         return tuple(k.split("_"))
