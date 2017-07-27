@@ -135,4 +135,34 @@ create_variables <- function(data)
 }
 
 
+### II. Simulation tools ####
+predict_next_year <- function(p1,p2,p3)
+{
+  # random draw of next year situation based on predicted probabilities   
+  n = sample(c("no_exit", "exit_next",  "exit_oth"), size = 1, prob = c(p1,p2,p3), replace = T)  
+  return(n) 
+}  
+
+
+extract_exit = function(data, exit_var, name)
+  # Fonction computing for each individual in data the year of exit and the grade of destination.
+{
+  data = data[, c("ident", "annee", exit_var)]
+  data$exit_var = data[, exit_var]
+  data$ind_exit       = ifelse(data$exit_var != "no_exit", 1, 0) 
+  data$ind_exit_cum   = ave(data$ind_exit, data$ident, FUN = cumsum)
+  data$ind_exit_cum2  = ave(data$ind_exit_cum, data$ident, FUN = cumsum)
+  data$ind_exit_cum2  = ave(data$ind_exit_cum, data$ident, FUN = cumsum)
+  data$ind_exit_tot   = ave(data$ind_exit, data$ident, FUN = sum)
+  data$ind_first_exit  = ifelse(data$ind_exit_cum2 == 1, 1, 0) 
+  data$year_exit = ave((data$ind_first_exit*data$annee), data$ident, FUN = max)
+  data$year_exit[which(data$year_exit == 0)] = 2014
+  data2 = data[which(data$annee == data$year_exit ),]
+  data2$year_exit[which(data2$ind_exit_tot == 0)] = 9999
+  data2 = data2[c("ident", "year_exit", "exit_var")]
+  colnames(data2)= paste0(colnames(data2), "_", name)
+  return(data2)
+}  
+
+
 

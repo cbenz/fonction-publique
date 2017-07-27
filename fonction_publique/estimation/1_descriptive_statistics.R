@@ -14,7 +14,7 @@ data_min = datasets[[3]]
 
 
 data_stat = data_min[which(data_min$left_censored == F),]
-
+datai   =  data_id[which(data_id$left_censored == F),]
 
 
 ####### I. Sample description #######
@@ -149,10 +149,14 @@ plot_hazards = function(hazard, colors, type, title)
 
 data = extract_exit(data_stat, "next_year")
 
-list_TTH1 = which(data$c_cir_2011 == "TTH1")
-list_TTH2 = which(data$c_cir_2011 == "TTH2")
-list_TTH3 = which(data$c_cir_2011 == "TTH3")
-list_TTH4 = which(data$c_cir_2011 == "TTH4")
+list_TTH1 = which(datai$c_cir_2011 == "TTH1")
+list_TTH2 = which(datai$c_cir_2011 == "TTH2")
+list_TTH3 = which(datai$c_cir_2011 == "TTH3")
+list_TTH4 = which(datai$c_cir_2011 == "TTH4")
+
+list_G1 = which(datai$generation_group == 6)
+list_G2 = which(datai$generation_group == 7)
+list_G3 = which(datai$generation_group == 8)
 
 types = c(1, 1, 2)
 routes = c("all", "exit_next", "exit_oth")
@@ -162,6 +166,7 @@ list = 1:length(data$ident)
 haz = matrix(ncol= length(2011:2014), nrow = 3)
 for (t in 1:length(routes)){haz[t,] = compute_hazard(data, list, type = routes[t])}
 plot_hazards(haz, colors, types, title = "Tous")
+
 ### TTH1
 list = list_TTH1
 haz = matrix(ncol= length(2011:2014), nrow = 3)

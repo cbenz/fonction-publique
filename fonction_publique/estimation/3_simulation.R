@@ -53,7 +53,7 @@ estim  = mlogit.data(data_est, shape = "wide", choice = "next_year")
 mlog1 = mlogit(next_year ~ 0 | 1 
                , data = estim, reflevel = "no_exit")
 
-mlog2 = mlogit(next_year ~ 0 | I_unique_threshold + c_cir_2011 + sexe  
+mlog2 = mlogit(next_year ~ 0 |  c_cir_2011 + sexe  
                +  duration + duration2
                , data = estim, reflevel = "no_exit")
 
@@ -104,11 +104,12 @@ data_sim2 = data_sim[which(data_sim$annee == 2011), ]
 
 data_sim2$corps = "ATT"
 data_sim2$grade = data_sim2$c_cir
+data_sim2$ib = data_sim2$ib_2011
 data_sim2$next_situation = NULL
 
 for (m in 1:length(list_models))  
 {
-  data_sim2$next_situation = data_sim[, paste0("next_hat_", toString(m))  ]
+  data_sim2$next_situation = data_sim2[, paste0("next_hat_", toString(m))  ]
   data_simul_2011 = data_sim2[, c("ident", "annee", "corps", "grade", "ib", "echelon", "next_situation")]
   write.csv(data_simul_2011, file = paste0(save_data_path, "data_simul_2011_m",m,".csv"))
 }  
