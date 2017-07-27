@@ -7,110 +7,89 @@
 
 source(paste0(wd, "0_work_on_data.R"))
 datasets = load_and_clean(data_path, "data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat_grade_corrected.csv")
-data_id = datasets[[1]]
-data_max = datasets[[2]]
-data_min = datasets[[3]]
-
+data_max = datasets[[1]]
+data_min = datasets[[2]]
 
 data_est = data_min
-data_est = data_est[which(data_est$left_censored == F & data_est$annee >= 2011 & data_est$annee <= 2014),]
-
-
-#### 0. Variable creations ####
-
-data_est$dist_an_aff = data_est$annee - data_est$an_aff +1 
-grade_modif = which(data_est$c_cir_2011 == "TTH1" | data_est$c_cir_2011 == "TTH2")
-
-data_est$time2 = data_est$time
-data_est$time2[grade_modif] = data_est$dist_an_aff[grade_modif] 
-
-# Distance variables
-data_est$I_echC = ifelse(data_est$echelon >= data_est$E_choice, 1, 0) 
-data_est$I_gradeC   = ifelse(data_est$time2 >= data_est$D_choice, 1, 0) 
-data_est$I_gradeC   = ifelse(data_est$time2 >= data_est$D_choice, 1, 0) 
-
-data_est$I_bothC =  ifelse(data_est$I_echC ==1 &  data_est$I_gradeC == 1, 1, 0)
-
-data_est$I_echE     = ifelse(data_est$echelon >= data_est$E_exam & data_est$c_cir_2011 == "TTH1", 1, 0) 
-data_est$I_gradeE   = ifelse(data_est$time2 >= data_est$D_exam & data_est$c_cir_2011 == "TTH1", 1, 0) 
-data_est$I_bothE    = ifelse(data_est$I_echE ==1 &  data_est$I_gradeE == 1, 1, 0) 
-
-data_est$c_cir = factor(data_est$c_cir)
-
-data_est$generation_group = factor(data_est$generation_group)
-data_est$c_cir_2011 = factor(data_est$c_cir_2011)
-
-data_est$age  = data_est$annee - data_est$generation
-data_est$age2 = data_est$age*data_est$age
-
-# Duration in grade
-data_est$duration  = data_est$time
-data_est$duration2 = data_est$time^2
-# Duration in grade bef and after the threshold
-data_est$duration_aft  = data_est$time*data_est$I_bothC
-data_est$duration_aft2 = data_est$time^2*data_est$I_bothC
-data_est$duration_bef  = data_est$time*(1-data_est$I_bothC)
-data_est$duration_bef2 = data_est$time^2*(1-data_est$I_bothC)
-
-# Unique threshold (first reached)
-grade_modif_bis = which(data_est$c_cir_2011 == "TTH1")
-data_est$I_unique_threshold = data_est$I_bothC
-data_est$I_unique_threshold[grade_modif_bis] = data_est$I_bothE[grade_modif_bis]
-
-data_est$duration_aft_unique_threshold  = data_est$time*data_est$I_unique_threshold
-data_est$duration_aft_unique_threshold2 = data_est$time^2*data_est$I_unique_threshold
-
-data_est$duration_bef_unique_threshold  = data_est$time*(1-data_est$I_unique_threshold)
-data_est$duration_bef_unique_threshold2 = data_est$time^2*(1-data_est$I_unique_threshold)
-
+data_est = data_est[which(data_est$left_censored == F & data_est$annee == 2011 & data_est$generation_group != 9),]
+data_est = create_variables(data_est)  
 
 
 #### I. Estimation ####
-# 
-# 
- varlist = c("ident", "annee", "sexe", "generation_group",  "an_aff", "c_cir_2011",
-            "ib", "echelon", "time",
-            "exit_status2", "next_grade","next_year",
-            "I_unique_threshold", "duration","duration2",
-            "duration_bef_unique_threshold", "duration_bef_unique_threshold2",
-            "duration_aft_unique_threshold", "duration_aft_unique_threshold2")
+#
+estim = mlogit.data(data_est, shape = "wide", choice = "next_year")
 
-years = 2011:2014
-datam = data_est[which(is.element(data_est$annee, years)), varlist]
-datam$c_cir_2011 = as.character(datam$c_cir_2011)
 
-# estim = mlogit.data(datam, shape = "wide", choice = "next_year")
-# 
-# 
-# mlog1 = mlogit(next_year ~ 0 | I_unique_threshold, data = estim, reflevel = "no_exit")
-# mlog2 = mlogit(next_year ~ 0 | I_unique_threshold + c_cir_2011 + sexe + 
-#                  duration_bef_unique_threshold +  duration_aft_unique_threshold, 
-#                data = estim, reflevel = "no_exit")
-# summary(mlog1)
-# summary(mlog2)
-# 
-# ## Before/after
-# l1 <- extract.mlogit(mlog1)
-# l2 <- extract.mlogit(mlog2)
-# 
-# names = c("I_threshold", "Rank 2", "Rank 3", "Rank 4", "sexe = M", "duration_bef", "duration_bef2","duration_aft",
-#           "duration_aft2", "duration", "duration2")
-# 
-# list_models    <- list(l1, l2)
-# 
-# 
-# 
-# print(texreg(list_models,
-#              caption.above=F, 
-#              float.pos = "!ht",
-#              digit=3,
-#              only.content= T,
-#              stars = c(0.01, 0.05, 0.1),
-#              #custom.coef.names=names,
-#              #custom.coef.names=ror$ccn,  omit.coef=ror$oc, reorder.coef=ror$rc,
-#              #omit.coef = omit_var,
-#              booktabs=T), only.contents = T)
-# 
+mlog1 = mlogit(next_year ~ 0 | I_unique_threshold, data = estim, reflevel = "no_exit")
+mlog2 = mlogit(next_year ~ 0 | I_unique_threshold + c_cir_2011 + sexe +
+                 duration_bef_unique_threshold +  duration_aft_unique_threshold,
+               data = estim, reflevel = "no_exit")
+summary(mlog1)
+summary(mlog2)
+
+## Before/after
+l1 <- extract.mlogit(mlog1)
+l2 <- extract.mlogit(mlog2)
+
+names = c("I_threshold", "Rank 2", "Rank 3", "Rank 4", "sexe = M", "duration_bef", "duration_bef2","duration_aft",
+          "duration_aft2", "duration", "duration2")
+
+list_models    <- list(l1, l2)
+
+
+
+print(texreg(list_models,
+             caption.above=F,
+             float.pos = "!ht",
+             digit=3,
+             only.content= T,
+             stars = c(0.01, 0.05, 0.1),
+             #custom.coef.names=names,
+             #custom.coef.names=ror$ccn,  omit.coef=ror$oc, reorder.coef=ror$rc,
+             #omit.coef = omit_var,
+             booktabs=T), only.contents = T)
+
+
+
+# One logit per grade
+list1 = which(estim$c_cir_2011 == "TTH1")
+list2 = which(estim$c_cir_2011 == "TTH2")
+list3 = which(estim$c_cir_2011 == "TTH3")
+list4 = which(estim$c_cir_2011 == "TTH4")
+
+mlog1 = mlogit(next_year ~ 0 |  c_cir_2011 + sexe  
+               +  duration + duration2
+               , data = estim, reflevel = "no_exit")
+mlog1_1 = mlogit(next_year ~ 0 |  generation_group + sexe  
+               +  duration + duration2
+               , data = estim[list1, ], reflevel = "no_exit")
+mlog1_2 = mlogit(next_year ~ 0 |  generation_group + sexe  
+               +  duration + duration2
+               , data = estim[list2, ], reflevel = "no_exit")
+mlog1_3 = mlogit(next_year ~ 0 | generation_group + sexe  
+               +  duration + duration2
+               , data = estim[list3, ], reflevel = "no_exit")
+mlog1_4 = mlogit(next_year ~ 0 |  generation_group + sexe  
+               +  duration + duration2
+               , data = estim[list4, ], reflevel = "no_exit")
+
+mlog2 = mlogit(next_year ~ 0 | I_unique_threshold + c_cir_2011 + sexe  
+               +  duration_bef_unique_threshold +  duration_aft_unique_threshold 
+               , data = estim, reflevel = "no_exit")
+
+mlog2_1 = mlogit(next_year ~ 0 | generation_group + sexe  
+               +  I_bothE + I_bothC
+               , data = estim[list1, ], reflevel = "no_exit")
+mlog2_2 = mlogit(next_year ~ 0 |generation_group + sexe  
+                 + I_bothC
+               , data = estim[list2, ], reflevel = "no_exit")
+mlog2_3 = mlogit(next_year ~ 0 | generation_group + sexe  
+                 + I_bothC
+               , data = estim[list3, ], reflevel = "no_exit")
+mlog2_4 = mlogit(next_year ~ 0 | generation_group + sexe  
+               , data = estim[list4, ], reflevel = "no_exit")
+
+
 
 # TODO: reorder coeffs
 
