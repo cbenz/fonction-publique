@@ -27,11 +27,15 @@ nosetests fonction_publique/tests/test_config.py -svx
 ## Clean the raw data
 
 Raw data needs to be cleaned to be used by the various programs.
-This can be done by executing the following command
+This takes a long time and can be achieved by executing the following command
 ````shell
 clean_career -v
 ````
 
+## Extract the relevant information from the clean data
+
+
+## Filter the data to keep only what is needed for the estimation
 
 
   
