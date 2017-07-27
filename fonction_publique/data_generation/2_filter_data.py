@@ -4,6 +4,7 @@ import numpy as np
 import os
 import pandas as pd
 from fonction_publique.base import grilles, output_directory_path, add_grilles_variable
+from fonction_publique.data_generation.add_durations import main_duration
 
 
 # Read data and replace cir codes for ATT interns
@@ -17,6 +18,9 @@ def read_data(data_path = os.path.join(output_directory_path, 'select_data'), fi
             u'c_cir',
             u'etat4',
             u'generation',
+            u'ib1',
+            u'ib2',
+            u'ib3',
             u'ib4',
             u'ident',
             u'libemploi',
@@ -29,6 +33,9 @@ def read_data(data_path = os.path.join(output_directory_path, 'select_data'), fi
             'c_cir':str,
             'etat4':int,
             'generation':int,
+            'ib1':int,
+            'ib2':int,
+            'ib3':int,
             'ib4':int,
             'ident':int,
             'libemploi':str,
@@ -133,10 +140,20 @@ def select_non_special_level(data):
     return data.query('ident not in @idents_del').copy()
 
 
-# VI. Filters on echelon variable issues
+# V. Filters on echelon variable issues
 def select_non_missing_level(data):
     idents_del = data.query('(echelon == -1) & (annee <= annee_exit)').ident.unique()
     return data.query('ident not in @idents_del').copy()
+
+
+# VI. Add duration in grade variables
+def add_duration_var(data):
+    return main_duration(data)
+
+
+# VII. Filter on duration variables
+def select_non_left_censored(data):
+    return data.query('left_censored == False').copy()
 
 
 def main():
@@ -170,13 +187,16 @@ def main():
     data13 = select_non_special_level(data12)
     tracking.append(['No special levels', len(data13.ident.unique())])
     data14 = select_non_missing_level(data13)
-    print "14"
     tracking.append(['Non missing levels on I', len(data14.ident.unique())])
+    print "14"
+    data15 = add_duration_var(data14)
+    data16 = select_non_left_censored(data15)
+    tracking.append(['Non left censored', len(data16.ident.unique())])
     tracking.append(['Definition of I', 'max(an_aff, 2003), min(2015, first year of exit)'])
     tracking = pd.DataFrame(tracking)
     print tracking.to_latex()
-    data14.to_csv(os.path.join('M:/CNRACL/filter', "data_ATT_2011_filtered.csv"))
-    return data14
+    data16.to_csv(os.path.join('M:/CNRACL/filter', "data_ATT_2011_filtered_after_duration_var_added.csv"))
+    return data16
 
 
 if __name__ == "__main__":
