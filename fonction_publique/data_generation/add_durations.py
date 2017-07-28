@@ -36,13 +36,11 @@ def add_rank_change_var(
                     how = 'right'
                     )
         else:
-            #try:
             data_unique_transition = get_career_transitions(
                 data = data_a_utiliser_pour_annee_precedente,
                 annee = annee,
                 unique = True
                 )
-            print data_unique_transition.head()
             data_with_change_grade_variable = add_change_grade_variable(
                 data_unique_transition, annee, grilles = grilles
                 ).reset_index().merge(
@@ -52,13 +50,6 @@ def add_rank_change_var(
                     on = ['annee', 'ib_bef', 'c_cir'],
                     how = 'right'
                     )
-        #except MemoryError as e:
-#                log.debug(e)
-#                log.debug('returning data_with_change_grade_variable')
-#                return data_unique_transition
-#            log.debug('data_with_change_grade_variable : {}'.format(data_unique_transition.info()))
-#            log.debug('data_with_change_grade_variable : {}'.format(data_unique_transition.head()))
-
         data_change = data_with_change_grade_variable.query('change_grade == True')
         data_entre = data.query('(annee_min_to_consider == @annee) & (annee == @annee)')[['annee', 'ident']]
         data_entre['change_grade'] = [True] * len(data_entre)
@@ -148,13 +139,13 @@ def add_grade_bef_var(data):
     return data
 
 
-def add_grade_next_var(data):
+def add_grade_next_var(data): # tofix
     data_temp = data.copy()
     data_temp['grade_next'] = None
     data_temp.loc[(data['annee'] == data['annee_exit']), 'grade_next'] = data_temp['c_cir']
     data_temp = data_temp[['ident', 'grade_next']].dropna()
     data = data.merge(data_temp, on = ['ident'], how = 'left')
-    print data.head()
+
     data['next_grade_situation'] = ['no_exit'] * len(data)
     data.loc[
         (data['grade_next'].isin(['TTH2', 'TTH3', 'TTH4'])) & (data['annee'] == data['annee_exit'] - 1)
@@ -194,6 +185,8 @@ def add_duration_var(data):
 
 
 def add_entry_in_2011_echelon_var(data, data_quarterly = reshape_wide_to_long()):
+    """ /!\ : arbitrary use of 'annee_entry_max' """
+    #FIXME deal with grille change
     data_temp = data.query('annee <= 2011')[['ident', 'annee_entry_max']].drop_duplicates().copy()
     data_quarterly = data_quarterly.merge(
         data_temp,
@@ -209,27 +202,45 @@ def add_entry_in_2011_echelon_var(data, data_quarterly = reshape_wide_to_long())
     echelon_2011 = data_quarterly.query('(annee == 2011) & (quarter == 4)').copy().filter(
         ['ident', 'ib', 'echelon'], axis = 1
         ).drop_duplicates().rename(columns = {"ib":"ib_2011", "echelon":"echelon_2011"})
-    print data_quarterly.merge(echelon_2011, on = 'ident', how = 'left').head()
     data_quarterly = data_quarterly.merge(echelon_2011, on = 'ident', how = 'left').query(
         'ib == ib_2011'
         )
-    print data_quarterly.head()
     data_quarterly = data_quarterly.query('ib == ib_2011')[['ident', 'period']]
     data_quarterly['quarter_entry_echelon'] = data_quarterly.groupby('ident')['period'].transform(min)
     data_quarterly = data_quarterly[['ident', 'quarter_entry_echelon']].drop_duplicates()
     return data.merge(data_quarterly, on = 'ident', how = 'left')
 
 
+def add_initial_anciennete_in_echelon(data):
+    data['first_quarter_obs'] = pd.datetime(2011, 12, 31)
+    data['quarter_entry_echelon'] = pd.to_datetime(data['quarter_entry_echelon'])
+    def diff_month(d1, d2):
+        return (d1.year - d2.year) * 12 + d1.month - d2.month
+    data['anciennete_echelon'] = (
+        diff_month(pd.DatetimeIndex(data['first_quarter_obs']), pd.DatetimeIndex(data['quarter_entry_echelon']))
+        )
+    del data['first_quarter_obs']
+    return data
+
+
 def main_duration(data):
     data1 = add_rank_change_var()
+    log.info('add indicator of grade change between 2003 and 2011')
     data2 = add_censoring_var(data1)
+    log.info('add left and right censoring indicator')
     data3 = add_grade_bef_var(data2)
+    log.info('add previous grade')
     data4 = add_grade_next_var(data3)
+    log.info('add next grade / next grade situation variables')
     data5 = add_year_of_entry_var(data4)
+    log.info('add year of entry variables')
     data6 = add_duration_var(data5)
+    log.info('add duration in grade variables')
     data7 = add_entry_in_2011_echelon_var(data6)
-    data7.to_csv(os.path.join(output_directory_path, 'filter', 'data_ATT_2011_filtered_with_duration.csv'))
-    return data7
+    log.info('add quarter of entry in 2011 echelon variable')
+    data8 = add_initial_anciennete_in_echelon(data7)
+    log.info('add initial anciennete in 2011 echelon')
+    return data8
 
 
 if __name__ == '__main__':
