@@ -53,7 +53,7 @@ def get_data(rebuild = True):
             )
         del data['Unnamed: 0']
         data_long = reshape_wide_to_long(data)
-        data_long_with_quarter_of_entry_in_2011_echelon =  get_data_with_quarter_of_entry_in_2011_echelon(
+        data_long_with_quarter_of_entry_in_2011_echelon = get_data_with_quarter_of_entry_in_2011_echelon(
             data_long,
             grilles
             )
