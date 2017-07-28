@@ -17,9 +17,13 @@ del data_counterfactual_echelon_trajectory['Unnamed: 0']
 
 def predict_next_period_grade_when_exit_to_other_corps(data):
     data.loc[
-        (data['next_situation'] == 'exit_oth') | (
-            (data['grade'] == 'TTH4') & (data['next_situation'] == 'exit_next')
-            ), 'next_grade'] = "TTM1"
+        (data['next_situation'] == 'exit_oth') |
+        (
+            (data['grade'] == 'TTH4') &
+            (data['next_situation'] == 'exit_next')
+            ),
+        'next_grade'
+        ] = "TTM1"
     data['next_annee'] = data['annee'] + 1
     return data
 
@@ -30,7 +34,7 @@ def predict_echelon_next_period_when_no_exit(data):
     data_no_exit['next_annee'] = data_no_exit['annee'] + 1
     data_no_exit = data_no_exit.merge(
         data_counterfactual_echelon_trajectory[['ident', 'annee', 'echelon']].rename(
-            columns = {'annee':'next_annee', 'echelon':'next_echelon'}
+            columns = {'annee': 'next_annee', 'echelon': 'next_echelon'}
             ),
         on = ['ident', 'next_annee'],
         how = 'left',
@@ -38,18 +42,24 @@ def predict_echelon_next_period_when_no_exit(data):
     return data_no_exit
 
 
-
 def predict_echelon_next_period_when_exit(data, grilles):
     data_exit = data.query("next_situation != 'no_exit'").copy()
-
     data_exit.loc[(data_exit['next_situation'] == 'exit_next'), 'next_grade'] = [
-        'TTH' + str(int(s[-1:]) + 1) for s in data_exit.query("next_situation == 'exit_next'")['grade'].copy()
+        'TTH' + str(int(s[-1:]) + 1) for s in data_exit.query("next_situation == 'exit_next'")['grade']
         ]
     data_exit['next_grade'] = data_exit['next_grade'].replace(['TTH5'], 'TTM1')
-    grilles_in_effect = grilles.query("date_effet_grille <= 2012").groupby(
-        ['code_grade_NETNEH']
-        ).agg({'date_effet_grille': np.max}).reset_index()
-    grilles = grilles.merge(grilles_in_effect, on = ['code_grade_NETNEH', 'date_effet_grille'], how = 'inner')
+    grilles_in_effect = (grilles
+        .query("date_effet_grille <= 2012")
+        .groupby(['code_grade_NETNEH'])
+        .agg({'date_effet_grille': np.max})
+        .reset_index()
+        )
+    grilles = grilles.merge(
+        grilles_in_effect,
+        on = ['code_grade_NETNEH', 'date_effet_grille'],
+        how = 'inner'
+        )
+    # TODO: these echelon_x and echelon_y are ugly
     data_exit_merged = data_exit.merge(grilles, left_on = 'next_grade', right_on = 'code_grade_NETNEH', how = 'inner')
     data_exit_merged['next_echelon'] = data_exit_merged['echelon_y'].replace(['ES'], 55555).astype(int)
     data_exit_merged['echelon'] = data_exit_merged['echelon_x'].astype(int)
@@ -59,11 +69,14 @@ def predict_echelon_next_period_when_exit(data, grilles):
     data_exit_echelon_pour_echelon = data_exit_merged.query("(next_grade != 'TTH4') & (echelon == next_echelon)")
     data_exit_ib_pour_ib = data_exit_merged.query("next_grade == 'TTH4'") # To generalize
 
-    data_exit_ib_pour_ib = data_exit_ib_pour_ib.query('ib_y >= ib_x').groupby(
-        ['ident']).agg({'ib_y': np.min}).reset_index()
+    data_exit_ib_pour_ib = (data_exit_ib_pour_ib
+        .query('ib_y >= ib_x')
+        .groupby(['ident']).agg({'ib_y': np.min})
+        .reset_index()
+        )
     data_exit_with_ib_pour_ib = data_exit.merge(data_exit_ib_pour_ib, on = ['ident'], how= 'inner')
     data_exit_with_ib_pour_ib = data_exit_with_ib_pour_ib.merge(
-        grilles[['code_grade_NETNEH', 'ib', 'echelon']].rename(columns = {'ib':'next_ib', 'echelon':'next_echelon'}),
+        grilles[['code_grade_NETNEH', 'ib', 'echelon']].rename(columns = {'ib': 'next_ib', 'echelon': 'next_echelon'}),
         left_on = ['ib_y', 'next_grade'],
         right_on = ['next_ib', 'code_grade_NETNEH'],
         how = 'left')
@@ -91,7 +104,7 @@ def predict_echelon_next_period_when_exit(data, grilles):
 #            data_missing_echelon_next.next_grade.unique().tolist() == ['TTM1']
 #            )
 #    data_exit = data_exit.append(data_missing_echelon_next)
-    #assert len(data_exit.ident.unique()) == len(data.query("next_situation != 'no_exit'"))
+    # assert len(data_exit.ident.unique()) == len(data.query("next_situation != 'no_exit'"))
     print data_exit[~data_exit['ident'].isin(data.query("next_situation != 'no_exit'").ident.unique().tolist())]
     return data_exit
 
@@ -99,8 +112,11 @@ def predict_echelon_next_period_when_exit(data, grilles):
 def get_ib(data, grilles):
     grilles['echelon'] = grilles['echelon'].replace(['ES'], 55555).astype(int)
     grilles_grouped = (grilles
-            .query('date_effet_grille <= 2012').copy()
-            ).groupby(['code_grade_NETNEH', 'echelon']).agg({'date_effet_grille': np.max}).reset_index()
+        .query('date_effet_grille <= 2012')
+        .groupby(['code_grade_NETNEH', 'echelon'])
+        .agg({'date_effet_grille': np.max})
+        .reset_index()
+        )
     grilles_to_use = grilles_grouped.merge(
         grilles,
         on = ['code_grade_NETNEH', 'echelon', 'date_effet_grille'],
@@ -108,11 +124,14 @@ def get_ib(data, grilles):
         )
     grilles_to_use['code_grade_NETNEH'] = grilles_to_use['code_grade_NETNEH'].astype(str)
     data['grade'] = data['grade'].astype(str)
-    data_merged = data.merge(grilles_to_use[['code_grade_NETNEH', 'echelon', 'ib']],
-                      left_on = ['grade', 'echelon'],
-                      right_on = ['code_grade_NETNEH', 'echelon'],
-                      how = 'left'
-                      )[['ident', 'annee', 'grade', 'echelon', 'ib', 'situation']]
+    data_merged = data.merge(
+        grilles_to_use[['code_grade_NETNEH', 'echelon', 'ib']],
+        left_on = ['grade', 'echelon'],
+        right_on = ['code_grade_NETNEH', 'echelon'],
+        how = 'left',
+        )[
+            ['ident', 'annee', 'grade', 'echelon', 'ib', 'situation']
+            ]
     return data_merged
 
 
