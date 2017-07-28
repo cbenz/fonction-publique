@@ -13,12 +13,18 @@ from fonction_publique.career_simulation_vectorized import compute_changing_eche
 
 test_path = os.path.join(project_path, 'tests')
 grille_adjoint_technique_path = os.path.join(
-    asset_path,
+    asset_path, 'grilles_fonction_publique',
     'FPT_adjoint_technique.xlsx',
     )
 grille_adjoint_technique = pd.read_excel(grille_adjoint_technique_path, encoding='utf-8')
-grille_adjoint_technique = grille_adjoint_technique.rename(columns = dict(code_grade_NEG = 'code_grade'))
+grille_adjoint_technique = grille_adjoint_technique.rename(columns = dict(code_grade_NEG = 'code_grade_NEG'))
 
+grade_ATT = ['TTH1', 'TTH2', 'TTH3', 'TTH4']
+grilles = grilles.query('code_grade_NETNEH in @grade_ATT').copy()
+grilles['code_grade_NEG'] = grilles['code_grade_NEG'].astype(int)
+grilles = grilles[grilles['code_grade_NEG'].isin([792, 793, 794, 795])].copy()
+grilles['echelon'] = grilles['echelon'].astype(int)
+grilles['echelon'] = grilles['echelon'].replace([500000], -2).astype(int)
 
 # 1. Case tests
 agent0 = (0, datetime.datetime(2006, 12, 1), 793, 1)
@@ -50,7 +56,7 @@ agent6 = (6, datetime.datetime(2012, 11, 1), 796, 1)
 # already spent more time than required by the new grid in echelon1. Hence, agent6 goes to echelon 2 at the date of the
 # law change. His effective duration in echelon 1, if he has a fast career, is 15 months.
 agent7 = (7, datetime.datetime(2026, 10, 1), 796, 8)
-# agent7 is similar to agent2. agent7 has code_grade_NEG == 796 and acceedes to echelon 8 in the future.
+# agent7 is similar to agent2. agent7 has code_grade_NEG_NEG == 796 and acceedes to echelon 8 in the future.
 # Hence, by default, his evolution is given by the 2015-01-01 grid all along.
 agent8 = (8, datetime.datetime(2003, 11, 1), 796, 4)
 # agent 8 acceedes to echelon 4 in 2003. However, we don't have information on the legislation back then.
@@ -58,7 +64,7 @@ agent8 = (8, datetime.datetime(2003, 11, 1), 796, 4)
 
 agent_tuples = [locals()['agent{}'.format(i)] for i in range(0, 9)]
 df = pd.DataFrame(agent_tuples, columns = ['ident', 'period', 'grade', 'echelon'])
-
+df['anciennete_dans_echelon'] = 0
 
 date_effet_at_start_expect = [
     datetime.datetime(2006, 11, 1),
@@ -69,18 +75,6 @@ date_effet_at_start_expect = [
     datetime.datetime(2006, 11, 01),
     datetime.datetime(2012, 05, 01),
     datetime.datetime(2015, 01, 01),
-    pd.NaT,
-    ]
-
-date_next_effet_expect = [
-    datetime.datetime(2008, 7, 1),
-    pd.NaT,
-    pd.NaT,
-    datetime.datetime(2014, 02, 01),
-    datetime.datetime(2013, 07, 07),
-    datetime.datetime(2008, 07, 01),
-    datetime.datetime(2013, 07, 07),
-    pd.NaT,
     pd.NaT,
     ]
 
@@ -138,7 +132,7 @@ duration_echelon_expect = [
     np.nan,
     27.0,
     48.0,
-    np.inf,
+    386,  # np.inf,
     15.0,
     48.0,
     np.nan,
@@ -146,7 +140,6 @@ duration_echelon_expect = [
 
 results_expect = [
     date_effet_at_start_expect,
-    date_next_effet_expect,
     date_next_change_effet_expect,
     date_end_period_echelon_grille_in_effect_at_start_expect,
     duree_echelon_grille_initiale_max_expect,
@@ -156,11 +149,10 @@ results_expect = [
 
 results_expect_dataframe = pd.DataFrame.from_dict(dict(
     date_effet_grille_en_cours = date_effet_at_start_expect,
-    next_grille_date_effet = date_next_effet_expect,
     date_prochaine_reforme_grille = date_next_change_effet_expect,
     date_fin_echelon_grille_initiale = date_end_period_echelon_grille_in_effect_at_start_expect,
     duree_echelon_grille_initiale = duree_echelon_grille_initiale_max_expect,
-    echelon_duration_with_grille_in_effect_at_end = duration_echelon_grille_in_effect_at_end_expect,
+    duree_echelon_selon_grille_en_cours_fin_periode_echelon_selon_grille_initiale = duration_echelon_grille_in_effect_at_end_expect,
     duree_effective_echelon = duration_echelon_expect,
     ))
 results_expect_dataframe.index.name = 'ident'
@@ -193,10 +185,22 @@ def mess(resultats):
     return messages
 
 
+def create_agent_by_items(grade = None, echelon = None, period = None, anciennete_dans_echelon = None):
+    df = pd.DataFrame.from_dict(dict(
+        ident = [0],
+        grade = [grade],
+        echelon = [echelon],
+        period = [period],
+        anciennete_dans_echelon = [anciennete_dans_echelon],
+        ))
+    return AgentFpt(df, end_date = pd.Timestamp("2040-01-01").floor('D'))
+
+
 def test():
-    agents = AgentFpt(df)
+    agents = AgentFpt(df, end_date = pd.Timestamp(2040, 01, 01))
     agents.set_grille(grille_adjoint_technique)
     value_vars = results_expect_dataframe.variable.unique().tolist()
+    print value_vars
     agents.compute_all()
     results_actual_dataframe = pd.melt(
         agents.dataframe,
@@ -220,7 +224,7 @@ def test():
 
 
 def test_result():
-    agents = AgentFpt(df)
+    agents = AgentFpt(df, end_date = pd.Timestamp(2040, 01, 01))
     agents.set_grille(grille_adjoint_technique)
     agents.compute_all()
     result = agents.fill()
@@ -230,19 +234,16 @@ def test_result():
 
 
 def test_next():
-    agents = AgentFpt(df)
+    agents = AgentFpt(df, end_date = pd.Timestamp(2040, 01, 01))
     agents.set_grille(grille_adjoint_technique)
     print agents.compute_result()
 
 
-def test_agent_1763(grilles):
+def test_agent_1763(grilles = grilles):
     data_input2 = pd.read_csv(os.path.join(test_path, 'data', 'agent_1763_input.csv'))
     del data_input2['Unnamed: 0']
     data_input2['period'] = pd.to_datetime(data_input2['period'])
-    grilles['code_grade'] = grilles['code_grade'].astype(int)
-    grilles = grilles[grilles['code_grade'].isin([792, 793, 794, 795])].copy()
-    grilles['echelon'] = grilles['echelon'].astype(int)
-    grilles['echelon'] = grilles['echelon'].replace([500000], -2).astype(int)
+    data_input2['anciennete_dans_echelon'] = 0
     agents = AgentFpt(data_input2, end_date = pd.Timestamp(2040, 01, 01))
     agents.set_grille(grilles)
     agents.compute_result()
@@ -256,6 +257,19 @@ def test_agent_1763(grilles):
         ]].equals(expected_result.reset_index()[[
             'period', 'echelon', 'ident', 'grade', 'quarter'
             ]])
+
+
+if __name__ == '__main__':
+    agents = create_agent_by_items(
+        grade = 795,
+        echelon = 11,
+        period = pd.Timestamp('2013-01-01'),
+        anciennete_dans_echelon = 0,
+        )
+    agents.set_grille(grille_adjoint_technique)
+    agents.compute_result()
+    print agents.result
+
 
 
 #agents = AgentFpt(df)
