@@ -6,7 +6,7 @@ import numpy as np
 import os
 import pandas as pd
 
-from fonction_publique.base import grilles, output_directory_path, add_grilles_variable
+from fonction_publique.base import add_grilles_variable, grilles, output_directory_path, tmp_directory_path
 from fonction_publique.data_generation.add_durations import main_duration
 
 log = logging.getLogger(__name__)
@@ -219,6 +219,8 @@ def main():
     log.info("selecting no goings and comings of grade")
     data12 = add_grilles_variable(data11, grilles = grilles, first_year = 2011, last_year = 2015)
     log.info("adding echelon variable")
+    data12.to_csv(os.path.join(tmp_directory_path, 'filter', 'data_with_echelon.csv'))
+    log.info("saving data with echelon to tmp_directory_path\filter")
     data13 = select_non_special_level(data12)
     tracking.append(['No special echelon', len(data13.ident.unique())])
     log.info(r"selecting only numeric echelon")
@@ -227,6 +229,8 @@ def main():
     log.info(r"selecting non missing echelon")
     data15 = add_duration_var(data14)
     log.info(r"add duration in grade and duration in echelon variables")
+    data15.to_csv(os.path.join(tmp_directory_path, 'filter', 'data_with_duration_variables.csv'))
+    log.info("saving data with duration variables tmp_directory_path\filter")
     data16 = select_non_left_censored(data15)
     log.info(r"select non left censored")
     tracking.append(['Non left censored', len(data16.ident.unique())])
