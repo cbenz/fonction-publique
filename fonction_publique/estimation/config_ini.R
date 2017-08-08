@@ -40,6 +40,7 @@ library(mfx)
 library(texreg)
 library(xtable)
 library(mlogit)
+library(data.table)
 
 
 shift1<-function(x){

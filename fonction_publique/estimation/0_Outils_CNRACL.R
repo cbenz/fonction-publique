@@ -1,13 +1,12 @@
+################# Library of functions #######
 
 
-################# Initialisation: 
-# Packages
-# Data loading
-# Variables creation
-# Tidy data for estimation
 
+## I. Managing data #####
 
 load_and_clean = function(data_path, dataname)
+# Input: inital data (name and path)
+# Ouput: two datasets, with two definitions of duration in grade
 {
   ## Chargement de la base
   filename = paste0(data_path, dataname)
@@ -85,5 +84,85 @@ load_and_clean = function(data_path, dataname)
   data_id = data_long[!duplicated(data_long$ident),]
   data_id = data_id[which(!is.element(data_id$ident, pb_ech)),]
   
-  return(list(data_id, data_max, data_min))
+  return(list(data_max, data_min))
 }  
+
+
+# Variable creations 
+create_variables <- function(data)
+{
+  data$dist_an_aff = data$annee - data$an_aff +1 
+  grade_modif = which(data$c_cir_2011 == "TTH1" | data$c_cir_2011 == "TTH2")
+  data$time2 = data$time
+  data$time2[grade_modif] = data$dist_an_aff[grade_modif] 
+  data$I_echC = ifelse(data$echelon >= data$E_choice, 1, 0) 
+  data$I_gradeC   = ifelse(data$time2 >= data$D_choice, 1, 0) 
+  data$I_gradeC   = ifelse(data$time2 >= data$D_choice, 1, 0) 
+  data$I_bothC =  ifelse(data$I_echC ==1 &  data$I_gradeC == 1, 1, 0) 
+  data$I_echE     = ifelse(data$echelon >= data$E_exam & data$c_cir_2011 == "TTH1", 1, 0) 
+  data$I_gradeE   = ifelse(data$time2 >= data$D_exam & data$c_cir_2011 == "TTH1", 1, 0) 
+  data$I_bothE    = ifelse(data$I_echE ==1 &  data$I_gradeE == 1, 1, 0) 
+  data$c_cir = factor(data$c_cir)
+  
+  data$duration = data$time
+  data$duration2 = data$time^2 
+  
+  data$duration  = data$time
+  data$duration2 = data$time^2
+  
+  data$duration_aft  = data$time*data$I_bothC
+  data$duration_aft2 = data$time^2*data$I_bothC
+  
+  data$duration_bef  = data$time*(1-data$I_bothC)
+  data$duration_bef2 = data$time^2*(1-data$I_bothC)
+  
+  data$generation_group = factor(data$generation_group)
+  data$c_cir_2011 = factor(data$c_cir_2011)
+  
+  # Unique threshold (first reached)
+  grade_modif_bis = which(data$c_cir_2011 == "TTH1")
+  data$I_unique_threshold = data$I_bothC
+  data$I_unique_threshold[grade_modif_bis] = data$I_bothE[grade_modif_bis]
+  
+  data$duration_aft_unique_threshold  = data$time*data$I_unique_threshold
+  data$duration_aft_unique_threshold2 = data$time^2*data$I_unique_threshold
+  
+  data$duration_bef_unique_threshold  = data$time*(1-data$I_unique_threshold)
+  data$duration_bef_unique_threshold2 = data$time^2*(1-data$I_unique_threshold)
+  
+  
+  return(data)
+}
+
+
+### II. Simulation tools ####
+predict_next_year <- function(p1,p2,p3)
+{
+  # random draw of next year situation based on predicted probabilities   
+  n = sample(c("no_exit", "exit_next",  "exit_oth"), size = 1, prob = c(p1,p2,p3), replace = T)  
+  return(n) 
+}  
+
+
+extract_exit = function(data, exit_var, name)
+  # Fonction computing for each individual in data the year of exit and the grade of destination.
+{
+  data = data[, c("ident", "annee", exit_var)]
+  data$exit_var = data[, exit_var]
+  data$ind_exit       = ifelse(data$exit_var != "no_exit", 1, 0) 
+  data$ind_exit_cum   = ave(data$ind_exit, data$ident, FUN = cumsum)
+  data$ind_exit_cum2  = ave(data$ind_exit_cum, data$ident, FUN = cumsum)
+  data$ind_exit_cum2  = ave(data$ind_exit_cum, data$ident, FUN = cumsum)
+  data$ind_exit_tot   = ave(data$ind_exit, data$ident, FUN = sum)
+  data$ind_first_exit  = ifelse(data$ind_exit_cum2 == 1, 1, 0) 
+  data$year_exit = ave((data$ind_first_exit*data$annee), data$ident, FUN = max)
+  data$year_exit[which(data$year_exit == 0)] = 2014
+  data2 = data[which(data$annee == data$year_exit ),]
+  data2$year_exit[which(data2$ind_exit_tot == 0)] = 9999
+  data2 = data2[c("ident", "year_exit", "exit_var")]
+  colnames(data2)= paste0(colnames(data2), "_", name)
+  return(data2)
+}  
+
+
+
