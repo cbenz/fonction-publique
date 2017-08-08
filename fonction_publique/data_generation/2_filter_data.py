@@ -11,6 +11,7 @@ from fonction_publique.data_generation.add_durations import main_duration
 
 log = logging.getLogger(__name__)
 
+
 # Read data and replace cir codes for ATT interns
 def read_data(data_path = os.path.join(output_directory_path, 'select_data'), filename = 'corpsAT_1995.csv'):
     """read output from 1_extract_data_by_c_cir.py"""
@@ -31,35 +32,36 @@ def read_data(data_path = os.path.join(output_directory_path, 'select_data'), fi
             u'libemploi',
             u'sexe',
             u'statut',
-           ],
+            ],
         dtype = {
-            'annee':int,
-            'an_aff':int,
-            'c_cir':str,
-            'etat4':int,
-            'generation':int,
-            'ib1':int,
-            'ib2':int,
-            'ib3':int,
-            'ib4':int,
-            'ident':int,
-            'libemploi':str,
-            'sexe':str,
-            'statut':str,
+            'annee': int,
+            'an_aff': int,
+            'c_cir': str,
+            'etat4': int,
+            'generation': int,
+            'ib1': int,
+            'ib2': int,
+            'ib3': int,
+            'ib4': int,
+            'ident': int,
+            'libemploi': str,
+            'sexe': str,
+            'statut': str,
             }
-        ).rename(columns = {"etat4":"etat", "ib4":"ib"}).reset_index()
+        ).rename(columns = {"etat4": "etat", "ib4": "ib"}).reset_index()
 
 
 def replace_interns_cir(data):
     """replace ATT interns grade code by ATT fonctionnaires grade code"""
     interns_cir = {
-         "STH1": "TTH1",
-         "STH2": "TTH2",
-         "STH3": "TTH3",
-         "STH4": "TTH4",
-         }
+        "STH1": "TTH1",
+        "STH2": "TTH2",
+        "STH3": "TTH3",
+        "STH4": "TTH4",
+        }
     data['c_cir'] = data['c_cir'].replace(interns_cir)
     return data
+
 
 # I. Sample selection
 def select_ATT_in_2011(data):
@@ -77,7 +79,7 @@ def select_next_state_in_fonction_publique(data):
     data = data.merge(
         data.query(
             'annee == 2011'
-            ).copy()[['ident', 'c_cir']].rename(columns = {"c_cir":"c_cir_2011"}), on = 'ident', how = 'left'
+            ).copy()[['ident', 'c_cir']].rename(columns = {"c_cir": "c_cir_2011"}), on = 'ident', how = 'left'
         )
     data_after_2011 = data.query('(annee > 2011) & (c_cir != c_cir_2011)').copy()[['ident', 'annee']]
     data_after_2011['annee_exit'] = data_after_2011.groupby('ident')['annee'].transform(min)
@@ -102,7 +104,7 @@ def select_continuous_activity_state(data):
 
 
 # II. Data issues
-def select_positive_ib(data): # compare with interval (entry in grade, exit)
+def select_positive_ib(data):  # compare with interval (entry in grade, exit)
     """ select careers of agents who have a stricly positive ib between the maximum between the first year of observation
      (2003 by default) and the year they join civil service, and the minimum between the first year they spend in their
      next grade, included, and 2015 """
@@ -123,7 +125,7 @@ def select_no_decrease_in_ATT_rank(data):
     ATT_cir = ['TTH1', 'TTH2', 'TTH3', 'TTH4']
     data_exit = data.query('annee >= annee_exit')
     data_exit = data_exit.groupby('ident')['c_cir'].value_counts().rename(
-        columns = {'c_cir':'c_cir_aft_exit'}
+        columns = {'c_cir': 'c_cir_aft_exit'}
         ).reset_index()
     del data_exit[0]
     data_exit = data_exit.merge(data[['ident', 'c_cir_2011']], on = 'ident', how = 'inner').query(
@@ -140,7 +142,7 @@ def select_no_decrease_in_ib(data):
     """ select careers of agents with no decrease in IB between the maximum between the first year of observation
      (2003 by default) and the year they join civil service, and 2015 """
     def non_decreasing(L):
-        return all(x<=y for x, y in zip(L, L[1:]))
+        return all(x <= y for x, y in zip(L, L[1:]))
     data_entered = data.query('annee >= annee_min_to_consider').copy().sort_values('annee', ascending = True)
     data_entered = data_entered.groupby('ident')['ib'].apply(list).reset_index()
     data_entered['non_decreasing'] = data_entered['ib'].apply(non_decreasing)
