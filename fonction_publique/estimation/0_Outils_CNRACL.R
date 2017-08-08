@@ -143,9 +143,29 @@ predict_next_year <- function(p1,p2,p3)
   return(n) 
 }  
 
+predict_next_grade <- function(next_situation, grade, exit_oth)
+  # Predict next grade based on next situation and current situation.
+  {
+  # Default: same grade
+  next_grade = as.character(grade)
+  # Exit next: next
+  next_grade[which(grade == "TTH1" & next_situation == "exit_next")] = "TTH2"
+  next_grade[which(grade == "TTH2" & next_situation == "exit_next")] = "TTH3"
+  next_grade[which(grade == "TTH3" & next_situation == "exit_next")] = "TTH4"
+  # Exit oth: draw in probability
+  for (g in c("TTH1", "TTH2", "TTH3", "TTH4"))
+  {
+  list1 = which(grade == g & next_situation == "exit_oth")
+  data1 = data_exit_oth[which(data_exit_oth$c_cir == g),]
+  table1 = table(data1$next_grade)/length(data1$next_grade)
+  next_grade[list1]  = sample(names(table1), size = length(list1), prob = as.vector(table1), replace = T)  
+  }
+  return(next_grade) 
+}  
+
 
 extract_exit = function(data, exit_var, name)
-  # Fonction computing for each individual in data the year of exit and the grade of destination.
+# Fonction computing for each individual in data the year of exit and the grade of destination.
 {
   data = data[, c("ident", "annee", exit_var)]
   data$exit_var = data[, exit_var]

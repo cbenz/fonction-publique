@@ -78,9 +78,11 @@ for (m in 1:length(list_models))
 {
   model = list_models[[m]]
   prob     <- predict(model, data_predict,type = "response")   
-  next_hat <-  paste0("next_hat_", toString(m))  
-  data_sim[, next_hat] <- mapply(predict_next_year, prob[,1], prob[,2], prob[,3])
+  next_year_hat <-  paste0("next_year_hat_", toString(m))  
+  data_sim[, next_year_hat] <- mapply(predict_next_year, prob[,1], prob[,2], prob[,3])
 }  
+
+
 
 
 ## Simulation outputs
@@ -92,7 +94,7 @@ obs = extract_exit(data_obs, "next_year", "obs")
 data1 = cbind(data1, obs[,c(2,3)])
 for (m in 1:length(list_models))  
 {
-  var <- paste0("next_hat_", toString(m))  
+  var <- paste0("next_year_hat_", toString(m))  
   name <-  paste0("pred_", toString(m))  
   pred = extract_exit(data_sim, var, name)
   data1 = cbind(data1, pred[,c(2,3)])
@@ -101,7 +103,7 @@ save(data1,  file = paste0(save_data_path, "data_simul1.Rdata"))
 
 # 2.  Data with prediction for imputing next 
 data_sim2 = data_sim[which(data_sim$annee == 2011), ]
-
+data_exit_oth = data_min[which(data_min$next_year == "exit_oth"), c("c_cir", "next_grade")]
 data_sim2$corps = "ATT"
 data_sim2$grade = data_sim2$c_cir
 data_sim2$ib = data_sim2$ib_2011
@@ -109,8 +111,9 @@ data_sim2$next_situation = NULL
 
 for (m in 1:length(list_models))  
 {
-  data_sim2$next_situation = data_sim2[, paste0("next_hat_", toString(m))  ]
-  data_simul_2011 = data_sim2[, c("ident", "annee", "corps", "grade", "ib", "echelon", "next_situation")]
-  write.csv(data_simul_2011, file = paste0(save_data_path, "data_simul_2011_m",m,".csv"))
+  data_sim2$next_situation = data_sim2[, paste0("next_year_hat_", toString(m))  ]
+  data_sim2$next_grade = predict_next_grade(data_sim2$next_situation, data_sim2$c_cir_2011, data_exit_oth)
+  data_simul_2011 = data_sim2[, c("ident", "annee", "corps", "grade", "ib", "echelon", "next_situation", "next_grade")]
+  write.csv(data_simul_2011, file = paste0(save_data_path, "data_simul_2011_bis_m",m,".csv"))
 }  
 
