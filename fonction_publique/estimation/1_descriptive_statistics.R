@@ -440,8 +440,10 @@ print(xtable(table),
       sanitize.text.function=identity,size="\\footnotesize")
 
 
-### IV. Divers ###
+## IV. Divers ####
 
+
+##  Grade de destination ####
 
 
 ##  Annee d'affilation ####
