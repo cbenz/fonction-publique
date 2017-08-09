@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 
 def add_rank_change_var(
         data = pd.read_csv(
-            os.path.join('M:/CNRACL/filter', 'data_ATT_2011_filtered.csv'),
+            os.path.join(output_directory_path, 'filter', 'data_ATT_2011_filtered.csv'),
             index_col = 0,
             ).query('annee >= annee_min_to_consider'),
         grilles = get_grilles_including_bef_ATT(grilles = grilles),
@@ -249,6 +249,6 @@ if __name__ == '__main__':
     import sys
     logging.basicConfig(level = logging.DEBUG, stream = sys.stdout)
     main_duration(pd.read_csv(
-        os.path.join('M:/CNRACL/filter', 'data_ATT_2011_filtered.csv'),
+        os.path.join(output_directory_path, 'filter', 'data_ATT_2011_filtered.csv'),
         index_col = 0,
         ).query('annee >= annee_min_to_consider'))

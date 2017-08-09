@@ -7,7 +7,7 @@ import os
 import pandas as pd
 
 
-from fonction_publique.base import get_careers, grilles
+from fonction_publique.base import get_careers, grilles, output_directory_path
 
 
 log = logging.getLogger(__name__)
@@ -116,5 +116,5 @@ if __name__ == '__main__':
             ],
         first_year = 2000,
         list_corps = ['adjoints techniques territoriaux'],
-        save_path = 'M:/CNRACL/output/select_data'
+        save_path = os.path.join(output_directory_path, 'select_data'),
         )

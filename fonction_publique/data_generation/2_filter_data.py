@@ -242,7 +242,9 @@ def main():
     tracking.append(['L', '[max(an_aff, 2003), 2015]'])
     tracking = pd.DataFrame(tracking)
     print tracking.to_latex()
-    data16.to_csv(os.path.join('M:/CNRACL/filter', "data_ATT_2011_filtered_after_duration_var_added.csv"))
+    data16.to_csv(
+        os.path.join(output_directory_path, 'filter', "data_ATT_2011_filtered_after_duration_var_added.csv")
+        )
     log.info(r"saving data to data_ATT_2011_filtered_after_duration_var_added.csv")
     return data16
 

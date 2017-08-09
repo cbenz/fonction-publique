@@ -2,7 +2,7 @@
 import os
 import numpy as np
 import pandas as pd
-from fonction_publique.base import grilles
+from fonction_publique.base import grilles, output_directory_path
 
 
 def get_grilles_including_bef_ATT(grilles = grilles):
@@ -265,7 +265,8 @@ def format_output(
 
 def get_career_transitions(
         data = pd.read_csv(
-            os.path.join('M:/CNRACL/filter', 'data_ATT_2011_filtered.csv'), index_col = 0,
+            os.path.join(output_directory_path, 'filter', 'data_ATT_2011_filtered.csv'),
+            index_col = 0,
             ),
         annee = 2011,
         unique = False,
@@ -338,7 +339,7 @@ def get_grilles_pre_ATT_in_effect(c_cir, annee, grilles = get_grilles_including_
 
 def reshape_wide_to_long(
         data = pd.read_csv(
-            os.path.join('M:/CNRACL/filter', 'data_ATT_2011_filtered.csv'),
+            os.path.join(output_directory_path, 'filter', 'data_ATT_2011_filtered.csv'),
             index_col = 0,
             ).query('annee >= annee_min_to_consider')
         ):
