@@ -264,14 +264,16 @@ def format_output(
 
 
 def get_career_transitions(
-        data = pd.read_csv(
-            os.path.join(output_directory_path, 'filter', 'data_ATT_2011_filtered.csv'),
-            index_col = 0,
-            ),
+        data = None,
         annee = 2011,
         unique = False,
         change_grade = None,
         ):
+    if data is None:
+        data = pd.read_csv(
+            os.path.join(output_directory_path, 'filter', 'data_ATT_2011_filtered.csv'),
+            index_col = 0,
+            )
     columns_keep_1 = ['ident', 'annee', 'c_cir']
     columns_keep_2 = ['ident', 'ib']
     data_transition = (data
@@ -338,11 +340,13 @@ def get_grilles_pre_ATT_in_effect(c_cir, annee, grilles = get_grilles_including_
 
 
 def reshape_wide_to_long(
+        data = None
+        ):
+    if data is None:
         data = pd.read_csv(
             os.path.join(output_directory_path, 'filter', 'data_ATT_2011_filtered.csv'),
             index_col = 0,
             ).query('annee >= annee_min_to_consider')
-        ):
     data = data.rename(columns = {'ib': 'ib4'})
     data = pd.wide_to_long(
         data, ['ib'], i = ['ident', 'annee'], j = ''

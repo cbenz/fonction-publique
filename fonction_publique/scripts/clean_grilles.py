@@ -7,11 +7,12 @@ import logging
 import pandas as pd
 import numpy as np
 import os
+import sys
+
 from fonction_publique.base import grilles_path, grilles_txt_path, grilles_hdf_path, table_correspondance_corps_path
 
 app_name = os.path.splitext(os.path.basename(__file__))[0]
 log = logging.getLogger(app_name)
-
 
 
 def clean_grille(force_rebuild = False, hdf_path = grilles_hdf_path):
@@ -49,7 +50,7 @@ def clean_grille(force_rebuild = False, hdf_path = grilles_hdf_path):
         grille['date_effet_grille'] = pd.to_datetime(grille['date_effet_grille'])
         grille = grille[~grille['ib'].isin([-1, 0])].copy()
         special_echelons = list(
-            set(grille.echelon.unique()) - set([str(n).zfill(2) for n in range(1,25)] + [str(n) for n in range(1,25)])
+            set(grille.echelon.unique()) - set([str(n).zfill(2) for n in range(1, 25)] + [str(n) for n in range(1, 25)])
             )
         grille.loc[grille['echelon'].isin(special_echelons), 'echelon'] = '-5'
         grille['annee_effet_grille'] = (pd.to_datetime(np.array(
@@ -60,7 +61,7 @@ def clean_grille(force_rebuild = False, hdf_path = grilles_hdf_path):
             grille[col] = grille[col].fillna(-1).astype('int32')
         for col in ['libelle_grade_NEG', 'code_grade_NEG', 'categh', 'echelle', 'code_grade_NETNEH']:
             grille[col] = grille[col].fillna(-1).astype(str)
-        corresp_grade_corps =  pd.read_csv(
+        corresp_grade_corps = pd.read_csv(
             table_correspondance_corps_path,
             usecols = [
                 'CodeEmploiGrade_neg',
@@ -74,9 +75,9 @@ def clean_grille(force_rebuild = False, hdf_path = grilles_hdf_path):
                 },
             sep = ';',
             ).rename(columns = {
-                'CodeEmploiGrade_neg':'code_grade_NEG',
-                'CadredemploiNEG':'corps_NEG',
-                'cadredemploiNETNEH':'corps_NETNEH'
+                'CodeEmploiGrade_neg': 'code_grade_NEG',
+                'CadredemploiNEG': 'corps_NEG',
+                'cadredemploiNETNEH': 'corps_NETNEH'
                 })
         corresp_grade_corps['code_grade_NEG'] = [s.lstrip("0") for s in corresp_grade_corps['code_grade_NEG']]
         grille = grille.merge(corresp_grade_corps, on = 'code_grade_NEG', how = 'left')
@@ -90,5 +91,9 @@ def clean_grille(force_rebuild = False, hdf_path = grilles_hdf_path):
             clean_grille(force_rebuild = True, hdf_path = hdf_path)
 
 
+def main():
+    clean_grille(force_rebuild = True, hdf_path = os.path.join(grilles_path, 'grilles.h5'))
+
+
 if __name__ == "__main__":
-     clean_grille(force_rebuild = True, hdf_path = os.path.join(grilles_path, 'grilles.h5'))
+    sys.exit(main())

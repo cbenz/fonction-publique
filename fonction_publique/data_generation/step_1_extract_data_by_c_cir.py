@@ -16,7 +16,10 @@ log = logging.getLogger(__name__)
 def select_ident(corps, dataset, grilles, variable):
     data_grade = get_careers(variable = variable, data_path = dataset)
     subset_by_corps = dict()
-    log.INFO('Entering corps {}'.format(corps))
+    log.info('Entering corps {}'.format(corps))
+    assert 'corps_NETNEH' in grilles.columns, 'corps_NETNEH is not available in grilles columns: \n {}'.format(
+        grilles.columns,
+        )
     assert corps in grilles.corps_NETNEH.unique().tolist(), "NETNEH for the corps are not included in grilles.h5"
     grilles = grilles.query('corps_NETNEH in @corps').copy()
     grades_keep = grilles.code_grade_NETNEH.unique().tolist()
@@ -70,16 +73,16 @@ def select_variables(corps, dataset, first_year, grilles, subset_by_corps):
     data = data.drop_duplicates(subset = ['ident', 'annee'], keep = False)
     b = len(set(data.ident))
     diff = a - b
-    log.INFO("{}: {} individus dupliqués et supprimés".format(dataset, diff))
+    log.info("{}: {} individus dupliqués et supprimés".format(dataset, diff))
     return data
 
 
 def main(datasets = None, first_year = None, grilles = grilles, list_corps = None, save_path = None):
     data_merge_corps = {}
     for dataset in datasets:
-        log.INFO("Processing data {}".format(dataset))
+        log.info("Processing data {}".format(dataset))
         for corps in list_corps:
-            log.INFO("Processing corps {}".format(corps))
+            log.info("Processing corps {}".format(corps))
             subset_by_corps = select_ident(corps, dataset, grilles, 'c_cir')
             data_cleaned = select_variables(
                 corps,
@@ -94,13 +97,16 @@ def main(datasets = None, first_year = None, grilles = grilles, list_corps = Non
                 data_merge = data_merge_corps["data_corps_{}".format(corps)].append(data_cleaned)
                 data_merge_corps["data_corps_{}".format(corps)] = data_merge
     for corps in list_corps:
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+
         path = os.path.join(
             save_path,
             "corps{}_{}.csv".format(corps, first_year)
             )
         data_merge_corps["data_corps_{}".format(corps)].to_csv(path)
 
-        log.INFO("Saving data corps{}_{}.csv".format(corps, first_year))
+        log.info("Saving data corps{}_{}.csv".format(corps, first_year))
 
     return
 

@@ -25,10 +25,11 @@ setup(
     url = 'https://git.framasoft.org/ipp/fonction-publique',
     entry_points = {
         'console_scripts': [
-            'grade_matching=fonction_publique.matching_grade.grade_matching:main',
-            'grade_matching_from_neg=fonction_publique.matching_grade.grade_matching_from_neg:main',
+            'clean_grilles=fonction_publique.scripts.clean_grilles:main',
             'clean_raw_carreer=fonction_publique.scripts.clean_raw_career:main',
             'generate_data=fonction_publique.scripts.generate_data:main',
+            'grade_matching_from_neg=fonction_publique.matching_grade.grade_matching_from_neg:main',
+            'grade_matching=fonction_publique.matching_grade.grade_matching:main',
             ],
         },
     data_files = [

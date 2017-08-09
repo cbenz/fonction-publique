@@ -84,7 +84,8 @@ class AgentFpt:
                     np.where(
                         reforme_intervient_pendant_duree_donnee_par_grille_initiale &
                         reforme_raccourcit_duree_donnee_par_grille_initiale &
-                        (duree_donnee_par_grille_finale <= duree_jusque_reforme_qui_raccourcit_duree_donnee_par_grille_initiale),
+                        (duree_donnee_par_grille_finale <=
+                            duree_jusque_reforme_qui_raccourcit_duree_donnee_par_grille_initiale),
                         duree_jusque_reforme_qui_raccourcit_duree_donnee_par_grille_initiale,
                         duree_donnee_par_grille_finale,
                         ),
@@ -94,7 +95,6 @@ class AgentFpt:
                 ),
             np.nan,
             )
-
 
     def set_dates_effet(self, date_observation = None, start_variable_name = "date_effet_grille_en_cours",
             next_variable_name = None):

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """Generate data for imputation and treatment"""
@@ -10,9 +11,9 @@ import sys
 
 
 from fonction_publique.data_generation import (
-    1_extract_data_by_c_cir,
-    2_filter_data,
-    3_correct_anciennete_echelon,
+    step_1_extract_data_by_c_cir,
+    step_2_filter_data,
+    # step_3_correct_anciennete_echelon,
     )
 from fonction_publique.base import output_directory_path
 
@@ -45,13 +46,15 @@ def main():
     if args.debug:
         logging.basicConfig(level = logging.DEBUG)
 
-    1_extract_data_by_c_cir.main(
-        datasets = args.subset_data,
-        first_year = 2000,  # 2011 ??
-        list_corps = args.list_corps,
-        save_path = os.path.join(output_directory_path, select_data)
-        )
-    2_filter_data.main()
+    # first_year = args.first_year
+    first_year = 2000  # 2011 ??
+    # step_1_extract_data_by_c_cir.main(
+    #     datasets = args.subset_data,
+    #     first_year = first_year
+    #     list_corps = args.list_corps,
+    #     save_path = os.path.join(output_directory_path, 'select_data')
+    #     )
+    step_2_filter_data.main(corps = args.list_corps[0], first_year = first_year)  # FIXME should loop over list_corps
 
 
 if __name__ == "__main__":

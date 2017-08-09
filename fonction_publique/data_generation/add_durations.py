@@ -14,13 +14,15 @@ log = logging.getLogger(__name__)
 
 
 def add_rank_change_var(
-        data = pd.read_csv(
-            os.path.join(output_directory_path, 'filter', 'data_ATT_2011_filtered.csv'),
-            index_col = 0,
-            ).query('annee >= annee_min_to_consider'),
+        data = None,
         grilles = get_grilles_including_bef_ATT(grilles = grilles),
         first_year = 2004
         ):
+    if data is None:
+        data = pd.read_csv(
+            os.path.join(output_directory_path, 'filter', 'data_ATT_2011_filtered.csv'),
+            index_col = 0,
+            ).query('annee >= annee_min_to_consider')
     data_change_grade = []  # Redefined at the end of the loop
     annees = list(reversed(range(first_year, 2012)))
     data_a_utiliser_pour_annee_precedente = None
@@ -184,9 +186,11 @@ def add_duration_var(data):
     return data
 
 
-def add_entry_in_2011_echelon_var(data, data_quarterly = reshape_wide_to_long()):
+def add_entry_in_2011_echelon_var(data, data_quarterly = None):
     """ /!\ : arbitrary use of 'annee_entry_max' """
     # FIXME deal with grille change
+    if data_quarterly is None:
+        data_quarterly = reshape_wide_to_long()
     data_temp = data.query('annee <= 2011')[['ident', 'annee_entry_max']].drop_duplicates().copy()
     data_quarterly = data_quarterly.merge(
         data_temp,

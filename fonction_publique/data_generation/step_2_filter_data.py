@@ -13,8 +13,12 @@ log = logging.getLogger(__name__)
 
 
 # Read data and replace cir codes for ATT interns
-def read_data(data_path = os.path.join(output_directory_path, 'select_data'), filename = 'corpsAT_1995.csv'):
-    """read output from 1_extract_data_by_c_cir.py"""
+def read_data(data_path = os.path.join(output_directory_path, 'select_data'), corps = None, first_year = None):
+    """read output from step_1_extract_data_by_c_cir.py"""
+    assert corps is not None
+    assert first_year is not None
+    filename = 'corps{}_{}.csv'.format(corps, first_year)
+    log.debug('Reading data from {}'.format(os.path.join(data_path, filename)))
     return pd.read_csv(
         os.path.join(data_path, filename),
         index_col = 0,
@@ -66,6 +70,7 @@ def replace_interns_cir(data):
 # I. Sample selection
 def select_ATT_in_2011(data):
     """select careers of agents who are ATT (interns and fonctionnaires) in 2011 according to their c_cir"""
+    log.debug('Entering: select_ATT_in_2011')
     ATT_cir = ['TTH1', 'TTH2', 'TTH3', 'TTH4']
     idents_keep = data.query('(annee == 2011) & (c_cir in @ATT_cir)').ident.unique()
     data = data.query('ident in @idents_keep').copy()
@@ -76,6 +81,7 @@ def select_ATT_in_2011(data):
 def select_next_state_in_fonction_publique(data):
     """select careers of agents who are active the year after they leave their 2011 grade,
      or who do not leave their grade"""
+    log.debug('Entering select_next_state_in_fonction_publique')
     data = data.merge(
         data.query(
             'annee == 2011'
@@ -92,12 +98,14 @@ def select_next_state_in_fonction_publique(data):
 
 def select_generation(data, generation = 1960):
     """select careers of agents who were born after 1960"""
+    log.debug('Entering select_generation')
     return data.query('generation > @generation').copy()
 
 
 def select_continuous_activity_state(data):
     """select careers of agents who are actively working between the maximum between the first year of observation
      (2003 by default) and the year they join civil service, and the last year they spend in their grade, included """
+    log.debug('Entering select_continuous_activity_state')
     data['annee_min_to_consider'] = np.where(data['an_aff'] >= 2003, data['an_aff'], 2003)
     idents_del = data.query('(etat != 1) & (annee >= annee_min_to_consider) & (annee < annee_exit)').ident.unique()
     return data.query('ident not in @idents_del').copy()
@@ -183,10 +191,10 @@ def select_non_left_censored(data):
     return data.query('left_censored == False')
 
 
-def main():
+def main(corps = None, first_year = None):
     # TODO move the print as log inside the functions
     # use pipes to chain functions
-    data = read_data()
+    data = read_data(corps = corps, first_year = first_year)
     log.info("reading data")
     tracking = []
     tracking.append(['ATT once btw. 2011-2015', len(data.ident.unique())])

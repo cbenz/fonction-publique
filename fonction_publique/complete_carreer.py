@@ -5,7 +5,7 @@ from __future__ import division
 import logging
 import pandas as pd
 
-from fonction_publique.base import get_output_hdf_path, law_hdf_path, DEBUG
+from fonction_publique.base import get_output_hdf_path, grilles_hdf_path, DEBUG
 
 from fonction_publique.career_simulation_vectorized import AgentFpt
 
@@ -37,7 +37,7 @@ def extract_initial(file_path, debug = None):
     log.info(starting_careers.head())
     starting_careers = starting_careers.rename(columns = dict(code_grade_NETNEH = 'grade'))
 
-    law_store = pd.HDFStore(law_hdf_path)
+    law_store = pd.HDFStore(grilles_hdf_path)
     grilles = law_store.select('grilles')
     grilles = grilles[
         (grilles.max_mois > 0)  # TODO: add other conditions
