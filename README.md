@@ -32,10 +32,10 @@ This takes a long time and can be achieved by executing the following command
 clean_career -v
 ````
 
-## Extract the relevant information from the clean data
-
-
-## Filter the data to keep only what is needed for the estimation
+## Extract the relevant information from the clean data and filter it to keep only what is needed for the estimation
+````shell
+generate_data -v
+````
 
 
   

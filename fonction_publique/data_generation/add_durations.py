@@ -14,13 +14,13 @@ log = logging.getLogger(__name__)
 
 
 def add_rank_change_var(
-    data = pd.read_csv(
-        os.path.join('M:/CNRACL/filter', 'data_ATT_2011_filtered.csv'),
-        index_col = 0,
-        ).query('annee >= annee_min_to_consider'),
-    grilles = get_grilles_including_bef_ATT(grilles = grilles),
-    first_year = 2004
-    ):
+        data = pd.read_csv(
+            os.path.join('M:/CNRACL/filter', 'data_ATT_2011_filtered.csv'),
+            index_col = 0,
+            ).query('annee >= annee_min_to_consider'),
+        grilles = get_grilles_including_bef_ATT(grilles = grilles),
+        first_year = 2004
+        ):
     data_change_grade = []  # Redefined at the end of the loop
     annees = list(reversed(range(first_year, 2012)))
     data_a_utiliser_pour_annee_precedente = None
@@ -90,8 +90,8 @@ def add_rank_change_var(
             data_no_ambig = data_with_var_grade_change.query(
                 '(ambiguite == False) & (change_grade == False)'
                 ).reset_index()[[
-                'ident', 'annee'
-                ]].drop_duplicates()
+                    'ident', 'annee'
+                    ]].drop_duplicates()
             data_no_ambig['first_year_no_ambig'] = data_no_ambig.groupby('ident')['annee'].transform(min)
             data_no_ambig = data_no_ambig[['ident', 'first_year_no_ambig']].drop_duplicates()
             data_with_var_grade_change_ident_no_ambig = data_with_var_grade_change.query(
@@ -139,7 +139,7 @@ def add_grade_bef_var(data):
     return data
 
 
-def add_grade_next_var(data): # tofix
+def add_grade_next_var(data):  # FIXME
     data_temp = data.copy()
     data_temp['grade_next'] = None
     data_temp.loc[(data['annee'] == data['annee_exit']), 'grade_next'] = data_temp['c_cir']
@@ -195,13 +195,13 @@ def add_entry_in_2011_echelon_var(data, data_quarterly = reshape_wide_to_long())
         )[['ident', 'annee', 'quarter', 'echelon', 'ib', 'annee_entry_max']].query(
             '(annee >= annee_entry_max) & (annee <= 2011)').copy()
 
-    dict_periods = {1:'03-31', 2:'06-30', 3:'09-30', 4:'12-31'}
+    dict_periods = {1: '03-31', 2: '06-30', 3: '09-30', 4: '12-31'}
     data_quarterly['period'] = pd.to_datetime(
         data_quarterly['annee'].map(str) + '-' + data_quarterly['quarter'].map(dict_periods).map(str)
         ).dt.strftime('%Y-%m-%d')
     echelon_2011 = data_quarterly.query('(annee == 2011) & (quarter == 4)').copy().filter(
         ['ident', 'ib', 'echelon'], axis = 1
-        ).drop_duplicates().rename(columns = {"ib":"ib_2011", "echelon":"echelon_2011"})
+        ).drop_duplicates().rename(columns = {"ib": "ib_2011", "echelon": "echelon_2011"})
     data_quarterly = data_quarterly.merge(echelon_2011, on = 'ident', how = 'left').query(
         'ib == ib_2011'
         )
@@ -214,8 +214,10 @@ def add_entry_in_2011_echelon_var(data, data_quarterly = reshape_wide_to_long())
 def add_initial_anciennete_in_echelon(data):
     data['first_quarter_obs'] = pd.datetime(2011, 12, 31)
     data['quarter_entry_echelon'] = pd.to_datetime(data['quarter_entry_echelon'])
+
     def diff_month(d1, d2):
         return (d1.year - d2.year) * 12 + d1.month - d2.month
+
     data['anciennete_echelon'] = (
         diff_month(pd.DatetimeIndex(data['first_quarter_obs']), pd.DatetimeIndex(data['quarter_entry_echelon']))
         )

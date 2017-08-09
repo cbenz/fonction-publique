@@ -4,9 +4,8 @@
 from __future__ import division
 import logging
 import pandas as pd
-from datetime import datetime
 
-from fonction_publique.base import asset_path, get_output_hdf_path, law_hdf_path, DEBUG, debug_chunk_size
+from fonction_publique.base import get_output_hdf_path, law_hdf_path, DEBUG
 
 from fonction_publique.career_simulation_vectorized import AgentFpt
 
