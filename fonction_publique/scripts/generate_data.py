@@ -23,7 +23,8 @@ log = logging.getLogger(app_name)
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-y', '--first_year', type = int, default = 2011, help = 'starting year for dataset. defaut = 2011')
+    parser.add_argument('-y', '--first_year', type = int, default = 2011,
+        help = 'starting year for dataset. defaut = 2011')
     parser.add_argument('--subset_data', nargs='+', default = [
         '1960_1965_carrieres.h5',
         '1966_1969_carrieres.h5',
@@ -55,5 +56,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-
-

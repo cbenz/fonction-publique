@@ -13,7 +13,15 @@ def get_grilles_including_bef_ATT(grilles = grilles):
     grade_NEG_bef_TTH2 = [26, 34, 626]
     grade_NEG_bef_TTH3 = [25, 33, 627]
     grade_NEG_bef_TTH4 = [157, 156, 628]
-    grades_NEG_bef_ATT = grade_NEG_bef_TTH1 + grade_NEG_bef_TTH2 + grade_NEG_bef_TTH3 + grade_NEG_bef_TTH4 + grade_NEG_bef_769 + grade_NEG_bef_26 + grade_NEG_bef_25
+    grades_NEG_bef_ATT = (
+        grade_NEG_bef_TTH1 +
+        grade_NEG_bef_TTH2 +
+        grade_NEG_bef_TTH3 +
+        grade_NEG_bef_TTH4 +
+        grade_NEG_bef_769 +
+        grade_NEG_bef_26 +
+        grade_NEG_bef_25
+        )
     grades_NEG_bef_ATT = map(str, grades_NEG_bef_ATT)
     grilles_ATT_bef = grilles.query('code_grade_NEG in @grades_NEG_bef_ATT').copy()
     grade_aft_2006 = {
@@ -160,7 +168,7 @@ def add_change_grade_variable(data, annee, grilles = get_grilles_including_bef_A
                                 }))
                     rang_grade_possible = 1
                     for index, row in grades_possibles.iterrows():
-                        rang_grade_possible +=1
+                        rang_grade_possible += 1
                         cas_uniques_with_indic_chgmt_grade.append(format_output(
                             c_cir_now = c_cir_now,
                             ib_bef = ib_bef,

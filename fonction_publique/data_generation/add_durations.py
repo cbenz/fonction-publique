@@ -62,23 +62,23 @@ def add_rank_change_var(
         if annee != first_year:
             data_a_utiliser_pour_annee_precedente = (data_with_change_grade_variable
                 .query('change_grade == False')[['ident', 'c_cir_bef_predit']]
-                .rename(columns = {'c_cir_bef_predit':'c_cir'})
+                .rename(columns = {'c_cir_bef_predit': 'c_cir'})
                 .merge(
-                    data[['ident', 'ib', 'annee']].query('annee == {} | annee == {}'.format(annee-1, annee-2)),
+                    data[['ident', 'ib', 'annee']].query('annee == {} | annee == {}'.format(annee - 1, annee - 2)),
                     on = ['ident']
                     )
                 )
             del data_with_change_grade_variable, data_change, data_entre
         else:
-            data_with_var_grade_change = pd.concat(data_change_grade).drop_duplicates().append(
-                data_with_change_grade_variable.query(
-                'change_grade == False'
+            data_with_var_grade_change = (pd.concat(data_change_grade)
+                .drop_duplicates()
+                .append(data_with_change_grade_variable.query('change_grade == False'))
+                .drop_duplicates()
                 )
-                ).drop_duplicates()
             del data_with_var_grade_change['c_cir']
             data_with_var_grade_change['annee'] = data_with_var_grade_change['annee'] - 1
             data_with_var_grade_change = data_with_var_grade_change.rename(
-                columns = {'c_cir_bef_predit':'c_cir', 'ib_bef':'ib'}
+                columns = {'c_cir_bef_predit': 'c_cir', 'ib_bef': 'ib'}
                 )
             data_with_var_grade_change = data_with_var_grade_change.sort_values(['ident', 'date_effet_grille'])
             data_with_var_grade_change = data_with_var_grade_change.drop_duplicates(
@@ -148,8 +148,8 @@ def add_grade_next_var(data):  # FIXME
 
     data['next_grade_situation'] = ['no_exit'] * len(data)
     data.loc[
-        (data['grade_next'].isin(['TTH2', 'TTH3', 'TTH4'])) & (data['annee'] == data['annee_exit'] - 1)
-        , 'next_grade_situation'
+        (data['grade_next'].isin(['TTH2', 'TTH3', 'TTH4'])) & (data['annee'] == data['annee_exit'] - 1),
+        'next_grade_situation'
         ] = 'exit_next'
     data.loc[
         (data['next_grade_situation'] != 'exit_next') & (data['annee'] == data['annee_exit'] - 1),
@@ -186,7 +186,7 @@ def add_duration_var(data):
 
 def add_entry_in_2011_echelon_var(data, data_quarterly = reshape_wide_to_long()):
     """ /!\ : arbitrary use of 'annee_entry_max' """
-    #FIXME deal with grille change
+    # FIXME deal with grille change
     data_temp = data.query('annee <= 2011')[['ident', 'annee_entry_max']].drop_duplicates().copy()
     data_quarterly = data_quarterly.merge(
         data_temp,
