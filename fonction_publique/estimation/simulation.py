@@ -2,7 +2,7 @@
 import pandas as pd
 import numpy as np
 import os
-from fonction_publique.base import grilles, output_directory_path
+from fonction_publique.base import grilles, output_directory_path, simulation_directory_path
 
 grilles = grilles[grilles['code_grade_NETNEH'].isin(['TTM1', 'TTH1', 'TTH2', 'TTH3', 'TTH4'])]
 data_counterfactual_echelon_trajectory = pd.read_csv(
@@ -155,12 +155,12 @@ def main(data, results_filename, grilles):
     assert len(list(set(results.ident.unique()) - set(data.ident.unique()))) == 0
     results = get_ib(results, grilles)
     results['grade'] = results['grade'].astype(str)
-    results.to_csv(os.path.join('M:/CNRACL/simulation/results_modif_regles_replacement', results_filename))
+    results.to_csv(os.path.join(simulation_directory_path, 'results_modif_regles_replacement', results_filename))
 
 
 if __name__ == '__main__':
     for model in ['_m0', '_m1', '_m2']:
-        main(data = pd.read_csv('M:/CNRACL/simulation/data_simul_2011{}.csv'.format(model)),
+        main(data = pd.read_csv(os.path.join(simulation_directory_path,'data_simul_2011{}.csv'.format(model)),
              results_filename = 'results_2011{}.csv'.format(model),
              grilles = grilles
              )

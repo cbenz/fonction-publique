@@ -1,20 +1,18 @@
 
-library(xtable)
 
 
 
 ######## Descriptive statistics ########
 
 
-source(paste0(wd, "0_work_on_data.R"))
+source(paste0(wd, "0_Outils_CNRACL.R"))
 datasets = load_and_clean(data_path, "/data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat_grade_corrected.csv")
-data_id = datasets[[1]]
-data_max = datasets[[2]]
-data_min = datasets[[3]]
+data_max = datasets[[1]]
+data_min = datasets[[2]]
 
 
 data_stat = data_min[which(data_min$left_censored == F),]
-
+datai   =  data_min[which(data_min$annee == 2011),]
 
 
 ####### I. Sample description #######
@@ -149,10 +147,14 @@ plot_hazards = function(hazard, colors, type, title)
 
 data = extract_exit(data_stat, "next_year")
 
-list_TTH1 = which(data$c_cir_2011 == "TTH1")
-list_TTH2 = which(data$c_cir_2011 == "TTH2")
-list_TTH3 = which(data$c_cir_2011 == "TTH3")
-list_TTH4 = which(data$c_cir_2011 == "TTH4")
+list_TTH1 = which(datai$c_cir_2011 == "TTH1")
+list_TTH2 = which(datai$c_cir_2011 == "TTH2")
+list_TTH3 = which(datai$c_cir_2011 == "TTH3")
+list_TTH4 = which(datai$c_cir_2011 == "TTH4")
+
+list_G1 = which(datai$generation_group == 6)
+list_G2 = which(datai$generation_group == 7)
+list_G3 = which(datai$generation_group == 8)
 
 types = c(1, 1, 2)
 routes = c("all", "exit_next", "exit_oth")
@@ -162,6 +164,7 @@ list = 1:length(data$ident)
 haz = matrix(ncol= length(2011:2014), nrow = 3)
 for (t in 1:length(routes)){haz[t,] = compute_hazard(data, list, type = routes[t])}
 plot_hazards(haz, colors, types, title = "Tous")
+
 ### TTH1
 list = list_TTH1
 haz = matrix(ncol= length(2011:2014), nrow = 3)
@@ -434,8 +437,51 @@ as.numeric(table[c(1,2,3,5,7,9,11), ]) <- as.numeric(table[c(1,2,3,5,7,9,11), ])
 print(xtable(table),
       sanitize.text.function=identity,size="\\footnotesize")
 
+##  Grade de destination quand exit oht par grade et année ####
 
-### IV. Divers ###
+compute_transitions_oth <- function(data, grade, years)
+{
+  data = data[which(data$c_cir_2011 == grade & is.element(data$annee, years)),]
+  data_exit_oth = data[which(data$next_year == "exit_oth"), ]
+  table_exit = numeric(10)
+  # % exit oth
+  table_exit[1] = round(length(data_exit_oth$ident)*100/length(data$ident),2)
+  t = as.data.frame(table(data_exit_oth$next_grade)*100/length(data_exit_oth$next_grade))
+  t = t[order(-t$Freq),]
+  for (n in 1:4){
+    table_exit[1+2*n-1] = toString(t[n,1])
+    table_exit[1+2*n] = round(t[n,2],2)
+  }
+  table_exit[10] = length(which(t$Freq >0))
+  return(table_exit)
+}
+
+for (y in 2011:2014)
+{  
+for (g in c("TTH1", "TTH2", "TTH3", "TTH4"))
+{
+subtable = compute_transitions_oth(data_min, grade = g, years = y)
+if (g == "TTH1"){tabley = subtable}
+else{ tabley = cbind(tabley, subtable)  }
+}
+print(tabley)
+if (y == 2011){table = tabley}
+else{ table = rbind(table, tabley)  }  
+}
+  
+
+colnames(table) <-  c("TTH1", "TTH2", "TTH3", "TTH4")
+rownames(table) <-  c("\\% no exit", "\\% exit next", "\\% exit oth",
+                      "\\hfill 1st oth grade ", "\\hfill  \\% 1st oth", 
+                      "\\hfill 2nd oth grade ", "\\hfill  \\% 2nd oth", 
+                      "\\hfill 3rd oth grade ", "\\hfill  \\% 3rd oth", 
+                      "\\hfill 4th oth grade ", "\\hfill  \\% 4th oth", 
+                      "Nb oth grades")
+
+as.numeric(table[c(1,2,3,5,7,9,11), ]) <- as.numeric(table[c(1,2,3,5,7,9,11), ])
+
+print(xtable(table),
+      sanitize.text.function=identity,size="\\footnotesize")
 
 
 

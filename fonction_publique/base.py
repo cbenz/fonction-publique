@@ -61,6 +61,7 @@ raw_directory_path = parser.get('data', 'raw')
 tmp_directory_path = parser.get('data', 'tmp')
 clean_directory_path = parser.get('data', 'clean')
 output_directory_path = parser.get('data', 'output')
+simulation_directory_path = parser.get('data', 'simulation')
 
 
 # Options:
