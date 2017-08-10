@@ -15,6 +15,7 @@ log = logging.getLogger(__name__)
 # Read data and replace cir codes for ATT interns
 def read_data(data_path = os.path.join(output_directory_path, 'select_data'), corps = None, first_year = None):
     """read output from step_1_extract_data_by_c_cir.py"""
+    log.info("Reading data")
     assert corps is not None
     assert first_year is not None
     filename = 'corps{}_{}.csv'.format(corps, first_year)
@@ -57,6 +58,7 @@ def read_data(data_path = os.path.join(output_directory_path, 'select_data'), co
 
 def replace_interns_cir(data):
     """replace ATT interns grade code by ATT fonctionnaires grade code"""
+    log.info("Replacing interns grade codes")
     interns_cir = {
         "STH1": "TTH1",
         "STH2": "TTH2",
@@ -70,7 +72,7 @@ def replace_interns_cir(data):
 # I. Sample selection
 def select_ATT_in_2011(data):
     """select careers of agents who are ATT (interns and fonctionnaires) in 2011 according to their c_cir"""
-    log.debug('Entering: select_ATT_in_2011')
+    log.info("Selecting ATT agents in 2011")
     ATT_cir = ['TTH1', 'TTH2', 'TTH3', 'TTH4']
     idents_keep = data.query('(annee == 2011) & (c_cir in @ATT_cir)').ident.unique()
     data = data.query('ident in @idents_keep').copy()
@@ -81,7 +83,7 @@ def select_ATT_in_2011(data):
 def select_next_state_in_fonction_publique(data):
     """select careers of agents who are active the year after they leave their 2011 grade,
      or who do not leave their grade"""
-    log.debug('Entering select_next_state_in_fonction_publique')
+    log.info("Selecting next grade state active in civil service")
     data = data.merge(
         data.query(
             'annee == 2011'
@@ -98,14 +100,14 @@ def select_next_state_in_fonction_publique(data):
 
 def select_generation(data, generation = 1960):
     """select careers of agents who were born after 1960"""
-    log.debug('Entering select_generation')
+    log.info("Selecting generation > 1960")
     return data.query('generation > @generation').copy()
 
 
 def select_continuous_activity_state(data):
     """select careers of agents who are actively working between the maximum between the first year of observation
      (2003 by default) and the year they join civil service, and the last year they spend in their grade, included """
-    log.debug('Entering select_continuous_activity_state')
+    log.info("Selecting continuous activity")
     data['annee_min_to_consider'] = np.where(data['an_aff'] >= 2003, data['an_aff'], 2003)
     idents_del = data.query('(etat != 1) & (annee >= annee_min_to_consider) & (annee < annee_exit)').ident.unique()
     return data.query('ident not in @idents_del').copy()
@@ -116,6 +118,7 @@ def select_positive_ib(data):  # compare with interval (entry in grade, exit)
     """ select careers of agents who have a stricly positive ib between the maximum between the first year of observation
      (2003 by default) and the year they join civil service, and the minimum between the first year they spend in their
      next grade, included, and 2015 """
+    log.info("Selecting strictly positive ib")
     idents_del = data.query('(ib <= 0) & (annee >= annee_min_to_consider) & (annee <= annee_exit)').ident.unique()
     return data.query('ident not in @idents_del').copy()
 
@@ -123,6 +126,7 @@ def select_positive_ib(data):  # compare with interval (entry in grade, exit)
 def select_non_missing_c_cir(data):
     """ select careers of agents with no missing grade code between 2011 and their first year in next grade included (or
     2015 if they do not leave """
+    log.info("Selecting non missing code cir")
     data_after_2011 = data.query('(annee > 2011) & (annee <= annee_exit)').copy()
     idents_del = data_after_2011[data_after_2011['c_cir'].isnull()].ident.unique()
     return data.query('ident not in @idents_del').copy()
@@ -130,6 +134,7 @@ def select_non_missing_c_cir(data):
 
 def select_no_decrease_in_ATT_rank(data):
     """ select careers of agents with no hierarchical decrease in their grade between 2011 and 2015 """
+    log.info("Selecting careers with no hierarchical decrease in ATT grades")
     ATT_cir = ['TTH1', 'TTH2', 'TTH3', 'TTH4']
     data_exit = data.query('annee >= annee_exit')
     data_exit = data_exit.groupby('ident')['c_cir'].value_counts().rename(
@@ -149,8 +154,10 @@ def select_no_decrease_in_ATT_rank(data):
 def select_no_decrease_in_ib(data):
     """ select careers of agents with no decrease in IB between the maximum between the first year of observation
      (2003 by default) and the year they join civil service, and 2015 """
+    log.info("Selecting no decrease in ib on L")
     def non_decreasing(L):
         return all(x <= y for x, y in zip(L, L[1:]))
+
     data_entered = data.query('annee >= annee_min_to_consider').copy().sort_values('annee', ascending = True)
     data_entered = data_entered.groupby('ident')['ib'].apply(list).reset_index()
     data_entered['non_decreasing'] = data_entered['ib'].apply(non_decreasing)
@@ -160,6 +167,7 @@ def select_no_decrease_in_ib(data):
 
 def select_no_goings_and_comings_of_rank(data):
     """ select careers of agents who don't come back to their 2011 grade after leaving it """
+    log.info("Selecting no goings and comings of grade")
     idents_del = data.query('(annee > annee_exit) & (c_cir == c_cir_2011)').ident.unique()
     return data.query('ident not in @idents_del')
 
@@ -167,6 +175,7 @@ def select_no_goings_and_comings_of_rank(data):
 # IV. Sample selection based on echelon variable
 def select_non_special_level(data):
     """ select careers of agents who only have regular, numeric echelons if their echelon is not missing """
+    log.info("Selecting only numeric echelon")
     data['echelon'] = data['echelon'].astype(int)
     idents_del = data.query('echelon == -5').ident.unique()
     return data.query('ident not in @idents_del')
@@ -175,12 +184,14 @@ def select_non_special_level(data):
 # V. Filters on echelon variable issues
 def select_non_missing_level(data):
     """ select careers of agents with no missing echelon between 2011 and their first year in next grade included"""
+    log.info("Selecting non missing echelon")
     idents_del = data.query('(echelon == -1) & (annee <= annee_exit)').ident.unique()
     return data.query('ident not in @idents_del')
 
 
 # VI. Add duration in grade variables
 def add_duration_var(data):
+    log.info("Add duration in grade and duration in echelon variables")
     """ add variables linked to durations in rank and durations in echelon (from add_durations.py) """
     return main_duration(data)
 
@@ -192,57 +203,42 @@ def select_non_left_censored(data):
 
 
 def main(corps = None, first_year = None):
-    # TODO move the print as log inside the functions
     # use pipes to chain functions
     data = read_data(corps = corps, first_year = first_year)
-    log.info("reading data")
     tracking = []
     tracking.append(['ATT once btw. 2011-2015', len(data.ident.unique())])
     data2 = replace_interns_cir(data)
-    log.info("replacing interns grade codes")
     data3 = select_ATT_in_2011(data2)
     tracking.append(['ATT in 2011, interns included', len(data3.ident.unique())])
-    log.info("selecting ATT agents in 2011")
     data4 = select_next_state_in_fonction_publique(data3)
-    log.info("selecting next grade state active in civil service")
     tracking.append(['Next grade state = activity in civil service', len(data4.ident.unique())])
     data5 = select_generation(data4)
     tracking.append(['Generation > 1960', len(data5.ident.unique())])
-    log.info("selecting generation > 1960")
     data6 = select_continuous_activity_state(data5)
     tracking.append(['Continuous activity on I', len(data6.ident.unique())])
-    log.info("selecting continuous activity")
     data7 = select_positive_ib(data6)
     tracking.append(['IB > 0 on J', len(data7.ident.unique())])
-    log.info("selecting strictly positive ib")
     data8 = select_non_missing_c_cir(data7)
     tracking.append(['Non missing c_cir on K', len(data8.ident.unique())])
-    log.info("selecting non missing code cir")
     data9 = select_no_decrease_in_ATT_rank(data8)
     tracking.append(['Non decreasing grades for ATT', len(data9.ident.unique())])
-    log.info("selecting careers with no hierarchical decrease in ATT grades")
     data10 = select_no_decrease_in_ib(data9)
-    tracking.append(['Non decreasing IB on ', len(data10.ident.unique())])
-    log.info("selecting no decrease in ib on L")
+    tracking.append(['Non decreasing IB on L', len(data10.ident.unique())])
     data11 = select_no_goings_and_comings_of_rank(data10)
     tracking.append(['No goings and comings of grade', len(data11.ident.unique())])
-    log.info("selecting no goings and comings of grade")
     data12 = add_grilles_variable(data11, grilles = grilles, first_year = 2011, last_year = 2015)
     log.info("adding echelon variable")
     data12.to_csv(os.path.join(tmp_directory_path, 'filter', 'data_with_echelon.csv'))
     log.info("saving data with echelon to tmp_directory_path\filter")
     data13 = select_non_special_level(data12)
     tracking.append(['No special echelon', len(data13.ident.unique())])
-    log.info(r"selecting only numeric echelon")
     data14 = select_non_missing_level(data13)
     tracking.append(['Non missing echelons on K', len(data14.ident.unique())])
-    log.info(r"selecting non missing echelon")
     data15 = add_duration_var(data14)
-    log.info(r"add duration in grade and duration in echelon variables")
     data15.to_csv(os.path.join(tmp_directory_path, 'filter', 'data_with_duration_variables.csv'))
-    log.info("saving data with duration variables tmp_directory_path\filter")
+    log.info("Saving data with duration variables tmp_directory_path\filter")
     data16 = select_non_left_censored(data15)
-    log.info(r"select non left censored")
+    log.info("Select non left censored")
     tracking.append(['Non left censored', len(data16.ident.unique())])
     tracking.append(['I', '[max(an_aff, 2003), min(2015, last year in grade)]'])
     tracking.append(['J', '[max(an_aff, 2003), min(2015, first year in next grade)]'])

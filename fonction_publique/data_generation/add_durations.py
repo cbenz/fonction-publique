@@ -229,8 +229,8 @@ def add_initial_anciennete_in_echelon(data):
     return data
 
 
-def main_duration(data):
-    data1 = add_rank_change_var()
+def main_duration(data = None):
+    data1 = add_rank_change_var(data)
     log.info('add indicator of grade change between 2003 and 2011')
     data2 = add_censoring_var(data1)
     log.info('add left and right censoring indicator')
@@ -252,7 +252,9 @@ def main_duration(data):
 if __name__ == '__main__':
     import sys
     logging.basicConfig(level = logging.DEBUG, stream = sys.stdout)
-    main_duration(pd.read_csv(
-        os.path.join(output_directory_path, 'filter', 'data_ATT_2011_filtered.csv'),
-        index_col = 0,
-        ).query('annee >= annee_min_to_consider'))
+    main_duration(
+        data = pd.read_csv(
+            os.path.join(output_directory_path, 'filter', 'data_ATT_2011_filtered.csv'),
+            index_col = 0,
+            ).query('annee >= annee_min_to_consider')
+        )

@@ -1,8 +1,15 @@
 # -*- coding: utf-8 -*-
+
+import logging
 import os
 import numpy as np
 import pandas as pd
+
+
 from fonction_publique.base import grilles, output_directory_path
+
+
+log = logging.getLogger(__name__)
 
 
 def get_grilles_including_bef_ATT(grilles = grilles):
@@ -51,6 +58,14 @@ def get_grilles_including_bef_ATT(grilles = grilles):
 
 def add_change_grade_variable(data, annee, grilles = get_grilles_including_bef_ATT(grilles = grilles)):
     cas_uniques_with_indic_chgmt_grade = []
+    log.debug(data.index)
+    ib_befs = data.index.get_level_values('ib_bef').tolist()
+    assert not bool(set(ib_befs) & set(['NaN', -1])), \
+        "There are invalid ib_bef:\n - {} entries with ib_bef = 'Nan'\n - {} entries with ib_bef = -1\n {}".format(
+        len([ib for ib in ib_befs if ib == 'NaN']),
+        len([ib for ib in ib_befs if ib == -1]),
+        data.query("ib_bef in ['NaN', -1]")
+        )
     for annee_, ib_bef, c_cir in data.index:
         assert annee_ == annee
         c_cir_now = str(c_cir)
