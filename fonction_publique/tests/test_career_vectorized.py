@@ -5,11 +5,8 @@ import numpy as np
 import os
 import pandas as pd
 
-from openfisca_core import periods
-
 from fonction_publique.base import asset_path, project_path, grilles
 from fonction_publique.career_simulation_vectorized import AgentFpt
-from fonction_publique.career_simulation_vectorized import compute_changing_echelons_by_grade
 
 test_path = os.path.join(project_path, 'tests')
 grille_adjoint_technique_path = os.path.join(
@@ -56,7 +53,7 @@ agent6 = (6, datetime.datetime(2012, 11, 1), 796, 1)
 # already spent more time than required by the new grid in echelon1. Hence, agent6 goes to echelon 2 at the date of the
 # law change. His effective duration in echelon 1, if he has a fast career, is 15 months.
 agent7 = (7, datetime.datetime(2026, 10, 1), 796, 8)
-# agent7 is similar to agent2. agent7 has code_grade_NEG_NEG == 796 and acceedes to echelon 8 in the future.
+# agent7 is similar to agent2. agent7 has code_grade_NEG == 796 and acceedes to echelon 8 in the future.
 # Hence, by default, his evolution is given by the 2015-01-01 grid all along.
 agent8 = (8, datetime.datetime(2003, 11, 1), 796, 4)
 # agent 8 acceedes to echelon 4 in 2003. However, we don't have information on the legislation back then.
@@ -248,8 +245,8 @@ def test_agent_1763(grilles = grilles):
     agents.set_grille(grilles)
     agents.compute_result()
     expected_result = pd.read_csv(os.path.join(test_path, 'data', 'agent_1763_results.csv'))[[
-            'period', 'echelon', 'ident', 'grade', 'quarter'
-            ]]
+        'period', 'echelon', 'ident', 'grade', 'quarter'
+        ]]
     expected_result['period'] = pd.to_datetime(expected_result['period'])
     expected_result['quarter'] = pd.to_datetime(expected_result['quarter'])
     assert agents.result.reset_index()[[
@@ -267,16 +264,15 @@ if __name__ == '__main__':
         anciennete_dans_echelon = 0,
         )
     agents.set_grille(grille_adjoint_technique)
+    print grilles.head()
     agents.compute_result()
     print agents.result
 
-
-
-#agents = AgentFpt(df)
-#agents.set_grille(grille_adjoint_technique)
-#agents.compute_result(end_date = pd.Timestamp("2040-01-01").floor('D'))
-#print agents.result
-#
-#agents2 = AgentFpt(pd.DataFrame(agents.next()))
-#agents2.set_grille(grille_adjoint_technique)
-#agents2.compute_all()
+    # agents = AgentFpt(df)
+    # agents.set_grille(grille_adjoint_technique)
+    # agents.compute_result(end_date = pd.Timestamp("2040-01-01").floor('D'))
+    # print agents.result
+    #
+    # agents2 = AgentFpt(pd.DataFrame(agents.next()))
+    # agents2.set_grille(grille_adjoint_technique)
+    # agents2.compute_all()

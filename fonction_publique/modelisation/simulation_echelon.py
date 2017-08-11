@@ -64,7 +64,7 @@ def get_data(rebuild = True):
         data_long_with_quarter_of_entry_in_2011_echelon['grade'] = data_long_with_quarter_of_entry_in_2011_echelon[
             'c_cir_2011'
             ].map(
-                {'TTH1':793 ,'TTH2':794, 'TTH3':795, 'TTH4': 796}
+                {'TTH1': 793 ,'TTH2': 794, 'TTH3': 795, 'TTH4': 796}
                 )
         del data_long_with_quarter_of_entry_in_2011_echelon['c_cir']
 #        data_long = reshape_wide_to_long(data)
