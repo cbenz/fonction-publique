@@ -5,7 +5,7 @@
 ################ Estimation by multinomial logit ################
 
 
-source(paste0(wd, "0_work_on_data.R"))
+source(paste0(wd, "0_Outils_CNRACL.R"))
 datasets = load_and_clean(data_path, "data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat_grade_corrected.csv")
 data_max = datasets[[1]]
 data_min = datasets[[2]]
@@ -269,19 +269,22 @@ print(xtable(table_movers,align="lcccc",nrow = nrow(table_movers),
 
 #### III. Nested logit  ####
 
-### Hausman test IIA
-data("TravelMode",package="AER")
-TravelMode <- mlogit.data(TravelMode,choice="choice",shape="long",
-                          alt.var="mode",chid.var="individual")
-## Create a variable of income only for the air mode
-TravelMode$avinc <- with(TravelMode,(mode=='air')*income)
-## Estimate the model on all alternatives, with car as the base level
-## like in Greene's book.
-#x <- mlogit(choice~wait+gcost+avinc,TravelMode,reflevel="car")
-x <- mlogit(choice~wait+gcost+avinc,TravelMode)
-## Estimate the same model for ground modes only (the variable avinc
-## must be dropped because it is 0 for every observation
-g <- mlogit(choice~wait+gcost,TravelMode,reflevel="car",
-            alt.subset=c("car","bus","train"))
-## Compute the test
+
+estim = mlogit.data(data_est, shape = "wide", choice = "next_year")
+
+# Hausman test
+x = mlogit(next_year ~ 0 | I_unique_threshold + c_cir_2011 + sexe + 
+                 duration_bef_unique_threshold +  duration_aft_unique_threshold, 
+               data = estim, reflevel = "no_exit")
+g = mlogit(next_year ~ 0 | I_unique_threshold + c_cir_2011 + sexe + 
+             duration_bef_unique_threshold +  duration_aft_unique_threshold, 
+           data = estim, reflevel = "exit_oth",
+           alt.subset=c("exit_oth","exit_next"))
 hmftest(x,g)
+
+# NL
+nl <- mlogit(next_year ~ 0 | c_cir_2011 + sexe ,
+                    data = estim, reflevel = "no_exit",
+                nests = list(noexit = "no_exit", exit =c("exit_oth","exit_next")), unscaled = TRUE)
+summary(nl)
+
