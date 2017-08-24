@@ -60,11 +60,12 @@ def add_change_grade_variable(data, annee, grilles = get_grilles_including_bef_A
     cas_uniques_with_indic_chgmt_grade = []
     log.debug(data.index)
     ib_befs = data.index.get_level_values('ib_bef').tolist()
+
     assert not bool(set(ib_befs) & set(['NaN', -1])), \
         "There are invalid ib_bef:\n - {} entries with ib_bef = 'Nan'\n - {} entries with ib_bef = -1\n {}".format(
         len([ib for ib in ib_befs if ib == 'NaN']),
         len([ib for ib in ib_befs if ib == -1]),
-        data.query("ib_bef in ['NaN', -1]")
+        data.query("(ib_bef == 'NaN') or (ib_bef == -1)")
         )
     for annee_, ib_bef, c_cir in data.index:
         assert annee_ == annee
@@ -282,8 +283,9 @@ def get_career_transitions(
         data = None,
         annee = 2011,
         unique = False,
-        change_grade = None,
         ):
+    """Returns an empty dataframe which important part is the index"""
+
     if data is None:
         data = pd.read_csv(
             os.path.join(output_directory_path, 'filter', 'data_ATT_2011_filtered.csv'),
@@ -291,6 +293,9 @@ def get_career_transitions(
             )
     columns_keep_1 = ['ident', 'annee', 'c_cir']
     columns_keep_2 = ['ident', 'ib']
+    log.debug(data.query('annee == @annee').loc[data.query('annee == @annee').ib == -1])
+
+
     data_transition = (data
         .query('annee == @annee')
         .filter(columns_keep_1, axis = 1)
@@ -301,10 +306,16 @@ def get_career_transitions(
             )
         .rename(columns = {"ib": "ib_bef"})
         )
+    log.debug(data_transition.loc[data_transition.ib_bef == -1])
+    idents = data_transition.loc[data_transition.ib_bef == -1].ident.unique()
+    log.debug(data.query('ident in @idents')[['ib', 'annee', 'c_cir', 'an_aff']])
+    log.debug(data.query('ident in @idents')['an_aff'].value_counts(dropna = False))
+    BADABOUM
     if unique:
-        return data_transition[['annee', 'c_cir', 'ib_bef']].drop_duplicates().set_index(
+        data_transition = data_transition[['annee', 'c_cir', 'ib_bef']].drop_duplicates().set_index(
             ["annee", 'ib_bef', "c_cir"]
             )
+        return data_transition
     else:
         return data_transition
 

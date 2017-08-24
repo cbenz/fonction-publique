@@ -264,9 +264,9 @@ if __name__ == '__main__':
         anciennete_dans_echelon = 0,
         )
     agents.set_grille(grille_adjoint_technique)
-    print grilles.head()
     agents.compute_result()
     print agents.result
+    print grilles.head()
 
     # agents = AgentFpt(df)
     # agents.set_grille(grille_adjoint_technique)

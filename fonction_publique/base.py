@@ -163,7 +163,10 @@ def get_careers(variable = None, variables = None, stop = None, data_path = None
                 )
 
 
-def add_grilles_variable(data, grilles = grilles, first_year = 2011, last_year = 2015): #FIXME deal with late policy implementation
+def add_grilles_variable(data, grilles = grilles, first_year = 2011, last_year = 2015):  # FIXME deal with late policy implementation
+    """Add grilles variables to observation according to their grade (code_grade_NETNEH == c_cir)
+    """
+    log.info('Add grilles variables')
     data_after_first_year = data.query('(annee >= @first_year)').copy()
     cas_uniques_with_echelon = list()
     for annee in range(first_year, last_year + 1):

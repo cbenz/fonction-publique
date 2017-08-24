@@ -18,6 +18,9 @@ def add_rank_change_var(
         grilles = get_grilles_including_bef_ATT(grilles = grilles),
         first_year = 2004
         ):
+    """Add indicator of grade change between 2003 and 2011
+    """
+    log.info('add indicator of grade change between 2003 and 2011')
     if data is None:
         data = pd.read_csv(
             os.path.join(output_directory_path, 'filter', 'data_ATT_2011_filtered.csv'),
@@ -30,6 +33,7 @@ def add_rank_change_var(
         log.info("processing year {}".format(annee))
         if annee == 2011:
             data_unique_transition = get_career_transitions(data, annee, unique = True)
+            log.debug(data_unique_transition)
             data_with_change_grade_variable = add_change_grade_variable(
                 data_unique_transition, annee, grilles = grilles
                 ).reset_index().merge(
@@ -135,7 +139,7 @@ def add_censoring_var(data, first_year = 2003):
 def add_grade_bef_var(data):
     data_temp = data.copy()
     data_temp['grade_bef'] = None
-    data_temp.loc[(data_temp['change_grade'] == True), 'grade_bef'] = data_temp['c_cir']
+    data_temp.loc[(data_temp['change_grade']), 'grade_bef'] = data_temp['c_cir']
     data_temp = data_temp[['ident', 'grade_bef']].dropna().drop_duplicates('ident', keep = 'first')
     data = data.merge(data_temp, on = 'ident', how = 'left')
     return data
@@ -163,7 +167,7 @@ def add_grade_next_var(data):  # FIXME
 
 def add_year_of_entry_var(data):
     data['annee_entry'] = None
-    data.loc[(data['change_grade'] == True) & (data['left_censored'] == False), 'annee_entry'] = data['annee'] + 1
+    data.loc[(data['change_grade']) & (data['left_censored'] == False), 'annee_entry'] = data['annee'] + 1
     data['annee_entry_min'] = data.groupby('ident')['annee_entry'].transform(min)
     data['annee_entry_max'] = data.groupby('ident')['annee_entry'].transform(max)
     for col in ['annee_entry_min', 'annee_entry_max']:
@@ -231,7 +235,6 @@ def add_initial_anciennete_in_echelon(data):
 
 def main_duration(data = None):
     data1 = add_rank_change_var(data)
-    log.info('add indicator of grade change between 2003 and 2011')
     data2 = add_censoring_var(data1)
     log.info('add left and right censoring indicator')
     data3 = add_grade_bef_var(data2)
