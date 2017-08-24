@@ -109,7 +109,7 @@ def select_continuous_activity_state(data):
      (2003 by default) and the year they join civil service, and the last year they spend in their grade, included """
     log.info("Selecting continuous activity")
     data['annee_min_to_consider'] = np.where(data['an_aff'] >= 2003, data['an_aff'], 2003)
-    idents_del = data.query('(etat != 1) & (annee >= annee_min_to_consider) & (annee < annee_exit)').ident.unique()
+    idents_del = data.query('(etat not in [1, 2, 3, 5, 6]) & (annee >= annee_min_to_consider) & (annee < annee_exit)').ident.unique()
     return data.query('ident not in @idents_del').copy()
 
 
@@ -206,7 +206,7 @@ def main(corps = None, first_year = None):
     # use pipes to chain functions
     tracking = []
     data = read_data(corps = corps, first_year = first_year)
-    tracking.append(['ATT once btw. 2011-2015', len(data.ident.unique())])
+    tracking.append(['ATT once btw. 2011-2015', len(data.ident.unique()), 100, 100])
     data = replace_interns_cir(data)
     data = select_ATT_in_2011(data)
     tracking.append(['ATT in 2011, interns included', len(data.ident.unique())])
@@ -233,7 +233,7 @@ def main(corps = None, first_year = None):
     data = select_non_missing_level(data)
     tracking.append(['Non missing echelons on K', len(data.ident.unique())])
 
-    # data = pd.read_csv(os.path.join(tmp_directory_path, 'filter', 'data_with_echelon.csv'))
+    # data = pd.read_csv(os.path.join(tmp_directory_path, 'filter', 'data_with_echelon.csv'))
     # print data.head()
     # log.info("saving data with echelon to tmp_directory_path\filter")
     # data.to_csv(os.path.join(tmp_directory_path, 'filter', 'data_with_echelon.csv'))
