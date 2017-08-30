@@ -243,23 +243,11 @@ def main(corps = None, first_year = None):
     data = select_non_missing_level(data)
     tracking.append(['Non missing echelons on K', len(data.ident.unique()), 
                      len(data.ident.unique())*100/tracking[0][1], len(data.ident.unique())*100/tracking[-1][1]])
-
-    # log.info("saving data with echelon to tmp_directory_path\filter")
-    # data.to_csv(os.path.join(tmp_directory_path, 'filter', 'check.csv'))
-     data = pd.read_csv(os.path.join(tmp_directory_path, 'filter', 'check.csv'))
-    # print data.head()
-
-
-    # try:
-    data15 = add_duration_var(data)
-    # except Exception as e:
-    #     print(e)
-    #    return data
-    data15.to_csv(os.path.join(tmp_directory_path, 'filter', 'data_with_duration_variables.csv'))
+    data = add_duration_var(data)
     log.info("Saving data with duration variables tmp_directory_path\filter")
-    data16 = select_non_left_censored(data15)
+    data = select_non_left_censored(data)
     log.info("Select non left censored")
-    tracking.append(['Non left censored', len(data16.ident.unique())]), 
+    tracking.append(['Non left censored', len(data.ident.unique()), 
                      len(data.ident.unique())*100/tracking[0][1], len(data.ident.unique())*100/tracking[-1][1]])
     tracking.append(['I', '[max(an_aff, 2003), min(2015, last year in grade)]'])
     tracking.append(['J', '[max(an_aff, 2003), min(2015, first year in next grade)]'])
@@ -267,11 +255,11 @@ def main(corps = None, first_year = None):
     tracking.append(['L', '[max(an_aff, 2003), 2015]'])
     tracking = pd.DataFrame(tracking)
     print tracking.to_latex()
-    data16.to_csv(
-        os.path.join(output_directory_path, 'filter', "data_ATT_2011_filtered_after_duration_var_added.csv")
+    data.to_csv(
+        os.path.join(output_directory_path, 'filter', "data_ATT_2011_filtered_after_duration_var_added_new.csv")
         )
     log.info(r"saving data to data_ATT_2011_filtered_after_duration_var_added.csv")
-    return data16
+    return data
 
 
 if __name__ == "__main__":
