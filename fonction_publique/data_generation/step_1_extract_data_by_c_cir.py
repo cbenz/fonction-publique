@@ -6,6 +6,7 @@ import logging
 import os
 import pandas as pd
 
+import pkg_resources
 
 from fonction_publique.base import get_careers, grilles, output_directory_path
 
@@ -13,7 +14,7 @@ from fonction_publique.base import get_careers, grilles, output_directory_path
 log = logging.getLogger(__name__)
 
 
-def select_ident(corps, dataset, grilles, variable):
+def select_ident_LD(corps, dataset, grilles, variable):
     data_grade = get_careers(variable = variable, data_path = dataset)
     subset_by_corps = dict()
     log.info('Entering corps {}'.format(corps))
@@ -29,6 +30,53 @@ def select_ident(corps, dataset, grilles, variable):
     subset_ident = list(set(data_grade.ident[data_grade.c_cir.isin(grades_keep)]))
     subset_by_corps[corps] = subset_ident
     return subset_by_corps
+
+
+
+def select_grilles(corps):
+    path_grilles = os.path.join(
+        pkg_resources.get_distribution('fonction_publique').location,
+        'fonction_publique',
+        'assets',
+        'grilles_fonction_publique',
+        )
+    grilles = pd.read_hdf(os.path.join(path_grilles, "grilles_old.h5"))
+    if corps == 'AT':
+        libNEG_corps = ['ADJOINT TECHNIQUE DE 2EME CLASSE',
+                        'ADJOINT TECHNIQUE DE 1ERE CLASSE',
+                        'ADJOINT TECHNIQUE PRINCIPAL DE 2EME CLASSE',
+                        'ADJOINT TECHNIQUE PRINCIPAL DE 1ERE CLASSE'
+                        ]
+    elif corps == 'AA':
+        libNEG_corps = ['ADJOINT ADMINISTRATIF DE 2EME CLASSE',
+                        'ADJOINT ADMINISTRATIF DE 1ERE CLASSE',
+                        'ADJOINT ADMINISTRATIF PRINCIPAL DE 2EME CLASSE',
+                        'ADJOINT ADMINISTRATIF PRINCIPAL DE 1ERE CLASSE'
+                        ]
+    elif corps == 'AS':
+        libNEG_corps = ['AIDE SOIGNANT CL NORMALE (E04)',
+                        'AIDE SOIGNANT CL SUPERIEURE (E05)',
+                        'AIDE SOIGNANT CL EXCEPT (E06)'
+                        ]
+    else:
+        print("NEG for the corps are not specified in the select_grilles function")
+        stop
+    subset_grilles = grilles[grilles.libelle_grade_NEG.isin(libNEG_corps)]
+    return (subset_grilles)
+
+
+def select_ident(corps, dataset, grilles):
+    variable = 'c_neg'
+    c_neg = get_careers(variable = variable, data_path = dataset)
+    subset_by_corps = {}
+    for corps in ['AT', 'AA', 'AS']:
+        grilles = select_grilles(corps = corps)
+        list_code = list(set(grilles.code_grade_NEG.astype(str)))
+        list_code = ['0' + s for s in list_code]
+        subset_ident = list(set(c_neg.ident[c_neg.c_neg.isin(list_code)]))
+        subset_by_corps[corps] = subset_ident
+    return subset_by_corps
+
 
 
 def select_variables(corps, dataset, first_year, grilles, subset_by_corps):
@@ -83,7 +131,7 @@ def main(datasets = None, first_year = None, grilles = grilles, list_corps = Non
         log.info("Processing data {}".format(dataset))
         for corps in list_corps:
             log.info("Processing corps {}".format(corps))
-            subset_by_corps = select_ident(corps, dataset, grilles, 'c_cir')
+            subset_by_corps = select_ident(corps, dataset, grilles)
             data_cleaned = select_variables(
                 corps,
                 dataset,
@@ -104,7 +152,7 @@ def main(datasets = None, first_year = None, grilles = grilles, list_corps = Non
             save_path,
             "corps{}_{}.csv".format(corps, first_year)
             )
-        data_merge_corps["data_corps_{}".format(corps)].to_csv(path)
+        data_merge_corps["data_corps_{}_new".format(corps)].to_csv(path)
 
         log.info("Saving data corps{}_{}.csv".format(corps, first_year))
 
@@ -121,6 +169,6 @@ if __name__ == '__main__':
             '1980_1999_carrieres.h5',
             ],
         first_year = 2000,
-        list_corps = ['adjoints techniques territoriaux'],
+        list_corps = ['AT'],
         save_path = os.path.join(output_directory_path, 'select_data'),
         )
