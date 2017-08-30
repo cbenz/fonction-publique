@@ -141,7 +141,7 @@ def add_censoring_var(data, first_year = 2003):
 def add_grade_bef_var(data):
     data_temp = data.copy()
     data_temp['grade_bef'] = None
-    data_temp.loc[(data_temp['change_grade']), 'grade_bef'] = data_temp['c_cir']
+    data_temp.loc[(data_temp['change_grade']  == True ), 'grade_bef'] = data_temp['c_cir']
     data_temp = data_temp[['ident', 'grade_bef']].dropna().drop_duplicates('ident', keep = 'first')
     data = data.merge(data_temp, on = 'ident', how = 'left')
     return data
