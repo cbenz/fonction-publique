@@ -306,11 +306,7 @@ def get_career_transitions(
             )
         .rename(columns = {"ib": "ib_bef"})
         )
-    log.debug(data_transition.loc[data_transition.ib_bef == -1])
-    idents = data_transition.loc[data_transition.ib_bef == -1].ident.unique()
-    log.debug(data.query('ident in @idents')[['ib', 'annee', 'c_cir', 'an_aff']])
-    log.debug(data.query('ident in @idents')['an_aff'].value_counts(dropna = False))
-    BADABOUM
+
     if unique:
         data_transition = data_transition[['annee', 'c_cir', 'ib_bef']].drop_duplicates().set_index(
             ["annee", 'ib_bef', "c_cir"]

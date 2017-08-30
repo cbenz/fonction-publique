@@ -26,6 +26,8 @@ def add_rank_change_var(
             os.path.join(output_directory_path, 'filter', 'data_ATT_2011_filtered.csv'),
             index_col = 0,
             ).query('annee >= annee_min_to_consider')
+        
+    data = data.query('annee >= annee_min_to_consider')   
     data_change_grade = []  # Redefined at the end of the loop
     annees = list(reversed(range(first_year, 2012)))
     data_a_utiliser_pour_annee_precedente = None

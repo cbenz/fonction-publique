@@ -244,10 +244,11 @@ def main(corps = None, first_year = None):
     tracking.append(['Non missing echelons on K', len(data.ident.unique()), 
                      len(data.ident.unique())*100/tracking[0][1], len(data.ident.unique())*100/tracking[-1][1]])
 
-    # data = pd.read_csv(os.path.join(tmp_directory_path, 'filter', 'data_with_echelon.csv'))
-    # print data.head()
     # log.info("saving data with echelon to tmp_directory_path\filter")
-    # data.to_csv(os.path.join(tmp_directory_path, 'filter', 'data_with_echelon.csv'))
+    # data.to_csv(os.path.join(tmp_directory_path, 'filter', 'check.csv'))
+     data = pd.read_csv(os.path.join(tmp_directory_path, 'filter', 'check.csv'))
+    # print data.head()
+
 
     # try:
     data15 = add_duration_var(data)
