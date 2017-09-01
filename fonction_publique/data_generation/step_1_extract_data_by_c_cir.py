@@ -130,9 +130,6 @@ def main(datasets = None, first_year = None, grilles = grilles, list_corps = Non
         for corps in list_corps:
             log.info("Processing corps {}".format(corps))
             subset_by_corps = select_ident(corps, dataset, grilles, selection_variable)
-            log.info("Nb ind: {}".format(len(subset_by_corps[corps])))
-            BAMMM
-            
             data_cleaned = select_variables(
                 corps,
                 dataset,
