@@ -14,24 +14,6 @@ from fonction_publique.base import get_careers, grilles, output_directory_path
 log = logging.getLogger(__name__)
 
 
-def select_ident_LD(corps, dataset, grilles, variable):
-    data_grade = get_careers(variable = variable, data_path = dataset)
-    subset_by_corps = dict()
-    log.info('Entering corps {}'.format(corps))
-    assert 'corps_NETNEH' in grilles.columns, 'corps_NETNEH is not available in grilles columns: \n {}'.format(
-        grilles.columns,
-        )
-    assert corps in grilles.corps_NETNEH.unique().tolist(), "NETNEH for the corps are not included in grilles.h5"
-    grilles = grilles.query('corps_NETNEH in @corps').copy()
-    grades_keep = grilles.code_grade_NETNEH.unique().tolist()
-    for grade in grades_keep:
-        if grade in ['TTH1', 'TTH2', 'TTH3', 'TTH4']:
-            grades_keep.append('S' + grade[-3:])  # Include stagiaires
-    subset_ident = list(set(data_grade.ident[data_grade.c_cir.isin(grades_keep)]))
-    subset_by_corps[corps] = subset_ident
-    return subset_by_corps
-
-
 
 def select_grilles(corps):
     path_grilles = os.path.join(
@@ -65,16 +47,32 @@ def select_grilles(corps):
     return (subset_grilles)
 
 
-def select_ident(corps, dataset, grilles):
-    variable = 'c_neg'
-    c_neg = get_careers(variable = variable, data_path = dataset)
-    subset_by_corps = {}
-    for corps in ['AT', 'AA', 'AS']:
-        grilles = select_grilles(corps = corps)
-        list_code = list(set(grilles.code_grade_NEG.astype(str)))
-        list_code = ['0' + s for s in list_code]
-        subset_ident = list(set(c_neg.ident[c_neg.c_neg.isin(list_code)]))
-        subset_by_corps[corps] = subset_ident
+def select_ident(corps, dataset, grilles, selection_variable):
+    log.info('Entering corps {}'.format(corps))
+    if (selection_variable == 'c_neg'):
+        assert corps in['AT', 'AA', 'AS'], "C_NEG for the corps are not specificied in select_grilles"
+        c_neg = get_careers(variable = selection_variable, data_path = dataset)
+        subset_by_corps = {}
+        for corps in ['AT', 'AA', 'AS']:
+            grilles = select_grilles(corps = corps)
+            list_code = list(set(grilles.code_grade_NEG.astype(str)))
+            list_code = ['0' + s for s in list_code]
+            subset_ident = list(set(c_neg.ident[c_neg.c_neg.isin(list_code)]))
+            subset_by_corps[corps] = subset_ident
+    if (selection_variable == 'c_cir'):        
+        data_grade = get_careers(variable = selection_variable, data_path = dataset)
+        subset_by_corps = dict()
+        assert 'corps_NETNEH' in grilles.columns, 'corps_NETNEH is not available in grilles columns: \n {}'.format(
+            grilles.columns,
+            )
+        assert corps in grilles.corps_NETNEH.unique().tolist(), "NETNEH for the corps are not included in grilles.h5"
+        grilles = grilles.query('corps_NETNEH in @corps').copy()
+        grades_keep = grilles.code_grade_NETNEH.unique().tolist()
+        for grade in grades_keep:
+            if grade in ['TTH1', 'TTH2', 'TTH3', 'TTH4']:
+                grades_keep.append('S' + grade[-3:])  # Include stagiaires
+        subset_ident = list(set(data_grade.ident[data_grade.c_cir.isin(grades_keep)]))
+        subset_by_corps[corps] = subset_ident        
     return subset_by_corps
 
 
@@ -125,13 +123,16 @@ def select_variables(corps, dataset, first_year, grilles, subset_by_corps):
     return data
 
 
-def main(datasets = None, first_year = None, grilles = grilles, list_corps = None, save_path = None):
+def main(datasets = None, first_year = None, grilles = grilles, list_corps = None, save_path = None, selection_variable = None):
     data_merge_corps = {}
     for dataset in datasets:
         log.info("Processing data {}".format(dataset))
         for corps in list_corps:
             log.info("Processing corps {}".format(corps))
-            subset_by_corps = select_ident(corps, dataset, grilles)
+            subset_by_corps = select_ident(corps, dataset, grilles, selection_variable)
+            log.info("Nb ind: {}".format(len(subset_by_corps[corps])))
+            BAMMM
+            
             data_cleaned = select_variables(
                 corps,
                 dataset,
@@ -169,6 +170,9 @@ if __name__ == '__main__':
             '1980_1999_carrieres.h5',
             ],
         first_year = 2000,
-        list_corps = ['AT'],
         save_path = os.path.join(output_directory_path, 'select_data'),
+        list_corps = ['AT'],
+        selection_variable = "c_neg",
+    #    list_corps = ['adjoints techniques territoriaux'],
+    #    selection_variable = "c_cir",
         )
