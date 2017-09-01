@@ -206,11 +206,10 @@ def main(corps = None, first_year = None):
     # use pipes to chain functions
     tracking = []
     data = read_data(corps = corps, first_year = first_year)
-    tracking.append(['ATT once btw. 2011-2015', len(data.ident.unique()), 100, 100])
+ #   tracking.append(['ATT once btw. 2011-2015', len(data.ident.unique()), 100, 100])
     data = replace_interns_cir(data)
     data = select_ATT_in_2011(data)
-    tracking.append(['ATT in 2011, interns included', len(data.ident.unique()), 
-                   round(len(data.ident.unique())*100/tracking[0][1],2), round(len(data.ident.unique())*100/tracking[-1][1],2)] )
+    tracking.append(['ATT in 2011, interns included', len(data.ident.unique()), 100, 100])
     data = select_next_state_in_fonction_publique(data)
     tracking.append(['Next grade state = activity in civil service', len(data.ident.unique()), 
                    round(len(data.ident.unique())*100/tracking[0][1],2), round(len(data.ident.unique())*100/tracking[-1][1],2)] )
