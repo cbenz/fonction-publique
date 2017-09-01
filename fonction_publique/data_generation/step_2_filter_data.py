@@ -210,49 +210,45 @@ def main(corps = None, first_year = None):
     data = replace_interns_cir(data)
     data = select_ATT_in_2011(data)
     tracking.append(['ATT in 2011, interns included', len(data.ident.unique()), 
-                     len(data.ident.unique())*100/tracking[0][1], len(data.ident.unique())*100/tracking[-1][1]])
+                   round(len(data.ident.unique())*100/tracking[0][1],2), round(len(data.ident.unique())*100/tracking[-1][1],2)] )
     data = select_next_state_in_fonction_publique(data)
     tracking.append(['Next grade state = activity in civil service', len(data.ident.unique()), 
-                     len(data.ident.unique())*100/tracking[0][1], len(data.ident.unique())*100/tracking[-1][1]])
+                   round(len(data.ident.unique())*100/tracking[0][1],2), round(len(data.ident.unique())*100/tracking[-1][1],2)] )
     data = select_generation(data)
     tracking.append(['Generation > 1960', len(data.ident.unique()), 
-                     len(data.ident.unique())*100/tracking[0][1], len(data.ident.unique())*100/tracking[-1][1]])
+                   round(len(data.ident.unique())*100/tracking[0][1],2), round(len(data.ident.unique())*100/tracking[-1][1],2)] )
     data = select_continuous_activity_state(data)
     tracking.append(['Continuous activity on I', len(data.ident.unique()), 
-                     len(data.ident.unique())*100/tracking[0][1], len(data.ident.unique())*100/tracking[-1][1]])
+                   round(len(data.ident.unique())*100/tracking[0][1],2), round(len(data.ident.unique())*100/tracking[-1][1],2)] )
     data = select_positive_ib(data)
     tracking.append(['IB > 0 on J', len(data.ident.unique()), 
-                     len(data.ident.unique())*100/tracking[0][1], len(data.ident.unique())*100/tracking[-1][1]])
+                   round(len(data.ident.unique())*100/tracking[0][1],2), round(len(data.ident.unique())*100/tracking[-1][1],2)] )
     data = select_non_missing_c_cir(data)
     tracking.append(['Non missing c_cir on K', len(data.ident.unique()), 
-                     len(data.ident.unique())*100/tracking[0][1], len(data.ident.unique())*100/tracking[-1][1]])
+                   round(len(data.ident.unique())*100/tracking[0][1],2), round(len(data.ident.unique())*100/tracking[-1][1],2)] )
     data = select_no_decrease_in_ATT_rank(data)
     tracking.append(['Non decreasing grades for ATT', len(data.ident.unique()), 
-                     len(data.ident.unique())*100/tracking[0][1], len(data.ident.unique())*100/tracking[-1][1]])
+                   round(len(data.ident.unique())*100/tracking[0][1],2), round(len(data.ident.unique())*100/tracking[-1][1],2)] )
     data = select_no_decrease_in_ib(data)
     tracking.append(['Non decreasing IB on L', len(data.ident.unique()), 
-                     len(data.ident.unique())*100/tracking[0][1], len(data.ident.unique())*100/tracking[-1][1]])
+                   round(len(data.ident.unique())*100/tracking[0][1],2), round(len(data.ident.unique())*100/tracking[-1][1],2)] )
     data = select_no_goings_and_comings_of_rank(data)
     tracking.append(['No goings and comings of grade', len(data.ident.unique()), 
-                     len(data.ident.unique())*100/tracking[0][1], len(data.ident.unique())*100/tracking[-1][1]])
+                   round(len(data.ident.unique())*100/tracking[0][1],2), round(len(data.ident.unique())*100/tracking[-1][1],2)] )
     data = add_grilles_variable(data, grilles = grilles, first_year = 2011, last_year = 2015)
     log.info("adding echelon variable")
     data = select_non_special_level(data)
     tracking.append(['No special echelon', len(data.ident.unique()), 
-                     len(data.ident.unique())*100/tracking[0][1], len(data.ident.unique())*100/tracking[-1][1]])
+                   round(len(data.ident.unique())*100/tracking[0][1],2), round(len(data.ident.unique())*100/tracking[-1][1],2)] )
     data = select_non_missing_level(data)
     tracking.append(['Non missing echelons on K', len(data.ident.unique()), 
-                     len(data.ident.unique())*100/tracking[0][1], len(data.ident.unique())*100/tracking[-1][1]])
+                   round(len(data.ident.unique())*100/tracking[0][1],2), round(len(data.ident.unique())*100/tracking[-1][1],2)] )
     data = add_duration_var(data)
     log.info("Saving data with duration variables tmp_directory_path\filter")
     data = select_non_left_censored(data)
     log.info("Select non left censored")
     tracking.append(['Non left censored', len(data.ident.unique()), 
-                     len(data.ident.unique())*100/tracking[0][1], len(data.ident.unique())*100/tracking[-1][1]])
-    tracking.append(['I', '[max(an_aff, 2003), min(2015, last year in grade)]'])
-    tracking.append(['J', '[max(an_aff, 2003), min(2015, first year in next grade)]'])
-    tracking.append(['K', '[2011, min(2015, first year in next grade)]'])
-    tracking.append(['L', '[max(an_aff, 2003), 2015]'])
+                   round(len(data.ident.unique())*100/tracking[0][1],2), round(len(data.ident.unique())*100/tracking[-1][1],2)] )
     tracking = pd.DataFrame(tracking)
     print tracking.to_latex()
     data.to_csv(
@@ -265,4 +261,4 @@ def main(corps = None, first_year = None):
 if __name__ == "__main__":
     import sys
     logging.basicConfig(level = logging.DEBUG, stream = sys.stdout)
-    data = main(first_year = 2000, corps = 'adjoints techniques territoriaux')
+    data = main(first_year = 2000, corps = 'AT')

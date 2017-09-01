@@ -59,8 +59,8 @@ def select_grilles(corps):
                         'AIDE SOIGNANT CL EXCEPT (E06)'
                         ]
     else:
-        print("NEG for the corps are not specified in the select_grilles function")
-        stop
+        raise ValueError("NEG for the corps are not specified in the select_grilles function")
+        
     subset_grilles = grilles[grilles.libelle_grade_NEG.isin(libNEG_corps)]
     return (subset_grilles)
 
@@ -152,9 +152,9 @@ def main(datasets = None, first_year = None, grilles = grilles, list_corps = Non
             save_path,
             "corps{}_{}.csv".format(corps, first_year)
             )
-        data_merge_corps["data_corps_{}_new".format(corps)].to_csv(path)
+        data_merge_corps["data_corps_{}".format(corps)].to_csv(path)
 
-        log.info("Saving data corps{}_{}.csv".format(corps, first_year))
+        log.info("Saving {} data for year {} in {}".format(corps, first_year, path))
 
     return
 
