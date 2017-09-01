@@ -16,7 +16,7 @@ import pandas as pd
 import numpy as np
 from fonction_publique.base import raw_directory_path, get_careers, parser
 from fonction_publique.merge_careers_and_legislation import get_grilles, law_to_hdf
-from slugify import slugify
+
 
 libelles_emploi_directory = parser.get('correspondances',
                                        'libelles_emploi_directory')
@@ -25,12 +25,12 @@ save_path = 'M:/CNRACL/output'
 
 def select_grilles(corps):
     path_grilles = os.path.join(
-    pkg_resources.get_distribution('fonction_publique').location,
-    'fonction_publique',
-    'assets',
-    'grilles_fonction_publique',
-    )
-    grilles = pd.read_hdf(os.path.join(path_grilles,"grilles_old.h5"))
+        pkg_resources.get_distribution('fonction_publique').location,
+        'fonction_publique',
+        'assets',
+        'grilles_fonction_publique',
+        )
+    grilles = pd.read_hdf(os.path.join(path_grilles, "grilles_old.h5"))
     if corps == 'AT':
         libNEG_corps = ['ADJOINT TECHNIQUE DE 2EME CLASSE',
                         'ADJOINT TECHNIQUE DE 1ERE CLASSE',
@@ -48,15 +48,16 @@ def select_grilles(corps):
                         'AIDE SOIGNANT CL SUPERIEURE (E05)',
                         'AIDE SOIGNANT CL EXCEPT (E06)'
                         ]
-    else :
+    else:
         print("NEG for the corps are not specified in the select_grilles function")
         stop
     subset_grilles = grilles[grilles.libelle_grade_NEG.isin(libNEG_corps)]
     return (subset_grilles)
 
+
 def select_ident(dataset):
-    variable =  'c_neg'
-    c_neg =  get_careers(variable = variable, data_path = dataset)
+    variable = 'c_neg'
+    c_neg = get_careers(variable = variable, data_path = dataset)
     subset_by_corps = {}
     for corps in ['AT', 'AA', 'AS']:
         grilles = select_grilles(corps = corps)
@@ -76,7 +77,7 @@ def cleaning_data(dataset, subset_by_corps, corps, first_year, list_permanent_va
     generation =  get_careers(variable = permanent_variables[0], data_path = dataset, where = where)
     sexe =  get_careers(variable = permanent_variables[1], data_path = dataset, where = where)
     an_aff =  get_careers(variable = permanent_variables[2], data_path = dataset, where = where)
-    
+
 #    data_i = get_careers(variables = ["generation", "sexe", "an_aff"], data_path = dataset, where = where).sort_values(['ident'])
 #    data_i['ident'] = data_i.index
     data_i = generation.merge(sexe, how = "left", on = ['ident']).merge(an_aff, how = "left", on = ['ident']).sort_values(['ident'])
@@ -138,7 +139,7 @@ def main(first_year = None,
         print("Processing data {}".format(dataset))
         for corps in list_corps:
             print("Processing corps {}".format(corps))
-           # List of ident of the corps
+            # List of ident of the corps
             subset_by_corps = select_ident(dataset)
             # Load and clean data by corps
             data_cleaned = cleaning_data(dataset,

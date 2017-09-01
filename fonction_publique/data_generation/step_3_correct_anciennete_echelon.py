@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
-import os
-import pandas as pd
-
 
 
 def fix_anciennete_dans_echelon(data, default_value = None):
-    """"
-
-    """"
+    """
+    Fix anciennete_dans_echelon
+    FIXME: UNFINISHED
+    """
     assert default_value in ['min_mois', 'max_mois']
     data.loc[
         (data['annee'] == 2011) & (data['min_mois'] != -1) & (data['anciennete_echelon'] >= data[default_value]),
@@ -16,5 +14,5 @@ def fix_anciennete_dans_echelon(data, default_value = None):
     return data
 
 
-
-def main()
+def main():
+    NotImplementedError

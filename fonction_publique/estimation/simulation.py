@@ -84,7 +84,7 @@ def predict_echelon_next_period_when_exit(data, grilles):
     del data_exit_with_ib_pour_ib['ib_y']
 
     data_exit_with_echelon_pour_echelon = data_exit_echelon_pour_echelon.query('echelon == next_echelon').copy().rename(
-        columns = {"ib_x":"ib", "ib_y":"next_ib"})
+        columns = {"ib_x": "ib", "ib_y": "next_ib"})
     print len(data_exit_with_echelon_pour_echelon)
     print len(data_exit_with_echelon_pour_echelon.ident.unique())
     data_exit_with_echelon_pour_echelon_right_col = data_exit_with_echelon_pour_echelon[data_exit_with_ib_pour_ib.columns]

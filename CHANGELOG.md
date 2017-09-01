@@ -2,6 +2,9 @@
 
 
 
+## 0.3.3
+
+* Document first steps and add some configuration tests
 
 ## 0.3.2
 

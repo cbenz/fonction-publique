@@ -29,7 +29,7 @@ def check_template_config_files():
                     os.path.join(templates_config_files_directory, 'config_template.ini'),
                     os.path.join(config_files_directory, 'config_template.ini'),
                     )
-            print("Rename and fill the template files in {}".format(config_files_directory))
+            print("Rename and fill the template file in {}".format(config_files_directory))
             return False
     else:
         os.makedirs(config_files_directory)
@@ -44,8 +44,10 @@ class Config(ConfigParser.SafeConfigParser):
     def __init__(self):
         ConfigParser.SafeConfigParser.__init__(self)
         if not check_template_config_files():
-            print("Problem with the configuration directory {}: cannot proceed and thus exiting\n".format(
-                config_files_directory))
+            raise Exception(
+                "Problem with the configuration directory {}: cannot proceed and thus exiting on error\n".format(
+                    config_files_directory)
+                )
             sys.exit()
         config_ini = os.path.join(config_files_directory, 'config.ini')
         if os.path.exists(config_ini):

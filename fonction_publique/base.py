@@ -27,15 +27,15 @@ project_path = os.path.join(
     )
 
 asset_path = os.path.join(
-  project_path,
-  'assets',
-  )
+    project_path,
+    'assets',
+    )
 
 grilles_path = os.path.join(
-  project_path,
-  'assets',
-  'grilles_fonction_publique',
-   )
+    project_path,
+    'assets',
+    'grilles_fonction_publique',
+    )
 
 grilles_txt_path = os.path.join(
     grilles_path,
@@ -47,10 +47,10 @@ grilles_hdf_path = os.path.join(
     "grilles.h5",
     )
 
-#table_correspondance_corps_path = os.path.join(
-#    asset_path,
-#    'corresp_neg_netneh.csv'
-#    )
+table_correspondance_corps_path = os.path.join(
+    asset_path,
+    'corresp_neg_netneh.csv'
+    )
 
 grilles = pd.read_hdf(
     os.path.join(grilles_hdf_path),
@@ -162,7 +162,11 @@ def get_careers(variable = None, variables = None, stop = None, data_path = None
                 selector = variables[0]
                 )
 
-def add_grilles_variable(data, grilles = grilles, first_year = 2011, last_year = 2015): #FIXME deal with late policy implementation
+
+def add_grilles_variable(data, grilles = grilles, first_year = 2011, last_year = 2015):  # FIXME deal with late policy implementation
+    """Add grilles variables to observation according to their grade (code_grade_NETNEH == c_cir)
+    """
+    log.info('Add grilles variables')
     data_after_first_year = data.query('(annee >= @first_year)').copy()
     cas_uniques_with_echelon = list()
     for annee in range(first_year, last_year + 1):
@@ -205,8 +209,9 @@ def add_grilles_variable(data, grilles = grilles, first_year = 2011, last_year =
     data = data.merge(cas_uniques, on = ['c_cir', 'ib', 'annee'], how = 'left')
     data['echelon'] = data['echelon'].fillna(-2).astype(int)
     return data
-# Timer
 
+
+# Timer
 def timing(f):
     def wrap(*args, **kwargs):
         time1 = time.time()

@@ -12,7 +12,7 @@ results = pd.read_csv(
         # 'results_annuels.csv',
         'results_annuels_apres_modification_etat_initial.csv'
         )
-    )[['ident', 'annee', 'c_cir', 'echelon']].rename(columns = {'echelon':'echelon_predit'})
+    )[['ident', 'annee', 'c_cir', 'echelon']].rename(columns = {'echelon': 'echelon_predit'})
 
 observed = pd.read_csv(
     os.path.join(
@@ -21,7 +21,7 @@ observed = pd.read_csv(
         'data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat_grade_corrected.csv',
         )
     ).query('(annee > 2011) & (c_cir == c_cir_2011)').copy()[[
-        'ident', 'annee', 'c_cir', 'echelon']].rename(columns = {'echelon':'echelon_observe'})
+        'ident', 'annee', 'c_cir', 'echelon']].rename(columns = {'echelon': 'echelon_observe'})
 
 
 

@@ -1,8 +1,15 @@
 # -*- coding: utf-8 -*-
+
+import logging
 import os
 import numpy as np
 import pandas as pd
-from fonction_publique.base import grilles, add_grilles_variable
+
+
+from fonction_publique.base import grilles, output_directory_path
+
+
+log = logging.getLogger(__name__)
 
 
 def get_grilles_including_bef_ATT(grilles = grilles):
@@ -13,37 +20,53 @@ def get_grilles_including_bef_ATT(grilles = grilles):
     grade_NEG_bef_TTH2 = [26, 34, 626]
     grade_NEG_bef_TTH3 = [25, 33, 627]
     grade_NEG_bef_TTH4 = [157, 156, 628]
-    grades_NEG_bef_ATT = grade_NEG_bef_TTH1 + grade_NEG_bef_TTH2 + grade_NEG_bef_TTH3 + grade_NEG_bef_TTH4 + grade_NEG_bef_769 + grade_NEG_bef_26 + grade_NEG_bef_25
+    grades_NEG_bef_ATT = (
+        grade_NEG_bef_TTH1 +
+        grade_NEG_bef_TTH2 +
+        grade_NEG_bef_TTH3 +
+        grade_NEG_bef_TTH4 +
+        grade_NEG_bef_769 +
+        grade_NEG_bef_26 +
+        grade_NEG_bef_25
+        )
     grades_NEG_bef_ATT = map(str, grades_NEG_bef_ATT)
     grilles_ATT_bef = grilles.query('code_grade_NEG in @grades_NEG_bef_ATT').copy()
     grade_aft_2006 = {
-        '25':"TTH3",
-        '26':"TTH2",
-        '27':"TTH1",
-        '33':"TTH3",
-        '34':"TTH2",
-        '35':"TTH1",
-        '625':"TTH1",
-        '626':"TTH2",
-        '627':"TTH3",
-        '628':"TTH4",
-        '156':"TTH4",
-        '157':"TTH4",
-        '769':"TTH1",
-        '391':"TTH1",
-        '36':"TTH1",
-        '37':"TTH1",
-        '32':"TTH1",
-        '30':"TTH2",
-        '29':"TTH3",
+        '25': "TTH3",
+        '26': "TTH2",
+        '27': "TTH1",
+        '33': "TTH3",
+        '34': "TTH2",
+        '35': "TTH1",
+        '625': "TTH1",
+        '626': "TTH2",
+        '627': "TTH3",
+        '628': "TTH4",
+        '156': "TTH4",
+        '157': "TTH4",
+        '769': "TTH1",
+        '391': "TTH1",
+        '36': "TTH1",
+        '37': "TTH1",
+        '32': "TTH1",
+        '30': "TTH2",
+        '29': "TTH3",
         }
     grilles_ATT_bef['code_grade_NETNEH'] = grilles_ATT_bef['code_grade_NEG'].map(grade_aft_2006)
     return grilles.query('code_grade_NEG not in @grades_NEG_bef_ATT').append(grilles_ATT_bef)
 
 
-## Functions to put in outils
 def add_change_grade_variable(data, annee, grilles = get_grilles_including_bef_ATT(grilles = grilles)):
     cas_uniques_with_indic_chgmt_grade = []
+    log.debug(data.index)
+    ib_befs = data.index.get_level_values('ib_bef').tolist()
+
+    assert not bool(set(ib_befs) & set(['NaN', -1])), \
+        "There are invalid ib_bef:\n - {} entries with ib_bef = 'Nan'\n - {} entries with ib_bef = -1\n {}".format(
+        len([ib for ib in ib_befs if ib == 'NaN']),
+        len([ib for ib in ib_befs if ib == -1]),
+        data.query("(ib_bef == 'NaN') or (ib_bef == -1)")
+        )
     for annee_, ib_bef, c_cir in data.index:
         assert annee_ == annee
         c_cir_now = str(c_cir)
@@ -77,14 +100,14 @@ def add_change_grade_variable(data, annee, grilles = get_grilles_including_bef_A
                     ).query(
                         'ib == {}'.format(ib_bef)
                         )[[
-                        'code_grade_NETNEH',
-                        'date_effet_grille',
-                        'echelon',
-                        'min_mois',
-                        'max_mois',
-                        'moy_mois',
-                        'corps_NETNEH',
-                        ]]
+                            'code_grade_NETNEH',
+                            'date_effet_grille',
+                            'echelon',
+                            'min_mois',
+                            'max_mois',
+                            'moy_mois',
+                            'corps_NETNEH',
+                            ]]
                 if len(grille_c_cir_now_lower) == 0:
                     cas_uniques_with_indic_chgmt_grade.append(format_output(
                         c_cir_now = c_cir_now,
@@ -131,36 +154,37 @@ def add_change_grade_variable(data, annee, grilles = get_grilles_including_bef_A
                 grades_possibles_bef = grille_c_cir_now_lower.query(
                     'ib == {}'.format(ib_bef)
                     )[[
-                    'code_grade_NETNEH',
-                    'date_effet_grille',
-                    'echelon',
-                    'min_mois',
-                    'max_mois',
-                    'moy_mois',
-                    'corps_NETNEH',
-                    ]]
+                        'code_grade_NETNEH',
+                        'date_effet_grille',
+                        'echelon',
+                        'min_mois',
+                        'max_mois',
+                        'moy_mois',
+                        'corps_NETNEH',
+                        ]]
                 if len(grades_possibles_bef) != 0:
                     grades_possibles = grades_possibles_bef.append(
-                        pd.DataFrame([c_cir_now,
-                         grille_c_cir_now_inter_ib_bef['date_effet_grille'].values[0],
-                         grille_c_cir_now_inter_ib_bef['echelon'].values.astype(str)[0],
-                         grille_c_cir_now_inter_ib_bef['min_mois'].values.astype(int)[0],
-                         grille_c_cir_now_inter_ib_bef['max_mois'].values.astype(int)[0],
-                         grille_c_cir_now_inter_ib_bef['moy_mois'].values.astype(int)[0],
-                         grille_c_cir_now_inter_ib_bef['corps_NETNEH'].values.astype(str)[0],
-                         ]).transpose().rename(
+                        pd.DataFrame([
+                            c_cir_now,
+                            grille_c_cir_now_inter_ib_bef['date_effet_grille'].values[0],
+                            grille_c_cir_now_inter_ib_bef['echelon'].values.astype(str)[0],
+                            grille_c_cir_now_inter_ib_bef['min_mois'].values.astype(int)[0],
+                            grille_c_cir_now_inter_ib_bef['max_mois'].values.astype(int)[0],
+                            grille_c_cir_now_inter_ib_bef['moy_mois'].values.astype(int)[0],
+                            grille_c_cir_now_inter_ib_bef['corps_NETNEH'].values.astype(str)[0],
+                            ]).transpose().rename(
                             columns = {
-                                0:'code_grade_NETNEH',
-                                1:'date_effet_grille',
-                                2:'echelon',
-                                3:'min_mois',
-                                4:'max_mois',
-                                5:'moy_mois',
-                                6:'corps_NETNEH',
+                                0: 'code_grade_NETNEH',
+                                1: 'date_effet_grille',
+                                2: 'echelon',
+                                3: 'min_mois',
+                                4: 'max_mois',
+                                5: 'moy_mois',
+                                6: 'corps_NETNEH',
                                 }))
                     rang_grade_possible = 1
                     for index, row in grades_possibles.iterrows():
-                        rang_grade_possible +=1
+                        rang_grade_possible += 1
                         cas_uniques_with_indic_chgmt_grade.append(format_output(
                             c_cir_now = c_cir_now,
                             ib_bef = ib_bef,
@@ -218,10 +242,10 @@ def add_change_grade_variable(data, annee, grilles = get_grilles_including_bef_A
         ['annee', 'ib_bef', 'c_cir']
         )['c_cir_bef_predit'].count() == 1).all()
     c_cir_bef_predits = (cas_uniques_w_indic_df.query(
-            '(change_grade == True) & (ambiguite == False)').c_cir_bef_predit
-            .value_counts(dropna = False)
-            .index.tolist()
-            )
+        '(change_grade == True) & (ambiguite == False)').c_cir_bef_predit
+        .value_counts(dropna = False)
+        .index.tolist()
+        )
     assert 'TTH1' in c_cir_bef_predits
     return cas_uniques_w_indic_df
 
@@ -247,38 +271,47 @@ def format_output(
         "ambiguite": [ambiguite_before],
         "change_grade": [change_grade_before],
         "annee": [annee],
-        "echelon":[echelon],
-        "min_mois":[min_mois],
-        "max_mois":[max_mois],
-        "date_effet_grille":[date_effet_grille],
-        "corps_NETNEH":[corps]
+        "echelon": [echelon],
+        "min_mois": [min_mois],
+        "max_mois": [max_mois],
+        "date_effet_grille": [date_effet_grille],
+        "corps_NETNEH": [corps]
         }).set_index(["annee", "ib_bef", "c_cir"])
 
 
 def get_career_transitions(
-    data = pd.read_csv(
-        os.path.join('M:/CNRACL/filter', 'data_ATT_2011_filtered.csv'), index_col = 0,
-        ),
-    annee = 2011,
-    unique = False,
-    change_grade = None,
-    ):
+        data = None,
+        annee = 2011,
+        unique = False,
+        ):
+    """Returns an empty dataframe which important part is the index"""
+
+    if data is None:
+        data = pd.read_csv(
+            os.path.join(output_directory_path, 'filter', 'data_ATT_2011_filtered.csv'),
+            index_col = 0,
+            )
     columns_keep_1 = ['ident', 'annee', 'c_cir']
     columns_keep_2 = ['ident', 'ib']
+    log.debug(data.query('annee == @annee').loc[data.query('annee == @annee').ib == -1])
+
+
     data_transition = (data
         .query('annee == @annee')
         .filter(columns_keep_1, axis = 1)
         .merge(
-            data.query('annee == {}'.format(annee-1))[columns_keep_2],
+            data.query('annee == {}'.format(annee - 1))[columns_keep_2],
             on = ['ident'],
             how = 'inner'
             )
-        .rename(columns = {"ib":"ib_bef"})
+        .rename(columns = {"ib": "ib_bef"})
         )
+
     if unique:
-        return data_transition[['annee', 'c_cir', 'ib_bef']].drop_duplicates().set_index(
+        data_transition = data_transition[['annee', 'c_cir', 'ib_bef']].drop_duplicates().set_index(
             ["annee", 'ib_bef', "c_cir"]
             )
+        return data_transition
     else:
         return data_transition
 
@@ -329,15 +362,16 @@ def get_grilles_pre_ATT_in_effect(c_cir, annee, grilles = get_grilles_including_
 
 
 def reshape_wide_to_long(
-    data = pd.read_csv(
-        os.path.join('M:/CNRACL/filter', 'data_ATT_2011_filtered.csv'),
-        index_col = 0,
-        ).query('annee >= annee_min_to_consider'
-        )
-    ):
-    data = data.rename(columns = {'ib':'ib4'})
+        data = None
+        ):
+    if data is None:
+        data = pd.read_csv(
+            os.path.join(output_directory_path, 'filter', 'data_ATT_2011_filtered.csv'),
+            index_col = 0,
+            ).query('annee >= annee_min_to_consider')
+    data = data.rename(columns = {'ib': 'ib4'})
     data = pd.wide_to_long(
         data, ['ib'], i = ['ident', 'annee'], j = ''
-        ).reset_index().rename(columns = {'':'quarter'})
+        ).reset_index().rename(columns = {'': 'quarter'})
     data['quarter'] = data['quarter'].astype(int)
     return data

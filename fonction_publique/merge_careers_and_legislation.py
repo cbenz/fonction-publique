@@ -9,7 +9,7 @@ import os
 import pandas as pd
 
 from fonction_publique.base import (DEBUG_CLEAN_CARRIERES, clean_directory_path, debug_chunk_size,
-    get_careers_hdf_path, get_output_hdf_path, get_tmp_hdf_path, law_hdf_path, law_xls_path)
+    get_careers_hdf_path, get_output_hdf_path, get_tmp_hdf_path, grilles_hdf_path, law_xls_path)
 from fonction_publique.career_simulation_vectorized import _set_dates_effet
 
 log = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ log = logging.getLogger(__name__)
 def get_grilles(force_rebuild = False, date = None, date_effet_max = None, date_effet_min = None,
         subset = None, use_date_effet_index = False):
     law_to_hdf(force_rebuild = force_rebuild)
-    grilles = pd.read_hdf(law_hdf_path)
+    grilles = pd.read_hdf(grilles_hdf_path)
     grilles = grilles.loc[grilles.libelle_FP.isin(['FONCTION PUBLIQUE HOSPITALIERE', 'FONCTION PUBLIQUE TERRITORIALE'])]
     assert set(grilles.libelle_FP.unique()) == set(['FONCTION PUBLIQUE HOSPITALIERE', 'FONCTION PUBLIQUE TERRITORIALE'])
     if subset is not None:
@@ -77,11 +77,11 @@ def law_to_hdf(force_rebuild = False):
             law[variable] = law[variable].fillna(-1).astype('int32')
         law['code_grade'] = law['code_grade_NEG'].astype('str')
         law = law[~law['ib'].isin([-1, 0])].copy()
-        law.to_hdf(law_hdf_path, 'grilles', format = 'table', data_columns = True, mode = 'w')
+        law.to_hdf(grilles_hdf_path, 'grilles', format = 'table', data_columns = True, mode = 'w')
         return True
     else:
-        if os.path.exists(law_hdf_path):
-            log.info('Using existing {}'.format(law_hdf_path))
+        if os.path.exists(grilles_hdf_path):
+            log.info('Using existing {}'.format(grilles_hdf_path))
             return True
         else:
             law_to_hdf(force_rebuild = True)
@@ -108,7 +108,7 @@ def get_careers_for_which_we_have_law(start_year = 2009, file_path = None, debug
      Save to HDFStore
      Returns stored DataFrame
      """
-    law = pd.read_hdf(law_hdf_path, 'grilles')
+    law = pd.read_hdf(grilles_hdf_path, 'grilles')
     careers_hdf_path = get_careers_hdf_path(clean_directory_path = clean_directory_path,
         file_path = file_path, debug = debug)
     careers_hdf = pd.HDFStore(careers_hdf_path)
@@ -164,7 +164,7 @@ def get_unique_career_states(file_path = None, debug = DEBUG_CLEAN_CARRIERES):
 def append_date_effet_to_unique_career_states(file_path = None, debug = DEBUG_CLEAN_CARRIERES):
     tmp_hdf_path = get_tmp_hdf_path(file_path, debug = debug)
     tmp_hdf = pd.HDFStore(tmp_hdf_path)
-    law = pd.HDFStore(law_hdf_path)
+    law = pd.HDFStore(grilles_hdf_path)
     with tmp_hdf as store:
         unique_career_states = store.select('tmp_2').copy()
         dataframe = unique_career_states[['c_netneh', 'annee', 'trimestre']].copy()
@@ -235,7 +235,7 @@ def merge_careers_with_legislation(file_path = None, debug = DEBUG_CLEAN_CARRIER
     """ ajouter les echelons aux carrieres """
     tmp_hdf_path = get_tmp_hdf_path(file_path, debug = debug)
     tmp_hdf = pd.HDFStore(tmp_hdf_path)
-    law = pd.HDFStore(law_hdf_path)
+    law = pd.HDFStore(grilles_hdf_path)
     grilles = law.select('grilles')
 
     careers = tmp_hdf.select('tmp_4')
