@@ -1,21 +1,34 @@
 # -*- coding: utf-8 -*-
-import pandas as pd
-import numpy as np
-import os
-from fonction_publique.base import grilles, output_directory_path, simulation_directory_path
 
-grilles = grilles[grilles['code_grade_NETNEH'].isin(['TTM1', 'TTH1', 'TTH2', 'TTH3', 'TTH4'])]
-data_counterfactual_echelon_trajectory = pd.read_csv(
-    os.path.join(
-        output_directory_path,
-        'simulation_counterfactual_echelon',
-        'results_annuels.csv'
-        )
-    )
-del data_counterfactual_echelon_trajectory['Unnamed: 0']
+
+import logging
+import os
+import sys
+
+import numpy as np
+import pandas as pd
+
+from fonction_publique.base import (grilles, output_directory_path, simulation_directory_path)
+from fonction_publique.career_simulation_vectorized import AgentFpt
+
+log = logging.getLogger(__name__)
+
+
+def get_data_counterfactual_echelon_trajectory(data = None):
+    if data is None:
+        data_counterfactual_echelon_trajectory = pd.read_csv(
+            os.path.join(
+                output_directory_path,
+                'simulation_counterfactual_echelon',
+                'results_annuels.csv'
+                )
+            )
+        del data_counterfactual_echelon_trajectory['Unnamed: 0']
+    return data_counterfactual_echelon_trajectory
 
 
 def predict_next_period_grade_when_exit_to_other_corps(data):
+    log.info('Predict next period grade when exit to other corps')
     data.loc[
         (data['next_situation'] == 'exit_oth') |
         (
@@ -28,10 +41,96 @@ def predict_next_period_grade_when_exit_to_other_corps(data):
     return data
 
 
-def predict_echelon_next_period_when_no_exit(data):
+def predict_echelon_next_period_when_no_exit_old(data):
     data_no_exit = data.query("next_situation == 'no_exit'").copy()
     data_no_exit['next_grade'] = data_no_exit['grade']
     data_no_exit['next_annee'] = data_no_exit['annee'] + 1
+
+    #    data_input = get_data(rebuild = False)[[
+#        'ident', 'period', 'grade', 'echelon'
+#        ]]
+#    data_input['period'] = pd.to_datetime(data_input['period'])
+#    data_input = data_input.query('echelon != 55555').copy()
+#    grilles['code_grade'] = grilles['code_grade'].astype(int)
+#    grilles = grilles[grilles['code_grade'].isin([793, 794, 795, 796])].copy()
+#    grilles['echelon'] = grilles['echelon'].replace(['ES'], -2).astype(int)
+#    agents = AgentFpt(data_input, end_date = pd.Timestamp(2017, 01, 01))
+#    agents.set_grille(grilles)
+#    agents.compute_result()
+#
+#    resultats = agents.result
+#    resultats_annuel = resultats[resultats['quarter'].astype(str).str.contains("-12-31")].copy()
+#    # assert resultats_annuel.groupby('ident')['quarter'].count().unique() == 5
+#    resultats_annuel['annee'] = pd.to_datetime(resultats_annuel['quarter']).dt.year
+#    resultats_annuel['c_cir'] = resultats_annuel['grade'].map({793:'TTH1' ,794:'TTH2', 795:'TTH3', 796:'TTH4'})
+#    del resultats_annuel['period']
+#    del resultats_annuel['quarter']
+#
+#    resultats_annuel.to_csv(os.path.join(
+#        output_directory_path,
+#        'simulation_counterfactual_echelon',
+#        'results_annuels_apres_modification_etat_initial.csv'
+#        )
+#    )
+    data_counterfactual_echelon_trajectory = get_data_counterfactual_echelon_trajectory()
+    data_no_exit = data_no_exit.merge(
+        data_counterfactual_echelon_trajectory[['ident', 'annee', 'echelon']].rename(
+            columns = {'annee': 'next_annee', 'echelon': 'next_echelon'}
+            ),
+        on = ['ident', 'next_annee'],
+        how = 'left',
+        )
+    return data_no_exit
+
+
+def predict_echelon_next_period_when_no_exit(data):
+    log.debug('Predict echelon next period when no exit')
+    data_no_exit = data.query("next_situation == 'no_exit'").copy()
+    data_no_exit['next_grade'] = data_no_exit['grade']
+    data_no_exit['next_annee'] = data_no_exit['annee'] + 1
+    data_no_exit['period'] = pd.to_datetime(data_no_exit['annee'].astype(str) + "-12-31")
+    data_no_exit['anciennete_dans_echelon'] = 0
+    data_no_exit['code_grade_NETNEH'] = data_no_exit['grade']
+    del data_no_exit['grade']
+    #    data_input = get_data(rebuild = False)[[
+    #        'ident', 'period', 'grade', 'echelon'
+    #        ]]
+    #    data_input['period'] = pd.to_datetime(data_input['period'])
+    #    data_input = data_input.query('echelon != 55555').copy()
+
+    agents_grilles = (grilles
+        .loc[grilles['code_grade_NETNEH'].isin(['TTM1', 'TTH1', 'TTH2', 'TTH3', 'TTH4'])]
+        .copy()
+        )
+    agents_grilles['code_grade_NEG'] = agents_grilles['code_grade_NEG'].astype(int)
+    data_no_exit = data_no_exit.merge(
+        agents_grilles[['code_grade_NETNEH', 'code_grade_NEG']].copy(),
+        on = 'code_grade_NETNEH',
+        how = 'left',
+        )
+    data_no_exit['grade'] = data_no_exit['code_grade_NEG']
+    del data_no_exit['code_grade_NEG']
+    # agents_grilles = agents_grilles.loc[agents_grilles['code_grade_NEG'].isin([793, 794, 795, 796])].copy()
+    # grilles['echelon'] = grilles['echelon'].replace(['ES'], -2).astype(int)
+    agents = AgentFpt(data_no_exit, end_date = pd.Timestamp(2017, 1, 1))
+    agents.set_grille(agents_grilles)
+    agents.compute_result()
+    resultats = agents.result
+
+#    resultats_annuel = resultats[resultats['quarter'].astype(str).str.contains("-12-31")].copy()
+##    assert resultats_annuel.groupby('ident')['quarter'].count().unique() == 5
+#    resultats_annuel['annee'] = pd.to_datetime(resultats_annuel['quarter']).dt.year
+#    resultats_annuel['c_cir'] = resultats_annuel['grade'].map({793:'TTH1' ,794:'TTH2', 795:'TTH3', 796:'TTH4'})
+#    del resultats_annuel['period']
+#    del resultats_annuel['quarter']
+#
+#    resultats_annuel.to_csv(os.path.join(
+#        output_directory_path,
+#        'simulation_counterfactual_echelon',
+#        'results_annuels_apres_modification_etat_initial.csv'
+#        )
+#    )
+    data_counterfactual_echelon_trajectory = get_data_counterfactual_echelon_trajectory()
     data_no_exit = data_no_exit.merge(
         data_counterfactual_echelon_trajectory[['ident', 'annee', 'echelon']].rename(
             columns = {'annee': 'next_annee', 'echelon': 'next_echelon'}
@@ -43,6 +142,7 @@ def predict_echelon_next_period_when_no_exit(data):
 
 
 def predict_echelon_next_period_when_exit(data, grilles):
+    log.debug('Predict echelon next period when exit')
     data_exit = data.query("next_situation != 'no_exit'").copy()
     data_exit.loc[(data_exit['next_situation'] == 'exit_next'), 'next_grade'] = [
         'TTH' + str(int(s[-1:]) + 1) for s in data_exit.query("next_situation == 'exit_next'")['grade']
@@ -67,7 +167,7 @@ def predict_echelon_next_period_when_exit(data, grilles):
     del data_exit_merged['echelon_y']
 
     data_exit_echelon_pour_echelon = data_exit_merged.query("(next_grade != 'TTH4') & (echelon == next_echelon)")
-    data_exit_ib_pour_ib = data_exit_merged.query("next_grade == 'TTH4'") # To generalize
+    data_exit_ib_pour_ib = data_exit_merged.query("next_grade == 'TTH4'")  # To generalize
 
     data_exit_ib_pour_ib = (data_exit_ib_pour_ib
         .query('ib_y >= ib_x')
@@ -85,9 +185,9 @@ def predict_echelon_next_period_when_exit(data, grilles):
 
     data_exit_with_echelon_pour_echelon = data_exit_echelon_pour_echelon.query('echelon == next_echelon').copy().rename(
         columns = {"ib_x": "ib", "ib_y": "next_ib"})
-    print len(data_exit_with_echelon_pour_echelon)
-    print len(data_exit_with_echelon_pour_echelon.ident.unique())
-    data_exit_with_echelon_pour_echelon_right_col = data_exit_with_echelon_pour_echelon[data_exit_with_ib_pour_ib.columns]
+
+    data_exit_with_echelon_pour_echelon_right_col = data_exit_with_echelon_pour_echelon[
+        data_exit_with_ib_pour_ib.columns]
 
     data_exit = data_exit_with_echelon_pour_echelon_right_col.append(data_exit_with_ib_pour_ib)
 
@@ -110,6 +210,7 @@ def predict_echelon_next_period_when_exit(data, grilles):
 
 
 def get_ib(data, grilles):
+    grilles = grilles.copy()
     grilles['echelon'] = grilles['echelon'].replace(['ES'], 55555).astype(int)
     grilles_grouped = (grilles
         .query('date_effet_grille <= 2012')
@@ -147,7 +248,7 @@ def main(data, results_filename, grilles):
         )
     results = data_with_next_echelon_when_no_exit.append(data_with_next_echelon_when_exit)
     assert len(results.query("(next_situation != 'no_exit') & (next_grade != 'TTH4') & (echelon != next_echelon)")) == 0
-    results = results[['ident', 'next_annee', 'next_grade', 'next_echelon', 'next_situation']]
+    results = results[['ident', 'next_annee', 'next_grade', 'next_echelon', 'next_situation']].copy()
     results['next_annee'] = results['next_annee'].astype(int)
     results['ident'] = results['ident'].astype(int)
     results['next_grade'] = results['next_grade'].astype(str)
@@ -155,12 +256,23 @@ def main(data, results_filename, grilles):
     assert len(list(set(results.ident.unique()) - set(data.ident.unique()))) == 0
     results = get_ib(results, grilles)
     results['grade'] = results['grade'].astype(str)
-    results.to_csv(os.path.join(simulation_directory_path, 'results_modif_regles_replacement', results_filename))
+
+    directory_path = os.path.join(simulation_directory_path, 'results_modif_regles_replacement')
+    if not os.path.exists(directory_path):
+        os.makedirs(directory_path)
+    results.to_csv(os.path.join(directory_path, results_filename))
 
 
 if __name__ == '__main__':
-    for model in ['_m0', '_m1', '_m2']:
-        main(data = pd.read_csv(os.path.join(simulation_directory_path,'data_simul_2011{}.csv'.format(model)),
-             results_filename = 'results_2011{}.csv'.format(model),
-             grilles = grilles
-             )
+    logging.basicConfig(level = logging.DEBUG, stream = sys.stdout)
+    for model in ['_m1']:  #, '_m2', '_m3']:
+        main(
+            data = pd.read_csv(os.path.join(
+                output_directory_path,
+                '..',
+                'simulation',
+                'data_simul_2011{}.csv'.format(model)
+                )),
+            results_filename = 'results_2011{}.csv'.format(model),
+            grilles = grilles,
+            )
