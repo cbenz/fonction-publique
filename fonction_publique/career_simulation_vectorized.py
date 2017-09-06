@@ -31,7 +31,7 @@ class AgentFpt:
         self.echelon = dataframe.echelon
         # anciennete dans echelon unit is one month
         self.agentfptCount = len(dataframe)
-        log.debug('Setting a dataframe with {} lines'.format(self.agentfptCount))
+        log.debug('Setting a dataframe with {} rows'.format(self.agentfptCount))
         self.result = pd.DataFrame()
         if grille is not None:
             self.set_grille(grille)
@@ -432,7 +432,7 @@ class AgentFpt:
 
         self.grille = grille[['code_grade_NEG', 'date_effet_grille', 'echelon', 'max_mois', 'min_mois']].copy()
         assert not self.grille.empty
-        log.debug(self.grille.head())
+        log.debug("Excerpt of the grilles used: \n {}".format(self.grille.head()))
 
 
 def get_duree_echelon_from_grilles_dataframe(
