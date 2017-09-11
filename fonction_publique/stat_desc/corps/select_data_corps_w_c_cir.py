@@ -11,12 +11,10 @@ from __future__ import division
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
+from fonction_publique.base import asset_path, project_path, output_directory_path, clean_directory_path
 
-asset_path_careers = 'M:/CNRACL/clean/'
-save_path = 'M:/CNRACL/output'
-asset_path_corres_grades_corps = "C:/Users/l.degalle/CNRACL/fonction-publique/fonction_publique/assets/corresp_neg_netneh.csv"
-fig_save_path = "C:/Users/l.degalle/CNRACL/fonction-publique/fonction_publique/ecrits/note_corps_Lisa/Figures/"
-working_dir_path = 'C:/Users/l.degalle/CNRACL/fonction-publique/fonction_publique/stat_desc/corps'
+
+fig_save_path = os.path.join(project_path, "/ecrits/note_corps_Lisa/Figures/")
 
 datasets = [
             'pamplemousse.h5',
@@ -46,7 +44,7 @@ data_careers['c_cir'] = data_careers['c_cir'].str.zfill(4)
 
 
 # On doit maintenant ajouter une colonne indiquant le corps
-corres_grades_corps = pd.read_csv(asset_path_corres_grades_corps,
+corres_grades_corps = pd.read_csv( os.path.join(asset_path, "corresp_neg_netneh.csv"),
                                   sep = ";")
 
 corres_grades_corps = corres_grades_corps[['CodeNETNEH_neg',
