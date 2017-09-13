@@ -13,15 +13,21 @@ grille_adjoint_technique_path = os.path.join(
     asset_path, 'grilles_fonction_publique',
     'FPT_adjoint_technique.xlsx',
     )
-grille_adjoint_technique = pd.read_excel(grille_adjoint_technique_path, encoding='utf-8')
-grille_adjoint_technique = grille_adjoint_technique.rename(columns = dict(code_grade_NEG = 'code_grade_NEG'))
+grille_adjoint_technique = pd.read_excel(grille_adjoint_technique_path, encoding = 'utf-8')
+# grille_adjoint_technique = grille_adjoint_technique.rename(columns = dict(code_grade_NEG = 'code_grade_NEG'))
 
-grade_ATT = ['TTH1', 'TTH2', 'TTH3', 'TTH4']
-grilles = grilles.query('code_grade_NETNEH in @grade_ATT').copy()
+grille_adjoint_technique = (grille_adjoint_technique
+    #.query('echelon != 500000')
+    )
+grille_adjoint_technique['echelon'] = grille_adjoint_technique['echelon'].replace([500000], 8).astype(int)
+
+
+grades_ATT = ['TTH1', 'TTH2', 'TTH3', 'TTH4']
+grilles = grilles.query('code_grade_NETNEH in @grades_ATT').copy()
 grilles['code_grade_NEG'] = grilles['code_grade_NEG'].astype(int)
 grilles = grilles[grilles['code_grade_NEG'].isin([792, 793, 794, 795])].copy()
 grilles['echelon'] = grilles['echelon'].astype(int)
-grilles['echelon'] = grilles['echelon'].replace([500000], -2).astype(int)
+grilles['echelon'] = grilles['echelon'].replace([500000], 8).astype(int)
 
 # 1. Case tests
 agent0 = (0, datetime.datetime(2006, 12, 1), 793, 1)
@@ -255,8 +261,7 @@ def test_agent_1763(grilles = grilles):
             'period', 'echelon', 'ident', 'grade', 'quarter'
             ]])
 
-
-if __name__ == '__main__':
+def test_create_agent_by_items():
     agents = create_agent_by_items(
         grade = 795,
         echelon = 11,
@@ -268,6 +273,10 @@ if __name__ == '__main__':
     print agents.result
     print grilles.head()
 
+
+
+if __name__ == '__main__':
+    test()
     # agents = AgentFpt(df)
     # agents.set_grille(grille_adjoint_technique)
     # agents.compute_result(end_date = pd.Timestamp("2040-01-01").floor('D'))
