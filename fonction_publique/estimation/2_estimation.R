@@ -18,7 +18,6 @@ data_est = data_est[which(data_est$left_censored == F & data_est$annee == 2011 &
 data_est = create_variables(data_est)  
 
 
-
 #### I. Simple logit ####
 
 data_est$next_year = as.character(data_est$next_grade_situation)
@@ -92,7 +91,6 @@ list2 = which(estim$c_cir_2011 == "TTH2")
 list3 = which(estim$c_cir_2011 == "TTH3")
 list4 = which(data_est$c_cir_2011 == "TTH4")
 
-
 data_est$exit2 = ifelse(data_est$next_year == 'exit_oth',1, 0) 
 
 mlog1 = mlogit(next_year ~ 0 | sexe + generation_group2 + c_cir_2011 + 
@@ -155,15 +153,12 @@ print(texreg2(model.list,
 #### III. Sequential logit ####
 
 
-
 # Step 1: 
 data_est$exit = ifelse(data_est$next_year == 'exit_oth' | data_est$next_year =='exit_next', 1, 0)
 
 step1 <- glm(exit ~  sexe + generation_group2 + c_cir_2011 + 
                I_bothC + I_bothE + duration + duration2 + duration3, 
               data=data_est, x=T, family=binomial("logit"))
-
-
 # Step 2: 
 data_est2 = data_est[which(data_est$exit == 1), ]
 data_est2$exit_next = ifelse(data_est2$next_year =='exit_next', 1, 0)

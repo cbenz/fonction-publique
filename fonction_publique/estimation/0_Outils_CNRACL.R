@@ -3,10 +3,9 @@
 
 
 ## I. Packages
-
 list_packages = list()
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(OIsurv, rms, emuR, RColorBrewer, flexsurv, mfx, 
+pacman::p_load(OIsurv, rms, emuR, RColorBrewer, flexsurv, mfx, devtools,
                texreg, xtable, mlogit, data.table, pscl)
 
 
@@ -34,8 +33,7 @@ load_and_clean = function(data_path, dataname)
   # Duration variables
   data_long$time_spent_in_grade_max  = data_long$annee - data_long$annee_entry_min + 1
   data_long$time_spent_in_grade_min  = data_long$annee - data_long$annee_entry_max + 1
-  #data_long$time_spent_in_echelon    = 
-    
+  data_long$anciennete_dans_echelon  = data_long$anciennete_echelon
   # Exit_status
   data_long$exit_status2 = ifelse(data_long$annee == data_long$last_y_in_grade, 1, 0)
   data_long$exit_status2[data_long$right_censored] = 0
@@ -107,7 +105,7 @@ create_variables <- function(data)
   
   data$duration = data$time
   data$duration2 = data$time^2 
-  data$duration2 = data$time^3 
+  data$duration3 = data$time^3 
   
   
   data$duration_aft  = data$time*data$I_bothC
@@ -192,7 +190,15 @@ plot_hazards = function(hazard, colors, type, title)
 
 
 ### III. Simulation tools ####
-predict_next_year <- function(p1,p2,p3)
+predict_next_year_MNL <- function(p1,p2,p3)
+{
+  # random draw of next year situation based on predicted probabilities   
+  n = sample(c("no_exit", "exit_next",  "exit_oth"), size = 1, prob = c(p1,p2,p3), replace = T)  
+  return(n) 
+}  
+
+
+predict_next_year_MNL <- function(p1,p2,p3)
 {
   # random draw of next year situation based on predicted probabilities   
   n = sample(c("no_exit", "exit_next",  "exit_oth"), size = 1, prob = c(p1,p2,p3), replace = T)  
