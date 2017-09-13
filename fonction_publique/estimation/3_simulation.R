@@ -154,7 +154,7 @@ print(table(data_sim[,v]) )
 ## II.2 Simulation next grade  ##
 
 
-list_all_models = 
+list_all_models = c("next_year_hat_MNL_1", "next_year_hat_MNL_2","next_year_hat_MNL_3","next_year_byG_1", "next_year_MS_1")
 
 
 
