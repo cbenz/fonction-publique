@@ -36,7 +36,7 @@ def load_libelles(data_path = None, debug = False):
     libemploi = libemploi[libemploi.libemploi != '']
     return libemploi
 
-    
+
 def main(clean_data = False, debug = False):
     # Etape 1: data_cleaning
     if clean_data:
@@ -52,7 +52,7 @@ def main(clean_data = False, debug = False):
     # Etape 2: extract_libelles and merge
     data_to_extract = ["2_1940_carrieres.h5", "2_1960_carrieres.h5", "2_1970_carrieres.h5", "2_1980_carrieres.h5"]
     for data_path in data_to_extract:
-        print("Processing data {}".format(data_path))
+        log.info("Processing data {}".format(data_path))
         libemploi = load_libelles(data_path = data_path, debug = debug)
         if data_path == data_to_extract[0]:
             libemploi_all = libemploi

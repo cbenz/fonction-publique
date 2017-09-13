@@ -5,9 +5,12 @@ from __future__ import division
 
 
 from slugify import slugify
-
+import logging
 
 from fonction_publique.sandbox.grade_matching import load_libelles_emploi_data
+
+
+log = logging.getLogger(__name__)
 
 
 def test_slugify():
@@ -15,15 +18,14 @@ def test_slugify():
 
     libemplois.name = 'values'
     mylibemplois = libemplois.reset_index()
-    print len(mylibemplois.libemploi)
     slugified = mylibemplois.libemploi.apply(slugify, separator = "_")
     slugified = mylibemplois.libemploi.apply(slugify, separator = "_")
-    print len(slugified.unique())
     slugified.unique()
 
     mylibemplois.libemploi[:100]
 
+
 if __name__ == '__main__':
-    # logging.basicConfig(level = logging.INFO, stream = sys.stdout)
+    logging.basicConfig(level = logging.INFO, stream = sys.stdout)
     test_slugify()
 

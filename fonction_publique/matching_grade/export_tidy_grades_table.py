@@ -88,11 +88,11 @@ def main():
     # 4. Save to csv
     save_path = os.path.join(output_directory, 'correspondance_libemploi_grade.csv')
     expended_data.to_csv(save_path, sep = ';', encoding = 'latin1')
-    print("The table of correspondance between libelles and grade is saved at {}".format(save_path))
+    log.info("The table of correspondance between libelles and grade is saved at {}".format(save_path))
     assert len(set(expended_data.libelle_grade_NEG))== len(set(correspondance_data_frame.grade))
-    print("{} libellés différents assignés à {} grades".format(len(set(expended_data.libemploi)),len(set(expended_data.libelle_grade_NEG))))
-
+    log.info("{} libellés différents assignés à {} grades".format(len(set(expended_data.libemploi)),len(set(expended_data.libelle_grade_NEG))))
     return expended_data
+
 
 if __name__ == '__main__':
     logging.basicConfig(level = logging.INFO, stream = sys.stdout)

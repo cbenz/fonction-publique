@@ -151,7 +151,7 @@ def get_careers(variable = None, variables = None, stop = None, data_path = None
     careers_hdf_path = os.path.join(actual_clean_directory_path, data_path)
 
     if variable:
-        print('Reading variable {} from file {}'.format(variable, careers_hdf_path))
+        log.info('Reading variable {} from file {}'.format(variable, careers_hdf_path))
         return pd.read_hdf(careers_hdf_path, variable, stop = stop, where = where)
     elif variables:
         with pd.HDFStore(careers_hdf_path) as store:

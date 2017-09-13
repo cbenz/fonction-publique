@@ -21,7 +21,6 @@ grille_adjoint_technique = (grille_adjoint_technique
     )
 grille_adjoint_technique['echelon'] = grille_adjoint_technique['echelon'].replace([500000], 8).astype(int)
 
-
 grades_ATT = ['TTH1', 'TTH2', 'TTH3', 'TTH4']
 grilles = grilles.query('code_grade_NETNEH in @grades_ATT').copy()
 grilles['code_grade_NEG'] = grilles['code_grade_NEG'].astype(int)
@@ -203,7 +202,6 @@ def test():
     agents = AgentFpt(df, end_date = pd.Timestamp(2040, 01, 01))
     agents.set_grille(grille_adjoint_technique)
     value_vars = results_expect_dataframe.variable.unique().tolist()
-    print value_vars
     agents.compute_all()
     results_actual_dataframe = pd.melt(
         agents.dataframe,
@@ -260,6 +258,7 @@ def test_agent_1763(grilles = grilles):
         ]].equals(expected_result.reset_index()[[
             'period', 'echelon', 'ident', 'grade', 'quarter'
             ]])
+
 
 def test_create_agent_by_items():
     agents = create_agent_by_items(
