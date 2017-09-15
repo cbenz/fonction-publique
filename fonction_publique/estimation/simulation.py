@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
+import argparse
 import logging
 import os
 import sys
@@ -93,6 +94,8 @@ def predict_echelon_next_period_when_no_exit(data):
     data_no_exit['next_grade'] = data_no_exit['grade']
     data_no_exit['next_annee'] = data_no_exit['annee'] + 1
     data_no_exit['period'] = pd.to_datetime(data_no_exit['annee'].astype(str) + "-12-31")
+    predicted_year = data_no_exit['annee'].max() + 1
+    log.info('Echelon prediction when no exit for year {}'.format(predicted_year))
     data_no_exit['anciennete_dans_echelon'] = 5
     # FIXME the latter should be more provided by the model
     # Replace by the following
@@ -134,19 +137,17 @@ def predict_echelon_next_period_when_no_exit(data):
     # grilles['echelon'] = grilles['echelon'].replace(['ES'], -2).astype(int)
     log.debug("5. Number of idents = {} and number of lines is {}".format(
         len(data_no_exit.ident.unique()), len(data_no_exit.ident)))
-    agents = AgentFpt(data_no_exit, end_date = pd.Timestamp(2017, 1, 1)) # FIXME jsut next year
+    agents = AgentFpt(data_no_exit, end_date = pd.Timestamp(predicted_year, 1, 1)) # FIXME jsut next year
     agents.set_grille(agents_grilles)
     agents.compute_result()
     resultats = agents.result
-
     resultats_annuel = resultats[resultats.quarter.astype(str).str.contains("-12-31")].copy()
-    assert resultats_annuel.groupby('ident')['quarter'].count().unique() == 5, resultats_annuel.groupby('ident')['quarter'].count().unique()
+    assert resultats_annuel.groupby('ident')['quarter'].count().unique() == 1, resultats_annuel.groupby('ident')['quarter'].count().unique()
     resultats_annuel['annee'] = pd.to_datetime(resultats_annuel['quarter']).dt.year
     resultats_annuel['c_cir'] = resultats_annuel['grade'].map({793: 'TTH1', 794: 'TTH2', 795: 'TTH3', 796: 'TTH4'})
     del resultats_annuel['period']
     del resultats_annuel['quarter']
 
-    print resultats_annuel.sort_values(['ident', 'annee']).head(50)
     data_no_exit = data_no_exit.merge(
         resultats_annuel[['ident', 'annee', 'echelon']].rename(
             columns = {'annee': 'next_annee', 'echelon': 'next_echelon'}
@@ -154,7 +155,6 @@ def predict_echelon_next_period_when_no_exit(data):
         on = ['ident', 'next_annee'],
         how = 'left',
         )
-    print data_no_exit.sort_values(['ident', 'annee']).head(50)
 
     return data_no_exit
 
@@ -254,11 +254,13 @@ def get_ib(data, grilles):
     return data_merged
 
 
-def main(data, results_filename, grilles):
+def predict_next_period(data = None, grilles = None):
     """
     data is the resut of the first simulation du grade for the nex year
     Take data and compute the echelon and IB for next year
     """
+    assert data is not None
+    assert grilles is not None
     del data['Unnamed: 0']
     data = data.query('echelon != 55555').copy()
     data_with_next_grade_when_exit_to_other = predict_next_period_grade_when_exit_to_other_corps(data)
@@ -278,37 +280,54 @@ def main(data, results_filename, grilles):
     assert len(list(set(results.ident.unique()) - set(data.ident.unique()))) == 0
     results = get_ib(results, grilles)
     results['grade'] = results['grade'].astype(str)
+    return results
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-i', '--input-file', default = 'data_simul_2011_m1.csv', help = 'input file (csv)')
+    parser.add_argument('-o', '--output-file', default = 'results_2011_m1.csv', help = 'output file (csv)')
+    parser.add_argument('-v', '--verbose', action = 'store_true', default = False, help = "increase output verbosity")
+    parser.add_argument('-d', '--debug', action = 'store_true', default = True, help = "increase output verbosity (debug mode)")
+
+    args = parser.parse_args()
+    if args.verbose:
+        level = logging.INFO
+    elif args.debug:
+        level = logging.DEBUG
+    else:
+        level = logging.WARNING
+    logging.basicConfig(level = level, stream = sys.stdout)
+    input_file_path = os.path.join(
+        output_directory_path,
+        '..',
+        'simulation',
+        args.input_file
+        )
+    log.info('Using unput data from {}'.format(input_file_path))
+    data = pd.read_csv(input_file_path)
+    results = predict_next_period(data = data, grilles = grilles)
 
     directory_path = os.path.join(simulation_directory_path, 'results_modif_regles_replacement')
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
-    log.info("Saving results to {}".format(os.path.join(directory_path, results_filename)))
-    results.to_csv(os.path.join(directory_path, results_filename))
-
-
-def prolongation2simulation(data, model = None):
-    assert model is not None
-
-
-def run(model, initial_year, final_year, grilles):
-    for year in range(initial_year, final_year + 1):
-        data = simulate_with_model(model, year)
-        results_filename = "results_{}".format(year)
-        main(data, results_filename, grilles)
-
+    output_file_path = os.path.join(directory_path, args.output_file)
+    log.info("Saving results to {}".format(output_file_path))
+    results.to_csv(output_file_path)
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level = logging.DEBUG, stream = sys.stdout)
-    for model in ['_m1']:  #, '_m2', '_m3']:
-        data = pd.read_csv(os.path.join(
-            output_directory_path,
-            '..',
-            'simulation',
-            'data_simul_2011{}.csv'.format(model)
-            ))
-        main(
-            data = data,
-            results_filename = 'results_2011{}.csv'.format(model),
-            grilles = grilles,
-            )
+    sys.exit(main())
+    # logging.basicConfig(level = logging.DEBUG, stream = sys.stdout)
+    # for model in ['_m1']:  #, '_m2', '_m3']:
+    #     data = pd.read_csv(os.path.join(
+    #         output_directory_path,
+    #         '..',
+    #         'simulation',
+    #         'data_simul_2011{}.csv'.format(model)
+    #         ))
+    #     predict_next_period(
+    #         data = data,
+    #         results_filename = 'results_2011{}.csv'.format(model),
+    #         grilles = grilles,
+    #         )
