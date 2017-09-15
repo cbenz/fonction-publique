@@ -288,7 +288,7 @@ def main():
     parser.add_argument('-i', '--input-file', default = 'data_simul_2011_m1.csv', help = 'input file (csv)')
     parser.add_argument('-o', '--output-file', default = 'results_2011_m1.csv', help = 'output file (csv)')
     parser.add_argument('-v', '--verbose', action = 'store_true', default = False, help = "increase output verbosity")
-    parser.add_argument('-d', '--debug', action = 'store_true', default = True, help = "increase output verbosity (debug mode)")
+    parser.add_argument('-d', '--debug', action = 'store_true', default = False, help = "increase output verbosity (debug mode)")
 
     args = parser.parse_args()
     if args.verbose:
