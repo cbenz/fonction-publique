@@ -28,7 +28,7 @@ estim = mlogit.data(data_est, shape = "wide", choice = "next_year")
 
 mlog0 = mlogit(next_year ~ 0 | 1, data = estim, reflevel = "no_exit")
 mlog1 = mlogit(next_year ~ 0 | sexe + generation_group2, data = estim, reflevel = "no_exit")
-mlog2 = mlogit(next_year ~ 0 | sexe + generation_group2 + cir_2011, data = estim, reflevel = "no_exit")
+mlog2 = mlogit(next_year ~ 0 | sexe + generation_group2 + c_cir_2011, data = estim, reflevel = "no_exit")
 mlog3 = mlogit(next_year ~ 0 | sexe + generation_group2 + c_cir_2011 + duration + duration2 + duration3, data = estim, reflevel = "no_exit")
 mlog4 = mlogit(next_year ~ 0 | sexe + generation_group2 + c_cir_2011 + I_bothC, data = estim, reflevel = "no_exit")
 mlog5 = mlogit(next_year ~ 0 | sexe + generation_group2 + c_cir_2011 + I_bothC + I_bothE, 

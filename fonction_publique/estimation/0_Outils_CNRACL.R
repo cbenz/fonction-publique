@@ -116,6 +116,7 @@ create_variables <- function(data)
   
   data$generation_group = factor(data$generation_group)
   data$c_cir_2011 = factor(data$c_cir_2011)
+  data$grade = factor(data$c_cir)
   
   # Unique threshold (first reached)
   grade_modif_bis = which(data$c_cir_2011 == "TTH1")
