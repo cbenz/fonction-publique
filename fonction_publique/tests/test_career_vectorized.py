@@ -24,7 +24,7 @@ grille_adjoint_technique['echelon'] = grille_adjoint_technique['echelon'].replac
 grades_ATT = ['TTH1', 'TTH2', 'TTH3', 'TTH4']
 grilles = grilles.query('code_grade_NETNEH in @grades_ATT').copy()
 grilles['code_grade_NEG'] = grilles['code_grade_NEG'].astype(int)
-grilles = grilles[grilles['code_grade_NEG'].isin([792, 793, 794, 795])].copy()
+grilles = grilles[grilles['code_grade_NEG'].isin([793, 794, 795, 796])].copy()
 grilles['echelon'] = grilles['echelon'].astype(int)
 grilles['echelon'] = grilles['echelon'].replace([500000], 8).astype(int)
 

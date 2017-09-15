@@ -14,7 +14,7 @@ class AgentFpt:
     'Common base class for all agent of French fonction publique'
 
     def __init__(self, dataframe, grille = None, end_date = None):
-
+        # 'anciennete_dans_echelon' should be in month
         assert set(dataframe.columns) >= set(['ident', 'period', 'grade', 'echelon', 'anciennete_dans_echelon']), \
             "The Agents dataframe lacks the following column(s): {}".format(
             set(['ident', 'period', 'grade', 'echelon', 'anciennete_dans_echelon']).difference(
@@ -356,7 +356,7 @@ class AgentFpt:
         return result
 
     def test_dataframe(self, iteration):
-        print('iteration {}'.format(iteration))
+        log.info('iteration {}'.format(iteration))
         pass
 
     def compute_result(self, test = False):

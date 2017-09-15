@@ -85,11 +85,19 @@ def predict_echelon_next_period_when_no_exit_old(data):
 
 def predict_echelon_next_period_when_no_exit(data):
     log.debug('Predict echelon next period when no exit')
+    log.debug("1. Number of idents = {} and number of lines is {}".format(
+        len(data.ident.unique()), len(data.ident)))
     data_no_exit = data.query("next_situation == 'no_exit'").copy()
+    log.debug("2. Number of idents = {} and number of lines is {}".format(
+        len(data_no_exit.ident.unique()), len(data_no_exit.ident)))
     data_no_exit['next_grade'] = data_no_exit['grade']
     data_no_exit['next_annee'] = data_no_exit['annee'] + 1
     data_no_exit['period'] = pd.to_datetime(data_no_exit['annee'].astype(str) + "-12-31")
-    data_no_exit['anciennete_dans_echelon'] = 0
+    data_no_exit['anciennete_dans_echelon'] = 5
+    # FIXME the latter should be more provided by the model
+    # Replace by the following
+    # assert 'anciennete_dans_echelon' in data_no_exit, 'anciennete_dans_echelon should be provided in the data'
+
     data_no_exit['code_grade_NETNEH'] = data_no_exit['grade']
     del data_no_exit['grade']
     #    data_input = get_data(rebuild = False)[[
@@ -97,47 +105,57 @@ def predict_echelon_next_period_when_no_exit(data):
     #        ]]
     #    data_input['period'] = pd.to_datetime(data_input['period'])
     #    data_input = data_input.query('echelon != 55555').copy()
-
+    assert len(data_no_exit['annee'].unique()) == 1
+    annee = data_no_exit['annee'].unique()[0]
     agents_grilles = (grilles
         .loc[grilles['code_grade_NETNEH'].isin(['TTM1', 'TTH1', 'TTH2', 'TTH3', 'TTH4'])]
         .copy()
         )
     agents_grilles['code_grade_NEG'] = agents_grilles['code_grade_NEG'].astype(int)
+    # FIXME very ugly way of dealing with echelon spéciaux of TTH4
+    agents_grilles['echelon'] = agents_grilles['echelon'].replace([-5], 8).astype(int)
+    log.debug("3. Number of idents = {} and number of lines is {}".format(
+        len(data_no_exit.ident.unique()), len(data_no_exit.ident)))
+    filtered_grilles = (agents_grilles
+        .query('annee_effet_grille > @annee')[['code_grade_NETNEH', 'code_grade_NEG']]
+        .drop_duplicates()
+        )
+    assert (filtered_grilles.code_grade_NETNEH.value_counts() == 1).all()
     data_no_exit = data_no_exit.merge(
-        agents_grilles[['code_grade_NETNEH', 'code_grade_NEG']].copy(),
+        filtered_grilles,
         on = 'code_grade_NETNEH',
         how = 'left',
         )
+    log.debug("4. Number of idents = {} and number of lines is {}".format(
+        len(data_no_exit.ident.unique()), len(data_no_exit.ident)))
     data_no_exit['grade'] = data_no_exit['code_grade_NEG']
     del data_no_exit['code_grade_NEG']
     # agents_grilles = agents_grilles.loc[agents_grilles['code_grade_NEG'].isin([793, 794, 795, 796])].copy()
     # grilles['echelon'] = grilles['echelon'].replace(['ES'], -2).astype(int)
-    agents = AgentFpt(data_no_exit, end_date = pd.Timestamp(2017, 1, 1))
+    log.debug("5. Number of idents = {} and number of lines is {}".format(
+        len(data_no_exit.ident.unique()), len(data_no_exit.ident)))
+    agents = AgentFpt(data_no_exit, end_date = pd.Timestamp(2017, 1, 1)) # FIXME jsut next year
     agents.set_grille(agents_grilles)
     agents.compute_result()
     resultats = agents.result
 
-#    resultats_annuel = resultats[resultats['quarter'].astype(str).str.contains("-12-31")].copy()
-##    assert resultats_annuel.groupby('ident')['quarter'].count().unique() == 5
-#    resultats_annuel['annee'] = pd.to_datetime(resultats_annuel['quarter']).dt.year
-#    resultats_annuel['c_cir'] = resultats_annuel['grade'].map({793:'TTH1' ,794:'TTH2', 795:'TTH3', 796:'TTH4'})
-#    del resultats_annuel['period']
-#    del resultats_annuel['quarter']
-#
-#    resultats_annuel.to_csv(os.path.join(
-#        output_directory_path,
-#        'simulation_counterfactual_echelon',
-#        'results_annuels_apres_modification_etat_initial.csv'
-#        )
-#    )
-    data_counterfactual_echelon_trajectory = get_data_counterfactual_echelon_trajectory()
+    resultats_annuel = resultats[resultats.quarter.astype(str).str.contains("-12-31")].copy()
+    assert resultats_annuel.groupby('ident')['quarter'].count().unique() == 5, resultats_annuel.groupby('ident')['quarter'].count().unique()
+    resultats_annuel['annee'] = pd.to_datetime(resultats_annuel['quarter']).dt.year
+    resultats_annuel['c_cir'] = resultats_annuel['grade'].map({793: 'TTH1', 794: 'TTH2', 795: 'TTH3', 796: 'TTH4'})
+    del resultats_annuel['period']
+    del resultats_annuel['quarter']
+
+    print resultats_annuel.sort_values(['ident', 'annee']).head(50)
     data_no_exit = data_no_exit.merge(
-        data_counterfactual_echelon_trajectory[['ident', 'annee', 'echelon']].rename(
+        resultats_annuel[['ident', 'annee', 'echelon']].rename(
             columns = {'annee': 'next_annee', 'echelon': 'next_echelon'}
             ),
         on = ['ident', 'next_annee'],
         how = 'left',
         )
+    print data_no_exit.sort_values(['ident', 'annee']).head(50)
+
     return data_no_exit
 
 
@@ -237,6 +255,10 @@ def get_ib(data, grilles):
 
 
 def main(data, results_filename, grilles):
+    """
+    data is the resut of the first simulation du grade for the nex year
+    Take data and compute the echelon and IB for next year
+    """
     del data['Unnamed: 0']
     data = data.query('echelon != 55555').copy()
     data_with_next_grade_when_exit_to_other = predict_next_period_grade_when_exit_to_other_corps(data)
@@ -260,19 +282,33 @@ def main(data, results_filename, grilles):
     directory_path = os.path.join(simulation_directory_path, 'results_modif_regles_replacement')
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
+    log.info("Saving results to {}".format(os.path.join(directory_path, results_filename)))
     results.to_csv(os.path.join(directory_path, results_filename))
+
+
+def prolongation2simulation(data, model = None):
+    assert model is not None
+
+
+def run(model, initial_year, final_year, grilles):
+    for year in range(initial_year, final_year + 1):
+        data = simulate_with_model(model, year)
+        results_filename = "results_{}".format(year)
+        main(data, results_filename, grilles)
+
 
 
 if __name__ == '__main__':
     logging.basicConfig(level = logging.DEBUG, stream = sys.stdout)
     for model in ['_m1']:  #, '_m2', '_m3']:
+        data = pd.read_csv(os.path.join(
+            output_directory_path,
+            '..',
+            'simulation',
+            'data_simul_2011{}.csv'.format(model)
+            ))
         main(
-            data = pd.read_csv(os.path.join(
-                output_directory_path,
-                '..',
-                'simulation',
-                'data_simul_2011{}.csv'.format(model)
-                )),
+            data = data,
             results_filename = 'results_2011{}.csv'.format(model),
             grilles = grilles,
             )
