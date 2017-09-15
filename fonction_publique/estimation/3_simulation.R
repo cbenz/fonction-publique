@@ -15,164 +15,118 @@
 
 #### 0. Initialisation ####
 
-# Main data
-source(paste0(wd, "0_Outils_CNRACL.R"))
+source(paste0(wd, "0_Outils_CNRACL.R")) 
+load(paste0(save_model_path, "mlog.rda"))
+
+
+generate_data_sim <- function(data_path, path_utils, use = "min")
+{
 datasets = load_and_clean(data_path, dataname = "filter/data_ATT_2011_filtered_after_duration_var_added_new.csv")
-data_max = datasets[[1]]
-data_min = datasets[[2]]
-
-install("Z:/Installations logiciels/Packages R/rPython")
-
-# Sample selection
-data_obs =  data_min[which(data_min$left_censored == F & data_min$generation < 1990),]
-data_obs = create_variables(data_obs) 
-
-data_est =  data_obs[which(data_obs$annee  == 2011),]
+if (use == "max"){data_obs = datasets[[1]]}
+if (use == "min"){data_obs = datasets[[2]]}
+data_obs  =  create_variables(data_obs) 
 data_sim =  data_obs[which(data_obs$left_censored == F  & data_obs$annee == 2011),]
+list_var = c("ident", "annee",  "sexe", "generation_group2", "c_cir_2011",
+             "I_bothC", "I_bothE", "duration", "duration2", "duration3",
+             "echelon", "time", "anciennete_echelon", "ib")
+return(data_sim[, list_var])
+}
 
-
-####  I. Estimations ####
-
-estimMNL  = mlogit.data(data_est, shape = "wide", choice = "next_year")
-estimGLM  = data_est
-
-##  I.1 MNM logit ##
-mlog1 = mlogit(next_year ~ 0 | 1, 
-               data = estimMNL, reflevel = "no_exit")
-mlog2 = mlogit(next_year ~ 0 | sexe + generation_group2 + c_cir_2011 
-               +  duration + duration2 + duration3, 
-               data = estimMNL, reflevel = "no_exit")
-mlog3 = mlogit(next_year ~ 0 | sexe + generation_group2 + c_cir_2011
-                 +  duration + duration2 + duration3 
-                 + I_bothC + I_bothE, 
-               data = estimMNL, reflevel = "no_exit")
-
-##  I.2 Model par grade ##
-list1 = which(estimMNL$c_cir_2011 == "TTH1")
-list2 = which(estimMNL$c_cir_2011 == "TTH2")
-list3 = which(estimMNL$c_cir_2011 == "TTH3")
-
-list4 = which(estimGLM$c_cir_2011 == "TTH4")
-estimGLM$exit2 = ifelse(estimGLM$next_year == 'exit_oth',1, 0) 
-
-
-mTTH1_1 = mlogit(next_year ~ 0 | sexe + generation_group2 + 
-                 I_bothC + I_bothE + duration + duration2 + duration3, 
-               data = estimMNL[list1, ], reflevel = "no_exit")
-mTTH2_1 = mlogit(next_year ~ 0 | sexe + generation_group2 + 
-                 I_bothC +  duration + duration2 + duration3, 
-               data = estimMNL[list2, ], reflevel = "no_exit")
-mTTH3_1 = mlogit(next_year ~ 0 | sexe + generation_group2 + 
-                 I_bothC +  duration + duration2 + duration3, 
-               data = estimMNL[list3, ], reflevel = "no_exit")
-mTTH4_1 = glm(exit2 ~  sexe + generation_group2 + 
-              duration + duration2 + duration3, 
-            data = estimGLM[list4, ], x=T, family=binomial("logit"))
-
-
-##  I.3 Model sequentiel ##
-estimGLM$exit = ifelse(estimGLM$next_year == 'exit_oth' | estimGLM$next_year =='exit_next', 1, 0)
-estimGLM2 = estimGLM[which(estimGLM$exit == 1), ]
-estimGLM2$exit_next = ifelse(estimGLM2$next_year =='exit_next', 1, 0)
-
-step1_1 <- glm(exit ~  sexe + generation_group2 + c_cir_2011 + 
-               I_bothC + I_bothE + duration + duration2 + duration3, 
-             data=estimGLM, x=T, family=binomial("logit"))
-step2_1 <- glm(exit_next ~  sexe + generation_group2 + c_cir_2011 + 
-               I_bothC + I_bothE + duration + duration2 + duration3, 
-             data=estimGLM2 , x=T, family=binomial("logit"))
-
-
-
-####  II. Simulation ####
-
-
-
-##  II.1 Prediction next_year ##
-
-
-adhoc <- sample(c("no_exit",   "exit_next", "exit_oth"), nrow(data_sim), replace=TRUE, prob = c(0.2, 0.2, 0.6))
-data_sim$next_year <-adhoc
-data_predict_MNL <- mlogit.data(data_sim, shape = "wide", choice = "next_year")
-data_predict     <- data_sim
-
-## TO DO: fonctions qui renvoit pour les M modèles un dataframe avec Nb ind nb de lignes et les variables 
-# "ident", "next_situation", "next_grade"
-
-##   MNM logit ##
-list_models = list(mlog1, mlog2, mlog3)
-for (m in 1:length(list_models))  
+generate_data_output <- function(data_path)
 {
-model = list_models[[m]]
-prob     <- predict(model, data_predict_MNL,type = "response")   
-next_year_hat <-  paste0("next_year_hat_MNL_", toString(m))  
-data_sim[, next_year_hat] <- mapply(predict_next_year, prob[,1], prob[,2], prob[,3])
-}  
-
-##  Model par grade ##
-list_models = list(mTTH1, mTTH2, mTTH3, mTTH4)
-for (m in 1:length(list_models))  
-{
-  model = list_models[[m]]
-  if (m < 4)
-  {
-    prob     <- predict(model, data_predict_MNL,type = "response")  
-    next_year_hat <-  paste0("next_year_TTH", toString(m))  
-    data_sim[, next_year_hat] <- mapply(predict_next_year, prob[,1], prob[,2], prob[,3])
-  }
-  if (m == 4)
-  {
-    prob     <- predict(model, data_predict, type = "response")  
-    pred     <- as.numeric(mapply(tirage, prob))
-    next_year_hat <-  paste0("next_year_TTH", toString(m))  
-    data_sim[, next_year_hat] <- ifelse(pred == 1, "exit_oth", "no_exit")
-  }
-}  
-data_sim$next_year_byG_1 = data_sim$next_year_TTH1
-data_sim$next_year_byG_1[which(data_sim$c_cir_2011 == "TTH2")] =  data_sim$next_year_TTH2[which(data_sim$c_cir_2011 == "TTH2")] 
-data_sim$next_year_byG_1[which(data_sim$c_cir_2011 == "TTH3")] =  data_sim$next_year_TTH3[which(data_sim$c_cir_2011 == "TTH3")] 
-data_sim$next_year_byG_1[which(data_sim$c_cir_2011 == "TTH4")] =  data_sim$next_year_TTH4[which(data_sim$c_cir_2011 == "TTH4")] 
-
-
-##  Modele séquentiel ##
-prob1     <- predict(step1_1, data_predict, type = "response")  
-pred1     <- as.numeric(mapply(tirage, prob1))
-prob2     <- predict(step2_1, data_predict, type = "response")  
-pred2     <- as.numeric(mapply(tirage, prob2))
-data_sim$next_year_MS_1 <- ifelse(pred1 == 1, "exit", "no_exit")
-data_sim$next_year_MS_1[which(pred1 == 1 & pred2 == 1)] <- "exit_next"
-data_sim$next_year_MS_1[which(pred1 == 1 & pred2 == 0)] <- "exit_oth"
-
-
-
-for (v in c("next_grade_situation", "next_year_hat_MNL_2","next_year_byG_1", "next_year_MS_1"))
-{
-print(table(data_sim[,v]) )
+  filename = paste0(data_path, dataname)
+  data_long = read.csv(filename)
+  list_var = c("ident", "annee", "c_cir_2011", "grade","ib")
+  output = data_long[which(data_long$annee <= 2015), list_var]
+  return(output[, list_var])
 }
 
 
-## II.2 Simulation next grade  ##
-
-
-list_all_models = 
-
-
-
-
-## II.3 Save csv  ##
-data_sim2 = data_sim[which(data_sim$annee == 2011), ]
-data_exit_oth = data_min[which(data_min$next_year == "exit_oth"), c("c_cir", "next_grade")]
-data_sim2$corps = "ATT"
-data_sim2$grade = data_sim2$c_cir
-data_sim2$ib = data_sim2$ib_2011
-data_sim2$next_situation = NULL
-  
-  
-for (m in 1:length(list_models))  
+increment_data_sim <- function(data_sim, data_results)
 {
-data_sim2$next_situation = data_sim2[, paste0("next_year_hat_", toString(m))  ]
-data_sim2$next_grade = predict_next_grade(data_sim2$next_situation, data_sim2$c_cir_2011, data_exit_oth)
-data_simul_2011 = data_sim2[, c("ident", "annee", "corps", "grade", "ib", "echelon", "next_situation", "next_grade")]
-write.csv(data_simul_2011, file = paste0(save_data_path, "data_simul_2011_bis_m",m,".csv"))
-}  
+  datasets = load_and_clean(data_path, dataname = "filter/data_ATT_2011_filtered_after_duration_var_added_new.csv")
+  if (use == "max"){data_obs = datasets[[1]]}
+  if (use == "min"){data_obs = datasets[[2]]}
+  data_obs  =  create_variables(data_obs) 
+  data_sim =  data_obs[which(data_obs$left_censored == F  & data_obs$annee == 2011),]
+  list_var = c("ident", "annee",  "sexe", "generation_group2", "c_cir_2011",
+               "I_bothC", "I_bothE", "duration", "duration2", "duration3",
+               "echelon", "time", "anciennete_echelon", "ib")
+  return(data_sim[, list_var])
+}
+
+save_prediction_R <- function(data, annee, save_path, modelname)
+{
+  data$corps = "ATT"
+  data$grade = data$c_cir
+  data$next_situation = data$yhat
+  data = data[, c("ident", "annee", "corps", "grade", "ib", "echelon", "next_situation")]
+  filename = paste0(save_path, annee, "_data_simul_withR_",modelname,".csv")
+  write.csv(data, file = filename)
+  print(paste0("Data ", filename, " saved"))
+}
+
+launch_prediction_Py <- function(annee, python_file_path, modelname)
+{
+command ="python"
+path2script= paste0(python_file_path, "simulation.py")
+input_name = paste0(annee, "_data_simul_withR_",modelname,".csv")
+output_name = paste0(annee, "_data_simul_withPy_",modelname,".csv")
+input_arg = paste0("-i ", input_name)
+output_arg = paste0("-o ", output_name)
+args = c(annee, input_arg, output_arg)
+# Add path to script as first arg
+allArgs = c(path2script, args)
+system2(command, args = allArgs)
+}
+  
+
+launch_prediction_Py2 <- function(annee, modelname)
+{
+input_name = paste0(annee, "_data_simul_withR_",modelname,".csv")
+output_name = paste0(annee, "_data_simul_withPy_",modelname,".csv")
+input_arg = paste0(" -i ", input_name)
+output_arg = paste0(" -o ", output_name)
+debug = " -d"
+args = paste0(input_arg, output_arg, debug)
+command =  paste0('simulation',  args)
+shell(command)
+}
+
+
+predict_next_year_MNL <- function(data_sim, model, modelname)
+{
+adhoc <- sample(c("no_exit",   "exit_next", "exit_oth"), nrow(data_sim), replace=TRUE, prob = c(0.2, 0.2, 0.6))
+data_sim$next_year <-adhoc
+data_predict_MNL <- mlogit.data(data_sim, shape = "wide", choice = "next_year")  
+prob     <- predict(model, data_predict_MNL,type = "response") 
+data_sim$yhat <- mapply(tirage_next_year_MNL, prob[,1], prob[,2], prob[,3])
+return(data_sim)
+}
+
+
+
+for (m in 1:length(list_MNL))
+  
+
+for (annee in 2011:2014)
+{
+if (annee == 2011){data_sim = generate_data_sim(data_path, use = "min")}
+# Prediction for MNL
+
+{
+model      = list_MNL[[m]]
+modelname  =  paste0("MNL_", toString(m))  
+pred =  predict_next_year_MNL(data_sim, model, modelname) 
+save_prediction_R(data = pred, annee, save_data_simul_path, modelname)
+launch_prediction_Py2(annee, modelname)
+
+}
+
+  
+  
+}
+  
+}
+
 

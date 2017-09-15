@@ -8,8 +8,12 @@ if (user == "simrab")
 {
 wd =  'U:/Projets/CNRACL/fonction-publique/fonction_publique/estimation/'
 data_path = "M:/CNRACL/output/"
-save_data_path = "/XXX/data/CNRACL/simulation/"
+save_model_path = "Q:/CNRACL/predictions/"
+save_data_simul_path = "M:/CNRACL/simulation/"
+python_file_path = 'U:/Projets/CNRACL/fonction-publique/fonction_publique/estimation/'
 git_path =  'XXX/IPP/CNRACL'
 fig_path = "Q:/CNRACL/Note CNRACL/Figures/"
-tab_path = "XXX/Graphiques/"
+tab_path = "Q:/CNRACL/Note CNRACL/Figures/"
 }
+
+setwd(wd)
