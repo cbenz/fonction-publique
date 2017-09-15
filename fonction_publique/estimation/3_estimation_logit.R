@@ -10,12 +10,28 @@
 
 # Main data
 source(paste0(wd, "0_Outils_CNRACL.R"))
+<<<<<<< HEAD
 datasets = load_and_clean(data_path, "/filter/data_ATT_2011_filtered_after_duration_var_added_new.csv")
+=======
+<<<<<<< HEAD
+datasets = load_and_clean(data_path, "/filter/data_ATT_2011_filtered_after_duration_var_added_new.csv")
+=======
+datasets = load_and_clean(data_path, "data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat_grade_corrected.csv")
+>>>>>>> 93b186717408d8840b39b31bb775fb54e8e7bdd5
+>>>>>>> 2a5c043f2827b0f0932cbfac30b9f067667ea687
 data_max = datasets[[1]]
 data_min = datasets[[2]]
 
 # Sample selection
+<<<<<<< HEAD
 data_est = data_min[which(data_min$annee  == 2011),]
+=======
+<<<<<<< HEAD
+data_est = data_min[which(data_min$annee  == 2011),]
+=======
+data_est =  data_min[which(data_min$annee  == 2011),]
+>>>>>>> 93b186717408d8840b39b31bb775fb54e8e7bdd5
+>>>>>>> 2a5c043f2827b0f0932cbfac30b9f067667ea687
 data_est = create_variables(data_est)  
 
 
