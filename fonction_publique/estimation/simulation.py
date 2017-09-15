@@ -61,7 +61,7 @@ def predict_echelon_next_period_when_no_exit_old(data):
 #
 #    resultats = agents.result
 #    resultats_annuel = resultats[resultats['quarter'].astype(str).str.contains("-12-31")].copy()
-#    # assert resultats_annuel.groupby('ident')['quarter'].count().unique() == 5
+#    # assert resultats_annuel.groupby('ident')['quarter'].count().unique() == 5
 #    resultats_annuel['annee'] = pd.to_datetime(resultats_annuel['quarter']).dt.year
 #    resultats_annuel['c_cir'] = resultats_annuel['grade'].map({793:'TTH1' ,794:'TTH2', 795:'TTH3', 796:'TTH4'})
 #    del resultats_annuel['period']
@@ -97,9 +97,9 @@ def predict_echelon_next_period_when_no_exit(data):
     predicted_year = data_no_exit['annee'].max() + 1
     log.info('Echelon prediction when no exit for year {}'.format(predicted_year))
     data_no_exit['anciennete_dans_echelon'] = 5
-    # FIXME the latter should be more provided by the model
+    # FIXME the latter should be more provided by the model
     # Replace by the following
-    # assert 'anciennete_dans_echelon' in data_no_exit, 'anciennete_dans_echelon should be provided in the data'
+    # assert 'anciennete_dans_echelon' in data_no_exit, 'anciennete_dans_echelon should be provided in the data'
 
     data_no_exit['code_grade_NETNEH'] = data_no_exit['grade']
     del data_no_exit['grade']
@@ -115,7 +115,7 @@ def predict_echelon_next_period_when_no_exit(data):
         .copy()
         )
     agents_grilles['code_grade_NEG'] = agents_grilles['code_grade_NEG'].astype(int)
-    # FIXME very ugly way of dealing with echelon spéciaux of TTH4
+    # FIXME very ugly way of dealing with echelon spéciaux of TTH4
     agents_grilles['echelon'] = agents_grilles['echelon'].replace([-5], 8).astype(int)
     log.debug("3. Number of idents = {} and number of lines is {}".format(
         len(data_no_exit.ident.unique()), len(data_no_exit.ident)))
@@ -298,17 +298,13 @@ def main():
     else:
         level = logging.WARNING
     logging.basicConfig(level = level, stream = sys.stdout)
-    input_file_path = os.path.join(
-        output_directory_path,
-        '..',
-        'simulation',
+    input_file_path = os.path.join(simulation_directory_path, 'results',
         args.input_file
         )
     log.info('Using unput data from {}'.format(input_file_path))
     data = pd.read_csv(input_file_path)
     results = predict_next_period(data = data, grilles = grilles)
-
-    directory_path = os.path.join(simulation_directory_path, 'results_modif_regles_replacement')
+    directory_path = os.path.join(simulation_directory_path, 'results')
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
     output_file_path = os.path.join(directory_path, args.output_file)

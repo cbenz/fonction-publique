@@ -26,7 +26,7 @@ if (use == "max"){data_obs = datasets[[1]]}
 if (use == "min"){data_obs = datasets[[2]]}
 data_obs  =  create_variables(data_obs) 
 data_sim =  data_obs[which(data_obs$left_censored == F  & data_obs$annee == 2011),]
-list_var = c("ident", "annee",  "sexe", "generation_group2", "c_cir_2011",
+list_var = c("ident", "annee",  "sexe", "generation_group2", "c_cir_2011", 
              "I_bothC", "I_bothE", "duration", "duration2", "duration3",
              "echelon", "time", "anciennete_echelon", "ib")
 return(data_sim[, list_var])
@@ -81,17 +81,19 @@ system2(command, args = allArgs)
 }
   
 
-launch_prediction_Py2 <- function(annee, modelname)
+launch_prediction_Py2 <- function(annee, modelname, debug = F)
 {
 input_name = paste0(annee, "_data_simul_withR_",modelname,".csv")
 output_name = paste0(annee, "_data_simul_withPy_",modelname,".csv")
 input_arg = paste0(" -i ", input_name)
 output_arg = paste0(" -o ", output_name)
-debug = " -d"
-args = paste0(input_arg, output_arg, debug)
+d = ifelse(debug, " -d", "")
+args = paste0(input_arg, output_arg, d)
 command =  paste0('simulation',  args)
 shell(command)
 }
+
+
 
 
 predict_next_year_MNL <- function(data_sim, model, modelname)
@@ -104,7 +106,12 @@ data_sim$yhat <- mapply(tirage_next_year_MNL, prob[,1], prob[,2], prob[,3])
 return(data_sim)
 }
 
-
+load_and_clean_prediction(annee, modelname)
+{
+  filename = paste0(, M:/CNRACL/simulation/results\2011_data_simul_withPy_MNL_1.csv)
+  data_long = read.csv(filename)
+  
+}
 
 for (m in 1:length(list_MNL))
   
@@ -118,8 +125,9 @@ if (annee == 2011){data_sim = generate_data_sim(data_path, use = "min")}
 model      = list_MNL[[m]]
 modelname  =  paste0("MNL_", toString(m))  
 pred =  predict_next_year_MNL(data_sim, model, modelname) 
-save_prediction_R(data = pred, annee, save_data_simul_path, modelname)
+save_prediction_R(data = pred, annee, save_path = simul_path, modelname)
 launch_prediction_Py2(annee, modelname)
+load_and_clean_prediction(annee, modelname)
 
 }
 

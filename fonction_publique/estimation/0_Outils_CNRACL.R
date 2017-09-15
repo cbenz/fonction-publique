@@ -94,10 +94,10 @@ create_variables <- function(data)
   grade_modif = which(data$c_cir_2011 == "TTH1" | data$c_cir_2011 == "TTH2")
   data$time2 = data$time
   data$time2[grade_modif] = data$dist_an_aff[grade_modif] 
-  data$I_echC = ifelse(data$echelon >= data$E_choice, 1, 0) 
+  data$I_echC     = ifelse(data$echelon >= data$E_choice, 1, 0) 
   data$I_gradeC   = ifelse(data$time2 >= data$D_choice, 1, 0) 
   data$I_gradeC   = ifelse(data$time2 >= data$D_choice, 1, 0) 
-  data$I_bothC =  ifelse(data$I_echC ==1 &  data$I_gradeC == 1, 1, 0) 
+  data$I_bothC    =  ifelse(data$I_echC ==1 &  data$I_gradeC == 1, 1, 0) 
   data$I_echE     = ifelse(data$echelon >= data$E_exam & data$c_cir_2011 == "TTH1", 1, 0) 
   data$I_gradeE   = ifelse(data$time2 >= data$D_exam & data$c_cir_2011 == "TTH1", 1, 0) 
   data$I_bothE    = ifelse(data$I_echE ==1 &  data$I_gradeE == 1, 1, 0) 
