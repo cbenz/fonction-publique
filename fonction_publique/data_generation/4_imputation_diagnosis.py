@@ -4,14 +4,15 @@
 from __future__ import division
 import pandas as pd
 import os
-from fonction_publique.base import output_directory_path, project_path, grilles
 import matplotlib.pyplot as plt
 import numpy as np
 import operator
 
+
 data_path = os.path.join("M:/CNRACL/output/filter/data_ATT_2011_filtered_after_duration_var_added_new.csv")
 fig_path = os.path.join("Q:/CNRACL/Note CNRACL/Figures")
 data = pd.read_csv(data_path).reset_index()
+
 
 def get_hazards(data_plot, column, idents_keep, grade, duree_min):
     data_plot['temp'] = map(int, data_plot[column].tolist())
@@ -24,7 +25,7 @@ def get_hazards(data_plot, column, idents_keep, grade, duree_min):
         else:
             for i in range(len(range(int(data_plot.annee.min()), (int(data_plot.annee.max()) + 1)))):
                 data_temp = data_plot.loc[:i]
-                print data_temp
+
                 cum_diff.append(reduce(operator.sub, data_temp[column]))
         cum_diff = cum_diff + [len(idents_keep)]
         cum_diff = (list(reversed(cum_diff)))
@@ -182,7 +183,6 @@ def hist_duree_min_duree_max(data):
     plt.show()
     fig.savefig(os.path.join(fig_path, 'gap.pdf'), format='pdf')
     return
-
 
 
 for grade in ['TTH1', 'TTH2', 'TTH3', 'TTH4']:

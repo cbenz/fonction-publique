@@ -30,7 +30,8 @@ setup(
             'generate_data=fonction_publique.scripts.generate_data:main',
             'grade_matching_from_neg=fonction_publique.matching_grade.grade_matching_from_neg:main',
             'grade_matching=fonction_publique.matching_grade.grade_matching:main',
-            ],
+            'simulation=fonction_publique.estimation.simulation:main',
+            'test_script=fonction_publique.test_script:main'            ],
         },
     data_files = [
         ('share/openfisca/fonction-publique', ['LICENSE', 'README.md']),
