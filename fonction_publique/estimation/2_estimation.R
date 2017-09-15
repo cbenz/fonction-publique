@@ -28,8 +28,7 @@ estim = mlogit.data(data_est, shape = "wide", choice = "next_year")
 
 mlog0 = mlogit(next_year ~ 0 | 1, data = estim, reflevel = "no_exit")
 mlog1 = mlogit(next_year ~ 0 | sexe + generation_group2, data = estim, reflevel = "no_exit")
-mlog2 = mlogit(next_year ~ 0 | sexe + generation_group2 + c_5
-               cir_2011, data = estim, reflevel = "no_exit")
+mlog2 = mlogit(next_year ~ 0 | sexe + generation_group2 + cir_2011, data = estim, reflevel = "no_exit")
 mlog3 = mlogit(next_year ~ 0 | sexe + generation_group2 + c_cir_2011 + duration + duration2 + duration3, data = estim, reflevel = "no_exit")
 mlog4 = mlogit(next_year ~ 0 | sexe + generation_group2 + c_cir_2011 + I_bothC, data = estim, reflevel = "no_exit")
 mlog5 = mlogit(next_year ~ 0 | sexe + generation_group2 + c_cir_2011 + I_bothC + I_bothE, 
@@ -37,6 +36,10 @@ mlog5 = mlogit(next_year ~ 0 | sexe + generation_group2 + c_cir_2011 + I_bothC +
 mlog6 = mlogit(next_year ~ 0 | sexe + generation_group2 + c_cir_2011 + 
                I_bothC + I_bothE + duration + duration2 + duration3, 
                data = estim, reflevel = "no_exit")
+
+
+list_MNL = list(mlog0, mlog3, mlog6)
+save(list_MNL, file = paste0(save_model_path, "mlog.rda"))
 
 
 
@@ -93,21 +96,25 @@ list4 = which(data_est$c_cir_2011 == "TTH4")
 
 data_est$exit2 = ifelse(data_est$next_year == 'exit_oth',1, 0) 
 
-mlog1 = mlogit(next_year ~ 0 | sexe + generation_group2 + c_cir_2011 + 
+m1_all = mlogit(next_year ~ 0 | sexe + generation_group2 + c_cir_2011 + 
                          I_bothC + I_bothE + duration + duration2 + duration3, 
                        data = estim, reflevel = "no_exit")
-mlog2 = mlogit(next_year ~ 0 | sexe + generation_group2 + 
+m1_TTH1 = mlogit(next_year ~ 0 | sexe + generation_group2 + 
                  I_bothC + I_bothE + duration + duration2 + duration3, 
                data = estim[list1, ], reflevel = "no_exit")
-mlog3 = mlogit(next_year ~ 0 | sexe + generation_group2 + 
+m1_TTH2 = mlogit(next_year ~ 0 | sexe + generation_group2 + 
                  I_bothC +  duration + duration2 + duration3, 
                data = estim[list2, ], reflevel = "no_exit")
-mlog4 = mlogit(next_year ~ 0 | sexe + generation_group2 + 
+m1_TTH3 = mlogit(next_year ~ 0 | sexe + generation_group2 + 
                  I_bothC +  duration + duration2 + duration3, 
                data = estim[list3, ], reflevel = "no_exit")
-mlog5 = glm(exit2 ~  sexe + generation_group2 + 
+m1_TTH4 = glm(exit2 ~  sexe + generation_group2 + 
                     duration + duration2 + duration3, 
                data = data_est[list4, ], x=T, family=binomial("logit"))
+
+
+save(m1_TTH1, m1_TTH2, m1_TTH3, m1_TTH3, file = paste0(save_model_path, "m1_by_grade.rda"))
+
 
 m1 = extract.mlogit2(mlog1)
 m2 = extract.mlogit2(mlog2)
@@ -165,6 +172,9 @@ data_est2$exit_next = ifelse(data_est2$next_year =='exit_next', 1, 0)
 step2 <- glm(exit_next ~  sexe + generation_group2 + c_cir_2011 + 
                I_bothC + I_bothE + duration + duration2 + duration3, 
              data=data_est2 , x=T, family=binomial("logit"))
+
+
+save(step1, step2, file = paste0(save_model_path, "m1_seq.rda"))
 
 
 m1 = extract.glm2(step1)
