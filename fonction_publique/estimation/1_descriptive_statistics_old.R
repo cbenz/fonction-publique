@@ -4,7 +4,7 @@
 
 
 source(paste0(wd, "0_Outils_CNRACL.R"))
-datasets = load_and_clean(data_path, "/data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat_grade_corrected.csv")
+datasets = load_and_clean(data_path, "clean_data_finalisation/data_ATT_2002_2015_with_filter_on_etat_at_exit_and_change_to_filter_on_etat_grade_corrected.csv")
 data_max = datasets[[1]]
 data_min = datasets[[2]]
 

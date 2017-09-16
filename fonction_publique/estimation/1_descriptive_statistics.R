@@ -94,6 +94,98 @@ print(xtable(table_censoring,align="lccccc",nrow = nrow(table), ncol=ncol(table_
 
 
 
+## I.3 Stats on transitions ####
+
+compute_transitions_next <- function(data, grade)
+{
+  data = data[which(data$c_cir_2011 == grade & data$annee == 2011),]
+  table_exit = numeric(12)
+  # % in each possible next_grade_situation
+  table_exit[1] = round(length(which(data$next_grade_situation == "no_exit"))*100/length(data$next_grade_situation),2)
+  table_exit[2] = round(length(which(data$next_grade_situation == "exit_next"))*100/length(data$next_grade_situation),2)
+  table_exit[3] = round(length(which(data$next_grade_situation == "exit_oth"))*100/length(data$next_grade_situation),2)
+  # From other known neg
+  data_exit_oth = data[which(data$next_grade_situation == "exit_oth"), ]
+  t = as.data.frame(table(data_exit_oth$grade_next)*100/length(data_exit_oth$grade_next))
+  t = t[order(-t$Freq),]
+  for (n in 1:4){
+    table_exit[3+2*n-1] = toString(t[n,1])
+    table_exit[3+2*n] = round(t[n,2],2)
+  }
+  table_exit[12] = length(which(t$Freq >0))
+  return(table_exit)
+}
+
+
+table1 = compute_transitions_next(data_stat, "TTH1")
+table2 = compute_transitions_next(data_stat, "TTH2")
+table3 = compute_transitions_next(data_stat, "TTH3")
+table4 = compute_transitions_next(data_stat, grade = "TTH4")
+
+table = cbind(table1, table2, table3, table4)
+
+colnames(table) <-  c("TTH1", "TTH2", "TTH3", "TTH4")
+rownames(table) <-  c("\\% no exit", "\\% exit next", "\\% exit oth",
+                      "\\hfill 1st oth grade ", "\\hfill  \\% 1st oth", 
+                      "\\hfill 2nd oth grade ", "\\hfill  \\% 2nd oth", 
+                      "\\hfill 3rd oth grade ", "\\hfill  \\% 3rd oth", 
+                      "\\hfill 4th oth grade ", "\\hfill  \\% 4th oth", 
+                      "Nb oth grades")
+
+as.numeric(table[c(1,2,3,5,7,9,11), ]) <- as.numeric(table[c(1,2,3,5,7,9,11), ])
+
+print(xtable(table),
+      sanitize.text.function=identity,size="\\footnotesize")
+
+##  Grade de destination quand exit oht par grade et anne ####
+
+compute_transitions_oth <- function(data, grade, years)
+{
+  data = data[which(data$c_cir_2011 == grade & is.element(data$annee, years)),]
+  data_exit_oth = data[which(data$next_year == "exit_oth"), ]
+  table_exit = numeric(10)
+  # % exit oth
+  table_exit[1] = round(length(data_exit_oth$ident)*100/length(data$ident),2)
+  t = as.data.frame(table(data_exit_oth$next_grade)*100/length(data_exit_oth$next_grade))
+  t = t[order(-t$Freq),]
+  for (n in 1:4){
+    table_exit[1+2*n-1] = toString(t[n,1])
+    table_exit[1+2*n] = round(t[n,2],2)
+  }
+  table_exit[10] = length(which(t$Freq >0))
+  return(table_exit)
+}
+
+for (y in 2011:2014)
+{  
+  for (g in c("TTH1", "TTH2", "TTH3", "TTH4"))
+  {
+    subtable = compute_transitions_oth(data_min, grade = g, years = y)
+    if (g == "TTH1"){tabley = subtable}
+    else{ tabley = cbind(tabley, subtable)  }
+  }
+  print(tabley)
+  if (y == 2011){table = tabley}
+  else{ table = rbind(table, tabley)  }  
+}
+
+
+colnames(table) <-  c("TTH1", "TTH2", "TTH3", "TTH4")
+rownames(table) <-  c("\\% no exit", "\\% exit next", "\\% exit oth",
+                      "\\hfill 1st oth grade ", "\\hfill  \\% 1st oth", 
+                      "\\hfill 2nd oth grade ", "\\hfill  \\% 2nd oth", 
+                      "\\hfill 3rd oth grade ", "\\hfill  \\% 3rd oth", 
+                      "\\hfill 4th oth grade ", "\\hfill  \\% 4th oth", 
+                      "Nb oth grades")
+
+as.numeric(table[c(1,2,3,5,7,9,11), ]) <- as.numeric(table[c(1,2,3,5,7,9,11), ])
+
+print(xtable(table),
+      sanitize.text.function=identity,size="\\footnotesize")
+
+
+
+
 
 ####### II. Hazard and surival analysis #######
 

@@ -5,7 +5,7 @@
 ## I. Packages
 list_packages = list()
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(OIsurv, rms, emuR, RColorBrewer, flexsurv, mfx, devtools,
+pacman::p_load(OIsurv, rms, emuR, RColorBrewer, flexsurv, mfx, devtools, plyr, 
                texreg, xtable, mlogit, data.table, pscl)
 
 
@@ -29,6 +29,8 @@ load_and_clean = function(data_path, dataname)
   data_long$observed  = ifelse(data_long$right_censored == 1, 0, 1) 
   data_long$echelon_2011 = ave(data_long$echelon*(data_long$annee == 2011), data_long$ident, FUN = max)
   data_long$last_y_in_grade = data_long$annee_exit - 1
+  
+  data_long$grade = as.character(data_long$c_cir)
   
   # Duration variables
   data_long$time_spent_in_grade_max  = data_long$annee - data_long$annee_entry_min + 1
@@ -91,17 +93,17 @@ create_variables <- function(data)
   
   data$age_an_aff    = data$an_aff - data$generation
   data$dist_an_aff = data$annee - data$an_aff +1 
-  grade_modif = which(data$c_cir_2011 == "TTH1" | data$c_cir_2011 == "TTH2")
+  grade_modif = which(data$grade == "TTH1" | data$grade == "TTH2")
   data$time2 = data$time
   data$time2[grade_modif] = data$dist_an_aff[grade_modif] 
   data$I_echC     = ifelse(data$echelon >= data$E_choice, 1, 0) 
   data$I_gradeC   = ifelse(data$time2 >= data$D_choice, 1, 0) 
   data$I_gradeC   = ifelse(data$time2 >= data$D_choice, 1, 0) 
   data$I_bothC    =  ifelse(data$I_echC ==1 &  data$I_gradeC == 1, 1, 0) 
-  data$I_echE     = ifelse(data$echelon >= data$E_exam & data$c_cir_2011 == "TTH1", 1, 0) 
-  data$I_gradeE   = ifelse(data$time2 >= data$D_exam & data$c_cir_2011 == "TTH1", 1, 0) 
+  data$I_echE     = ifelse(data$echelon >= data$E_exam & data$grade == "TTH1", 1, 0) 
+  data$I_gradeE   = ifelse(data$time2 >= data$D_exam & data$grade == "TTH1", 1, 0) 
   data$I_bothE    = ifelse(data$I_echE ==1 &  data$I_gradeE == 1, 1, 0) 
-  data$c_cir = factor(data$c_cir)
+
   
   data$duration = data$time
   data$duration2 = data$time^2 
@@ -116,10 +118,9 @@ create_variables <- function(data)
   
   data$generation_group = factor(data$generation_group)
   data$c_cir_2011 = factor(data$c_cir_2011)
-  data$grade = factor(data$c_cir)
   
   # Unique threshold (first reached)
-  grade_modif_bis = which(data$c_cir_2011 == "TTH1")
+  grade_modif_bis = which(data$grade == "TTH1")
   data$I_unique_threshold = data$I_bothC
   data$I_unique_threshold[grade_modif_bis] = data$I_bothE[grade_modif_bis]
   

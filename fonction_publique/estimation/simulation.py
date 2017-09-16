@@ -98,7 +98,7 @@ def predict_echelon_next_period_when_no_exit(data):
     resultats = agents.result
     resultats_annuel = resultats[resultats.quarter.astype(str).str.contains("-12-31")].copy()
     assert resultats_annuel.groupby('ident')['quarter'].count().unique() == 1, resultats_annuel.groupby('ident')['quarter'].count().unique()
-    resultats_annuel['next_annee'] = pd.to_datetime(resultats_annuel['quarter']).dt.year  # Au 31 décembre de l'année précédente
+    resultats_annuel['next_annee'] = pd.to_datetime(resultats_annuel['quarter']).dt.year  # Au 31 décembre de l'année précédente
     resultats_annuel.rename(columns = {
         'echelon': 'next_echelon',
         'anciennete_dans_echelon_bis': 'next_anciennete_dans_echelon',
@@ -197,7 +197,7 @@ def get_ib(data, grilles):
     assert len(annees) == 1
     annee = annees[0]
     grilles = grilles.copy()
-    # grilles['echelon'] = grilles['echelon'].replace(['ES'], 55555).astype(int)  # FIXME or drop me
+    # grilles['echelon'] = grilles['echelon'].replace(['ES'], 55555).astype(int)  # FIXME or drop me
     grilles_grouped = (grilles
         .query('annee_effet_grille <= @annee')
         .groupby(['code_grade_NETNEH', 'echelon'])
@@ -217,7 +217,7 @@ def get_ib(data, grilles):
         right_on = ['code_grade_NETNEH', 'echelon'],
         how = 'left',
         )[
-            ['ident', 'annee', 'grade', 'echelon', 'ib', 'situation']
+            ['ident', 'annee', 'grade', 'echelon', 'anciennete_dans_echelon', 'ib', 'situation']
             ]
     return data_merged
 
@@ -257,7 +257,7 @@ def main():
     parser.add_argument('-i', '--input-file', default = '2011_data_simul_withR_MNL_1.csv', help = 'input file (csv)')
     parser.add_argument('-o', '--output-file', default = 'results_2011_m1.csv', help = 'output file (csv)')
     parser.add_argument('-v', '--verbose', action = 'store_true', default = False, help = "increase output verbosity")
-    parser.add_argument('-d', '--debug', action = 'store_true', default = True, help = "increase output verbosity (debug mode)")
+    parser.add_argument('-d', '--debug', action = 'store_true', default = False, help = "increase output verbosity (debug mode)")
 
     args = parser.parse_args()
     if args.verbose:
