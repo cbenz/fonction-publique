@@ -29,6 +29,7 @@ class AgentFpt:
         self.period = dataframe.period
         self.grade = dataframe.grade
         self.echelon = dataframe.echelon
+        self.anciennete_dans_echelon = dataframe.anciennete_dans_echelon
         # anciennete dans echelon unit is one month
         self.agentfptCount = len(dataframe)
         log.debug('Setting a dataframe with {} rows'.format(self.agentfptCount))
@@ -316,7 +317,7 @@ class AgentFpt:
             date_effet_variable_name = 'date_effet_grille_en_cours_fin_periode_echelon_selon_grille_initiale',
             duree_variable_name = 'duree_echelon_selon_grille_en_cours_fin_periode_echelon_selon_grille_initiale'
             )
-        # 7. Calcule duree effectie dans l'échelon
+        # 7. Calcule duree effective dans l'échelon
         self.compute_duree_effective_dans_echelon()
         # 8. Calcule la date finale dans l'échelon
         self.add_duree_echelon_to_date(
@@ -346,10 +347,10 @@ class AgentFpt:
             df = dataframe.loc[
                 (dataframe[date_observation] <= quarter_begin) &
                 (quarter_date <= (dataframe.date_finale_dans_echelon + pd.tseries.offsets.MonthEnd())),
-                [date_observation, 'echelon', 'ident', 'grade']
+                [date_observation, 'echelon', 'ident', 'grade', 'anciennete_dans_echelon']
                 ].copy()
             df['quarter'] = quarter_date
-
+            df['anciennete_dans_echelon_bis'] = (df.quarter - df.period + df.anciennete_dans_echelon.values.astype("timedelta64[M]")).astype("timedelta64[M]").astype(int)
             result = pd.concat([result, df])
 
         self.result = pd.concat([self.result, result])
@@ -403,7 +404,7 @@ class AgentFpt:
             dataframe.date_finale_dans_echelon.notnull() & (
                 dataframe.date_finale_dans_echelon < self.end_date
                 ),
-            ['ident', 'date_finale_dans_echelon', 'grade', 'echelon'],
+            ['ident', 'date_finale_dans_echelon', 'grade', 'echelon', 'anciennete_dans_echelon'],
             ].copy()
         next_dataframe.rename(columns = dict(date_finale_dans_echelon = 'period'), inplace = True)
 
