@@ -17,8 +17,8 @@
 
 source(paste0(wd, "0_Outils_CNRACL.R")) 
 load(paste0(save_model_path, "mlog.rda"))
-load(paste0(save_model_path, "seq.rda"))
-load(paste0(save_model_path, "by_grade.rda"))
+load(paste0(save_model_path, "m1_seq.rda"))
+load(paste0(save_model_path, "m1_by_grade.rda"))
 
 generate_data_sim <- function(data_path, use = "min")
 {
@@ -40,7 +40,8 @@ generate_data_output <- function(data_path)
   filename = paste0(data_path, dataname)
   data_long = read.csv(filename)
   data_long$grade = data_long$c_cir
-  list_var = c("ident", "annee", "grade","ib", "echelon")
+  data_long$situation = data_long$next_grade_situation
+  list_var = c("ident", "annee", "c_cir_2011", "grade","ib", "echelon", "situation")
   output = data_long[which(data_long$annee >= 2011 & data_long$annee <= 2015), list_var]
   return(output[, list_var])
 }
@@ -107,6 +108,9 @@ predict_next_year_MNL <- function(data_sim, model, modelname)
 }
 
 
+
+
+
 predict_next_year_byG <- function(data_sim, list_model, modelname)
 {
   adhoc <- sample(c("no_exit",   "exit_next", "exit_oth"), nrow(data_sim), replace=TRUE, prob = c(0.2, 0.2, 0.6))
@@ -115,18 +119,31 @@ predict_next_year_byG <- function(data_sim, list_model, modelname)
   # Prediction by grade
   n = names(data_sim)
   data_merge = as.data.frame(setNames(replicate(length(n),numeric(0), simplify = F), n))
+  list_grade = c("TTH1","TTH2", "TTH3", "TTH4")
   for (g in 1:length(list_grade))
   {
     data = data_sim[which(data_sim$grade == list_grade[g]), ]
-    mlogit.data(data, shape = "wide", choice = "next_year")  
-    prob     <- predict(list_model[g], data_predict1 ,type = "response") 
+    model = list_model[[g]]
+    if (list_grade[g] != "TTH4")
+    {
+    data_predict = mlogit.data(data, shape = "wide", choice = "next_year")  
+    prob     <- predict(model, data_predict ,type = "response") 
     data$yhat = mapply(tirage_next_year_MNL, prob[,1], prob[,2], prob[,3])
+    }
+    if (list_grade[g] == "TTH4")
+    {
+      data_predict = data
+      prob     <- predict(model, data_predict ,type = "response") 
+      pred     <- as.numeric(mapply(tirage, prob))
+      data$yhat = ifelse(pred == 1, "exit_oth", "no_exit")
+    }
+    
     data_merge = rbind(data_merge, data)
   }
 
   if (length(unique(data_sim$grade)) > 4)
   {
-    data_noAT = data_sim[which(!is.element(data_sim$grade, c("TTH1","TTH2", "TTH3", "TTH4"))), ]
+    data_noAT = data_sim[which(!is.element(data_sim$grade, list_grade)), ]
     data_noAT$yhat = "no_exit" 
     data_sim = rbind(data_merge, data_noAT)  
   }
@@ -244,9 +261,10 @@ for (m in 1:5)
     }
     # Prediction of next_situation from estimated model 
     if (m <= 3){pred =  predict_next_year_MNL(data_sim, model = list_MNL[[m]], modelname)} 
-    if (m == 4){pred =  predict_next_year_seq(data_sim, list(mTTH1, mTTH2, mTTH3, mTTH4), modelname)}
+    if (m == 4){pred =  predict_next_year_byG(data_sim, list(m1_TTH1, m1_TTH2, m1_TTH3, m1_TTH4), modelname)}
     if (m == 5){pred =  predict_next_year_seq(data_sim, step1, step2, modelname)}
     # Save prediction for Py simulation
+    output[which(output$annee == annee), paste0("situation_", modelname)] = pred$yhat
     save_prediction_R(data = pred, annee, simul_path, modelname)
     # Prediction of next_ib using simulation.py
     launch_prediction_Py(annee, modelname)

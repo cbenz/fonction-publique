@@ -113,7 +113,7 @@ m1_TTH4 = glm(exit2 ~  sexe + generation_group2 +
                data = data_est[list4, ], x=T, family=binomial("logit"))
 
 
-save(mTTH1, mTTH2, mTTH3, mTTH4, file = paste0(save_model_path, "by_grade.rda"))
+save(m1_TTH1, m1_TTH2, m1_TTH3, m1_TTH4, file = paste0(save_model_path, "m1_by_grade.rda"))
 
 
 m1 = extract.mlogit2(mlog1)
@@ -174,7 +174,7 @@ step2 <- glm(exit_next ~  sexe + generation_group2 + grade +
              data=data_est2 , x=T, family=binomial("logit"))
 
 
-save(step1, step2, file = paste0(save_model_path, "seq.rda"))
+save(step1, step2, file = paste0(save_model_path, "m1_seq.rda"))
 
 
 m1 = extract.glm2(step1)

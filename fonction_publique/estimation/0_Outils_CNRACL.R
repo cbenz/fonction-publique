@@ -5,7 +5,7 @@
 ## I. Packages
 list_packages = list()
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(OIsurv, rms, emuR, RColorBrewer, flexsurv, mfx, devtools, plyr, 
+pacman::p_load(OIsurv, rms, emuR, RColorBrewer, flexsurv, mfx, devtools, plyr, lazyeval, ggplot2, gridExtra,
                texreg, xtable, mlogit, data.table, pscl)
 
 
@@ -149,11 +149,12 @@ extract_exit = function(data, exit_var)
   data$ind_exit_tot   = ave(data$ind_exit, data$ident, FUN = sum)
   ### PB  
   data$ind_first_exit  = ifelse(data$ind_exit_cum2 == 1, 1, 0) 
+  data$ind_first_exit[which(is.na(data$ind_first_exit))] = 0
   data$year_exit = ave((data$ind_first_exit*data$annee), data$ident, FUN = max)
   data$year_exit[which(data$year_exit == 0)] = 2014
   data2 = data[which(data$annee == data$year_exit ),]
   data2$year_exit[which(data2$ind_exit_tot == 0)] = 9999
-  
+  stopifnot(length(unique(data2$ident)) == length(unique(data$ident)))
   data2 = data2[, c("ident", "c_cir_2011", "year_exit", "exit_var")]
   return(data2)
 }  
@@ -222,7 +223,7 @@ predict_next_grade <- function(next_situation, grade, exit_oth)
 }  
 
 
-extract_exit = function(data, exit_var, name)
+extract_exit2 = function(data, exit_var, name)
 # Fonction computing for each individual in data the year of exit and the grade of destination.
 {
   data = data[, c("ident", "annee", exit_var)]
@@ -243,7 +244,47 @@ extract_exit = function(data, exit_var, name)
 }  
 
 
-### IV. Generic functions 
+### III. Graphes and tables 
+
+
+plot_share = function(exit_data, plot = F, title = "")
+{
+  # Construction data  
+  n_id = nrow(exit_data)
+  exit_data =  exit_data[rep(seq_len(nrow(exit_data)), each=5),]  
+  exit_data$annee = rep(seq(2011, 2015), n_id)
+  exit_data$state = ifelse(exit_data$annee <= exit_data$year_exit, 3, 0)
+  exit_data$state[which(exit_data$exit_var == "exit_next" & exit_data$state == 0)] = 2
+  exit_data$state[which(exit_data$exit_var == "exit_oth" & exit_data$state == 0)] = 1
+  # Graphe shares
+  df <- data.frame(Annee=numeric(),Status=numeric(),pct=numeric())
+  date <- seq(2011, 2015)
+  for (s in 1:3) 
+  { 
+    m <- matrix(ncol=3,nrow=length(date))
+    m[,1] <- s
+    m[,2] <- date
+    for (a in 1:length(date))
+    {
+      m[a,3]<- length(which(exit_data$annee==date[a] & exit_data$state == s))/length(which(exit_data$annee==date[a]))
+    }  
+    df <- rbind(df,as.data.frame(m))
+  }  
+  names(df) <- c("status","date","pct")
+  df$status2 <- as.factor(df$status)
+  s_titles <-  c("Sortie hors corps", "Sortie dans corps", "Grade initial")
+  n_col <- c("grey10", "grey40", "grey80")
+  p1 = ggplot(df, aes(x=date, y=pct, fill=status2)) + geom_area()+
+    scale_fill_manual(name="", values = n_col[1:6], labels=s_titles)+
+    scale_y_continuous( expand = c(0, 0)) +  scale_x_continuous( expand = c(0, 0)) + 
+    xlab("Annee")+ylab("Proportion")  + theme_bw() 
+  if (title != ""){p1 = p1 + ggtitle(title)}
+  if (plot){p1}
+  return(p1)
+}  
+
+
+### IV. Generic functions #####
 
 
 shift<-function(x,shift_by){
@@ -922,3 +963,34 @@ texreg2 <- function (l, file = NULL, single.row = FALSE, stars = c(0.001,0.01, 0
   }
 }
 environment(texreg2) = environment(texreg)
+
+
+
+grid_arrange_shared_legend <- function(..., ncol = length(list(...)), nrow = 1, position = c("bottom", "right")) {
+  
+  plots <- list(...)
+  position <- match.arg(position)
+  g <- ggplotGrob(plots[[1]] + theme(legend.position = position))$grobs
+  legend <- g[[which(sapply(g, function(x) x$name) == "guide-box")]]
+  lheight <- sum(legend$height)
+  lwidth <- sum(legend$width)
+  gl <- lapply(plots, function(x) x + theme(legend.position="none"))
+  gl <- c(gl, ncol = ncol, nrow = nrow)
+  
+  combined <- switch(position,
+                     "bottom" = arrangeGrob(do.call(arrangeGrob, gl),
+                                            legend,
+                                            ncol = 1,
+                                            heights = unit.c(unit(1, "npc") - lheight, lheight)),
+                     "right" = arrangeGrob(do.call(arrangeGrob, gl),
+                                           legend,
+                                           ncol = 2,
+                                           widths = unit.c(unit(1, "npc") - lwidth, lwidth)))
+  
+  grid.newpage()
+  grid.draw(combined)
+  
+  # return gtable invisibly
+  invisible(combined)
+  
+}
