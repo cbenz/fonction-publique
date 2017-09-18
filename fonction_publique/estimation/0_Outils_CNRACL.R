@@ -5,7 +5,7 @@
 ## I. Packages
 list_packages = list()
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(OIsurv, rms, emuR, RColorBrewer, flexsurv, mfx, devtools, plyr, lazyeval, ggplot2, gridExtra,
+pacman::p_load(OIsurv, rms, emuR, RColorBrewer, flexsurv, mfx, devtools, plyr, lazyeval, ggplot2, gridExtra, grid, 
                texreg, xtable, mlogit, data.table, pscl)
 
 

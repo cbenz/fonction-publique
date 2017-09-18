@@ -12,10 +12,10 @@ source(paste0(wd, "0_Outils_CNRACL.R"))
 # Load results
 load(paste0(simul_path, "predictions.Rdata"))
 
-## I. Exit grade 2011-2014 ####
+########## I. Exit grade 2011-2014   ##########
 
 
-# Compute exit rates and drawing plot
+## I.1 Compute exit rates and drawing plot ####
 
 # Obs
 exit_obs      = extract_exit(output_global, "situation")
@@ -74,11 +74,90 @@ grid_arrange_shared_legend(p_obs_TTH4,p_MNL_2_TTH4, p_MNL_3_TTH4, p_BG_1_TTH4, p
 dev.off()
 
 
+## I.2 Caracteristics of movers in 2011 ####
+
+# Caracteristics of movers
+
+movers_characteristics = function(data, exit_var)
+{  
+  table_movers = numeric(22)
+  data$exit = data[, exit_var]
+  data$age = 2011 - data$generation
+  data$femme =ifelse(data$sexe == "F", 1, 0)
+  data = data[which(data$annee == 2011),]
+  # All
+  table_movers[1] = 100*length(which(exit[] == "exit_next"))/length(exit[])
+  table_movers[2] = 100*length(which(exit[] == "exit_oth"))/length(exit[])                              
+  # Women
+  list = which(data$exit == "exit_next")
+  table_movers[3] = 100*mean(data$femme[list])
+  list = which(data$exit == "exit_oth")
+  table_movers[4] = 100*mean(data$femme[list])
+  # Age
+  list = which(data$exit == "exit_next")
+  table_movers[5] = mean(data$age[list])
+  list = which(data$exit == "exit_oth")
+  table_movers[6] = mean(data$age[list])
+  # TTH1
+  list = which(data$c_cir_2011 == "TTH1")
+  table_movers[7] = 100*length(which(data$exit[list] == "exit_next"))/length(data$exit[list])
+  table_movers[8] = 100*length(which(data$exit[list] == "exit_oth"))/length(data$exit[list])  
+  # TTH2
+  list = which(data$c_cir_2011 == "TTH2")
+  table_movers[9] = 100*length(which(data$exit[list] == "exit_next"))/length(data$exit[list])
+  table_movers[10] = 100*length(which(data$exit[list] == "exit_oth"))/length(data$exit[list])  
+  # TTH3
+  list = which(data$c_cir_2011 == "TTH3")
+  table_movers[11] = 100*length(which(data$exit[list] == "exit_next"))/length(data$exit[list])
+  table_movers[12] = 100*length(which(data$exit[list] == "exit_oth"))/length(data$exit[list])  
+  # TTH4
+  list = which(data$c_cir_2011 == "TTH4")
+  table_movers[13] = 100*length(which(data$exit[list] == "exit_next"))/length(data$exit[list])
+  table_movers[14] = 100*length(which(data$exit[list] == "exit_oth"))/length(data$exit[list])  
+  # IB distrib
+  list = which(data$exit == "exit_next")
+  table_movers[15] = mean(data$ib[list])
+  table_movers[16:18] = as.numeric(quantile(data$ib[list])[2:4])
+  list = which(data$exit == "exit_oth")
+  table_movers[19] = mean(data$ib[list])
+  table_movers[20:22] = as.numeric(quantile(data$ib[list])[2:4])
+  return(table_movers)
+}  
+
+table_obs =  movers_characteristics(output_global, exit_var = "situation")
+for (m in c("MNL_2", "MNL_3", "BG_1","MS_1"))
+{
+  var = paste0("situation_", m)  
+  table     = movers_characteristics(output_global, exit_var = var)
+  assign(paste0("table_", m), table)  
+}
+
+table_movers = cbind(table_obs, table_MNL_2, table_MNL_3, table_BG_1, table_MS_1)
+colnames(table_movers) = c('Observed', "MNL_2", "MNL_3", "BG_1", "MS_1")
+rownames(table_movers) = c("\\% exit next All", "\\% exit oth All", 
+                           "\\% Women when exit next", "\\% Women when exit oth",
+                           "Mean age when exit next", "Mean age  when exit oth",
+                           "\\% exit next TTH1", "\\% exit oth TTH1", "\\% exit next TTH2", "\\% exit oth TTH2",
+                           "\\% exit next TTH3", "\\% exit oth TTH3", "\\% exit next TTH4", "\\% exit oth TTH4",
+                           "Mean IB when exit next", "Q1 IB when exit next", "Q2 IB when exit next","Q3 IB when exit next",
+                           "Mean IB when exit oth", "Q1 IB when exit oth", "Q2 IB when exit oth","Q3 IB when exit oth")
+
+mdigit <- matrix(c(rep(2,(ncol(table_movers)+1)*14),rep(0,(ncol(table_movers)+1)*8)),
+                 nrow = nrow(table_movers), ncol=ncol(table_movers)+1, byrow=T)                           
+print(xtable(table_movers,nrow = nrow(table_movers), 
+             ncol=ncol(table_movers)+1, byrow=T, digits = mdigit),
+      sanitize.text.function=identity,size="\\footnotesize", hline.after = c(0, 2, 4, 6, 8, 10, 12, 14, 18),
+      only.contents=F, include.colnames = T)
+
+
+
+
 
 ############ II. IB #############
 
 
 ## II. 1 Plot distributions ####
+
 plot_distrib_ib_by_year = function(data, var)
 {
 # Drop ib above 500
@@ -97,8 +176,6 @@ plot(NA, xlim=range(sapply(dens, "[", "x")), ylim=range(sapply(dens, "[", "y")),
 mapply(lines, dens, col=ncolors, lwd = 3)
 legend("topright", legend= c(2011, 2013, 2015), fill=ncolors)
 }
-
-
 
 pdf(paste0(fig_path,"dist_ib_all.pdf"))
 plot_distrib_ib_by_year(data = output_global, var = "ib") 
@@ -119,7 +196,6 @@ dev.off()
 
 
 ## II. 2 Table ####
-
 
 
 table_masse_ib = function(data, var_ib)
@@ -151,53 +227,48 @@ table_gain_ib = function(data, var_ib, var_situation)
 {
   data$var_ib = data[, var_ib]
   data$var_situation = data[, var_situation]
-  data$next_ib = ave(data$ib, data$ident, FUN = shift1)
-  data$gain_ib = data$next_ib - data$ib
+  data$next_ib = ave(data$var_ib, data$ident, FUN = shift1)
+  data$gain_ib = data$next_ib - data$var_ib
   data$I_gain = ifelse(data$gain_ib >0, 1, 0)
-  data$gain_ib_pct = 100*(data$gain_ib)/data$ib
+  data$gain_ib_pct = 100*(data$gain_ib)/data$var_ib
   data = data[which(data$annee < 2015),]
   
-  table = numeric(1)
+  table = numeric(21)
   
-  
-  table[1] = mean(data$gain_ib)
-  table[2] = median(data$gain_ib_pct)
-  table[3] = 100*mean(data$I_gain)
+  table[1] = mean(data$gain_ib, na.rm = T)
+  table[2] = median(data$gain_ib_pct, na.rm = T)
+  table[3] = 100*mean(data$I_gain, na.rm = T)
   
   list_grade = c("TTH1", "TTH2", "TTH3", "TTH4")
   for (g in 1:length(list_grade))
   {
     list = which(data$c_cir_2011 == list_grade[g])
-    table[3*g+1] = mean(data$gain_ib[list])
-    table[3*g+2] = median(data$gain_ib_pct[list])
-    table[3*g+3] = 100*mean(data$I_gain[list])
+    table[3*g+1] = mean(data$gain_ib[list], na.rm = T)
+    table[3*g+2] = median(data$gain_ib_pct[list], na.rm = T)
+    table[3*g+3] = 100*mean(data$I_gain[list], na.rm = T)
   }
   list = which(data$var_situation == "no_exit")
-  table[16] = mean(data$gain_ib[list])
-  table[17] = 100*mean(data$I_gain[list])
+  table[16] = mean(data$gain_ib[list], na.rm = T)
+  table[17] = 100*mean(data$I_gain[list], na.rm = T)
   list = which(data$var_situation == "exit_next")
-  table[18] = mean(data$gain_ib[list])
-  table[19] = 100*mean(data$I_gain[list])
+  table[18] = mean(data$gain_ib[list], na.rm = T)
+  table[19] = 100*mean(data$I_gain[list], na.rm = T)
   list = which(data$var_situation == "exit_oth")
-  table[20] = mean(data$gain_ib[list])
-  table[21] = 100*mean(data$I_gain[list])
+  table[20] = mean(data$gain_ib[list], na.rm = T)
+  table[21] = 100*mean(data$I_gain[list], na.rm = T)
   
   return(table)
 }
 
 obs = table_gain_ib(output_global, "ib", "situation")
-for (m in c("MNL_3", "BG_1","MS_1" ))
+for (m in c("MNL_1","MNL_2", "MNL_3", "BG_1","MS_1" ))
 {
-  var_situation = paste0("situation_", m)  
-  var_ib = paste0("ib_", m) 
-  table = table_gain_ib(output_global, exit_var = var)
+  table = table_gain_ib(data = output_global, var_ib = paste0("ib_", m) , paste0("situation_", m) )
   assign(paste0("table_", m), table)  
 }
 
-table = cbind(obs, obs2, obs3)
-model_names = c("obs", "obs")
-
-colnames(table) = c('Observed', model_names)
+table = cbind(obs,table_MNL_1, table_MNL_2, table_MNL_3, table_BG_1, table_MS_1)
+colnames(table) = c('Observed', "MNL_2", "MNL_3", "BG_1","MS_1" )
 rownames(table) = c("gain ib moyen", "gain ib median en \\%", "\\% gain ib > 0",
                      "gain ib moyen TTH1", "gain ib median en \\% TTH1", "\\% gain ib > 0  TTH1",
                      "gain ib moyen TTH2", "gain ib median en \\% TTH2", "\\% gain ib > 0  TTH2",
@@ -208,11 +279,11 @@ rownames(table) = c("gain ib moyen", "gain ib median en \\%", "\\% gain ib > 0",
                      "gain ib moyen exit_oth", "\\% gain ib > 0 exit_oth"
                      )
 
-mdigit <- matrix(c(rep(2,(ncol(table)+1)*12),rep(0,(ncol(table)+1)*8)),
-                 nrow = nrow(table), ncol=ncol(table)+1, byrow=T)                           
-print(xtable(table,nrow = nrow(table_movers), 
+print(xtable(table,nrow = nrow(table), 
              ncol=ncol(table_movers)+1, byrow=T, digits = 2),
       sanitize.text.function=identity,size="\\footnotesize", hline.after = c(0, 3, 6, 9, 12, 15, 17, 19, 21),
       only.contents=F, include.colnames = T)
 
+
+check_old = table
 

@@ -160,6 +160,8 @@ print(texreg2(model.list,
 #### III. Sequential logit ####
 
 
+### M1 : sortie ou non / d
+
 # Step 1: 
 data_est$exit = ifelse(data_est$next_year == 'exit_oth' | data_est$next_year =='exit_next', 1, 0)
 

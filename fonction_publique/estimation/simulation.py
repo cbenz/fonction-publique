@@ -98,16 +98,26 @@ def predict_echelon_next_period_when_no_exit(data):
     log.debug("5. Number of idents = {} and number of lines is {}".format(
         len(data_no_exit.ident.unique()), len(data_no_exit.ident)))
 
-    # data_no_exit['anciennete_dans_echelon'] = data_no_exit['anciennete_dans_echelon'].fillna(1)  # FIXME upstream
-    # data_no_exit['anciennete_dans_echelon'] = data_no_exit['anciennete_dans_echelon'].astype(int)
-    data_no_exit['anciennete_dans_echelon'] = 5
+    data_no_exit['anciennete_dans_echelon'] = data_no_exit['anciennete_dans_echelon'].fillna(5)  # FIXME upstream
+    data_no_exit['anciennete_dans_echelon'] = data_no_exit['anciennete_dans_echelon'].astype(int)
+    data_no_exit.loc[
+        (data_no_exit['anciennete_dans_echelon'] < 2),
+        'anciennete_dans_echelon'
+        ] = 2  # FIXME very ugly to dazla with anciennete_echelon edges !
     agents = AgentFpt(data_no_exit, end_date = pd.Timestamp(predicted_year + 1, 1, 1))  # < end_date
     agents.set_grille(agents_grilles)
     agents.compute_result()
     resultats = agents.result
-    resultats_annuel = resultats[resultats.quarter.astype(str).str.contains("-12-31")].copy()
+    assert len(data_no_exit) == len(resultats.ident.unique())
+
+    resultats_annuel = resultats[
+        resultats.quarter.astype(str).str.contains("{}-12-31".format(predicted_year))
+        ].copy()
+    assert len(data_no_exit) == len(resultats_annuel.ident.unique())
     assert resultats_annuel.groupby('ident')['quarter'].count().unique() == 1, resultats_annuel.groupby('ident')['quarter'].count().unique()
+
     resultats_annuel['next_annee'] = pd.to_datetime(resultats_annuel['quarter']).dt.year  # Au 31 décembre de l'année précédente
+    assert (resultats_annuel['next_annee'] == predicted_year).all()
     resultats_annuel.rename(columns = {
         'echelon': 'next_echelon',
         'anciennete_dans_echelon_bis': 'next_anciennete_dans_echelon',
@@ -124,6 +134,7 @@ def predict_echelon_next_period_when_no_exit(data):
         on = ['ident'],
         how = 'left',
         )
+
     return data_no_exit
 
 
@@ -180,7 +191,6 @@ def predict_echelon_next_period_when_exit(data, grilles):
     del data_exit_with_ib_pour_ib['code_grade_NETNEH']
     del data_exit_with_ib_pour_ib['ib_grilles']
 
-    print data_exit_echelon_pour_echelon.head()
     data_exit_with_echelon_pour_echelon = data_exit_echelon_pour_echelon.query('echelon == next_echelon').copy().rename(
         columns = {"ib_data": "ib", "ib_grilles": "next_ib"})
     data_exit_with_echelon_pour_echelon_right_col = data_exit_with_echelon_pour_echelon[

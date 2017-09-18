@@ -20,6 +20,9 @@ load(paste0(save_model_path, "mlog.rda"))
 load(paste0(save_model_path, "m1_seq.rda"))
 load(paste0(save_model_path, "m1_by_grade.rda"))
 
+set.seed(1234)
+
+
 generate_data_sim <- function(data_path, use = "min")
 {
 datasets = load_and_clean(data_path, dataname = "filter/data_ATT_2011_filtered_after_duration_var_added_new.csv")
@@ -41,7 +44,7 @@ generate_data_output <- function(data_path)
   data_long = read.csv(filename)
   data_long$grade = data_long$c_cir
   data_long$situation = data_long$next_grade_situation
-  list_var = c("ident", "annee", "c_cir_2011", "grade","ib", "echelon", "situation")
+  list_var = c("ident", "annee", "c_cir_2011", "sexe", "generation", "grade","ib", "echelon", "situation")
   output = data_long[which(data_long$annee >= 2011 & data_long$annee <= 2015), list_var]
   return(output[, list_var])
 }
@@ -278,7 +281,7 @@ for (m in 1:5)
   output_global = merge(output_global, output, by = c("ident", "annee"), all.x = T)
 }
 
-save(output_global, file = paste0(simul_path, "predictions.Rdata"))
+save(output_global, file = paste0(simul_path, "predictions2.Rdata"))
 
 
 
