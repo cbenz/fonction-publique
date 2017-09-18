@@ -128,7 +128,7 @@ def predict_echelon_next_period_when_no_exit(data):
     return data_no_exit
 
 
-def predict_echelon_next_period_when_exit_next_grade(data, grilles):
+def predict_echelon_next_period_when_exit(data, grilles):
     log.debug('Predict echelon next period when exit')
     data_exit = data.query("next_situation != 'no_exit'").copy()
     data_exit.loc[(data_exit['next_situation'] == 'exit_next'), 'next_grade'] = [
@@ -147,42 +147,51 @@ def predict_echelon_next_period_when_exit_next_grade(data, grilles):
         how = 'inner'
         )
     # TODO: these echelon_x and echelon_y are ugly
-    data_exit_merged = data_exit.merge(grilles, left_on = 'next_grade', right_on = 'code_grade_NETNEH', how = 'inner')
-    data_exit_merged['next_echelon'] = data_exit_merged['echelon_y'].replace(['ES'], 55555).astype(int)
-    data_exit_merged['echelon'] = data_exit_merged['echelon_x'].astype(int)
-    del data_exit_merged['echelon_x']
-    del data_exit_merged['echelon_y']
+    data_exit_merged = data_exit.merge(
+        grilles[['code_grade_NETNEH', 'echelon', 'ib']],
+        left_on = 'next_grade',
+        right_on = 'code_grade_NETNEH',
+        how = 'inner',
+        suffixes = ('_data', '_grilles')
+        )
+    data_exit_merged.rename(columns = {
+        'echelon_grilles': 'next_echelon',
+        'echelon_data': 'echelon',
+        },
+        inplace = True,
+        )
 
-    data_exit_echelon_pour_echelon = data_exit_merged.query("(next_grade != 'TTH4') & (echelon == next_echelon)")
-    data_exit_ib_pour_ib = data_exit_merged.query("next_grade == 'TTH4'")  # To generalize
-
+    data_exit_echelon_pour_echelon = data_exit_merged.query("(next_grade not in ['TTH4', 'TTM1']) & (echelon == next_echelon)")
+    data_exit_ib_pour_ib = data_exit_merged.query("next_grade in ['TTH4', 'TTM1']")  # FIXME To generalize
     data_exit_ib_pour_ib = (data_exit_ib_pour_ib
-        .query('ib_y >= ib_x')
-        .groupby(['ident']).agg({'ib_y': np.min})
+        .query('ib_grilles >= ib_data')
+        .groupby(['ident']).agg({'ib_grilles': np.min})
         .reset_index()
         )
-    data_exit_with_ib_pour_ib = data_exit.merge(data_exit_ib_pour_ib, on = ['ident'], how= 'inner')
+    data_exit_with_ib_pour_ib = data_exit.merge(data_exit_ib_pour_ib, on = 'ident', how= 'inner')
+    assert (data_exit_with_ib_pour_ib.ib_grilles >= data_exit_with_ib_pour_ib.ib).all()
+
     data_exit_with_ib_pour_ib = data_exit_with_ib_pour_ib.merge(
         grilles[['code_grade_NETNEH', 'ib', 'echelon']].rename(columns = {'ib': 'next_ib', 'echelon': 'next_echelon'}),
-        left_on = ['ib_y', 'next_grade'],
-        right_on = ['next_ib', 'code_grade_NETNEH'],
-        how = 'left')
+        left_on = ['next_grade', 'ib_grilles'],
+        right_on = ['code_grade_NETNEH', 'next_ib'],
+        how = 'left',
+        )
+
     del data_exit_with_ib_pour_ib['code_grade_NETNEH']
-    del data_exit_with_ib_pour_ib['ib_y']
+    del data_exit_with_ib_pour_ib['ib_grilles']
 
+    print data_exit_echelon_pour_echelon.head()
     data_exit_with_echelon_pour_echelon = data_exit_echelon_pour_echelon.query('echelon == next_echelon').copy().rename(
-        columns = {"ib_x": "ib", "ib_y": "next_ib"})
-
+        columns = {"ib_data": "ib", "ib_grilles": "next_ib"})
     data_exit_with_echelon_pour_echelon_right_col = data_exit_with_echelon_pour_echelon[
         data_exit_with_ib_pour_ib.columns]
 
     data_exit = data_exit_with_echelon_pour_echelon_right_col.append(data_exit_with_ib_pour_ib)
-
-    data_exit['next_echelon'] = data_exit['next_echelon'].astype(int)
     # FIXME Some anciennete_dans_echelon are NA: we set them to 9 the median value
     data_exit['anciennete_dans_echelon'].fillna(9, inplace = True)
     # FIXME hypothèse de conseravtion de la durée dans l'échelon à la promotion
-    data_exit['next_anciennete_dans_echelon'] = data_exit['anciennete_dans_echelon'].astype(int) + 12
+    data_exit['next_anciennete_dans_echelon'] = data_exit['anciennete_dans_echelon'] + 12
 
 #    data_missing_echelon_next = data.query("next_situation != 'no_exit'")[~
 #        data.query("next_situation != 'no_exit'")['ident'].isin(
@@ -244,11 +253,11 @@ def predict_next_period(data = None, grilles = None):
     data_with_next_echelon_when_no_exit = predict_echelon_next_period_when_no_exit(
         data
         )
-    data_with_next_echelon_when_exit = predict_echelon_next_period_when_exit_next_grade(
+    data_with_next_echelon_when_exit = predict_echelon_next_period_when_exit(
         data_with_next_grade_when_exit_to_other, grilles
         )
     results = data_with_next_echelon_when_no_exit.append(data_with_next_echelon_when_exit)
-    assert len(results.query("(next_situation != 'no_exit') & (next_grade != 'TTH4') & (echelon != next_echelon)")) == 0
+    assert len(results.query("(next_situation != 'no_exit') & (next_grade not in ['TTH4', 'TTM1']) & (echelon != next_echelon)")) == 0
     assert 'next_anciennete_dans_echelon' in results.columns
     results = results[['ident', 'next_annee', 'next_grade', 'next_echelon', 'next_situation', 'next_anciennete_dans_echelon']].copy()
     results['next_annee'] = results['next_annee'].astype(int)
