@@ -15,6 +15,10 @@ from fonction_publique.career_simulation_vectorized import AgentFpt
 log = logging.getLogger(__name__)
 
 
+processed_grades = ['TTM1', 'TTH1', 'TTH2', 'TTH3', 'TTH4']
+processed_grades_by_code = {24: 'TTM1', 793: 'TTH1', 794: 'TTH2', 795: 'TTH3', 796: 'TTH4'}
+
+
 def get_data_counterfactual_echelon_trajectory(data = None):
     if data is None:
         data_counterfactual_echelon_trajectory = pd.read_csv(
@@ -42,6 +46,7 @@ def predict_next_period_grade_when_exit_to_other_corps(data):
     data['next_anciennete_dans_echelon'] = 5
     return data
 
+
 def predict_echelon_next_period_when_no_exit(data):
     log.debug('Predict echelon next period when no exit')
     log.debug("1. Number of idents = {} and number of lines is {}".format(
@@ -49,11 +54,11 @@ def predict_echelon_next_period_when_no_exit(data):
     data_no_exit = data.query("next_situation == 'no_exit'").copy()
     log.debug("2. Number of idents = {} and number of lines is {}".format(
         len(data_no_exit.ident.unique()), len(data_no_exit.ident)))
+
     data_no_exit['next_grade'] = data_no_exit['grade']
     data_no_exit['period'] = pd.to_datetime(data_no_exit['annee'].astype(str) + "-12-31")
     predicted_year = data_no_exit['annee'].max() + 1
     log.info('Echelon prediction when no exit for year {}'.format(predicted_year))
-    data_no_exit['anciennete_dans_echelon'] = 5
     # FIXME the latter should be more provided by the model
     # Replace by the following
     data_no_exit['code_grade_NETNEH'] = data_no_exit['grade']
@@ -66,7 +71,7 @@ def predict_echelon_next_period_when_no_exit(data):
     assert len(data_no_exit['annee'].unique()) == 1
     annee = data_no_exit['annee'].unique()[0]
     agents_grilles = (grilles
-        .loc[grilles['code_grade_NETNEH'].isin(['TTM1', 'TTH1', 'TTH2', 'TTH3', 'TTH4'])]
+        .loc[grilles['code_grade_NETNEH'].isin(processed_grades)]
         .copy()
         )
     agents_grilles['code_grade_NEG'] = agents_grilles['code_grade_NEG'].astype(int)
@@ -92,6 +97,10 @@ def predict_echelon_next_period_when_no_exit(data):
     # grilles['echelon'] = grilles['echelon'].replace(['ES'], -2).astype(int)
     log.debug("5. Number of idents = {} and number of lines is {}".format(
         len(data_no_exit.ident.unique()), len(data_no_exit.ident)))
+
+    # data_no_exit['anciennete_dans_echelon'] = data_no_exit['anciennete_dans_echelon'].fillna(1)  # FIXME upstream
+    # data_no_exit['anciennete_dans_echelon'] = data_no_exit['anciennete_dans_echelon'].astype(int)
+    data_no_exit['anciennete_dans_echelon'] = 5
     agents = AgentFpt(data_no_exit, end_date = pd.Timestamp(predicted_year + 1, 1, 1))  # < end_date
     agents.set_grille(agents_grilles)
     agents.compute_result()
@@ -106,11 +115,10 @@ def predict_echelon_next_period_when_no_exit(data):
         inplace = True,
         )
     # next_grade should be a string
-    resultats_annuel['next_grade'] = resultats_annuel['grade'].map({793: 'TTH1', 794: 'TTH2', 795: 'TTH3', 796: 'TTH4'})
+    resultats_annuel['next_grade'] = resultats_annuel['grade'].map(processed_grades_by_code)
     del resultats_annuel['period']
     del resultats_annuel['quarter']
 
-    # print len(data_no_exit)
     data_no_exit = data_no_exit.merge(
         resultats_annuel[['ident', 'next_annee', 'next_grade', 'next_echelon', 'next_anciennete_dans_echelon']],
         on = ['ident'],
@@ -217,7 +225,7 @@ def get_ib(data, grilles):
         right_on = ['code_grade_NETNEH', 'echelon'],
         how = 'left',
         )[
-            ['ident', 'annee', 'grade', 'echelon', 'anciennete_dans_echelon', 'ib', 'situation']
+            ['ident', 'annee', 'grade', 'echelon', 'ib', 'situation', 'anciennete_dans_echelon']
             ]
     return data_merged
 
@@ -240,6 +248,7 @@ def predict_next_period(data = None, grilles = None):
         )
     results = data_with_next_echelon_when_no_exit.append(data_with_next_echelon_when_exit)
     assert len(results.query("(next_situation != 'no_exit') & (next_grade != 'TTH4') & (echelon != next_echelon)")) == 0
+    assert 'next_anciennete_dans_echelon' in results.columns
     results = results[['ident', 'next_annee', 'next_grade', 'next_echelon', 'next_situation', 'next_anciennete_dans_echelon']].copy()
     results['next_annee'] = results['next_annee'].astype(int)
     results['ident'] = results['ident'].astype(int)
@@ -248,7 +257,6 @@ def predict_next_period(data = None, grilles = None):
     assert len(list(set(results.ident.unique()) - set(data.ident.unique()))) == 0
     results = get_ib(results, grilles)
     results['grade'] = results['grade'].astype(str)
-    print results.head(50)
     return results
 
 
