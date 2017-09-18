@@ -46,7 +46,7 @@ assign(paste0("p_", m), p)
 }
   
 pdf(paste0(fig_path,"exit_obs_all.pdf"))
-p 
+p_obs
 dev.off()
 
 pdf(paste0(fig_path,"exit_obs_byG.pdf"), onefile=FALSE)
@@ -133,7 +133,7 @@ for (m in c("MNL_2", "MNL_3", "BG_1","MS_1"))
 }
 
 table_movers = cbind(table_obs, table_MNL_2, table_MNL_3, table_BG_1, table_MS_1)
-colnames(table_movers) = c('Observed', "MNL_2", "MNL_3", "BG_1", "MS_1")
+colnames(table_movers) = c('Observed', "MNL\\_2", "MNL\\_3", "BG\\_1", "MS\\_1")
 rownames(table_movers) = c("\\% exit next All", "\\% exit oth All", 
                            "\\% Women when exit next", "\\% Women when exit oth",
                            "Mean age when exit next", "Mean age  when exit oth",
@@ -200,10 +200,11 @@ dev.off()
 
 table_masse_ib = function(data, var_ib)
 {
-  data = output_global
-  var_ib = "ib"
-  
   data$var_ib = data[, var_ib]
+  
+  print(paste0("Il y a ",(length(which(is.na(data$var_ib))))," obs avec ib = NA, que l'on supprime"  ))
+  data = data[which(!is.na(data$var_ib)),]
+  
   table = numeric(1)
   
   table[1] = sum(data$var_ib)/1e6
@@ -220,6 +221,29 @@ table_masse_ib = function(data, var_ib)
 
   return(table)
 }
+
+
+
+obs = table_masse_ib(output_global, "ib")
+for (m in c("MNL_1","MNL_2", "MNL_3", "BG_1","MS_1" ))
+{
+  table = table_masse_ib(data = output_global, var_ib = paste0("ib_", m))
+  assign(paste0("table_masse_", m), table)  
+}
+
+table = cbind(obs, table_masse_MNL_2, table_masse_MNL_3, table_masse_BG_1, table_masse_MS_1)
+colnames(table) = c('Observed', "MNL\\_2", "MNL\\_3", "BG\\_1","MS\\_1" )
+rownames(table) = c("Masse totale 2011-2015 (en 1e6)", "Masse totale 2012 (en 1e6)",  "Masse totale 2015 (en 1e6)",
+                    "Masse totale 2011-2015 TTH1 (en 1e6)", "Masse totale 2012 TTH1  (en 1e6)",  "Masse totale 2015 TTH1  (en 1e6)",
+                    "Masse totale 2011-2015 TTH2 (en 1e6)", "Masse totale 2012 TTH2  (en 1e6)",  "Masse totale 2015 TTH2  (en 1e6)",
+                    "Masse totale 2011-2015 TTH3 (en 1e6)", "Masse totale 2012 TTH3  (en 1e6)",  "Masse totale 2015 TTH3  (en 1e6)",
+                    "Masse totale 2011-2015 TTH4 (en 1e6)", "Masse totale 2012 TTH4  (en 1e6)",  "Masse totale 2015 TTH4  (en 1e6)"
+                      )
+
+print(xtable(table,nrow = nrow(table), 
+             ncol=ncol(table_movers)+1, byrow=T, digits = 2),
+      sanitize.text.function=identity,size="\\footnotesize", hline.after = c(0, 3, 6, 9, 12, 15),
+      only.contents=F, include.colnames = T)
 
 
 
@@ -264,22 +288,22 @@ obs = table_gain_ib(output_global, "ib", "situation")
 for (m in c("MNL_1","MNL_2", "MNL_3", "BG_1","MS_1" ))
 {
   table = table_gain_ib(data = output_global, var_ib = paste0("ib_", m) , paste0("situation_", m) )
-  assign(paste0("table_", m), table)  
+  assign(paste0("table_gain_", m), table)  
 }
 
-table = cbind(obs,table_MNL_1, table_MNL_2, table_MNL_3, table_BG_1, table_MS_1)
-colnames(table) = c('Observed', "MNL_2", "MNL_3", "BG_1","MS_1" )
+table = cbind(obs, table_gain_MNL_2, table_gain_MNL_3, table_gain_BG_1, table_gain_MS_1)
+colnames(table) = c('Observed', "MNL\\_2", "MNL\\_3", "BG\\_1","MS\\_1" )
 rownames(table) = c("gain ib moyen", "gain ib median en \\%", "\\% gain ib > 0",
                      "gain ib moyen TTH1", "gain ib median en \\% TTH1", "\\% gain ib > 0  TTH1",
                      "gain ib moyen TTH2", "gain ib median en \\% TTH2", "\\% gain ib > 0  TTH2",
                      "gain ib moyen TTH3", "gain ib median en \\% TTH3", "\\% gain ib > 0 TTH3",
                      "gain ib moyen TTH4", "gain ib median en \\% TTH4", "\\% gain ib > 0 TTH4",
-                     "gain ib moyen no_exit", "\\% gain ib > 0 no_exit",
-                     "gain ib moyen exit_next", "\\% gain ib > 0 exit_next",
-                     "gain ib moyen exit_oth", "\\% gain ib > 0 exit_oth"
+                     "gain ib moyen no\\_exit", "\\% gain ib > 0 no\\_exit",
+                     "gain ib moyen exit\\_next", "\\% gain ib > 0 exit\\_next",
+                     "gain ib moyen exit\\_oth", "\\% gain ib > 0 exit\\_oth"
                      )
 
-print(xtable(table,nrow = nrow(table), 
+print(xtable(table,nrow = nrow(table), align = "l|c|cccc",
              ncol=ncol(table_movers)+1, byrow=T, digits = 2),
       sanitize.text.function=identity,size="\\footnotesize", hline.after = c(0, 3, 6, 9, 12, 15, 17, 19, 21),
       only.contents=F, include.colnames = T)

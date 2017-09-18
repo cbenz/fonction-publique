@@ -255,7 +255,7 @@ plot_share = function(exit_data, plot = F, title = "")
   exit_data$annee = rep(seq(2011, 2015), n_id)
   exit_data$state = ifelse(exit_data$annee <= exit_data$year_exit, 3, 0)
   exit_data$state[which(exit_data$exit_var == "exit_next" & exit_data$state == 0)] = 2
-  exit_data$state[which(exit_data$exit_var == "exit_oth" & exit_data$state == 0)] = 1
+  exit_data$state[which(exit_data$exit_var == "exit_oth"  & exit_data$state == 0)] = 1
   # Graphe shares
   df <- data.frame(Annee=numeric(),Status=numeric(),pct=numeric())
   date <- seq(2011, 2015)
