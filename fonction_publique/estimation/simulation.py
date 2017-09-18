@@ -181,7 +181,6 @@ def predict_echelon_next_period_when_exit(data, grilles):
     del data_exit_with_ib_pour_ib['code_grade_NETNEH']
     del data_exit_with_ib_pour_ib['ib_grilles']
 
-    print data_exit_echelon_pour_echelon.head()
     data_exit_with_echelon_pour_echelon = data_exit_echelon_pour_echelon.query('echelon == next_echelon').copy().rename(
         columns = {"ib_data": "ib", "ib_grilles": "next_ib"})
     data_exit_with_echelon_pour_echelon_right_col = data_exit_with_echelon_pour_echelon[
