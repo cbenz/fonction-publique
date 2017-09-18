@@ -9,7 +9,7 @@ import os
 import pandas as pd
 
 from fonction_publique.base import (DEBUG_CLEAN_CARRIERES, clean_directory_path, debug_chunk_size,
-    get_careers_hdf_path, get_output_hdf_path, get_tmp_hdf_path, grilles_hdf_path, law_xls_path)
+    get_careers_hdf_path, get_output_hdf_path, get_tmp_hdf_path, grilles_hdf_path)  # , law_xls_path)
 from fonction_publique.career_simulation_vectorized import _set_dates_effet
 
 log = logging.getLogger(__name__)
