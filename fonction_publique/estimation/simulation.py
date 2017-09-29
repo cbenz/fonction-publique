@@ -109,13 +109,14 @@ def predict_echelon_next_period_when_no_exit(data):
     agents.compute_result()
     resultats = agents.result
     assert len(data_no_exit) == len(resultats.ident.unique())
-
-    resultats_annuel = resultats[
-        resultats.quarter.astype(str).str.contains("{}-12-31".format(predicted_year))
+    resultats["max_quarter"] = resultats.groupby(['ident'])['quarter'].transform(max)
+    # FIXME ugly way to deal with missing last quarter for some individuals
+    resultats_annuel = resultats.loc[
+        resultats.quarter == resultats.max_quarter
         ].copy()
     assert len(data_no_exit) == len(resultats_annuel.ident.unique())
     assert resultats_annuel.groupby('ident')['quarter'].count().unique() == 1, resultats_annuel.groupby('ident')['quarter'].count().unique()
-
+    
     resultats_annuel['next_annee'] = pd.to_datetime(resultats_annuel['quarter']).dt.year  # Au 31 décembre de l'année précédente
     assert (resultats_annuel['next_annee'] == predicted_year).all()
     resultats_annuel.rename(columns = {
