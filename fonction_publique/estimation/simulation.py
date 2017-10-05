@@ -116,7 +116,7 @@ def predict_echelon_next_period_when_no_exit(data):
         ].copy()
     assert len(data_no_exit) == len(resultats_annuel.ident.unique())
     assert resultats_annuel.groupby('ident')['quarter'].count().unique() == 1, resultats_annuel.groupby('ident')['quarter'].count().unique()
-    
+
     resultats_annuel['next_annee'] = pd.to_datetime(resultats_annuel['quarter']).dt.year  # Au 31 décembre de l'année précédente
     assert (resultats_annuel['next_annee'] == predicted_year).all()
     resultats_annuel.rename(columns = {
@@ -300,16 +300,24 @@ def main():
         )
     log.info('Using unput data from {}'.format(input_file_path))
     data = pd.read_csv(input_file_path)
+    input_idents = data.ident.unique().tolist()
+    log.info("Number of unique idents in input file: {}".format(len(input_idents)))
     results = predict_next_period(data = data, grilles = grilles)
     directory_path = os.path.join(simulation_directory_path, 'results')
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
     output_file_path = os.path.join(directory_path, args.output_file)
     log.info("Saving results to {}".format(output_file_path))
+    output_idents = results.ident.unique().tolist()
+    missing = data.loc[data.ident.isin(set(input_idents) - set(output_idents))].to_csv(
+        os.path.join(directory_path, 'missing.csv')
+        )
+    log.info("Number of unique idents in output file: {}".format(len(output_idents)))
     results.to_csv(output_file_path)
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level = logging.INFO, stream = sys.stdout)
     sys.exit(main())
     # logging.basicConfig(level = logging.DEBUG, stream = sys.stdout)
     # for model in ['_m1']:  #, '_m2', '_m3']:
