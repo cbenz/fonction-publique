@@ -1,4 +1,3 @@
-################# Library of functions #######
 
 
 
@@ -98,17 +97,14 @@ create_variables <- function(data)
   data$time2[grade_modif] = data$dist_an_aff[grade_modif] 
   data$I_echC     = ifelse(data$echelon >= data$E_choice, 1, 0) 
   data$I_gradeC   = ifelse(data$time2 >= data$D_choice, 1, 0) 
-  data$I_gradeC   = ifelse(data$time2 >= data$D_choice, 1, 0) 
   data$I_bothC    =  ifelse(data$I_echC ==1 &  data$I_gradeC == 1, 1, 0) 
   data$I_echE     = ifelse(data$echelon >= data$E_exam & data$grade == "TTH1", 1, 0) 
   data$I_gradeE   = ifelse(data$time2 >= data$D_exam & data$grade == "TTH1", 1, 0) 
   data$I_bothE    = ifelse(data$I_echE ==1 &  data$I_gradeE == 1, 1, 0) 
 
-  
-  data$duration = data$time
+  data$duration  = data$time
   data$duration2 = data$time^2 
   data$duration3 = data$time^3 
-  
   
   data$duration_aft  = data$time*data$I_bothC
   data$duration_aft2 = data$time^2*data$I_bothC
@@ -129,8 +125,6 @@ create_variables <- function(data)
   
   data$duration_bef_unique_threshold  = data$time*(1-data$I_unique_threshold)
   data$duration_bef_unique_threshold2 = data$time^2*(1-data$I_unique_threshold)
-  
-  
   return(data)
 }
 
@@ -190,6 +184,62 @@ plot_hazards = function(hazard, colors, type, title)
   title(title)
   for (l in 1:nrow(hazard)){lines(years, hazard[l,], col =  colors[l], lwd = 3, lty = types[l])}  
 }
+
+
+
+# Hazard by duration in grade
+hazard_by_duree = function(data, save = F, corps = F, type_exit = "")
+{
+  grade = seq(1, 12)
+  hazard   = numeric(length(grade))
+  effectif = numeric(length(grade))
+  
+  data$exit = data$exit_status2
+  if (type_exit == "in_corps") {data$exit[which(data$next_year == "exit_oth")] = 0}
+  if (type_exit == "out_corps"){data$exit[which(data$next_year == "exit_next")] = 0}
+  
+  for (g in 1:length(grade))
+  {
+    hazard[g]   = length(which(data$time ==  grade[g] & data$exit == 1))/length(which(data$time == grade[g]))
+    effectif[g] = length(which(data$time == grade[g]))
+  }  
+  par(mar = c(5,5,2,5))
+  xlabel = ifelse(corps, "Duration in section", "Duration in rank")
+  plot(grade, hazard, type ="l", lwd = 3, xlab = xlabel, ylab = "Hazard rate", col = "darkcyan")
+  par(new = T)
+  plot(grade, effectif, type ="l", lty = 2, lwd = 2, axes=F, xlab=NA, ylab=NA)
+  axis(side = 4)
+  mtext(side = 4, line = 3, 'Nb obs.')
+  legend("topleft", legend = c("Hazard", "Nb obs."), lwd = 3, lty = c(1,3), col = c("darkcyan", "black"), cex = 1.1)
+}  
+
+# Hazard by echelon
+hazard_by_ech = function(data, save = F, type_exit = "")
+{
+  ech = 1:12
+  hazard = numeric(length(ech))
+  effectif = numeric(length(ech))
+  
+  data$exit = data$exit_status2
+  if (type_exit == "in_corps") {data$exit[which(data$next_year == "exit_oth")] = 0}
+  if (type_exit == "out_corps"){data$exit[which(data$next_year == "exit_next")] = 0}
+  
+  
+  for (e in 1:length(ech))
+  {
+    hazard[e] =   length(which(data$echelon == ech[e] & data$exit == 1))/length(which(data$echelon == ech[e]))
+    effectif[e] = length(which(data$echelon == ech[e]))
+  }  
+  
+  par(mar = c(5,5,2,5))
+  plot(ech, hazard, type ="l", lwd = 3, xlab = "Level", ylab = "Hazard rate", col = "darkcyan")
+  par(new = T)
+  plot(ech, effectif, type ="l", lty = 2, lwd = 2, axes=F, xlab=NA, ylab=NA)
+  axis(side = 4)
+  mtext(side = 4, line = 3, 'Nb. obs')
+  legend("topleft", legend = c("Hazard", "Nb obs."), lwd = 3, lty = c(1,3), col = c("darkcyan", "black"), cex = 1.1)
+}  
+
 
 
 ### III. Simulation tools ####

@@ -19,7 +19,9 @@ datasets = load_and_clean(data_path, "/filter/data_ATT_2011_filtered_after_durat
 data_max = datasets[[1]]
 data_min = datasets[[2]]
 
-data_stat = data_min[which(data_min$left_censored == F & data_min$annee <= 2014),]
+data_stat_min = data_min[which(data_min$left_censored == F & data_min$annee <= 2014),]
+data_stat_max = data_max[which(data_max$left_censored == F & data_max$annee <= 2014),]
+data_stat = data_stat_min
 datai     =  data_min[which(data_min$annee == 2011),]
 
 
@@ -237,8 +239,7 @@ plot_hazards(haz, colors, types, title = "TTH4")
 #TTH1
 subdata = data_stat
 subdata = subdata[which(subdata$left_censored == F & subdata$c_cir_2011 == "TTH1"),]
-hazard_by_duree(data = subdata)
-hazard_by_ech(data = subdata)
+
 
 pdf(paste0(fig_path,"hazard_by_duree_TTH1.pdf"))
 hazard_by_duree(data = subdata)
@@ -263,9 +264,19 @@ dev.off()
 
 # Double condition
 pdf(paste0(fig_path,"hazard_by_duree_TTH1_cond.pdf"))
-hazard_by_duree(data = subdata2[which(subdata2$echelon >= 7),])
-abline(v = 10, lwd = 3)
+hazard_by_duree(data = subdata2[which(subdata2$echelon >= 4),])
+abline(v = 3, lwd = 3)
 dev.off()
+
+hazard_by_duree(data = subdata2[which(subdata2$echelon >= 4),], type_exit = "in_corps")
+abline(v = 3, lwd = 3)
+hazard_by_ech(data = subdata2[which(subdata2$time >= 3),], type_exit = "in_corps")
+abline(v = 4, lwd = 3)
+hazard_by_duree(data = subdata2[which(subdata2$echelon >= 4),], type_exit = "out_corps")
+abline(v = 3, lwd = 3)
+hazard_by_ech(data = subdata2[which(subdata2$time >= 3),], type_exit = "out_corps")
+abline(v = 4, lwd = 3)
+
 
 pdf(paste0(fig_path,"hazard_by_ech_TTH1_cond.pdf"))
 hazard_by_ech(data = subdata2[which(subdata2$time >= 10),])
@@ -297,7 +308,10 @@ pdf(paste0(fig_path,"hazard_by_duree_TTH2_bis.pdf"))
 hazard_by_duree(data = subdata2, corps = T)
 abline(v = 6, lwd = 3)
 dev.off()
-
+pdf(paste0(fig_path,"hazard_by_duree_TTH2_bis_exit_next.pdf"))
+hazard_by_duree(data = subdata2, corps = T, type_exit = "in_corps")
+abline(v = 6, lwd = 3)
+dev.off()
 
 # Double condition
 pdf(paste0(fig_path,"hazard_by_duree_TTH2_cond.pdf"))
@@ -305,20 +319,37 @@ hazard_by_duree(data = subdata2[which(subdata2$echelon >= 5),])
 abline(v = 6, lwd = 3)
 dev.off()
 
+hazard_by_duree(data = subdata2[which(subdata2$echelon >= 7),], type_exit = "in_corps")
+abline(v = 6, lwd = 3)
+hazard_by_duree(data = subdata2[which(subdata2$echelon >= 7),], type_exit = "out_corps")
+abline(v = 6, lwd = 3)
+
 pdf(paste0(fig_path,"hazard_by_ech_TTH2_cond.pdf"))
 hazard_by_ech(data = subdata2[which(subdata2$time >= 6),])
 abline(v = 5, lwd = 3)
 dev.off()
 
-
+hazard_by_ech(data = subdata2[which(subdata2$time >= 6),], type_exit = "in_corps")
+abline(v = 5, lwd = 3)
+hazard_by_ech(data = subdata2[which(subdata2$time >= 6),], type_exit = "out_corps")
+abline(v = 5, lwd = 3)
 
 
 # TTH3 
-subdata = data_stat
+subdata = data_stat_min
 subdata = subdata[which(subdata$left_censored == F & subdata$c_cir_2011 == "TTH3"),]
 hazard_by_duree(data = subdata)
+abline(v = 5, lwd = 3)
+hazard_by_duree(data = subdata, type_exit = "in_corps")
+abline(v = 5, lwd = 3)
+hazard_by_duree(data = subdata, type_exit = "out_corps")
+abline(v = 5, lwd = 3)
 hazard_by_ech(data = subdata)
-
+abline(v = 6, lwd = 3)
+hazard_by_ech(data = subdata, type_exit = "in_corps")
+abline(v = 6, lwd = 3)
+hazard_by_ech(data = subdata, type_exit = "out_corps")
+abline(v = 6, lwd = 3)
 
 pdf(paste0(fig_path,"hazard_by_duree_TTH3.pdf"))
 hazard_by_duree(data = subdata)
@@ -436,3 +467,9 @@ dev.off()
 }
 }
 
+
+##### CHECK WEIRD INDIVIDUALS #####
+list_weird_TTH3 <- unique(data_stat$ident[which(data_stat$c_cir_2011 == "TTH3" & data_stat$time < data_stat$D_choice & data_stat$next_year == "exit_next")])
+list = list_weird_TTH3[1:10]
+View(data_min[which(is.element(data_min$ident, list)), ])
+View(data_max[which(is.element(data_max$ident, list)), ])

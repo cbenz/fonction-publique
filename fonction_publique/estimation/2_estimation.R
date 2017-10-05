@@ -8,7 +8,7 @@
 
 # Main data
 source(paste0(wd, "0_Outils_CNRACL.R"))
-datasets = load_and_clean(data_path, "/filter/data_ATT_2011_filtered_after_duration_var_added_new.csv")
+datasets = load_and_clean(data_path, dataname = "/filter/data_ATT_2011_filtered_after_duration_var_added_new.csv")
 data_max = datasets[[1]]
 data_min = datasets[[2]]
 
@@ -40,7 +40,6 @@ mlog6 = mlogit(next_year ~ 0 | sexe + generation_group2 + grade +
 
 list_MNL = list(mlog0, mlog3, mlog6)
 save(list_MNL, file = paste0(save_model_path, "mlog.rda"))
-
 
 
 # bundle up some models
@@ -160,27 +159,27 @@ print(texreg2(model.list,
 #### III. Sequential logit ####
 
 
-### M1 : sortie ou non / d
+### M1 : sortie ou non / destination
 
 # Step 1: 
 data_est$exit = ifelse(data_est$next_year == 'exit_oth' | data_est$next_year =='exit_next', 1, 0)
 
-step1 <- glm(exit ~  sexe + generation_group2 + grade + 
+step1_m1 <- glm(exit ~  sexe + generation_group2 + grade + 
                I_bothC + I_bothE + duration + duration2 + duration3, 
               data=data_est, x=T, family=binomial("logit"))
 # Step 2: 
 data_est2 = data_est[which(data_est$exit == 1), ]
 data_est2$exit_next = ifelse(data_est2$next_year =='exit_next', 1, 0)
-step2 <- glm(exit_next ~  sexe + generation_group2 + grade + 
+step2_m1 <- glm(exit_next ~  sexe + generation_group2 + grade + 
                I_bothC + I_bothE + duration + duration2 + duration3, 
              data=data_est2 , x=T, family=binomial("logit"))
 
 
-save(step1, step2, file = paste0(save_model_path, "m1_seq.rda"))
+save(step1_m1, step2_m1, file = paste0(save_model_path, "m1_seq.rda"))
 
 
-m1 = extract.glm2(step1)
-m2 = extract.glm2(step2)
+m1 = extract.glm2(step1_m1)
+m2 = extract.glm2(step2_m1)
 model.list <- list(m1, m2)
 
 
@@ -206,4 +205,54 @@ print(texreg2(model.list,
               stars = c(0.01, 0.05, 0.1),
               custom.coef.names=ror$ccn,   reorder.coef=ror$rc,  omit.coef=ror$oc,
               booktabs=T))
+
+
+
+### M2 : sortie du corps? / changement de grade?
+
+# Step 1: 
+data_est$exit_corps = ifelse(data_est$next_year == 'exit_oth', 1, 0)
+
+step1_m2 <- glm(exit_corps ~  sexe + generation_group2 + grade + duration + duration2 + duration3, 
+             data=data_est, x=T, family=binomial("logit"))
+# Step 2: 
+data_est2 = data_est[which(data_est$exit_corps == 0), ]
+data_est2$exit_next = ifelse(data_est2$next_year =='exit_next', 1, 0)
+step2_m2 <- glm(exit_next ~  sexe + generation_group2 + grade + 
+               I_bothC + I_bothE + duration + duration2 + duration3, 
+             data=data_est2 , x=T, family=binomial("logit"))
+
+
+save(step1_m2, step2_m2, file = paste0(save_model_path, "m2_seq.rda"))
+
+
+m1 = extract.glm2(step1_m2)
+m2 = extract.glm2(step2_m2)
+model.list <- list(m1, m2)
+
+
+name.map <- list("(intercept)"        = "Constante",              
+                 "sexeM"              = "Homme",
+                 "generation_group22" = "Generation 70s",
+                 "generation_group23" = "Generation 80s",
+                 "gradeTTH2"     = "TTH2",
+                 "gradeTTH3"     = "TTH3",
+                 "gradeTTH4"     = "TTH4",
+                 "I_bothC"            = "Conditions choix remplies",
+                 "I_bothE"            = "Conditions exam remplies")
+
+
+oldnames <- all.varnames.dammit(model.list) 
+ror <- build.ror(oldnames, name.map)
+
+print(texreg2(model.list,
+              caption.above=T,
+              custom.model.names = c("Etape 1: Sortie corps? ", "Etape 2: Changement de grade?"),
+              float.pos = "!ht",
+              digit=3,
+              stars = c(0.01, 0.05, 0.1),
+              custom.coef.names=ror$ccn,   reorder.coef=ror$rc,  omit.coef=ror$oc,
+              booktabs=T))
+
+
 

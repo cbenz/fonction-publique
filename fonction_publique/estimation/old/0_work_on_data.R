@@ -13,6 +13,12 @@ load_and_clean = function(data_path, dataname)
   filename = paste0(data_path, dataname)
   data_long = read.csv(filename)
 
+  
+  #### REMOVE ALL INDIVIDUALS WITH ANCIENNETE DANS ECHELON NON RENSEIGNE (A REMONTER SUR DATA)
+  id_pbl_anciennete_ech = unique(data_long$ident[which(is.na(data_long$anciennete_echelon))])
+  print(paste0("Il y a ", length(id_pbl_anciennete_ech)," individus avec anciennete dans echelon manquant"))
+  data_long = data_long[-is.element(data_long$ident, id_pbl_anciennete_ech),]
+  
   ## Variables creation ####
 
   # Format bolean                     

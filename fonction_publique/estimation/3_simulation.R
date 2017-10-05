@@ -18,6 +18,7 @@
 source(paste0(wd, "0_Outils_CNRACL.R")) 
 load(paste0(save_model_path, "mlog.rda"))
 load(paste0(save_model_path, "m1_seq.rda"))
+load(paste0(save_model_path, "m2_seq.rda"))
 load(paste0(save_model_path, "m1_by_grade.rda"))
 
 set.seed(1234)
@@ -46,6 +47,7 @@ generate_data_output <- function(data_path)
   data_long$situation = data_long$next_grade_situation
   list_var = c("ident", "annee", "c_cir_2011", "sexe", "generation", "grade","ib", "echelon", "situation")
   output = data_long[which(data_long$annee >= 2011 & data_long$annee <= 2015), list_var]
+  output$I_bothC = NULL
   return(output[, list_var])
 }
 
@@ -159,7 +161,7 @@ predict_next_year_byG <- function(data_sim, list_model, modelname)
 }
 
 
-predict_next_year_seq <- function(data_sim, m1, m2, modelname)
+predict_next_year_seq_m1 <- function(data_sim, m1, m2, modelname)
 {
   # Prediction for AT grade
   data_AT = data_sim[which(is.element(data_sim$grade, c("TTH1","TTH2", "TTH3", "TTH4"))), ]
@@ -185,6 +187,32 @@ predict_next_year_seq <- function(data_sim, m1, m2, modelname)
   return(data_sim)
 }
 
+predict_next_year_seq_m2 <- function(data_sim, m1, m2, modelname)
+{
+  # Prediction for AT grade
+  data_AT = data_sim[which(is.element(data_sim$grade, c("TTH1","TTH2", "TTH3", "TTH4"))), ]
+  prob1     <- predict(m1, data_AT, type = "response")  
+  pred1     <- as.numeric(mapply(tirage, prob1))
+  prob2     <- predict(m2, data_AT, type = "response")  
+  pred2     <- as.numeric(mapply(tirage, prob2))
+  data_AT$yhat <- ifelse(pred1 == 1, "exit_oth", "no_exit")
+  data_AT$yhat[which(pred1 == 0 & pred2 == 1)] <- "exit_next"
+  data_AT$yhat[which(pred1 == 0 & pred2 == 0)] <- "no_exit"
+  
+  if (length(unique(data_sim$grade)) > 4)
+  {
+    data_noAT = data_sim[which(!is.element(data_sim$grade, c("TTH1","TTH2", "TTH3", "TTH4"))), ]
+    data_noAT$yhat = "no_exit" 
+    data_sim = rbind(data_AT, data_noAT)  
+  }
+  if (length(unique(data_sim$grade)) <= 4)
+  {
+    data_sim = data_AT
+  }
+  data_sim = data_sim[order(data_sim$ident), ]
+  return(data_sim)
+}
+
 
 increment_data_sim <- function(data_sim, simul_py)
 {
@@ -192,16 +220,19 @@ increment_data_sim <- function(data_sim, simul_py)
   if (length(data_sim$ident) != length(simul_py$ident) | length(which(is.na(simul_py$ib)) >0 )  | length(which(is.na(simul_py$grade)) >0 ))
   {
     
-    list_pbl_id = unique(setdiff(data_sim$ident, simul_py$ident))
-    print(paste0("Il y a ",length(list_pbl_id)," présents dans data_sim et absent dans simul"))
+    list_pbl_id1 = unique(setdiff(data_sim$ident, simul_py$ident))
+    print(paste0("Il y a ",length(list_pbl_id1)," présents dans data_sim et absent dans simul"))
+    
+    list_pbl_id2 = unique(setdiff(simul_py$ident, data_sim$ident))
+    print(paste0("Il y a ",length(list_pbl_id2)," présents dans simul et absent dans data_sim"))
     
     list_pbl_ib = unique(simul_py$ident[which(is.na(simul_py$ib))])
-    print(paste0("Il y a ",length(list_pbl_ib)," individus dans la simul  avec ib = NA"))
+    print(paste0("Il y a ",length(list_pbl_ib)," individus dans la base simul  avec ib = NA"))
     
     list_pbl_grade = unique(simul_py$ident[which(is.na(simul_py$grade) | simul_py$grade == "nan")])
     print(paste0("Il y a ",length(list_pbl_grade)," individus dans la simul  avec grade = NA"))
     
-    deleted_id = Reduce(union, list(list_pbl_id, list_pbl_ib, list_pbl_grade))
+    deleted_id = Reduce(union, list(list_pbl_id1, list_pbl_id2, list_pbl_ib, list_pbl_grade))
     data_sim = data_sim[which(!is.element(data_sim$ident, deleted_id)), ]
     simul_py = simul_py[which(!is.element(simul_py$ident, deleted_id)), ]
     
@@ -226,11 +257,11 @@ increment_data_sim <- function(data_sim, simul_py)
 
 save_results_simul <- function(output, data_sim, modelname)
 {
-  var = c("grade", "anciennete_dans_echelon", "echelon", "ib", "situation")
-  new_var = paste0(c("grade", "anciennete_dans_echelon", "echelon", "ib", "situation"), "_", modelname )
+  var = c("grade", "anciennete_dans_echelon", "echelon", "ib", "situation", "I_bothC")
+  new_var = paste0(c("grade", "anciennete_dans_echelon", "echelon", "ib", "situation", "I_bothC"), "_", modelname )
   data_sim[, new_var] = data_sim[, var]
   add = data_sim[, c("ident", "annee", new_var)]
-    # Merge
+  # Merge
   output = rbind(output, add)
   output = output[order(output$ident, output$annee),]
   return(output)
@@ -244,28 +275,32 @@ save_results_simul <- function(output, data_sim, modelname)
 output_global = generate_data_output(data_path)
 
 
-for (m in 1:5)
+for (m in 1:6)
 {
   if (m <= 3){modelname  =  paste0("MNL_", toString(m))}  
   if (m == 4){modelname = "BG_1"}
   if (m == 5){modelname = "MS_1"}
+  if (m == 6){modelname = "MS_2"}
   print(paste0("Simulation for model ", modelname))
   for (annee in 2011:2014)
-  {
+  { 
+    print(paste0("Annee ", annee))
     if (annee == 2011)
     {
       data_sim = generate_data_sim(data_path, use = "min")
-      output = data_sim[, c("ident", "annee", "grade","ib", "anciennete_dans_echelon", "echelon")]
+      output = data_sim[, c("ident", "annee", "grade","ib", "anciennete_dans_echelon", "echelon", "I_bothC")]
       output = rename(output, c("grade"=paste0("grade_", modelname) , 
                                 "ib"=paste0("ib_", modelname), 
                                 "anciennete_dans_echelon"=paste0("anciennete_dans_echelon_", modelname),
-                                "echelon"=paste0("echelon_", modelname)))
+                                "echelon"=paste0("echelon_", modelname),
+                                "I_bothC"=paste0("I_bothC_", modelname)))
       output[, paste0("situation_", modelname)] = NA
     }
     # Prediction of next_situation from estimated model 
     if (m <= 3){pred =  predict_next_year_MNL(data_sim, model = list_MNL[[m]], modelname)} 
     if (m == 4){pred =  predict_next_year_byG(data_sim, list(m1_TTH1, m1_TTH2, m1_TTH3, m1_TTH4), modelname)}
-    if (m == 5){pred =  predict_next_year_seq(data_sim, step1, step2, modelname)}
+    if (m == 5){pred =  predict_next_year_seq_m1(data_sim, step1_m1, step2_m1, modelname)}
+    if (m == 6){pred =  predict_next_year_seq_m2(data_sim, step1_m2, step2_m2, modelname)}
     # Save prediction for Py simulation
     output[which(output$annee == annee), paste0("situation_", modelname)] = pred$yhat
     save_prediction_R(data = pred, annee, simul_path, modelname)
@@ -275,13 +310,14 @@ for (m in 1:5)
     simul_py = load_simul_py(annee, modelname)
     # Incrementing data_sim for next year
     data_sim = increment_data_sim(data_sim, simul_py)
+    
     # Save results
     output = save_results_simul(output, data_sim, modelname)
   }
   output_global = merge(output_global, output, by = c("ident", "annee"), all.x = T)
 }
 
-save(output_global, file = paste0(simul_path, "predictions2.Rdata"))
+save(output_global, file = paste0(simul_path, "predictions4.Rdata"))
 
 
 
