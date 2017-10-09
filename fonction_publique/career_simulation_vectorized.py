@@ -95,10 +95,11 @@ class AgentFpt:
                         ),
                     duree_donnee_par_grille_initiale,
                     ),
-                (self.end_date - dataframe.period).values.astype("timedelta64[M]") / np.timedelta64(1, 'M'),
+                (self.end_date - dataframe.period).values.astype("timedelta64[M]") / np.timedelta64(1, 'M') + dataframe.anciennete_dans_echelon,
                 ),
             np.nan,
             )
+        # # print dataframe['duree_effective_echelon']
 
     def set_dates_effet(self, date_observation = None, start_variable_name = "date_effet_grille_en_cours",
             next_variable_name = None):
@@ -191,7 +192,10 @@ class AgentFpt:
             for echelon in echelons:  # Only changing echelons
                 log.debug('get_date_prochaine_reforme_grille: echelon = {}'.format(echelon))
                 if not ((dataframe.echelon == echelon) & (dataframe.grade == grade)).any():
-                    continue  # We skip the echelons not present in the dataframe
+                    log.debug('We skip this echelon since it is not present in the dataframe')
+                    continue
+                log.debug('We use this echelon since it is present in the dataframe')
+                # print date_effet_filtered_grille
                 dates_effet_grille = dataframe.loc[
                     (dataframe.echelon == echelon) & (dataframe.grade == grade),
                     start_date_effet_variable_name

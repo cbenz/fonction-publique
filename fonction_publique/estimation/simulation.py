@@ -19,6 +19,20 @@ processed_grades = ['TTM1', 'TTM2','TTH1', 'TTH2', 'TTH3', 'TTH4']
 processed_grades_by_code = {24: 'TTM1', 551: 'TTM2', 793: 'TTH1', 794: 'TTH2', 795: 'TTH3', 796: 'TTH4'}
 
 
+def complete_echelon_speciaux(grilles_to_be_completed):
+    grilles.query('(code_grade_NETNEH in @processed_grades) & (echelon ==-5)')
+    new_echelon_speciaux_by_grade = {
+        'TTH4': 8,
+        'TTM2': 10
+        }
+    for grade, echelon in new_echelon_speciaux_by_grade.iteritems():
+        grilles_to_be_completed.loc[
+            (grilles_to_be_completed.code_grade_NETNEH == grade) &
+            (grilles_to_be_completed.echelon == -5),
+            'echelon'
+            ] = echelon
+    return grilles_to_be_completed
+
 
 def get_data_counterfactual_echelon_trajectory(data = None):
     if data is None:
@@ -77,8 +91,7 @@ def predict_echelon_next_period_when_no_exit(data):
         .copy()
         )
     agents_grilles['code_grade_NEG'] = agents_grilles['code_grade_NEG'].astype(int)
-    # FIXME very ugly way of dealing with echelon spéciaux of TTH4
-    agents_grilles['echelon'] = agents_grilles['echelon'].replace([-5], 8).astype(int)
+    complete_echelon_speciaux(agents_grilles)
     log.debug("3. Number of idents = {} and number of lines is {}".format(
         len(data_no_exit.ident.unique()), len(data_no_exit.ident)))
     filtered_grilles = (agents_grilles
@@ -239,6 +252,7 @@ def get_ib(data, grilles):
         on = ['code_grade_NETNEH', 'echelon', 'date_effet_grille'],
         how = 'inner'
         )
+    grilles_to_use = complete_echelon_speciaux(grilles_to_use)
     grilles_to_use['code_grade_NETNEH'] = grilles_to_use['code_grade_NETNEH'].astype(str)
     data['grade'] = data['grade'].astype(str)
     data_merged = data.merge(
@@ -249,6 +263,11 @@ def get_ib(data, grilles):
         )[
             ['ident', 'annee', 'grade', 'echelon', 'ib', 'situation', 'anciennete_dans_echelon']
             ]
+
+    assert data_merged.ib.notnull().all(), data_merged.loc[
+        data_merged.ib.isnull(), ['grade', 'echelon']
+        ].drop_duplicates()
+
     return data_merged
 
 
@@ -313,10 +332,10 @@ def main():
     output_idents = results.ident.unique().tolist()
     missing_id = data.loc[data.ident.isin(set(input_idents) - set(output_idents))]
     missing_id.to_csv(os.path.join(directory_path, 'missing_id.csv'))
-    
+
     missing_ib = results.loc[results.ib.isnull()]
     missing_ib.to_csv(os.path.join(directory_path, 'missing_ib.csv'))
-    
+
     log.info("Number of unique idents in output file: {}".format(len(output_idents)))
     results.to_csv(output_file_path)
 
