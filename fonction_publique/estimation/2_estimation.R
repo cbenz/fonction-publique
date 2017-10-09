@@ -256,3 +256,16 @@ print(texreg2(model.list,
 
 
 
+##### TEST NESTED ####
+estim = mlogit.data(data_est, shape = "wide", choice = "next_year")
+
+
+
+mlog0 = mlogit(next_year ~ 0 | 1, data = estim, reflevel = "no_exit")
+mlog1 = mlogit(next_year ~ 0 | sexe + generation_group2, data = estim, reflevel = "no_exit")
+mlog2 = mlogit(next_year ~ 0 | sexe + generation_group2 + grade, data = estim, reflevel = "no_exit")
+mlog3 = mlogit(next_year ~ 0 | sexe + generation_group2 + grade + duration + duration2 + duration3, data = estim, reflevel = "no_exit")
+mlog4 = mlogit(next_year ~ 0 | sexe + generation_group2 + grade + I_bothC, data = estim, reflevel = "no_exit")
+mlog5 = mlogit(next_year ~ 0 | sexe + generation_group2 + grade + I_bothC + I_bothE, 
+               data = estim, reflevel = "no_exit")
+

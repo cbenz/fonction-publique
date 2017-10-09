@@ -139,13 +139,14 @@ movers_characteristics = function(data, exit_var)
   table_movers[25] = mean(data$echelon[list])
   list =   which(data$exit == "exit_next" & data$c_cir_2011 == "TTH3")
   table_movers[26] = mean(data$echelon[list])
-  # Condition remplies
-  table_movers[27] = mean(data$cond, na.rm = T)
-  list =   which(data$exit == "no_exit")
-  table_movers[28] = mean(data$cond[list], na.rm = T)
+  # Condition remplies when exit next by grade
   list =   which(data$exit == "exit_next")
+  table_movers[27] = mean(data$cond[list], na.rm = T)
+  list =   which(data$exit == "exit_next" & data$c_cir_2011 == "TTH1")
+  table_movers[28] = mean(data$cond[list], na.rm = T)
+  list =   which(data$exit == "exit_next" & data$c_cir_2011 == "TTH2")
   table_movers[29] = mean(data$cond[list], na.rm = T)
-  list =   which(data$exit == "exit_oth")
+  list =   which(data$exit == "exit_next" & data$c_cir_2011 == "TTH3")
   table_movers[30] = mean(data$cond[list], na.rm = T)
   return(table_movers)
   }
@@ -169,8 +170,8 @@ rownames(table_movers) = c("\\% exit next All", "\\% exit oth All",
                            "Mean IB when exit next", "Q1 IB when exit next", "Q2 IB when exit next","Q3 IB when exit next",
                            "Mean IB when exit oth", "Q1 IB when exit oth", "Q2 IB when exit oth","Q3 IB when exit oth",
                            "Mean echelon when exit next",  "Mean ech when exit next TTH1", "Mean ech when exit next TTH2", "Mean ech when exit next TTH3",
-                           "\\% cond. remplies",  "\\% cond. remplies when no next",   "\\% cond. remplies when exit next",  
-                           "\\% cond. remplies when exit oth")
+                           "\\% cond. remplies when exit next",  "\\% cond. remplies when exit next TTH1",
+                           "\\% cond. remplies when exit next  TTH2","\\% cond. remplies when exit next  TTH3")
 
 mdigit <- matrix(c(rep(2,(ncol(table_movers)+1)*14),rep(0,(ncol(table_movers)+1)*8)),
                  nrow = nrow(table_movers), ncol=ncol(table_movers)+1, byrow=T)                           
@@ -424,8 +425,6 @@ print(xtable(table_all,nrow = nrow(table_all), align = "l|ccccc",
 
 
 y = 2011
-
-
 list1 = output_global$ident[which(output_global$grade == "TTH2" & output_global$annee == y)]
 list2 = output_global$ident[which(output_global$grade == "TTH3" & output_global$annee == y+1)]
 listA = intersect(list1, list2)
@@ -478,4 +477,11 @@ for (e in 1:11)
   print(paste0('DataA: echelon',e, " et var = 1  :",mean(dataA$var_ib[which(dataA$echelon== e & dataA$var_ech == 1)])))
   print(paste0('DataB: echelon',e, " et var = 1  :",mean(dataB$var_ib[which(dataB$echelon== e & dataB$var_ech == 1)])))
 }  
+
+
+
+####### Check départ avant condition #######
+
+
+
 

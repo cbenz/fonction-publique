@@ -15,8 +15,9 @@ from fonction_publique.career_simulation_vectorized import AgentFpt
 log = logging.getLogger(__name__)
 
 
-processed_grades = ['TTM1', 'TTH1', 'TTH2', 'TTH3', 'TTH4']
-processed_grades_by_code = {24: 'TTM1', 793: 'TTH1', 794: 'TTH2', 795: 'TTH3', 796: 'TTH4'}
+processed_grades = ['TTM1', 'TTM2','TTH1', 'TTH2', 'TTH3', 'TTH4']
+processed_grades_by_code = {24: 'TTM1', 551: 'TTM2', 793: 'TTH1', 794: 'TTH2', 795: 'TTH3', 796: 'TTH4'}
+
 
 
 def get_data_counterfactual_echelon_trajectory(data = None):
@@ -42,6 +43,7 @@ def predict_next_period_grade_when_exit_to_other_corps(data):
             ),
         'next_grade'
         ] = "TTM1"
+    data.loc[ (data.grade  == 'TTH4') & (data.next_grade == 'TTM1') & (data.echelon > 5) , 'next_grade'] = "TTM2"
     data['next_annee'] = data['annee'] + 1
     data['next_anciennete_dans_echelon'] = 5
     return data
@@ -309,9 +311,12 @@ def main():
     output_file_path = os.path.join(directory_path, args.output_file)
     log.info("Saving results to {}".format(output_file_path))
     output_idents = results.ident.unique().tolist()
-    missing = data.loc[data.ident.isin(set(input_idents) - set(output_idents))].to_csv(
-        os.path.join(directory_path, 'missing.csv')
-        )
+    missing_id = data.loc[data.ident.isin(set(input_idents) - set(output_idents))]
+    missing_id.to_csv(os.path.join(directory_path, 'missing_id.csv'))
+    
+    missing_ib = results.loc[results.ib.isnull()]
+    missing_ib.to_csv(os.path.join(directory_path, 'missing_ib.csv'))
+    
     log.info("Number of unique idents in output file: {}".format(len(output_idents)))
     results.to_csv(output_file_path)
 
