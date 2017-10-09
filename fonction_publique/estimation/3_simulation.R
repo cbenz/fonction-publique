@@ -97,7 +97,14 @@ predict_next_year_MNL <- function(data_sim, model, modelname)
   data_predict_MNL <- mlogit.data(data_AT, shape = "wide", choice = "next_year")  
   prob     <- predict(model, data_predict_MNL ,type = "response") 
   data_AT$yhat <- mapply(tirage_next_year_MNL, prob[,1], prob[,2], prob[,3])
-  # 
+  
+  # Correct 1: individuals in TTH4 cannot go in 'exit_next'
+  to_change = which(data_AT$grade == "TTH4" & data_AT$yhat == "exit_next")
+  rescale_p_no_exit = prob[,1]/(prob[,1]+prob[,3])
+  no_exit_hat   <- as.numeric(mapply(tirage, rescale_p_no_exit))
+  data_AT$yhat[to_change] <- ifelse(no_exit_hat[to_change]  == 1, "no_exit", "exit_oth")
+
+  # Correct 2: individuals in TTM1 or TTM2 stay in their grade.
   if (length(unique(data_sim$grade)) > 4)
   {
     data_noAT = data_sim[which(!is.element(data_sim$grade, c("TTH1","TTH2", "TTH3", "TTH4"))), ]
@@ -172,7 +179,10 @@ predict_next_year_seq_m1 <- function(data_sim, m1, m2, modelname)
   data_AT$yhat <- ifelse(pred1 == 1, "exit", "no_exit")
   data_AT$yhat[which(pred1 == 1 & pred2 == 1)] <- "exit_next"
   data_AT$yhat[which(pred1 == 1 & pred2 == 0)] <- "exit_oth"
-    
+  
+  # Correct: exit_next to oth when TTH4.
+  data_AT$yhat[which(data_AT$grade == "TTH4" & data_AT$yhat == "exit_next")] <- "exit_oth"
+  
   if (length(unique(data_sim$grade)) > 4)
   {
     data_noAT = data_sim[which(!is.element(data_sim$grade, c("TTH1","TTH2", "TTH3", "TTH4"))), ]
@@ -198,6 +208,8 @@ predict_next_year_seq_m2 <- function(data_sim, m1, m2, modelname)
   data_AT$yhat <- ifelse(pred1 == 1, "exit_oth", "no_exit")
   data_AT$yhat[which(pred1 == 0 & pred2 == 1)] <- "exit_next"
   data_AT$yhat[which(pred1 == 0 & pred2 == 0)] <- "no_exit"
+  # Correct: exit_next to no_exit when TTH4.
+  data_AT$yhat[which(data_AT$grade == "TTH4" & data_AT$yhat == "exit_next")] <- "no_exit"
   
   if (length(unique(data_sim$grade)) > 4)
   {
@@ -301,6 +313,7 @@ for (m in 1:6)
     if (m == 4){pred =  predict_next_year_byG(data_sim, list(m1_TTH1, m1_TTH2, m1_TTH3, m1_TTH4), modelname)}
     if (m == 5){pred =  predict_next_year_seq_m1(data_sim, step1_m1, step2_m1, modelname)}
     if (m == 6){pred =  predict_next_year_seq_m2(data_sim, step1_m2, step2_m2, modelname)}
+    stopifnot(length(which(pred$yhat == "exit_next" & pred$grade == "TTH4")) == 0)
     # Save prediction for Py simulation
     output[which(output$annee == annee), paste0("situation_", modelname)] = pred$yhat
     save_prediction_R(data = pred, annee, simul_path, modelname)

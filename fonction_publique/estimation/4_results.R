@@ -411,7 +411,7 @@ rownames(table_all) = c("\\% bonne prediction etat", "\\% bonne prediction quand
                         "\\% bonne prediction etat quand obs = exit oth",
                         "Ecart IB moyen", "Q2 ecart IB ","Q3 ecart IB ",
                         "Ecart IB moyen (abs)", "Q2 ecart IB (abs)","Q3 ecart IB (abs)",
-                        "Ecart IB moyen en 2011","Ecart IB moyen en 2014")
+                        "Ecart IB moyen en 2011","Ecart IB moyen en 2014", "RMSE")
 
 print(xtable(table_all,nrow = nrow(table_all), align = "l|ccccc",
              ncol=ncol(table_all)+1, byrow=T, digits = 2),
