@@ -303,7 +303,7 @@ def predict_next_period(data = None, grilles = None):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input-file', default = '2011_data_simul_withR_MNL_1.csv', help = 'input file (csv)')
+    parser.add_argument('-i', '--input-file', default = '2012_data_simul_withR_MNL_1.csv', help = 'input file (csv)')
     parser.add_argument('-o', '--output-file', default = 'results_2011_m1.csv', help = 'output file (csv)')
     parser.add_argument('-v', '--verbose', action = 'store_true', default = False, help = "increase output verbosity")
     parser.add_argument('-d', '--debug', action = 'store_true', default = False, help = "increase output verbosity (debug mode)")
@@ -332,11 +332,17 @@ def main():
     output_idents = results.ident.unique().tolist()
     missing_id = data.loc[data.ident.isin(set(input_idents) - set(output_idents))]
     missing_id.to_csv(os.path.join(directory_path, 'missing_id.csv'))
-
+    
     missing_ib = results.loc[results.ib.isnull()]
     missing_ib.to_csv(os.path.join(directory_path, 'missing_ib.csv'))
+    
+    ids = results.ident
+    clones = results[ids.isin(ids[ids.duplicated()])]
 
     log.info("Number of unique idents in output file: {}".format(len(output_idents)))
+    log.info("Number of unique doubles in output file: {}".format(len(clones.ident.unique().tolist())))
+    
+    results  = results.drop_duplicates(subset = "ident")
     results.to_csv(output_file_path)
 
 
