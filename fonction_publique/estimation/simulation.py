@@ -57,13 +57,13 @@ def predict_next_period_grade_when_exit_to_other_corps(data):
             ),
         'next_grade'
         ] = "TTM1"
-    data.loc[ (data.grade  == 'TTH4') & (data.next_grade == 'TTM1') & (data.echelon > 5) , 'next_grade'] = "TTM2"
+    data.loc[(data.grade == 'TTH4') & (data.next_grade == 'TTM1') & (data.echelon > 5), 'next_grade'] = "TTM2"
     data['next_annee'] = data['annee'] + 1
     data['next_anciennete_dans_echelon'] = 5
     return data
 
 
-def predict_echelon_next_period_when_no_exit(data):
+def predict_echelon_next_period_when_no_exit(data, grilles):
     log.debug('Predict echelon next period when no exit')
     log.debug("1. Number of idents = {} and number of lines is {}".format(
         len(data.ident.unique()), len(data.ident)))
@@ -89,9 +89,8 @@ def predict_echelon_next_period_when_no_exit(data):
     agents_grilles = (grilles
         .loc[grilles['code_grade_NETNEH'].isin(processed_grades)]
         .copy()
-        )
+        )  # FIXME take out of the function
     agents_grilles['code_grade_NEG'] = agents_grilles['code_grade_NEG'].astype(int)
-    complete_echelon_speciaux(agents_grilles)
     log.debug("3. Number of idents = {} and number of lines is {}".format(
         len(data_no_exit.ident.unique()), len(data_no_exit.ident)))
     filtered_grilles = (agents_grilles
@@ -239,7 +238,6 @@ def get_ib(data, grilles):
     annees = data.annee.unique()
     assert len(annees) == 1
     annee = annees[0]
-    grilles = grilles.copy()
     # grilles['echelon'] = grilles['echelon'].replace(['ES'], 55555).astype(int)  # FIXME or drop me
     grilles_grouped = (grilles
         .query('annee_effet_grille <= @annee')
@@ -252,9 +250,19 @@ def get_ib(data, grilles):
         on = ['code_grade_NETNEH', 'echelon', 'date_effet_grille'],
         how = 'inner'
         )
-    grilles_to_use = complete_echelon_speciaux(grilles_to_use)
     grilles_to_use['code_grade_NETNEH'] = grilles_to_use['code_grade_NETNEH'].astype(str)
+    assert not (grilles_to_use
+        .query('code_grade_NETNEH in @processed_grades')
+        .duplicated(subset = ['code_grade_NETNEH', 'echelon'])
+        .any()
+        ), \
+        grilles_to_use.query('code_grade_NETNEH in @processed_grades').loc[grilles_to_use
+            .query('code_grade_NETNEH in @processed_grades')
+            .duplicated(subset = ['code_grade_NETNEH', 'echelon'], keep = False)
+            ]
+
     data['grade'] = data['grade'].astype(str)
+    assert not data.duplicated(subset = ['ident']).any()
     data_merged = data.merge(
         grilles_to_use[['code_grade_NETNEH', 'echelon', 'ib']],
         left_on = ['grade', 'echelon'],
@@ -279,11 +287,11 @@ def predict_next_period(data = None, grilles = None):
     assert data is not None
     assert grilles is not None
     del data['Unnamed: 0']
+    grilles = complete_echelon_speciaux(grilles.copy())
     data = data.query('echelon != 55555').copy()
     data_with_next_grade_when_exit_to_other = predict_next_period_grade_when_exit_to_other_corps(data)
     data_with_next_echelon_when_no_exit = predict_echelon_next_period_when_no_exit(
-        data
-        )
+        data, grilles)
     data_with_next_echelon_when_exit = predict_echelon_next_period_when_exit(
         data_with_next_grade_when_exit_to_other, grilles
         )
@@ -332,16 +340,16 @@ def main():
     output_idents = results.ident.unique().tolist()
     missing_id = data.loc[data.ident.isin(set(input_idents) - set(output_idents))]
     missing_id.to_csv(os.path.join(directory_path, 'missing_id.csv'))
-    
+
     missing_ib = results.loc[results.ib.isnull()]
     missing_ib.to_csv(os.path.join(directory_path, 'missing_ib.csv'))
-    
+
     ids = results.ident
     clones = results[ids.isin(ids[ids.duplicated()])]
 
     log.info("Number of unique idents in output file: {}".format(len(output_idents)))
     log.info("Number of unique doubles in output file: {}".format(len(clones.ident.unique().tolist())))
-    
+
     results  = results.drop_duplicates(subset = "ident")
     results.to_csv(output_file_path)
 
