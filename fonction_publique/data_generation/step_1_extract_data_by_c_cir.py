@@ -40,10 +40,21 @@ def select_grilles(corps):
                         'AIDE SOIGNANT CL SUPERIEURE (E05)',
                         'AIDE SOIGNANT CL EXCEPT (E06)'
                         ]
+    elif corps == 'T':
+        libNEG_corps = ['TECHNICIEN',
+                        'TECHNICIEN PRINCIPAL DE 2EME CLASSE',
+                        'TECHNICIEN PRINCIPAL DE 1ERE CLASSE'
+                        ]    
     else:
         raise ValueError("NEG for the corps are not specified in the select_grilles function")
         
     subset_grilles = grilles[grilles.libelle_grade_NEG.isin(libNEG_corps)]
+    assert (
+            len(subset_grilles.libelle_grade_NEG.unique()) == len(libNEG_corps) & 
+            len(subset_grilles.code_grade_NETNEH.unique()) == len(libNEG_corps) &
+            len(subset_grilles.code_grade_NEG.unique()) == len(libNEG_corps)
+            )    
+    
     return (subset_grilles)
 
 
@@ -53,12 +64,11 @@ def select_ident(corps, dataset, grilles, selection_variable):
         assert corps in['AT', 'AA', 'AS'], "C_NEG for the corps are not specificied in select_grilles"
         c_neg = get_careers(variable = selection_variable, data_path = dataset)
         subset_by_corps = {}
-        for corps in ['AT', 'AA', 'AS']:
-            grilles = select_grilles(corps = corps)
-            list_code = list(set(grilles.code_grade_NEG.astype(str)))
-            list_code = ['0' + s for s in list_code]
-            subset_ident = list(set(c_neg.ident[c_neg.c_neg.isin(list_code)]))
-            subset_by_corps[corps] = subset_ident
+        grilles = select_grilles(corps = corps)
+        list_code = list(set(grilles.code_grade_NEG.astype(str)))
+        list_code = ['0' + s for s in list_code]
+        subset_ident = list(set(c_neg.ident[c_neg.c_neg.isin(list_code)]))
+        subset_by_corps[corps] = subset_ident
     if (selection_variable == 'c_cir'):        
         data_grade = get_careers(variable = selection_variable, data_path = dataset)
         subset_by_corps = dict()
@@ -168,7 +178,7 @@ if __name__ == '__main__':
             ],
         first_year = 2000,
         save_path = os.path.join(output_directory_path, 'select_data'),
-        list_corps = ['AT'],
+        list_corps = ['AS'],
         selection_variable = "c_neg",
     #    list_corps = ['adjoints techniques territoriaux'],
     #    selection_variable = "c_cir",
