@@ -17,6 +17,8 @@ load(paste0(simul_path, "predictions4.Rdata"))
 list_id = unique(output_global$ident[which(output_global$echelon == -1)])
 output_global = output_global[which(!is.element(output_global$ident, list_id)), ]
 
+list_id = unique(output_global$ident[which(output_global$generation >= 1990)])
+output_global = output_global[which(!is.element(output_global$ident, list_id)), ]
 
 ########## I. Exit grade 2011-2014   ##########
 
@@ -278,7 +280,7 @@ print(xtable(table,nrow = nrow(table), align = "l|c|ccccc",
 
 
 
-table_gain_ib = function(data, var_ib, var_situation, details = F)
+table_gain_ib = function(data, var_ib, var_situation, details = T)
 {
   data$var_ib = data[, var_ib]
   data$var_situation = data[, var_situation]
@@ -393,7 +395,8 @@ table_ind = function(data, var_ib, var_situation)
   table[9:10] = as.numeric(quantile(data$diff_ib_abs, na.rm = T)[3:4])
   table[11] = mean(data$diff_ib[which(data$annee == 2012)], na.rm = T)
   table[12] = mean(data$diff_ib[which(data$annee == 2015)], na.rm = T)
-  
+  # Ecart moyen au carré
+  table[13] = rmse(data$ib_sim, data$ib_obs)
   return(table)
 }
 
@@ -425,8 +428,8 @@ print(xtable(table_all,nrow = nrow(table_all), align = "l|ccccc",
 
 
 y = 2011
-list1 = output_global$ident[which(output_global$grade == "TTH2" & output_global$annee == y)]
-list2 = output_global$ident[which(output_global$grade == "TTH3" & output_global$annee == y+1)]
+list1 = output_global$ident[which(output_global$grade == "TTH3" & output_global$annee == y)]
+list2 = output_global$ident[which(output_global$grade == "TTH4" & output_global$annee == y+1)]
 listA = intersect(list1, list2)
 data_check = output_global[which(is.element(output_global$ident, listA)),]
 data_check = data_check[which(data_check$annee == y | data_check$annee == y+1), ]
@@ -438,6 +441,7 @@ data_check$var_ech = data_check$next_ech - data_check$echelon
 data_check$var_ib = data_check$next_ib - data_check$ib
 data_check = data_check[which(data_check$annee == y), ]
 mean(data_check$var_ib)
+table(data_check$var_ech)/length(data_check$var_ech)
 dataA = data_check
 # table(data_check$var_ech)/length(data_check$var_ech)
 # table(data_check$echelon)/length(data_check$echelon)
@@ -448,8 +452,8 @@ dataA = data_check
 # View(data_check[which(is.element(data_check$ident, listB)),])
 
 
-list1 = output_global$ident[which(output_global$grade_MS_2 == "TTH2" & output_global$annee == y)]
-list2 = output_global$ident[which(output_global$grade_MS_2 == "TTH3" & output_global$annee == y+1)]
+list1 = output_global$ident[which(output_global$grade_MS_2 == "TTH3" & output_global$annee == y)]
+list2 = output_global$ident[which(output_global$grade_MS_2 == "TTH4" & output_global$annee == y+1)]
 listB = intersect(list1, list2)
 data_check = output_global[which(is.element(output_global$ident, listB)),]
 data_check$ib = data_check$ib_MS_2 
@@ -462,7 +466,7 @@ data_check$var_ib = data_check$next_ib - data_check$ib
 data_check = data_check[which(data_check$annee == y), ]
 dataB = data_check
 mean(data_check$var_ib)
-mean(data_check$echelon)
+table(data_check$var_ech)/length(data_check$var_ech)
 # table(data_check$var_ech)/length(data_check$var_ech)
 # table(data_check$echelon)/length(data_check$echelon)
 # dataB= data_check[which(data_check$echelon == 5 & data_check$var_ech == 0),]
