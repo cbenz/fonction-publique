@@ -8,6 +8,13 @@ import pandas as pd
 from fonction_publique.base import asset_path, project_path, grilles
 from fonction_publique.career_simulation_vectorized import AgentFpt
 
+
+import logging
+
+
+log = logging.getLogger(__name__)
+
+
 test_path = os.path.join(project_path, 'tests')
 grille_adjoint_technique_path = os.path.join(
     asset_path, 'grilles_fonction_publique',
@@ -261,21 +268,30 @@ def test_agent_1763(grilles = grilles):
 
 
 def test_create_agent_by_items():
+    # agents = create_agent_by_items(
+    #     grade = 795,
+    #     echelon = 11,
+    #     period = pd.Timestamp('2013-01-01'),
+    #     anciennete_dans_echelon = 0,
+    #     )
     agents = create_agent_by_items(
         grade = 795,
         echelon = 11,
-        period = pd.Timestamp('2013-01-01'),
-        anciennete_dans_echelon = 0,
+        period = pd.Timestamp('2011-01-01'),
+        anciennete_dans_echelon = 74,
         )
-    agents.set_grille(grille_adjoint_technique)
+
+    agents.set_grille(grilles)
     agents.compute_result()
     print agents.result
-    print grilles.head()
+    # print grilles.head()
 
 
 
 if __name__ == '__main__':
-    test()
+    import sys
+    logging.basicConfig(level = logging.DEBUG, stream = sys.stdout)
+    test_create_agent_by_items()
     # agents = AgentFpt(df)
     # agents.set_grille(grille_adjoint_technique)
     # agents.compute_result(end_date = pd.Timestamp("2040-01-01").floor('D'))

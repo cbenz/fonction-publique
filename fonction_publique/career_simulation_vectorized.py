@@ -84,7 +84,7 @@ class AgentFpt:
             np.where(
                 echelon_inferieur_a_echelon_terminal,
                 np.where(
-                    grille_change_during_period,
+                    grille_change_during_period,  # TODO inverse this condition and echelon_inferieur_a_echelon_terminal
                     np.where(
                         reforme_intervient_pendant_duree_donnee_par_grille_initiale &
                         reforme_raccourcit_duree_donnee_par_grille_initiale &
@@ -269,7 +269,6 @@ class AgentFpt:
         assert date_effet_grille != 'date_effet_grille'
         assert date_effet_grille in dataframe, '{} is not present in dataframe which columns are {}'.format(
             date_effet_grille, dataframe.columns)
-
         dataframe = dataframe.merge(
             echelon_max_by_grille,
             how = 'left',
@@ -277,10 +276,8 @@ class AgentFpt:
             right_on = ['date_effet_grille', 'code_grade_NEG'],
             copy = False
             )
-
         del dataframe['date_effet_grille']
         del dataframe['code_grade_NEG']
-
         self.dataframe = dataframe
 
     def compute_all(self):
