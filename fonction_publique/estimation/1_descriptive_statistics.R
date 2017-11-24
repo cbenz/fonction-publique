@@ -337,7 +337,7 @@ abline(v = 5, lwd = 3)
 
 # TTH3 
 subdata = data_stat_min
-subdata = subdata[which(subdata$left_censored == F & subdata$c_cir_2011 == "TTH3"),]
+subdata = subdata[which(subdata$left_censored == F & subdata$c_cir_2011 == "TTH3" & subdata$annee <= 2014),]
 hazard_by_duree(data = subdata)
 abline(v = 5, lwd = 3)
 hazard_by_duree(data = subdata, type_exit = "in_corps")

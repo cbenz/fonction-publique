@@ -8,7 +8,7 @@
 
 # Main data
 source(paste0(wd, "0_Outils_CNRACL.R"))
-datasets = load_and_clean(data_path, dataname = "/filter/data_ATT_2011_filtered_after_duration_var_added_new.csv")
+datasets = load_and_clean(data_path, dataname = "filter/data_ATT_2011_filtered_after_duration_var_added_new.csv")
 data_max = datasets[[1]]
 data_min = datasets[[2]]
 
@@ -28,6 +28,7 @@ estim = mlogit.data(data_est, shape = "wide", choice = "next_year")
 
 mlog0 = mlogit(next_year ~ 0 | 1, data = estim, reflevel = "no_exit")
 mlog1 = mlogit(next_year ~ 0 | sexe + generation_group2, data = estim, reflevel = "no_exit")
+mlog1 = mlogit(next_year ~ 0 | sexe + generation_group2 + grade + I_echC + I_echE, data = estim, reflevel = "no_exit")
 mlog2 = mlogit(next_year ~ 0 | sexe + generation_group2 + grade, data = estim, reflevel = "no_exit")
 mlog3 = mlogit(next_year ~ 0 | sexe + generation_group2 + grade + duration + duration2 + duration3, data = estim, reflevel = "no_exit")
 mlog4 = mlogit(next_year ~ 0 | sexe + generation_group2 + grade + I_bothC, data = estim, reflevel = "no_exit")
@@ -38,17 +39,17 @@ mlog6 = mlogit(next_year ~ 0 | sexe + generation_group2 + grade +
                data = estim, reflevel = "no_exit")
 
 
-list_MNL = list(mlog0, mlog3, mlog6)
+list_MNL = list(mlog0, mlog1, mlog3, mlog6)
 save(list_MNL, file = paste0(save_model_path, "mlog.rda"))
 
 
 # bundle up some models
-m1 = extract.mlogit2(mlog1)
-m2 = extract.mlogit2(mlog2)
-m3 = extract.mlogit2(mlog3)
-m4 = extract.mlogit2(mlog4)
-m5 = extract.mlogit2(mlog5)
-m6 = extract.mlogit2(mlog6)
+m1 = extract.mlogit2(mlog1, include.aic =  T )
+m2 = extract.mlogit2(mlog2, include.aic =  T )
+m3 = extract.mlogit2(mlog3, include.aic =  T )
+m4 = extract.mlogit2(mlog4, include.aic =  T )
+m5 = extract.mlogit2(mlog5, include.aic =  T )
+m6 = extract.mlogit2(mlog6, include.aic =  T )
 
 model.list <- list(m1, m2, m3, m4, m5, m6)
 
@@ -61,6 +62,8 @@ name.map <- list("exit_next:(intercept)"       = "exit_next: constante",
                  "exit_next:gradeTTH4"    = "exit_next: TTH4",
                  "exit_next:I_bothC"            = "exit_next: Conditions choix remplies",
                  "exit_next:I_bothE"            = "exit_next: Conditions exam remplies",
+                 "exit_next:I_echC"            = "exit_next: Conditions echelon choix remplies",
+                 "exit_next:I_echE"            = "exit_next: Conditions echelon exam remplies",
                  "exit_oth:(intercept)"        = "exit_oth: constante",              
                  "exit_oth:sexeM"              = "exit_oth: Homme",
                  "exit_oth:generation_group22" = "exit_oth: Generation 70s",
@@ -69,7 +72,9 @@ name.map <- list("exit_next:(intercept)"       = "exit_next: constante",
                  "exit_oth:gradeTTH3"     = "exit_oth: TTH3",
                  "exit_oth:gradeTTH4"     = "exit_oth: TTH4",
                  "exit_oth:I_bothC"            = "exit_oth: Conditions choix remplies",
-                 "exit_oth:I_bothE"            = "exit_oth: Conditions exam remplies")
+                 "exit_oth:I_bothE"            = "exit_oth: Conditions exam remplies",
+                 "exit_oth:I_echC"            = "exit_oth: Conditions echelon choix remplies",
+                 "exit_oth:I_echE"            = "exit_oth: Conditions echelon exam remplies")
 
 
 oldnames <- all.varnames.dammit(model.list) 

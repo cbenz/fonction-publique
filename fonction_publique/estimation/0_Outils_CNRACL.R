@@ -525,7 +525,7 @@ extract.mlogit2 <- function (model, include.aic = FALSE, include.loglik = TRUE, 
     gof.decimal <- c(gof.decimal, TRUE)
   }
   if (include.aic == TRUE) {
-    gof <- AIC(model)
+    gof <- c(gof, AIC(model))
     gof.names <- c(gof.names, "AIC")
     gof.decimal <- c(gof.decimal, TRUE)
   }

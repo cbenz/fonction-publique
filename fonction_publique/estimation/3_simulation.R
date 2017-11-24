@@ -269,7 +269,7 @@ increment_data_sim <- function(data_sim, simul_py)
 
 save_results_simul <- function(output, data_sim, modelname)
 {
-  var = c("grade", "anciennete_dans_echelon", "echelon", "ib", "situation", "I_bothC")
+  var = c("grade", "anciennete_dans_echelon", "echelon", "ib", "situation", "I_bothC", "time")
   new_var = paste0(c("grade", "anciennete_dans_echelon", "echelon", "ib", "situation", "I_bothC"), "_", modelname )
   data_sim[, new_var] = data_sim[, var]
   add = data_sim[, c("ident", "annee", new_var)]
@@ -284,15 +284,15 @@ save_results_simul <- function(output, data_sim, modelname)
 ########## II. Simulation #########
 
 
-output_global = generate_data_output(data_path)
+output_global = generate_data_output(data_path, use = "max")
 
 
-for (m in 1:6)
+for (m in 1:7)
 {
-  if (m <= 3){modelname  =  paste0("MNL_", toString(m))}  
-  if (m == 4){modelname = "BG_1"}
-  if (m == 5){modelname = "MS_1"}
-  if (m == 6){modelname = "MS_2"}
+  if (m <= 4){modelname  =  paste0("MNL_", toString(m))}  
+  if (m == 5){modelname = "BG_1"}
+  if (m == 6){modelname = "MS_1"}
+  if (m == 7){modelname = "MS_2"}
   print(paste0("Simulation for model ", modelname))
   for (annee in 2011:2014)
   { 
@@ -309,10 +309,10 @@ for (m in 1:6)
       output[, paste0("situation_", modelname)] = NA
     }
     # Prediction of next_situation from estimated model 
-    if (m <= 3){pred =  predict_next_year_MNL(data_sim, model = list_MNL[[m]], modelname)} 
-    if (m == 4){pred =  predict_next_year_byG(data_sim, list(m1_TTH1, m1_TTH2, m1_TTH3, m1_TTH4), modelname)}
-    if (m == 5){pred =  predict_next_year_seq_m1(data_sim, step1_m1, step2_m1, modelname)}
-    if (m == 6){pred =  predict_next_year_seq_m2(data_sim, step1_m2, step2_m2, modelname)}
+    if (m <= 4){pred =  predict_next_year_MNL(data_sim, model = list_MNL[[m]], modelname)} 
+    if (m == 5){pred =  predict_next_year_byG(data_sim, list(m1_TTH1, m1_TTH2, m1_TTH3, m1_TTH4), modelname)}
+    if (m == 6){pred =  predict_next_year_seq_m1(data_sim, step1_m1, step2_m1, modelname)}
+    if (m == 7){pred =  predict_next_year_seq_m2(data_sim, step1_m2, step2_m2, modelname)}
     stopifnot(length(which(pred$yhat == "exit_next" & pred$grade == "TTH4")) == 0)
     # Save prediction for Py simulation
     output[which(output$annee == annee), paste0("situation_", modelname)] = pred$yhat
@@ -330,7 +330,7 @@ for (m in 1:6)
   output_global = merge(output_global, output, by = c("ident", "annee"), all.x = T)
 }
 
-save(output_global, file = paste0(simul_path, "predictions4.Rdata"))
+save(output_global, file = paste0(simul_path, "predictions6_min.Rdata"))
 
 
 
