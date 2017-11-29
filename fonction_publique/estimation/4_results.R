@@ -97,7 +97,18 @@ grid_arrange_shared_legend(p_obs_TTH4, p_MNL_1_TTH4, p_MNL_2_TTH4, p_MNL_3_TTH4,
 dev.off()
 
 
-## I.2 Caracteristics of movers in 2011 ####
+#### II Caracteristics of movers in 2011 ####
+
+
+listM = list(mlog3, mlog6, mlog7, mlog8)
+namesM = c("Duration", "Duration + seuil1", "Duration + seuil2", "Duration2 + seuil2")
+plot_comp_predicted_prob(data = data_est, data_estim = estim, list_models = listM  , grade = "TTH3",
+                         model_names = namesM, xvariable =  "duration")
+plot_comp_predicted_prob(data = data_est, data_estim = estim, list_models = listM, grade = "TTH3",
+                         model_names = namesM, xvariable =  "echelon")
+plot_comp_predicted_prob(data = data_est, data_estim = estim, list_models = listM, grade = "TTH2",
+                         model_names = namesM, xvariable =  "echelon")
+
 
 # Caracteristics of movers
 movers_characteristics = function(data, exit_var)

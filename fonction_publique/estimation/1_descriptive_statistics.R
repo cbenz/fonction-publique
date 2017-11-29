@@ -1,7 +1,4 @@
 
-
-
-
 ################################################### Descriptive statistics ##########################################################
 
 # Descriptive statistiscs on the population of interest 
@@ -21,7 +18,7 @@ data_min = datasets[[2]]
 
 data_stat_min = data_min[which(data_min$left_censored == F & data_min$annee <= 2014),]
 data_stat_max = data_max[which(data_max$left_censored == F & data_max$annee <= 2014),]
-data_stat = data_stat_min
+data_stat = data_stat_max
 datai     =  data_min[which(data_min$annee == 2011),]
 
 
@@ -286,7 +283,7 @@ dev.off()
 
 # TTH2
 subdata = data_stat
-subdata = subdata[which(subdata$left_censored == F & subdata$c_cir_2011 == "TTH2"),]
+subdata = subdata[which(subdata$left_censored == F & subdata$c_cir_2011 == "TTH2" & subdata$annee >= 2011),]
 hazard_by_duree(data = subdata)
 hazard_by_ech(data = subdata)
 
@@ -337,7 +334,7 @@ abline(v = 5, lwd = 3)
 
 # TTH3 
 subdata = data_stat_min
-subdata = subdata[which(subdata$left_censored == F & subdata$c_cir_2011 == "TTH3" & subdata$annee <= 2014),]
+subdata = subdata[which(subdata$left_censored == F & subdata$c_cir_2011 == "TTH3" & subdata$annee <= 2014& subdata$annee >= 2011),]
 hazard_by_duree(data = subdata)
 abline(v = 5, lwd = 3)
 hazard_by_duree(data = subdata, type_exit = "in_corps")

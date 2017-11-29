@@ -269,7 +269,7 @@ increment_data_sim <- function(data_sim, simul_py)
 
 save_results_simul <- function(output, data_sim, modelname)
 {
-  var = c("grade", "anciennete_dans_echelon", "echelon", "ib", "situation", "I_bothC", "time")
+  var = c("grade", "anciennete_dans_echelon", "echelon", "ib", "situation", "I_bothC")
   new_var = paste0(c("grade", "anciennete_dans_echelon", "echelon", "ib", "situation", "I_bothC"), "_", modelname )
   data_sim[, new_var] = data_sim[, var]
   add = data_sim[, c("ident", "annee", new_var)]
@@ -280,9 +280,59 @@ save_results_simul <- function(output, data_sim, modelname)
 }
 
 
+########## II. Compute probabilities in initial state #########
 
-########## II. Simulation #########
+# Laod data
+datasets = load_and_clean(data_path, dataname = "filter/data_ATT_2011_filtered_after_duration_var_added_new.csv")
+data_max = datasets[[1]]
+data_min = datasets[[2]]
+data_est = data_min
+data_obs = data_est[which(data_est$left_censored == F & data_est$annee == 2011 & data_est$generation < 1990),]
+data_obs = data_obs[order(data_obs$ident),]
+data_obs = create_variables(data_obs)  
+data_obs$next_year = as.character(data_obs$next_grade_situation)
+estim = mlogit.data(data_obs, shape = "wide", choice = "next_year")
 
+data_proba = data_obs[,c("ident", "grade")]
+
+# Observé
+data$no_exit_obs   = ifelse(data$next_year == "no_exit",   1, 0)
+data$exit_next_obs = ifelse(data$next_year == "exit_next", 1, 0)
+data$exit_oth_obs  = ifelse(data$next_year == "exit_oth",  1, 0)
+# Proba MNL
+for (m in 1:length(list_MNL))
+{
+prob <- as.data.frame(predict(list_models[[m]] , estim ,type = "response"))    
+names(prob) = paste0(names(prob), paste0("_MNL_",m))  
+data_proba = cbind(data_proba, prob)
+}
+# Proba model par grade
+list_model = list(m1_TTH1, m1_TTH2, m1_TTH3, m1_TTH4)
+list_grade =  c("TTH1", "TTH2", "TTH3")
+data_proba[, c("no_exit_byG",   "exit_next_byG", "exit_oth_byG")] = 0
+for (g in 1:length(list_grade))
+{
+list1 = which(estim$grade == list_grade[g])
+prob = predict(list_models[[m]] , estim[list1,] ,type = "response")
+list2 = which(data_proba$grade == list_grade[g])
+data_proba[list2, c("no_exit_byG",   "exit_next_byG", "exit_oth_byG")] = prob
+stopifnot(length(setdiff(data_proba$ident[list2], estim$ident[list1])) == 0)
+}
+list = which(estim$grade == "TTH4")
+prob = predict(m1_TTH4, data_obs[list, ], type = "response")  
+data_proba[list, "exit_oth_byG"] = prob
+data_proba[list, "no_exit_byG"] = 1 - prob
+# Model sequentiels
+# TODO
+
+
+
+### Sauvegarde de la base avec probas predites
+save(data_proba, file = paste0(simul_path, "prob_pred.Rdata"))
+
+
+
+########## III. Simulation #########
 
 output_global = generate_data_output(data_path, use = "max")
 

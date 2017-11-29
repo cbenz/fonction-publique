@@ -74,11 +74,10 @@ load_and_clean = function(data_path, dataname)
   data_max$time = data_max$time_spent_in_grade_min
   
   # Modif: time = an_aff when TTH1
-  data_max$dist_an_aff = data_max$annee - data_max$an_aff
+  data_max$dist_an_aff = data_max$annee - data_max$an_aff +1 
   data_max$time[which(data_max$grade == "TTH1")] = data_max$dist_an_aff[which(data_max$grade == "TTH1")]
   data_min$dist_an_aff = data_min$annee - data_min$an_aff
   data_min$time[which(data_min$grade == "TTH1")] = data_min$dist_an_aff[which(data_min$grade == "TTH1")]
-  
   
   # One line per ident data
   data_id = data_long[!duplicated(data_long$ident),]
@@ -96,6 +95,8 @@ create_variables <- function(data)
   # Generation group
   data$generation_group  <-cut(data$generation, c(1960,1965,1970,1975,1980,1985,1990), labels=c(1:6))
   data$generation_group2 <-cut(data$generation, c(1960,1969,1979,1989), labels = c(1:3))
+
+  data$c_cir_2011 = factor(data$c_cir_2011)
   
   data$age_an_aff    = data$an_aff - data$generation
   data$dist_an_aff = data$annee - data$an_aff +1 
@@ -109,29 +110,74 @@ create_variables <- function(data)
   data$I_gradeE   = ifelse(data$time2 >= data$D_exam & data$grade == "TTH1", 1, 0) 
   data$I_bothE    = ifelse(data$I_echE ==1 &  data$I_gradeE == 1, 1, 0) 
 
+  data$cum_bothC = ave(data$I_bothC, data$ident, FUN = cumsum)
+  data$I_bothC_bis = ifelse(data$cum_bothC >= 1 & data$cum_bothC <=3, 1, 0) 
+  
+  data$cum_bothE = ave(data$I_bothE, data$ident, FUN =  cumsum)
+  data$I_bothE_bis = ifelse(data$cum_bothE >= 1 & data$cum_bothE <=3, 1, 0) 
+  
+
+  grille_ech = data.frame(echelon =  seq(1, 11), duree_min= c(12, 24, 24, 36, 36, 36, 48, 48, 48, 48, 48))
+  grille_ech$cum_duree = cumsum(grille_ech$duree_min)
+  # Distance au seuil "au choix" (A AMELIORER)
+  data = merge(data, grille_ech, by = "echelon", all.x = T) 
+  data$refC = 999
+  for (grade in c("TTH1", "TTH2", "TTH3"))
+  {
+  list = which(data$c_cir_2011 == grade)
+  if (grade == "TTH1"){data$refC[list] = grille_ech$cum_duree[which(grille_ech$echelon == 7 )]}
+  if (grade == "TTH2"){data$refC[list] = grille_ech$cum_duree[which(grille_ech$echelon == 5 )]}
+  if (grade == "TTH3"){data$refC[list] = grille_ech$cum_duree[which(grille_ech$echelon == 6 )]}
+  }
+  data$dist_dureeC = data$cum_duree - data$refC
+  data$a = 1
+  data$duree_in_echC  = ave(data$a, list(data$ident, data$grade, data$echelon), FUN = cumsum)
+  data$dist_ech_condC = (data$dist_dureeC)/12 + data$duree_in_echC
+  
+  data$dist_grade_condC = data$time2 - data$D_choice
+  data$dist_threshold_bef = pmin(0, pmin(data$dist_grade_condC, data$dist_ech_condC ))
+  data$dist_threshold_aft = pmax(0, pmin(data$dist_grade_condC, data$dist_ech_condC ))
+  data$dist_thresholdC = data$dist_threshold_bef + data$dist_threshold_aft
+  
+  data$T_condC = ifelse(data$dist_thresholdC >= 0 & data$dist_thresholdC <= 1, 1, 0)
+  data$I_condC = ifelse(data$dist_thresholdC >= 0, 1, 0)
+  
+    
+  # Distance au seuil "exam" (A AMELIORER)
+  data$refE = 999
+  list = which(data$c_cir_2011 == "TTH1")
+  data$refE[list] = grille_ech$cum_duree[which(grille_ech$echelon == 4 )]
+  data$dist_dureeE = data$cum_duree - data$refE
+  data$a = 1
+  data$duree_in_echE  = ave(data$a, list(data$ident, data$grade, data$echelon), FUN = cumsum)
+  data$dist_ech_condE = (data$dist_dureeE)/12 + data$duree_in_echE
+  
+  data$dist_grade_condE = data$time2 - data$D_exam
+  data$dist_threshold_bef = pmin(0, pmin(data$dist_grade_condE, data$dist_ech_condE ))
+  data$dist_threshold_aft = pmax(0, pmin(data$dist_grade_condE, data$dist_ech_condE ))
+  data$dist_thresholdE = data$dist_threshold_bef + data$dist_threshold_aft
+  
+  data$T_condE = ifelse(data$dist_thresholdE >= 0 & data$dist_thresholdE <= 1, 1, 0)
+  data$I_condE = ifelse(data$dist_thresholdE >= 0, 1, 0)
+  
+  
+  ### Variables de durées
   data$duration  = data$time
   data$duration2 = data$time^2 
   data$duration3 = data$time^3 
   
-  data$duration_aft  = data$time*data$I_bothC
-  data$duration_aft2 = data$time^2*data$I_bothC
+  data$aft_seuil  = ifelse(data$I_condC == 1, data$duration, 0)
+  data$aft_seuil2 = data$aft_seuil^2
+  data$bef_seuil  = ifelse(data$I_condC == 0, data$duration, 0)
+  data$bef_seuil2 = data$bef_seuil^2
   
-  data$duration_bef  = data$time*(1-data$I_bothC)
-  data$duration_bef2 = data$time^2*(1-data$I_bothC)
+  data$aft_seuil_TTH1  = ifelse(data$I_condC == 1, data$duration, 0)
+  data$aft_seuil2_TTH1 = data$aft_seuil^2
+  data$mid_seuil_TTH1  = ifelse(data$I_condC == 0 & data$I_condE == 1, data$duration, 0)
+  data$mid_seuil2_TTH1 = data$mid_seuil^2
+  data$bef_seuil_TTH1  = ifelse(data$I_condE == 0, data$duration, 0)
+  data$bef_seuil2_TTH1 = data$bef_seuil^2
   
-  data$generation_group = factor(data$generation_group)
-  data$c_cir_2011 = factor(data$c_cir_2011)
-  
-  # Unique threshold (first reached)
-  grade_modif_bis = which(data$grade == "TTH1")
-  data$I_unique_threshold = data$I_bothC
-  data$I_unique_threshold[grade_modif_bis] = data$I_bothE[grade_modif_bis]
-  
-  data$duration_aft_unique_threshold  = data$time*data$I_unique_threshold
-  data$duration_aft_unique_threshold2 = data$time^2*data$I_unique_threshold
-  
-  data$duration_bef_unique_threshold  = data$time*(1-data$I_unique_threshold)
-  data$duration_bef_unique_threshold2 = data$time^2*(1-data$I_unique_threshold)
   return(data)
 }
 
@@ -1307,5 +1353,69 @@ save_results_simul <- function(output, data_sim, modelname)
   output = rbind(output, add)
   output = output[order(output$ident, output$annee),]
   return(output)
+}
+
+
+
+# Predicted probabilities -------------------------------------------------
+
+
+plot_comp_predicted_prob = function(data, data_estim, list_models, model_names, grade = "Tous", xvariable = "duration")
+{
+  stopifnot(is.element(grade, c("Tous", "TTH1", "TTH2", "TTH3", "TTH4")))  
+  stopifnot(length(list_models) == length(model_names)) 
+  # Obs  
+  data$xvariable =   data[, xvariable]
+  data$no_exit   = ifelse(data$next_year == "no_exit",   1, 0)
+  data$exit_next = ifelse(data$next_year == "exit_next", 1, 0)
+  data$exit_oth  = ifelse(data$next_year == "exit_oth",  1, 0)
+  if (grade != "Tous"){data = data[which(data$grade == grade),]}
+  df <- aggregate(cbind(no_exit, exit_next, exit_oth ) ~ xvariable, data, FUN= "mean" )
+  df$mod = "obs"
+  # Pred
+  for (m in 1:length(list_models))
+  {
+    if (grade != "Tous"){data_estim = data_estim[which(data_estim$grade == grade),]}  
+    prob <- as.data.frame(predict(list_models[[m]] , data_estim ,type = "response"))  
+    prob <- cbind(prob, data[, c("grade", xvariable)]) 
+    prob$xvariable =   prob[, xvariable]
+    mean <- aggregate(cbind(no_exit, exit_next, exit_oth ) ~ xvariable, prob, FUN= "mean" )
+    mean$mod = model_names[m]
+    df = rbind(df, mean)
+  }
+  df <- melt(df, id.vars = c(1,5), value.name = "probability")
+  ggplot(df, aes(x = xvariable, y = probability, colour = mod)) + 
+    geom_line( size = 1) + facet_grid(variable ~ ., scales = "free") + theme_bw() + 
+    labs(x = xvariable) + labs(colour = "Modèles")
+}
+
+
+plot_comp_predicted_prob_by_outcome = function(data, data_estim, list_models, model_names, outcome = "exit_next", xvariable = "duration")
+{
+  stopifnot(is.element(grade, c("Tous", "TTH1", "TTH2", "TTH3", "TTH4")))  
+  stopifnot(length(list_models) == length(model_names)) 
+  # Obs  
+  data$xvariable =   data[, xvariable]
+  data$no_exit   = ifelse(data$next_year == "no_exit",   1, 0)
+  data$exit_next = ifelse(data$next_year == "exit_next", 1, 0)
+  data$exit_oth  = ifelse(data$next_year == "exit_oth",  1, 0)
+  if (grade != "Tous"){data = data[which(data$grade == grade),]}
+  df <- aggregate(cbind(no_exit, exit_next, exit_oth ) ~ xvariable, data, FUN= "mean" )
+  df$mod = "obs"
+  # Pred
+  for (m in 1:length(list_models))
+  {
+    if (grade != "Tous"){data_estim = data_estim[which(data_estim$grade == grade),]}  
+    prob <- as.data.frame(predict(list_models[[m]] , data_estim ,type = "response"))  
+    prob <- cbind(prob, data[, c("grade", xvariable)]) 
+    prob$xvariable =   prob[, xvariable]
+    mean <- aggregate(cbind(no_exit, exit_next, exit_oth ) ~ xvariable, prob, FUN= "mean" )
+    mean$mod = model_names[m]
+    df = rbind(df, mean)
+  }
+  df <- melt(df, id.vars = c(1,5), value.name = "probability")
+  ggplot(df, aes(x = xvariable, y = probability, colour = mod)) + 
+    geom_line( size = 1) + facet_grid(variable ~ ., scales = "free") + theme_bw() + 
+    labs(x = xvariable) + labs(colour = "Modèles")
 }
 
