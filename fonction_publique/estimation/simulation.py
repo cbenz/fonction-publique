@@ -57,8 +57,9 @@ def predict_next_period_grade_when_exit_to_other_corps(data):
             ),
         'next_grade'
         ] = "TTM1"
-    data.loc[(data.grade  == 'TTH4') & (data.next_grade == 'TTM1') & (data.echelon > 5) , 'next_grade'] = "TTM2"
-    data.loc[(data.grade  == 'TTH3') & (data.next_grade == 'TTM1') & (data.echelon > 10), 'next_grade'] = "TTM2"
+    if sum(data['next_situation'] == 'exit_oth')>0: # FIXME: find a better organisation for three possible options 
+        data.loc[(data.grade  == 'TTH4') & (data.next_grade == 'TTM1') & (data.echelon > 5) , 'next_grade'] = "TTM2"
+        data.loc[(data.grade  == 'TTH3') & (data.next_grade == 'TTM1') & (data.echelon > 10), 'next_grade'] = "TTM2"
     data['next_annee'] = data['annee'] + 1
     data['next_anciennete_dans_echelon'] = 5
     return data
