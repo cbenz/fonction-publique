@@ -1390,32 +1390,5 @@ plot_comp_predicted_prob = function(data, data_estim, list_models, model_names, 
 }
 
 
-plot_comp_predicted_prob_by_outcome = function(data, data_estim, list_models, model_names, outcome = "exit_next", xvariable = "duration")
-{
-  stopifnot(is.element(grade, c("Tous", "TTH1", "TTH2", "TTH3", "TTH4")))  
-  stopifnot(length(list_models) == length(model_names)) 
-  # Obs  
-  data$xvariable =   data[, xvariable]
-  data$no_exit   = ifelse(data$next_year == "no_exit",   1, 0)
-  data$exit_next = ifelse(data$next_year == "exit_next", 1, 0)
-  data$exit_oth  = ifelse(data$next_year == "exit_oth",  1, 0)
-  if (grade != "Tous"){data = data[which(data$grade == grade),]}
-  df <- aggregate(cbind(no_exit, exit_next, exit_oth ) ~ xvariable, data, FUN= "mean" )
-  df$mod = "obs"
-  # Pred
-  for (m in 1:length(list_models))
-  {
-    if (grade != "Tous"){data_estim = data_estim[which(data_estim$grade == grade),]}  
-    prob <- as.data.frame(predict(list_models[[m]] , data_estim ,type = "response"))  
-    prob <- cbind(prob, data[, c("grade", xvariable)]) 
-    prob$xvariable =   prob[, xvariable]
-    mean <- aggregate(cbind(no_exit, exit_next, exit_oth ) ~ xvariable, prob, FUN= "mean" )
-    mean$mod = model_names[m]
-    df = rbind(df, mean)
-  }
-  df <- melt(df, id.vars = c(1,5), value.name = "probability")
-  ggplot(df, aes(x = xvariable, y = probability, colour = mod)) + 
-    geom_line( size = 1) + facet_grid(variable ~ ., scales = "free") + theme_bw() + 
-    labs(x = xvariable) + labs(colour = "Modèles")
-}
+
 

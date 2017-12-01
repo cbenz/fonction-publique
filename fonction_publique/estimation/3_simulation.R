@@ -35,6 +35,7 @@ list_var = c("ident", "annee",  "sexe", "c_cir_2011", "generation", "an_aff", "g
 data = data[which(data$left_censored == F  & data$annee == 2011 & data$generation < 1990),
                     list_var ]
 data_sim  =  create_variables(data) 
+data_sim = data_sim[order(data_sim$ident), ]
 return(data_sim)
 }
 
@@ -45,7 +46,7 @@ generate_data_output <- function(data_path)
   data_long = read.csv(filename)
   data_long$grade = data_long$c_cir
   data_long$situation = data_long$next_grade_situation
-  list_var = c("ident", "annee", "c_cir_2011", "sexe", "generation", "grade","ib", "echelon", "situation")
+  list_var = c("ident", "annee", "c_cir_2011", "sexe", "generation", "grade","ib", "echelon", "situation", "duration_min_in_grade", "duration_max_in_grade")
   output = data_long[which(data_long$annee >= 2011 & data_long$annee <= 2015), list_var]
   output$I_bothC = NULL
   return(output[, list_var])
@@ -280,69 +281,17 @@ save_results_simul <- function(output, data_sim, modelname)
 }
 
 
-########## II. Compute probabilities in initial state #########
+########## II. Simulation #########
 
-# Laod data
-datasets = load_and_clean(data_path, dataname = "filter/data_ATT_2011_filtered_after_duration_var_added_new.csv")
-data_max = datasets[[1]]
-data_min = datasets[[2]]
-data_est = data_min
-data_obs = data_est[which(data_est$left_censored == F & data_est$annee == 2011 & data_est$generation < 1990),]
-data_obs = data_obs[order(data_obs$ident),]
-data_obs = create_variables(data_obs)  
-data_obs$next_year = as.character(data_obs$next_grade_situation)
-estim = mlogit.data(data_obs, shape = "wide", choice = "next_year")
+output_global = generate_data_output(data_path)
 
-data_proba = data_obs[,c("ident", "grade")]
 
-# Observé
-data$no_exit_obs   = ifelse(data$next_year == "no_exit",   1, 0)
-data$exit_next_obs = ifelse(data$next_year == "exit_next", 1, 0)
-data$exit_oth_obs  = ifelse(data$next_year == "exit_oth",  1, 0)
-# Proba MNL
-for (m in 1:length(list_MNL))
+for (m in 1:6)
 {
-prob <- as.data.frame(predict(list_models[[m]] , estim ,type = "response"))    
-names(prob) = paste0(names(prob), paste0("_MNL_",m))  
-data_proba = cbind(data_proba, prob)
-}
-# Proba model par grade
-list_model = list(m1_TTH1, m1_TTH2, m1_TTH3, m1_TTH4)
-list_grade =  c("TTH1", "TTH2", "TTH3")
-data_proba[, c("no_exit_byG",   "exit_next_byG", "exit_oth_byG")] = 0
-for (g in 1:length(list_grade))
-{
-list1 = which(estim$grade == list_grade[g])
-prob = predict(list_models[[m]] , estim[list1,] ,type = "response")
-list2 = which(data_proba$grade == list_grade[g])
-data_proba[list2, c("no_exit_byG",   "exit_next_byG", "exit_oth_byG")] = prob
-stopifnot(length(setdiff(data_proba$ident[list2], estim$ident[list1])) == 0)
-}
-list = which(estim$grade == "TTH4")
-prob = predict(m1_TTH4, data_obs[list, ], type = "response")  
-data_proba[list, "exit_oth_byG"] = prob
-data_proba[list, "no_exit_byG"] = 1 - prob
-# Model sequentiels
-# TODO
-
-
-
-### Sauvegarde de la base avec probas predites
-save(data_proba, file = paste0(simul_path, "prob_pred.Rdata"))
-
-
-
-########## III. Simulation #########
-
-output_global = generate_data_output(data_path, use = "max")
-
-
-for (m in 1:7)
-{
-  if (m <= 4){modelname  =  paste0("MNL_", toString(m))}  
-  if (m == 5){modelname = "BG_1"}
-  if (m == 6){modelname = "MS_1"}
-  if (m == 7){modelname = "MS_2"}
+  if (m <= 3){modelname  =  paste0("MNL_", toString(m))}  
+  if (m == 4){modelname = "BG_1"}
+  if (m == 5){modelname = "MS_1"}
+  if (m == 6){modelname = "MS_2"}
   print(paste0("Simulation for model ", modelname))
   for (annee in 2011:2014)
   { 
@@ -359,10 +308,10 @@ for (m in 1:7)
       output[, paste0("situation_", modelname)] = NA
     }
     # Prediction of next_situation from estimated model 
-    if (m <= 4){pred =  predict_next_year_MNL(data_sim, model = list_MNL[[m]], modelname)} 
-    if (m == 5){pred =  predict_next_year_byG(data_sim, list(m1_TTH1, m1_TTH2, m1_TTH3, m1_TTH4), modelname)}
-    if (m == 6){pred =  predict_next_year_seq_m1(data_sim, step1_m1, step2_m1, modelname)}
-    if (m == 7){pred =  predict_next_year_seq_m2(data_sim, step1_m2, step2_m2, modelname)}
+    if (m <= 3){pred =  predict_next_year_MNL(data_sim, model = list_MNL[[m]], modelname)} 
+    if (m == 4){pred =  predict_next_year_byG(data_sim, list_by_grade, modelname)}
+    if (m == 5){pred =  predict_next_year_seq_m1(data_sim, step1_m1, step2_m1, modelname)}
+    if (m == 6){pred =  predict_next_year_seq_m2(data_sim, step1_m2, step2_m2, modelname)}
     stopifnot(length(which(pred$yhat == "exit_next" & pred$grade == "TTH4")) == 0)
     # Save prediction for Py simulation
     output[which(output$annee == annee), paste0("situation_", modelname)] = pred$yhat
@@ -380,7 +329,7 @@ for (m in 1:7)
   output_global = merge(output_global, output, by = c("ident", "annee"), all.x = T)
 }
 
-save(output_global, file = paste0(simul_path, "predictions6_min.Rdata"))
+save(output_global, file = paste0(simul_path, "predictions7_min.Rdata"))
 
 
 

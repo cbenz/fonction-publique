@@ -10,7 +10,7 @@
 
 source(paste0(wd, "0_Outils_CNRACL.R")) 
 # Load results
-load(paste0(simul_path, "predictions5.Rdata"))
+load(paste0(simul_path, "predictions7_min.Rdata"))
 
 
 ## NEW FILTER: à déplacer dans select_data
@@ -42,58 +42,46 @@ exit_obs_TTH1 = extract_exit(output_global[which(output_global$c_cir_2011 == "TT
 exit_obs_TTH2 = extract_exit(output_global[which(output_global$c_cir_2011 == "TTH2"), ], "situation")
 exit_obs_TTH3 = extract_exit(output_global[which(output_global$c_cir_2011 == "TTH3"), ], "situation")
 exit_obs_TTH4 = extract_exit(output_global[which(output_global$c_cir_2011 == "TTH4"), ], "situation")
+limits = c(0.5, 0.5, 0.3, 0.5)
 p_obs = plot_share(exit_obs, plot = F, title = "Obs")
 p_obs_TTH1 =  plot_share(exit_obs_TTH1, plot = F, title = "Obs")
 p_obs_TTH2 =  plot_share(exit_obs_TTH2, plot = F, title = "Obs")
 p_obs_TTH3 =  plot_share(exit_obs_TTH3, plot = F, title = "Obs")
 p_obs_TTH4 =  plot_share(exit_obs_TTH4, plot = F, title = "Obs")
 # Sim
-for (m in c("MNL_1", "MNL_2", "MNL_3","MNL_4", "BG_1","MS_1","MS_2" ))
+list_models = c("MNL_2", "MNL_3", "BG_1","MS_1")
+for (m in (1:length(list_models)))
 {
-var = paste0("situation_", m)  
+var = paste0("situation_", list_models[m])  
 exit     = extract_exit(output_global, exit_var = var)
-p = plot_share(exit_obs, plot = F, title = m)
-assign(paste0("exit_", m), exit)  
-assign(paste0("p_", m), p)
-  for (g in c("TTH1", "TTH2", "TTH3", "TTH4"))
+p = plot_share(exit, plot = F, title =  list_models[m])
+assign(paste0("exit_",  list_models[m]), exit)  
+assign(paste0("p_",  list_models[m]), p)
+list_grade =c("TTH1", "TTH2", "TTH3", "TTH4")
+  for (g in 1:length(list_grade))
   {
-    exit = extract_exit(output_global[which(output_global$c_cir_2011 == g), ], var)
-    p = plot_share(exit, plot = F, title = m)
-    assign(paste0("exit_", m,"_",g), exit)  
-    assign(paste0("p_", m,"_",g), p)  
+    exit = extract_exit(output_global[which(output_global$c_cir_2011 == list_grade[g]), ], var)
+    p = plot_share(exit, plot = F, title = list_models[g])
+    assign(paste0("exit_", list_models[m],"_",list_grade[g]), exit)  
+    assign(paste0("p_", list_models[m],"_",list_grade[g]), p)  
   }
 }
   
-pdf(paste0(fig_path,"exit_obs_all.pdf"))
-p_obs
-dev.off()
-
-pdf(paste0(fig_path,"exit_obs_byG.pdf"), onefile=FALSE)
-grid_arrange_shared_legend(p1, p2, p3, p4, ncol = 2, nrow = 2)
-dev.off()
-
-pdf(paste0(fig_path,"exit_comp_all.pdf"), onefile=FALSE)
-grid_arrange_shared_legend(p_obs, p_MNL_1, p_MNL_2, p_MNL_3, p_MNL_4, p_BG_1, p_MS_1, p_MS_2, ncol = 4, nrow = 2)
-dev.off()
 
 pdf(paste0(fig_path,"exit_comp_TTH1.pdf"), onefile=FALSE)
-grid_arrange_shared_legend(p_obs_TTH1, p_MNL_1_TTH1, p_MNL_2_TTH1, p_MNL_3_TTH1, p_MNL_4_TTH1, p_BG_1_TTH1, p_MS_1_TTH1, p_MS_2_TTH1, 
-                           ncol = 4, nrow = 2)
+grid_arrange_shared_legend(p_obs_TTH1,  p_MNL_2_TTH1, p_MNL_3_TTH1, p_BG_1_TTH1, p_MS_1_TTH1, ncol = 5, nrow = 1)
 dev.off()
 
 pdf(paste0(fig_path,"exit_comp_TTH2.pdf"), onefile=FALSE)
-grid_arrange_shared_legend(p_obs_TTH2, p_MNL_1_TTH3, p_MNL_2_TTH3, p_MNL_3_TTH3, p_MNL_4_TTH3, p_BG_1_TTH3, p_MS_1_TTH3, p_MS_2_TTH3, 
-                           ncol = 4, nrow = 2)
+grid_arrange_shared_legend(p_obs_TTH2, p_MNL_2_TTH2, p_MNL_3_TTH2, p_BG_1_TTH2, p_MS_1_TTH2,  ncol = 5, nrow = 1)
 dev.off()
 
 pdf(paste0(fig_path,"exit_comp_TTH3.pdf"), onefile=FALSE)
-grid_arrange_shared_legend(p_obs_TTH3, p_MNL_1_TTH3, p_MNL_2_TTH3, p_MNL_3_TTH3, p_MNL_4_TTH3, p_BG_1_TTH3, p_MS_1_TTH3, p_MS_2_TTH3, 
-                           ncol = 4, nrow = 2)
+grid_arrange_shared_legend(p_obs_TTH3, p_MNL_2_TTH3, p_MNL_3_TTH3, p_BG_1_TTH3, p_MS_1_TTH3,  ncol = 5, nrow = 1)
 dev.off()
 
 pdf(paste0(fig_path,"exit_comp_TTH4.pdf"), onefile=FALSE)
-grid_arrange_shared_legend(p_obs_TTH4, p_MNL_1_TTH4, p_MNL_2_TTH4, p_MNL_3_TTH4, p_MNL_4_TTH4, p_BG_1_TTH4, p_MS_1_TTH4, p_MS_2_TTH4, 
-                           ncol = 4, nrow = 2)
+grid_arrange_shared_legend(p_obs_TTH4, p_MNL_2_TTH4, p_MNL_3_TTH4, p_BG_1_TTH4, p_MS_1_TTH4,  ncol = 5, nrow = 1)
 dev.off()
 
 
@@ -208,7 +196,102 @@ print(xtable(table_movers, nrow = nrow(table_movers), align = "l|c|ccccccc",
       sanitize.text.function=identity,size="\\footnotesize", hline.after = c(0, 2, 4, 6, 8, 10, 12, 14, 18, 22, 26),
       only.contents=F, include.colnames = T,
       file = paste0(fig_path,"profile_movers.tex"))
-      )
+      
+
+
+
+#### Graphes ####
+# Proba de sortie vers grade next par grade et par échelon
+subdata = output_global[which(output_global$annee == 2011 & output_global$c_cir_2011 != "TTH4"),]
+subdata$situation_obs = subdata$situation
+var = c("ident", "c_cir_2011", "echelon", "situation_obs", "situation_MNL_2",
+        "situation_MNL_3", "situation_MS_1", "situation_MS_2", "situation_BG_1")
+subdata = subdata[, var]
+df <- melt(subdata, id.vars = c(1:3), value.name = "next_year",  variable.name = "model")
+df$model = substring(df$model, 11)
+df$exit = ifelse(df$next_year == "exit_next", 1, 0)
+
+
+comp_exit_by_ech = function(df, save = F, list_models, n_col, legend = F, grade)
+{
+  df = df[which(df$c_cir_2011 == grade),]
+  
+  ech = seq(range(df$echelon)[1],range(df$echelon)[2])
+  hazard = matrix(ncol = length(ech), nrow = length(list_models))
+  effectif = numeric(length(ech))
+  
+  for (m in 1:length(list_models))
+  {
+  subdf = df[which(df$model == list_models[m]),] 
+    for (e in 1:length(ech))
+    {
+    if (m ==1){effectif[e] = length(which(subdf$echelon == ech[e]))}
+    hazard[m, e] =   length(which(subdf$echelon == ech[e] & subdf$exit == 1))/length(which(subdf$echelon == ech[e]))
+    }
+  }  
+  par(mar = c(4,4,1,1))
+  lim = c(0, max(hazard, na.rm = T))
+  plot(ech, rep(NA, length(ech)), ylim = lim, xlab = "ECHELON", ylab = "% EXIT NEXT GRADE")
+  for (m in 1:length(list_models))
+  {
+  lines(ech ,hazard[m, ], type = "l", lty = 1, lwd = 3, col = n_col[m])
+  }
+  par(new = T)
+  plot(ech, effectif, type ="l", lty = 2, lwd = 1, axes=F, xlab=NA, ylab=NA)
+  if (legend){legend("topleft", legend = c("Hazard", "Nb obs."), lwd = 3, lty = c(1,3), col = c("darkcyan", "black"), cex = 1.1)}
+}  
+
+
+comp_exit_by_dur = function(df, save = F, list_models = c("obs", "MNL_2", "MNL_3", "BG_1"), n_col, legend = F, grade)
+{
+  df = df[which(df$c_cir_2011 == grade),]
+  
+  dur = seq(range(df$duration)[1],range(df$duration)[2])
+  hazard = matrix(ncol = length(dur), nrow = length(list_models))
+  effectif = numeric(length(dur))
+  
+  for (m in 1:length(list_models))
+  {
+    subdf = df[which(df$model == list_models[m]),] 
+    for (e in 1:length(dur))
+    {
+      if (m ==1){effectif[e] = length(which(subdf$duration == dur[e]))}
+      hazard[m, e] =   length(which(subdf$duration == dur[e] & subdf$exit == 1))/length(which(subdf$duration == ech[e]))
+    }
+  }  
+  par(mar = c(4,4,1,1))
+  lim = c(0, max(hazard, na.rm = T))
+  plot(ech, rep(NA, length(dur)), ylim = lim, xlab = "DUREE DANS LE GRADE", ylab = "% EXIT NEXT GRADE")
+  for (m in 1:length(list_models))
+  {
+    lines(dur ,hazard[m, ], type = "l", lty = 1, lwd = 3, col = n_col[m])
+  }
+  par(new = T)
+  plot(ech, effectif, type ="l", lty = 2, lwd = 1, axes=F, xlab=NA, ylab=NA)
+  if (legend){legend("topleft", legend = c("Hazard", "Nb obs."), lwd = 3, lty = c(1,3), col = c("darkcyan", "black"), cex = 1.1)}
+}  
+
+
+list_models = c("obs", "MNL_2", "MNL_3", "MS_1", "BG_1")
+list_names = list_models
+
+n_col <- c("black", "#727272","#f1595f","#79c36a","#599ad3", "#f9a65a", "#9e66ab", "#cd7058","#d77fb3")
+for (grade in c("TTH1", "TTH2", "TTH3"))
+{
+  pdf(paste0(fig_path, "comp_exit_pred_",grade,".pdf"))
+  layout(matrix(c(1,2,3, 3), nrow=2,ncol=2, byrow=F), heights =  c(3,3), widths = c(4,1))
+  # Graphe by ech
+  comp_exit_by_ech(df, list_models = list_models, n_col = n_col, grade = grade)
+  # Graphe by dur
+  comp_exit_by_ech(df, list_models = list_models, n_col = n_col, grade = grade) 
+  # Legend
+  par(mar=c(0,0,0,0),font=1.5)
+  plot.new()
+  legend("left", legend=c(list_names, "Nb \nd'obs\n"), lty=c(rep(1, length(list_names)), 2), title = "Modèles",
+         col=c(n_col[1:length(list_names)],"black"),lwd=3,cex=1.2, ncol=1, bty = "n")
+  dev.off()
+  
+}
 
 
 
@@ -259,9 +342,10 @@ dev.off()
 ## II. 2 Table ####
 
 
-table_masse_ib = function(data, var_ib)
+table_masse_ib = function(data, var_ib, var_obs)
 {
   data$var_ib = data[, var_ib]
+  data$var_obs = data[, var_obs]
   
   print(paste0("Il y a ",(length(which(is.na(data$var_ib))))," obs avec ib = NA, que l'on supprime"  ))
   data = data[which(!is.na(data$var_ib)),]
@@ -269,15 +353,21 @@ table_masse_ib = function(data, var_ib)
   table = numeric(1)
   
   table[1] = sum(data$var_ib)/1e6
-  table[2] = sum(data$var_ib[which(data$annee == 2012)])/1e6
-  table[3] = sum(data$var_ib[which(data$annee == 2015)])/1e6
+  table[2] = (sum(data$var_ib)-sum(data$var_obs))/sum(data$var_obs)
+  table[3] = sum(data$var_ib[which(data$annee == 2012)])/1e6
+  table[4] = (sum(data$var_ib[which(data$annee == 2012)]) - sum(data$var_obs[which(data$annee == 2012)]))/sum(data$var_obs[which(data$annee == 2012)])
+  table[5] = sum(data$var_ib[which(data$annee == 2015)])/1e6
+  table[6] = (sum(data$var_ib[which(data$annee == 2015)]) - sum(data$var_obs[which(data$annee == 2015)]))/sum(data$var_obs[which(data$annee == 2015)])
   
   list_grade = c("TTH1", "TTH2", "TTH3", "TTH4")
   for (g in 1:length(list_grade))
   {
-    table[3*g+1] = sum(data$var_ib[which(data$c_cir_2011 == list_grade[g])])/1e6
-    table[3*g+2] = sum(data$var_ib[which(data$annee == 2012 & data$c_cir_2011 == list_grade[g])])/1e6
-    table[3*g+3] = sum(data$var_ib[which(data$annee == 2015 & data$c_cir_2011 == list_grade[g])])/1e6    
+    list = which(data$c_cir_2011 == list_grade[g])]
+    table[7*(g-1)+1] = sum(data$var_ib[list])/1e6
+    table[7*(g-1)+2] = (sum(data$var_ib[list]) - sum(data$var_obs[list])) /sum(data$var_obs[list])
+    list = which(data$c_cir_2011 == list_grade[g] & data$annee == 2015)]
+    table[7*(g-1)+3] = sum(data$var_ib[list])/1e6
+    table[7*(g-1)+4] = (sum(data$var_ib[list]) - sum(data$var_obs[list])) /sum(data$var_obs[list])
   }
 
   return(table)

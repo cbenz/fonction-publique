@@ -47,10 +47,10 @@ mlog1 = mlogit(next_year ~ 0 | sexe + generation_group2, data = estim, reflevel 
 mlog2 = mlogit(next_year ~ 0 | sexe + generation_group2 + grade, data = estim, reflevel = "no_exit")
 mlog3 = mlogit(next_year ~ 0 | sexe + generation_group2 + grade + duration + duration2, data = estim, reflevel = "no_exit")
 mlog4 = mlogit(next_year ~ 0 | sexe + generation_group2 + grade + I_condC + I_condE, data = estim, reflevel = "no_exit")
-mlog5 = mlogit(next_year ~ 0 | sexe + generation_group2 + grade + duration + duration2+ I_condC + I_condE, 
+mlog5 = mlogit(next_year ~ 0 | sexe + generation_group2 + grade + duration + duration2 + I_condC + I_condE, 
                data = estim, reflevel = "no_exit")
 
-list_MNL = list(mlog0, mlog1, mlog6)
+list_MNL = list(mlog0, mlog3, mlog5)
 save(list_MNL, file = paste0(save_model_path, "mlog.rda"))
 
 # bundle up some models
@@ -69,8 +69,8 @@ name.map <- list("exit_next:(intercept)"       = "exit_next: constante",
                  "exit_next:gradeTTH2"    = "exit_next: TTH2",  
                  "exit_next:gradeTTH3"    = "exit_next: TTH3", 
                  "exit_next:gradeTTH4"    = "exit_next: TTH4",
-                 "exit_next:T_condC"            = "exit_next: Conditions choix remplies",
-                 "exit_next:T_condE"            = "exit_next: Conditions exam remplies",
+                 "exit_next:I_condC"            = "exit_next: Conditions choix remplies",
+                 "exit_next:I_condE"            = "exit_next: Conditions exam remplies",
                  "exit_next:I_echC"            = "exit_next: Conditions echelon choix remplies",
                  "exit_next:I_echE"            = "exit_next: Conditions echelon exam remplies",
                  "exit_oth:(intercept)"        = "exit_oth: constante",              
@@ -80,8 +80,8 @@ name.map <- list("exit_next:(intercept)"       = "exit_next: constante",
                  "exit_oth:gradeTTH2"     = "exit_oth: TTH2",
                  "exit_oth:gradeTTH3"     = "exit_oth: TTH3",
                  "exit_oth:gradeTTH4"     = "exit_oth: TTH4",
-                 "exit_oth:T_condC"       = "exit_oth: Conditions choix remplies",
-                 "exit_oth:T_condE"       = "exit_oth: Conditions exam remplies",
+                 "exit_oth:I_condC"       = "exit_oth: Conditions choix remplies",
+                 "exit_oth:I_condE"       = "exit_oth: Conditions exam remplies",
                  "exit_oth:I_echC"        = "exit_oth: Conditions echelon choix remplies",
                  "exit_oth:I_echE"        = "exit_oth: Conditions echelon exam remplies")
 
