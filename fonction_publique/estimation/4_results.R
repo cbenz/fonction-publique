@@ -10,8 +10,8 @@
 
 source(paste0(wd, "0_Outils_CNRACL.R")) 
 # Load results
-load(paste0(simul_path, "predictions7_min.Rdata"))
-
+load(paste0(simul_path, "predictions7_min"))
+table(output_global$situation_MNL_1[which(output_global$annee == 2011 & output_global$c_cir_2011 == "TTH4")])
 
 ## NEW FILTER: à déplacer dans select_data
 list_id = unique(output_global$ident[which(output_global$echelon == -1)])
@@ -61,7 +61,7 @@ list_grade =c("TTH1", "TTH2", "TTH3", "TTH4")
   for (g in 1:length(list_grade))
   {
     exit = extract_exit(output_global[which(output_global$c_cir_2011 == list_grade[g]), ], var)
-    p = plot_share(exit, plot = F, title = list_models[g])
+    p = plot_share(exit, plot = F, title = list_models[m])
     assign(paste0("exit_", list_models[m],"_",list_grade[g]), exit)  
     assign(paste0("p_", list_models[m],"_",list_grade[g]), p)  
   }
@@ -212,6 +212,11 @@ df$model = substring(df$model, 11)
 df$exit = ifelse(df$next_year == "exit_next", 1, 0)
 
 
+subdata$exit1 = ifelse(subdata$situation_obs == "exit_next", 1, 0)
+subdata$exit2 = ifelse(subdata$situation_BG_1 == "exit_next", 1, 0)
+aggregate(exit1 ~ echelon, subdata[which(subdata$c_cir_2011 == "TTH3"),], mean)
+aggregate(exit2 ~ echelon, subdata[which(subdata$c_cir_2011 == "TTH3"),], mean)
+
 comp_exit_by_ech = function(df, save = F, list_models, n_col, legend = F, grade)
 {
   df = df[which(df$c_cir_2011 == grade),]
@@ -353,21 +358,21 @@ table_masse_ib = function(data, var_ib, var_obs)
   table = numeric(1)
   
   table[1] = sum(data$var_ib)/1e6
-  table[2] = (sum(data$var_ib)-sum(data$var_obs))/sum(data$var_obs)
+  table[2] = 100*(sum(data$var_ib)-sum(data$var_obs))/sum(data$var_obs)
   table[3] = sum(data$var_ib[which(data$annee == 2012)])/1e6
-  table[4] = (sum(data$var_ib[which(data$annee == 2012)]) - sum(data$var_obs[which(data$annee == 2012)]))/sum(data$var_obs[which(data$annee == 2012)])
+  table[4] = 100*(sum(data$var_ib[which(data$annee == 2012)]) - sum(data$var_obs[which(data$annee == 2012)]))/sum(data$var_obs[which(data$annee == 2012)])
   table[5] = sum(data$var_ib[which(data$annee == 2015)])/1e6
-  table[6] = (sum(data$var_ib[which(data$annee == 2015)]) - sum(data$var_obs[which(data$annee == 2015)]))/sum(data$var_obs[which(data$annee == 2015)])
+  table[6] = 100*(sum(data$var_ib[which(data$annee == 2015)]) - sum(data$var_obs[which(data$annee == 2015)]))/sum(data$var_obs[which(data$annee == 2015)])
   
   list_grade = c("TTH1", "TTH2", "TTH3", "TTH4")
   for (g in 1:length(list_grade))
   {
-    list = which(data$c_cir_2011 == list_grade[g])]
-    table[7*(g-1)+1] = sum(data$var_ib[list])/1e6
-    table[7*(g-1)+2] = (sum(data$var_ib[list]) - sum(data$var_obs[list])) /sum(data$var_obs[list])
-    list = which(data$c_cir_2011 == list_grade[g] & data$annee == 2015)]
-    table[7*(g-1)+3] = sum(data$var_ib[list])/1e6
-    table[7*(g-1)+4] = (sum(data$var_ib[list]) - sum(data$var_obs[list])) /sum(data$var_obs[list])
+    list = which(data$c_cir_2011 == list_grade[g])
+    table[6 + 4*(g-1)+1] = sum(data$var_ib[list])/1e6
+    table[6 + 4*(g-1)+2] = 100*(sum(data$var_ib[list]) - sum(data$var_obs[list])) /sum(data$var_obs[list])
+    list = which(data$c_cir_2011 == list_grade[g] & data$annee == 2015)
+    table[6 + 4*(g-1)+3] = sum(data$var_ib[list])/1e6
+    table[6 + 4*(g-1)+4] = 100*(sum(data$var_ib[list]) - sum(data$var_obs[list])) /sum(data$var_obs[list])
   }
 
   return(table)
@@ -375,24 +380,29 @@ table_masse_ib = function(data, var_ib, var_obs)
 
 
 
-obs = table_masse_ib(output_global, "ib")
-for (m in c("MNL_1", "MNL_2", "MNL_3","MNL_4", "BG_1","MS_1","MS_2" ))
+obs = table_masse_ib(output_global, "ib", var_obs = "ib")
+for (m in c("MNL_1", "MNL_2", "MNL_3", "BG_1","MS_1"))
 {
-  table = table_masse_ib(data = output_global, var_ib = paste0("ib_", m))
+  table = table_masse_ib(data = output_global, var_ib = paste0("ib_", m), var_obs = "ib")
   assign(paste0("table_masse_", m), table)  
 }
 
-table = cbind(obs, table_masse_MNL_1, table_masse_MNL_2, table_masse_MNL_3, table_masse_MNL_4, 
-              table_masse_BG_1, table_masse_MS_1, table_masse_MS_2)
-colnames(table) = c('Observed', "MNL\\_1", "MNL\\_2", "MNL\\_3", "MNL\\_4", "BG\\_1","MS\\_1","MS\\_2" )
-rownames(table) = c("Masse totale 2011-2015 (en 1e6)", "Masse totale 2012 (en 1e6)",  "Masse totale 2015 (en 1e6)",
-                    "Masse totale 2011-2015 TTH1 (en 1e6)", "Masse totale 2012 TTH1  (en 1e6)",  "Masse totale 2015 TTH1  (en 1e6)",
-                    "Masse totale 2011-2015 TTH2 (en 1e6)", "Masse totale 2012 TTH2  (en 1e6)",  "Masse totale 2015 TTH2  (en 1e6)",
-                    "Masse totale 2011-2015 TTH3 (en 1e6)", "Masse totale 2012 TTH3  (en 1e6)",  "Masse totale 2015 TTH3  (en 1e6)",
-                    "Masse totale 2011-2015 TTH4 (en 1e6)", "Masse totale 2012 TTH4  (en 1e6)",  "Masse totale 2015 TTH4  (en 1e6)"
+table = cbind(obs, table_masse_MNL_2, table_masse_MNL_3, table_masse_BG_1, table_masse_MS_1)
+colnames(table) = c('Observed', "MNL\\_2", "MNL\\_3", "BG\\_1","MS\\_1")
+rownames(table) = c("Masse totale 2011-2015 (en 1e6)", "\\% diff par rapport à obs", 
+                    "Masse totale 2012 (en 1e6)",  "\\% diff 2012 par rapport à obs",
+                    "Masse totale 2015 (en 1e6)",  "\\% diff 2015 par rapport à obs",
+                    "Masse totale 2011-2015 TTH1 (en 1e6)", "\\% diff TTH1 par rapport à obs",
+                    "Masse totale 2015 TTH1 (en 1e6)", "\\% diff TTH1 2015 par rapport à obs",
+                    "Masse totale 2011-2015 TTH2 (en 1e6)", "\\% diff TTH2 par rapport à obs",
+                    "Masse totale 2015 TTH2 (en 1e6)", "\\% diff TTH2 2015 par rapport à obs",
+                    "Masse totale 2011-2015 TTH3 (en 1e6)", "\\% diff TTH3 par rapport à obs",
+                    "Masse totale 2015 TTH3 (en 1e6)", "\\% diff TTH3 2015 par rapport à obs",
+                    "Masse totale 2011-2015 TTH4 (en 1e6)", "\\% diff TTH4 par rapport à obs",
+                    "Masse totale 2015 TTH4 (en 1e6)", "\\% diff TTH4 2015 par rapport à obs"
                       )
 
-print(xtable(table,nrow = nrow(table), align = "l|c|ccccccc",
+print(xtable(table,nrow = nrow(table), align = "l|c|cccc",
              ncol=ncol(table_movers)+1, byrow=T, digits = 2,
              caption = "Masses ib"),
       sanitize.text.function=identity,size="\\footnotesize", hline.after = c(0, 3, 6, 9, 12, 15),

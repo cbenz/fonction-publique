@@ -49,6 +49,7 @@ generate_data_output <- function(data_path)
   list_var = c("ident", "annee", "c_cir_2011", "sexe", "generation", "grade","ib", "echelon", "situation", "duration_min_in_grade", "duration_max_in_grade")
   output = data_long[which(data_long$annee >= 2011 & data_long$annee <= 2015), list_var]
   output$I_bothC = NULL
+  output = output[order(output$ident, output$annee),]
   return(output[, list_var])
 }
 
@@ -263,7 +264,7 @@ increment_data_sim <- function(data_sim, simul_py)
   
   # Recreate variables (duration, thresholds with new time and echelons)
   data_merge  =  create_variables(data_merge) 
-  
+  data_merge = data_merge[order(data_merge$ident), ]
   return(data_merge)
 }
 
@@ -315,6 +316,9 @@ for (m in 1:6)
     stopifnot(length(which(pred$yhat == "exit_next" & pred$grade == "TTH4")) == 0)
     # Save prediction for Py simulation
     output[which(output$annee == annee), paste0("situation_", modelname)] = pred$yhat
+    list_id1 = output$ident[which(output$situation_MS_2 == "exit_next")]
+    list_id2 = pred$ident[which(pred$yhat == "exit_next")]
+    setdiff(list_id1, list_id2)
     save_prediction_R(data = pred, annee, simul_path, modelname)
     # Prediction of next_ib using simulation.py
     launch_prediction_Py(annee, modelname)
@@ -322,7 +326,6 @@ for (m in 1:6)
     simul_py = load_simul_py(annee, modelname)
     # Incrementing data_sim for next year
     data_sim = increment_data_sim(data_sim, simul_py)
-    
     # Save results
     output = save_results_simul(output, data_sim, modelname)
   }

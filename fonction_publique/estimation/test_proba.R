@@ -81,7 +81,7 @@ load(paste0(simul_path, "prob_pred.Rdata"))
 list_models = c("obs", "MNL_3", "byG")
 model_names = c("Observé", "MNL", "Par grade")
 
-plot_comp_predicted_prob_by_outcome = function(data_proba, list_models, model_names, outcome = "exit_next", xvariable = "duration")
+plot_comp_predicted_prob_by_outcome = function(data_proba, list_models, model_names, outcome = "exit_next", xvariable = "echelon")
 {
   stopifnot(is.element(outcome, c("exit_next", "no_exit", "exit_oth")))  
   stopifnot(is.element(paste0("no_exit_", list_models), names(data_proba)))  
