@@ -70,29 +70,29 @@ def replace_interns_cir(data):
 
 
 # I. Sample selection
-def select_ATT_in_2011(data):
-    """select careers of agents who are ATT (interns and fonctionnaires) in 2011 according to their c_cir"""
-    log.info("Selecting ATT agents in 2011")
+def select_ATT_in_2012(data):
+    """select careers of agents who are ATT (interns and fonctionnaires) in 2012 according to their c_cir"""
+    log.info("Selecting ATT agents in 2012")
     ATT_cir = ['TTH1', 'TTH2', 'TTH3', 'TTH4']
-    idents_keep = data.query('(annee == 2011) & (c_cir in @ATT_cir)').ident.unique()
+    idents_keep = data.query('(annee == 2012) & (c_cir in @ATT_cir)').ident.unique()
     data = data.query('ident in @idents_keep').copy()
-    assert set(data.query('annee == 2011').c_cir.unique()) == set(ATT_cir)
+    assert set(data.query('annee == 2012').c_cir.unique()) == set(ATT_cir)
     return data
 
 
 def select_next_state_in_fonction_publique(data):
-    """select careers of agents who are active the year after they leave their 2011 grade,
+    """select careers of agents who are active the year after they leave their 2012 grade,
      or who do not leave their grade"""
     log.info("Selecting next grade state active in civil service")
     data = data.merge(
         data.query(
-            'annee == 2011'
-            ).copy()[['ident', 'c_cir']].rename(columns = {"c_cir": "c_cir_2011"}), on = 'ident', how = 'left'
+            'annee == 2012'
+            ).copy()[['ident', 'c_cir']].rename(columns = {"c_cir": "c_cir_2012"}), on = 'ident', how = 'left'
         )
-    data_after_2011 = data.query('(annee > 2011) & (c_cir != c_cir_2011)').copy()[['ident', 'annee']]
-    data_after_2011['annee_exit'] = data_after_2011.groupby('ident')['annee'].transform(min)
-    data_after_2011 = data_after_2011[['ident', 'annee_exit']].drop_duplicates()
-    data = data.merge(data_after_2011, on = 'ident', how = 'left')
+    data_after_2012 = data.query('(annee > 2012) & (c_cir != c_cir_2012)').copy()[['ident', 'annee']]
+    data_after_2012['annee_exit'] = data_after_2012.groupby('ident')['annee'].transform(min)
+    data_after_2012 = data_after_2012[['ident', 'annee_exit']].drop_duplicates()
+    data = data.merge(data_after_2012, on = 'ident', how = 'left')
     data['annee_exit'] = data['annee_exit'].fillna(9999).astype(int)
     idents_keep = data.query('((annee == annee_exit) & (etat == 1)) | (annee_exit == 9999)').ident.unique()
     return data.query('ident in @idents_keep').copy()
@@ -124,16 +124,16 @@ def select_positive_ib(data):  # compare with interval (entry in grade, exit)
 
 
 def select_non_missing_c_cir(data):
-    """ select careers of agents with no missing grade code between 2011 and their first year in next grade included (or
+    """ select careers of agents with no missing grade code between 2012 and their first year in next grade included (or
     2015 if they do not leave """
     log.info("Selecting non missing code cir")
-    data_after_2011 = data.query('(annee > 2011) & (annee <= annee_exit)').copy()
-    idents_del = data_after_2011[data_after_2011['c_cir'].isnull()].ident.unique()
+    data_after_2012 = data.query('(annee > 2012) & (annee <= annee_exit)').copy()
+    idents_del = data_after_2012[data_after_2012['c_cir'].isnull()].ident.unique()
     return data.query('ident not in @idents_del').copy()
 
 
 def select_no_decrease_in_ATT_rank(data):
-    """ select careers of agents with no hierarchical decrease in their grade between 2011 and 2015 """
+    """ select careers of agents with no hierarchical decrease in their grade between 2012 and 2015 """
     log.info("Selecting careers with no hierarchical decrease in ATT grades")
     ATT_cir = ['TTH1', 'TTH2', 'TTH3', 'TTH4']
     data_exit = data.query('annee >= annee_exit')
@@ -141,13 +141,13 @@ def select_no_decrease_in_ATT_rank(data):
         columns = {'c_cir': 'c_cir_aft_exit'}
         ).reset_index()
     del data_exit[0]
-    data_exit = data_exit.merge(data[['ident', 'c_cir_2011']], on = 'ident', how = 'inner').query(
-        "c_cir_2011 != 'TTH1'"
+    data_exit = data_exit.merge(data[['ident', 'c_cir_2012']], on = 'ident', how = 'inner').query(
+        "c_cir_2012 != 'TTH1'"
         ).drop_duplicates().query('c_cir in @ATT_cir')
-    data_exit = data_exit.query("c_cir_2011 != 'TTH1'").copy()
-    for col in ['c_cir', 'c_cir_2011']:
+    data_exit = data_exit.query("c_cir_2012 != 'TTH1'").copy()
+    for col in ['c_cir', 'c_cir_2012']:
         data_exit[col] = data_exit[col].str[3:].astype(int)
-    idents_del = data_exit.query('c_cir < c_cir_2011').ident.unique()
+    idents_del = data_exit.query('c_cir < c_cir_2012').ident.unique()
     return data.query('ident not in @idents_del')
 
 
@@ -166,9 +166,9 @@ def select_no_decrease_in_ib(data):
 
 
 def select_no_goings_and_comings_of_rank(data):
-    """ select careers of agents who don't come back to their 2011 grade after leaving it """
+    """ select careers of agents who don't come back to their 2012 grade after leaving it """
     log.info("Selecting no goings and comings of grade")
-    idents_del = data.query('(annee > annee_exit) & (c_cir == c_cir_2011)').ident.unique()
+    idents_del = data.query('(annee > annee_exit) & (c_cir == c_cir_2012)').ident.unique()
     return data.query('ident not in @idents_del')
 
 
@@ -183,7 +183,7 @@ def select_non_special_level(data):
 
 # V. Filters on echelon variable issues
 def select_non_missing_level(data):
-    """ select careers of agents with no missing echelon between 2011 and their first year in next grade included"""
+    """ select careers of agents with no missing echelon between 2012 and their first year in next grade included"""
     log.info("Selecting non missing echelon")
     idents_del = data.query('(echelon == -1) & (annee <= annee_exit)').ident.unique()
     return data.query('ident not in @idents_del')
@@ -206,10 +206,10 @@ def main(corps = None, first_year = None):
     # use pipes to chain functions
     tracking = []
     data = read_data(corps = corps, first_year = first_year)
- #   tracking.append(['ATT once btw. 2011-2015', len(data.ident.unique()), 100, 100])
+ #   tracking.append(['ATT once btw. 2012-2015', len(data.ident.unique()), 100, 100])
     data = replace_interns_cir(data)
-    data = select_ATT_in_2011(data)
-    tracking.append(['ATT in 2011, interns included', len(data.ident.unique()), 100, 100])
+    data = select_ATT_in_2012(data)
+    tracking.append(['ATT in 2012, interns included', len(data.ident.unique()), 100, 100])
     data = select_next_state_in_fonction_publique(data)
     tracking.append(['Next grade state = activity in civil service', len(data.ident.unique()), 
                    round(len(data.ident.unique())*100/tracking[0][1],2), round(len(data.ident.unique())*100/tracking[-1][1],2)] )
@@ -234,7 +234,7 @@ def main(corps = None, first_year = None):
     data = select_no_goings_and_comings_of_rank(data)
     tracking.append(['No goings and comings of grade', len(data.ident.unique()), 
                    round(len(data.ident.unique())*100/tracking[0][1],2), round(len(data.ident.unique())*100/tracking[-1][1],2)] )
-    data = add_grilles_variable(data, grilles = grilles, first_year = 2011, last_year = 2015)
+    data = add_grilles_variable(data, grilles = grilles, first_year = 2012, last_year = 2015)
     log.info("adding echelon variable")
     data = select_non_special_level(data)
     tracking.append(['No special echelon', len(data.ident.unique()), 
@@ -251,9 +251,9 @@ def main(corps = None, first_year = None):
     tracking = pd.DataFrame(tracking)
     print tracking.to_latex()
     data.to_csv(
-        os.path.join(output_directory_path, 'filter', "data_ATT_2011_filtered_after_duration_var_added_new.csv")
+        os.path.join(output_directory_path, 'filter', "data_ATT_2012_filtered_after_duration_var_added_new.csv")
         )
-    log.info(r"saving data to data_ATT_2011_filtered_after_duration_var_added.csv")
+    log.info(r"saving data to data_ATT_2012_filtered_after_duration_var_added.csv")
     return data
 
 
