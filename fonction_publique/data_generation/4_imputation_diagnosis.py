@@ -9,7 +9,7 @@ import numpy as np
 import operator
 
 
-data_path = os.path.join("M:/CNRACL/output/filter/data_ATT_2012_filtered_after_duration_var_added_new.csv")
+data_path = os.path.join("M:/CNRACL/output/filter/data_ATT_2011_filtered_after_duration_var_added_new.csv")
 fig_path = os.path.join("Q:/CNRACL/Note CNRACL/Figures")
 data = pd.read_csv(data_path).reset_index()
 
@@ -43,7 +43,7 @@ def plot_hazards(data, grade, duree_min):
     else:
         condition = 'min'
     idents_keep = data.query(
-        "(c_cir_2012 == '{}') & (annee_entry_{} != -1)".format(grade, condition)
+        "(c_cir_2011 == '{}') & (annee_entry_{} != -1)".format(grade, condition)
         ).ident.unique().tolist()
     data_grade = data[data['ident'].isin(idents_keep)]
     data = data_grade.query(
@@ -77,9 +77,9 @@ def plot_hazards(data, grade, duree_min):
     data_plot['annee'] = data_plot['annee_entry_{}'.format(condition)] - 1
     del data_plot['annee_entry_{}'.format(condition)]
     if grade == 'TTH1':
-        data_plot.loc[len(data_plot)] = [len(idents_keep), len(idents_keep), len(idents_keep), 2012]
+        data_plot.loc[len(data_plot)] = [len(idents_keep), len(idents_keep), len(idents_keep), 2011]
     else:
-        data_plot.loc[len(data_plot)] = [len(idents_keep), len(idents_keep), len(idents_keep), len(idents_keep), 2012]
+        data_plot.loc[len(data_plot)] = [len(idents_keep), len(idents_keep), len(idents_keep), len(idents_keep), 2011]
     data_plot = data_plot.sort_values('annee', ascending = False)
     data_plot['hazard_total'] = get_hazards(data_plot, 'count_ident_total', idents_keep, grade, duree_min)
     data_plot['hazard_ib_bef_null'] = get_hazards(data_plot, 'count_ident_ib_bef_null', idents_keep, grade, duree_min)
@@ -96,7 +96,7 @@ def plot_hazards(data, grade, duree_min):
             duree_min)
     else:
         data_plot['hazard_c_cir_bef_in_corps'] = None
-    data_plot = data_plot.query('annee != 2012')
+    data_plot = data_plot.query('annee != 2011')
     fig = plt.figure(figsize=(7, 7))
     fig.suptitle("M{}. predicted year of entry, n = {}".format(condition[-2:], len(idents_keep)), fontsize=16)
    # plt.title("according to the {}imal predicted year of entry in grade".format(condition))
@@ -130,7 +130,7 @@ def plot_survival(grade):
     fig = plt.figure(figsize=(7, 5))
 
     idents_keep = data.query(
-        "(c_cir_2012 == '{}')".format(grade)
+        "(c_cir_2011 == '{}')".format(grade)
         ).ident.unique().tolist()
     data_grade = data[data['ident'].isin(idents_keep)]
     data_annee_min = data_grade.query(
