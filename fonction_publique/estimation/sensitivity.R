@@ -172,8 +172,6 @@ for (m in 1:4)
 
 #### III. Results ####
 
-
-
 ## III.1 Exit rates ####
 
 # Obs

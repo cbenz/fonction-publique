@@ -83,12 +83,10 @@ for (m in (1:length(list_models)))
 grid_arrange_shared_legend(p_obs, p_all_change, p_no_change, ncol = 3, nrow = 1)
 
 
-
-
-
-table_masse_ib = function(data, var_ib)
+table_masse_ib = function(data, var_ib, var_obs)
 {
   data$var_ib = data[, var_ib]
+  data$var_obs = data[, var_obs]
   
   print(paste0("Il y a ",(length(which(is.na(data$var_ib))))," obs avec ib = NA, que l'on supprime"  ))
   data = data[which(!is.na(data$var_ib)),]
@@ -96,41 +94,59 @@ table_masse_ib = function(data, var_ib)
   table = numeric(1)
   
   table[1] = sum(data$var_ib)/1e6
-  table[2] = sum(data$var_ib[which(data$annee == 2012)])/1e6
-  table[3] = sum(data$var_ib[which(data$annee == 2015)])/1e6
+  table[2] = 100*(sum(data$var_ib)-sum(data$var_obs))/sum(data$var_obs)
+  table[3] = sum(data$var_ib[which(data$annee == 2012)])/1e6
+  table[4] = 100*(sum(data$var_ib[which(data$annee == 2012)]) - sum(data$var_obs[which(data$annee == 2012)]))/sum(data$var_obs[which(data$annee == 2012)])
+  table[5] = sum(data$var_ib[which(data$annee == 2015)])/1e6
+  table[6] = 100*(sum(data$var_ib[which(data$annee == 2015)]) - sum(data$var_obs[which(data$annee == 2015)]))/sum(data$var_obs[which(data$annee == 2015)])
   
-  list_grade = c("TTH1", "TTH2", "TTH3")
-  for (g in 1:length(list_grade))
-  {
-    table[3*g+1] = sum(data$var_ib[which(data$c_cir_2011 == list_grade[g])])/1e6
-    table[3*g+2] = sum(data$var_ib[which(data$annee == 2012 & data$c_cir_2011 == list_grade[g])])/1e6
-    table[3*g+3] = sum(data$var_ib[which(data$annee == 2015 & data$c_cir_2011 == list_grade[g])])/1e6    
-  }
+  # list_grade = c("TTH1", "TTH2", "TTH3")
+  # for (g in 1:length(list_grade))
+  # {
+  #   list = which(data$c_cir_2011 == list_grade[g])
+  #   table[6 + 4*(g-1)+1] = sum(data$var_ib[list])/1e6
+  #   table[6 + 4*(g-1)+2] = 100*(sum(data$var_ib[list]) - sum(data$var_obs[list])) /sum(data$var_obs[list])
+  #   list = which(data$c_cir_2011 == list_grade[g] & data$annee == 2015)
+  #   table[6 + 4*(g-1)+3] = sum(data$var_ib[list])/1e6
+  #   table[6 + 4*(g-1)+4] = 100*(sum(data$var_ib[list]) - sum(data$var_obs[list])) /sum(data$var_obs[list])
+  # }
   
   return(table)
 }
 
-obs = table_masse_ib(output_global, "ib")
+
+
+obs = table_masse_ib(output_global, "ib", var_obs = "ib")
 for (m in c("all_change", "no_change"))
 {
-  table = table_masse_ib(data = output_global, var_ib = paste0("ib_", m))
+  table = table_masse_ib(data = output_global, var_ib = paste0("ib_", m), var_obs = "ib")
   assign(paste0("table_masse_", m), table)  
 }
-
 table = cbind(obs, table_masse_all_change, table_masse_no_change)
-colnames(table) = c('Observed', "Changement pour tous en 2011", "Aucun changement en 2011-2014" )
-rownames(table) = c("Masse totale 2011-2015 (en 1e6)", "Masse totale 2012 (en 1e6)",  "Masse totale 2015 (en 1e6)",
-                    "Masse totale 2011-2015 TTH1 (en 1e6)", "Masse totale 2012 TTH1  (en 1e6)",  "Masse totale 2015 TTH1  (en 1e6)",
-                    "Masse totale 2011-2015 TTH2 (en 1e6)", "Masse totale 2012 TTH2  (en 1e6)",  "Masse totale 2015 TTH2  (en 1e6)",
-                    "Masse totale 2011-2015 TTH3 (en 1e6)", "Masse totale 2012 TTH3  (en 1e6)",  "Masse totale 2015 TTH3  (en 1e6)"
-)
+colnames(table) = c('Observed', "Tous changent en 2011", "Aucun changement")
+rownames(table) = c("Masse totale 2011-2015 (en 1e6)", "\\% diff par rapport a obs", 
+                    "Masse totale 2012 (en 1e6)",  "\\% diff 2012 par rapport a obs",
+                    "Masse totale 2015 (en 1e6)",  "\\% diff 2015 par rapport a obs"
+                    # "Masse totale 2011-2015 TTH1 (en 1e6)", "\\% diff TTH1 par rapport a obs",
+                    # "Masse totale 2015 TTH1 (en 1e6)", "\\% diff TTH1 2015 par rapport a obs",
+                    # "Masse totale 2011-2015 TTH2 (en 1e6)", "\\% diff TTH2 par rapport a obs",
+                    # "Masse totale 2015 TTH2 (en 1e6)", "\\% diff TTH2 2015 par rapport a obs",
+                    # "Masse totale 2011-2015 TTH3 (en 1e6)", "\\% diff TTH3 par rapport a obs",
+                    # "Masse totale 2015 TTH3 (en 1e6)", "\\% diff TTH3 2015 par rapport a obs",
+                    
+                    )
+
 
 print(xtable(table,nrow = nrow(table), align = "l|ccc",
              ncol=ncol(table_movers)+1, byrow=T, digits = 2,
              caption = "Masses ib"),
-      sanitize.text.function=identity,size="\\footnotesize", hline.after = c(0, 3, 6, 9, 12),
-      only.contents=F, include.colnames = T,
+      sanitize.text.function=identity,size="\\footnotesize", hline.after = c(0, 6),
+      only.contents=T, include.colnames = T,
       file = paste0(fig_path,"masses_ib_cf.tex"))
+
+
+
+
 
 
 

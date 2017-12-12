@@ -19,6 +19,8 @@ config.ini
 
 .pydevproject
 .spyderproject
+.Rproj
+.Rhistory
 .spyproject
 .vscode
 /.coverage
@@ -48,3 +50,4 @@ fonction_publique/tags
 
 #
 fonction_publique/ecrits/**/*.pdf
+.Rproj.user

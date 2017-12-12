@@ -84,7 +84,7 @@ class AgentFpt:
             np.where(
                 echelon_inferieur_a_echelon_terminal,
                 np.where(
-                    grille_change_during_period,  # TODO inverse this condition and echelon_inferieur_a_echelon_terminal
+                    grille_change_during_period,  # TODO inverse this condition and echelon_inferieur_a_echelon_terminal
                     np.where(
                         reforme_intervient_pendant_duree_donnee_par_grille_initiale &
                         reforme_raccourcit_duree_donnee_par_grille_initiale &
@@ -99,7 +99,7 @@ class AgentFpt:
                 ),
             np.nan,
             )
-        # # print dataframe['duree_effective_echelon']
+        # # print dataframe['duree_effective_echelon']
 
     def set_dates_effet(self, date_observation = None, start_variable_name = "date_effet_grille_en_cours",
             next_variable_name = None):
@@ -462,8 +462,8 @@ def get_duree_echelon_from_grilles_dataframe(
             echelon_terminal)
     echelon_terminal = echelon_terminal['echelon_terminal'].unique().tolist()[0]
     if echelon != echelon_terminal:
-        assert (duree > 0).all(), "Presence de durees dans l'echelon invalides à la date d'effet {}: \n {}".format(
-            date_effet, duree)
+        assert (duree > 0).all(), "Presence de durees dans l'echelon invalides à la date d'effet {}: \n {}. Echelon {} Grade {}".format(
+            date_effet, duree, echelon, grade )
 
     return duree.squeeze()
 

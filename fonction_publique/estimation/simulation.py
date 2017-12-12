@@ -12,6 +12,9 @@ import pandas as pd
 from fonction_publique.base import (grilles, output_directory_path, simulation_directory_path)
 from fonction_publique.career_simulation_vectorized import AgentFpt
 
+simulation_directory_path = 'C:/Users/s.rabate/Desktop/temp/simulation/'
+    
+
 log = logging.getLogger(__name__)
 
 
@@ -315,8 +318,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--input-file', default = '2014_data_simul_withR_MNL_3.csv', help = 'input file (csv)')
     parser.add_argument('-o', '--output-file', default = 'results_2011_m1.csv', help = 'output file (csv)')
-    parser.add_argument('-v', '--verbose', action = 'store_true', default = False, help = "increase output verbosity")
+    parser.add_argument('-v', '--verbose', action = 'store_true', default = True, help = "increase output verbosity")
     parser.add_argument('-d', '--debug', action = 'store_true', default = False, help = "increase output verbosity (debug mode)")
+
 
     args = parser.parse_args()
     if args.verbose:

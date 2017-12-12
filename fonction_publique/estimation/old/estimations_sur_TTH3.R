@@ -162,6 +162,9 @@ hazard_by_ech(data = data_min[which(data_min$c_cir_2011 == "TTH3" & data_min$lef
 
 
 
+
+
+
 ## I.2.3 KM estimation ####
 
 subdata = data_id[which(data_id$left_censored == F),]
@@ -247,7 +250,6 @@ coxph.fit1 = coxph(Surv(start, stop, exit_status2) ~  sexe + generation_group +
                      dist_echelon_m3 + dist_echelon_m2 + dist_echelon_m1 + dist_echelon_0 + 
                      dist_echelon_p1 + dist_echelon_p2 + dist_echelon_p3 + dist_echelon_p4,
                    data=data)
-
 
 
 ##### Check weird #####
