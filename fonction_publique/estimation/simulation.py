@@ -13,7 +13,7 @@ from fonction_publique.base import (grilles, output_directory_path, simulation_d
 from fonction_publique.career_simulation_vectorized import AgentFpt
 
 simulation_directory_path = 'C:/Users/s.rabate/Desktop/temp/simulation/'
-    
+
 
 log = logging.getLogger(__name__)
 
@@ -21,12 +21,14 @@ log = logging.getLogger(__name__)
 processed_grades = ['TTM1', 'TTM2','TTH1', 'TTH2', 'TTH3', 'TTH4']
 processed_grades_by_code = {24: 'TTM1', 551: 'TTM2', 793: 'TTH1', 794: 'TTH2', 795: 'TTH3', 796: 'TTH4'}
 
+grilles = grilles.query("code_grade_NETNEH != 'TTM2' or echelon != -5")
+
 
 def complete_echelon_speciaux(grilles_to_be_completed):
     grilles.query('(code_grade_NETNEH in @processed_grades) & (echelon ==-5)')
     new_echelon_speciaux_by_grade = {
         'TTH4': 8,
-        'TTM2': 10
+        'TTM2': 0
         }
     for grade, echelon in new_echelon_speciaux_by_grade.iteritems():
         grilles_to_be_completed.loc[
@@ -60,7 +62,7 @@ def predict_next_period_grade_when_exit_to_other_corps(data):
             ),
         'next_grade'
         ] = "TTM1"
-    if sum(data['next_situation'] == 'exit_oth')>0: # FIXME: find a better organisation for three possible options 
+    if sum(data['next_situation'] == 'exit_oth')>0: # FIXME: find a better organisation for three possible options
         data.loc[(data.grade  == 'TTH4') & (data.next_grade == 'TTM1') & (data.echelon > 5) , 'next_grade'] = "TTM2"
         data.loc[(data.grade  == 'TTH3') & (data.next_grade == 'TTM1') & (data.echelon > 10), 'next_grade'] = "TTM2"
     data['next_annee'] = data['annee'] + 1
@@ -191,8 +193,8 @@ def predict_echelon_next_period_when_exit(data, grilles):
         inplace = True,
         )
 
-    data_exit_echelon_pour_echelon = data_exit_merged.query("(next_grade not in ['TTH4', 'TTM1', 'TTM2']) & (echelon == next_echelon)")
-    data_exit_ib_pour_ib = data_exit_merged.query("next_grade in ['TTH4', 'TTM1', 'TTM2']")  # FIXME To generalize
+    data_exit_echelon_pour_echelon = data_exit_merged.query("(next_grade not in ['TTM1', 'TTM2']) & (echelon == next_echelon)")
+    data_exit_ib_pour_ib = data_exit_merged.query("next_grade in ['TTM1', 'TTM2']")  # FIXME To generalize
     data_exit_ib_pour_ib = (data_exit_ib_pour_ib
         .query('ib_grilles >= ib_data')
         .groupby(['ident']).agg({'ib_grilles': np.min})
@@ -301,7 +303,7 @@ def predict_next_period(data = None, grilles = None):
         data_with_next_grade_when_exit_to_other, grilles
         )
     results = data_with_next_echelon_when_no_exit.append(data_with_next_echelon_when_exit)
-    assert len(results.query("(next_situation != 'no_exit') & (next_grade not in ['TTH4', 'TTM1', 'TTM2']) & (echelon != next_echelon)")) == 0
+    assert len(results.query("(next_situation != 'no_exit') & (next_grade not in ['TTM1', 'TTM2']) & (echelon != next_echelon)")) == 0
     assert 'next_anciennete_dans_echelon' in results.columns
     results = results[['ident', 'next_annee', 'next_grade', 'next_echelon', 'next_situation', 'next_anciennete_dans_echelon']].copy()
     results['next_annee'] = results['next_annee'].astype(int)
@@ -321,7 +323,8 @@ def main():
     parser.add_argument('-v', '--verbose', action = 'store_true', default = True, help = "increase output verbosity")
     parser.add_argument('-d', '--debug', action = 'store_true', default = False, help = "increase output verbosity (debug mode)")
 
-
+    # FIXME: ugly
+    
     args = parser.parse_args()
     if args.verbose:
         level = logging.INFO
@@ -339,9 +342,15 @@ def main():
     log.info("Number of unique idents in input file: {}".format(len(input_idents)))
     results = predict_next_period(data = data, grilles = grilles)
     directory_path = os.path.join(simulation_directory_path, 'results')
+
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
+    
     output_file_path = os.path.join(directory_path, args.output_file)
+    if os.path.exists(output_file_path):
+        log.info("Found existing output file {}. Removing.".format(output_file_path))
+        os.remove(output_file_path)
+        
     log.info("Saving results to {}".format(output_file_path))
     output_idents = results.ident.unique().tolist()
     missing_id = data.loc[data.ident.isin(set(input_idents) - set(output_idents))]
@@ -357,6 +366,7 @@ def main():
     log.info("Number of unique doubles in output file: {}".format(len(clones.ident.unique().tolist())))
 
     results  = results.drop_duplicates(subset = "ident")
+
     results.to_csv(output_file_path)
 
 

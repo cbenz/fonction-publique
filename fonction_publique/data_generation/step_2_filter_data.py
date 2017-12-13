@@ -256,9 +256,9 @@ def main(corps = None, first_year = None):
     tracking = pd.DataFrame(tracking)
     print tracking.to_latex()
     data.to_csv(
-        os.path.join(output_directory_path, 'filter', "data_ATT_2011_filtered_after_duration_var_added_new.csv")
+        os.path.join(output_directory_path, 'filter', "data_ATT_2011_filtered_after_duration_final.csv")
         )
-    log.info(r"saving data to data_ATT_2011_filtered_after_duration_var_added.csv")
+    log.info(r"saving data to data_ATT_2011_filtered_after_duration_final.csv")
     return data
 
 

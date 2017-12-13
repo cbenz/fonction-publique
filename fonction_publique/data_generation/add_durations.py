@@ -252,7 +252,7 @@ def main_duration(data = None):
     log.info('add year of entry variables')
     data6 = add_duration_var(data5)
     log.info('add duration in grade variables')
-    data7 = add_entry_in_2011_echelon_var(data6, data)
+    data7 = add_entry_in_2011_echelon_var(data6,  data_quarterly = data, reshape = True)
     log.info('add quarter of entry in 2011 echelon variable')
     data8 = add_initial_anciennete_in_echelon(data7)
     log.info('add initial anciennete in 2011 echelon')

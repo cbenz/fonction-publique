@@ -458,8 +458,8 @@ def get_duree_echelon_from_grilles_dataframe(
         .query('code_grade_NEG == @grade')
         )
     assert len(echelon_terminal['echelon_terminal'].unique().tolist()) == 1, \
-        "Presence de plusieurs echelons terminaux: \n {}".format(
-            echelon_terminal)
+        "Presence de plusieurs echelons terminaux pour le grade {} à la date d'effet {}: \n {}".format(
+            grade, date_effet, echelon_terminal)
     echelon_terminal = echelon_terminal['echelon_terminal'].unique().tolist()[0]
     if echelon != echelon_terminal:
         assert (duree > 0).all(), "Presence de durees dans l'echelon invalides à la date d'effet {}: \n {}. Echelon {} Grade {}".format(
