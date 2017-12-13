@@ -49,8 +49,11 @@ mlog3 = mlogit(next_year ~ 0 | sexe + generation_group2 + grade + duration + dur
 mlog4 = mlogit(next_year ~ 0 | sexe + generation_group2 + grade + I_condC + I_condE, data = estim, reflevel = "no_exit")
 mlog5 = mlogit(next_year ~ 0 | sexe + generation_group2 + grade + duration + duration2 + I_condC + I_condE, 
                data = estim, reflevel = "no_exit")
+mlog6 = mlogit(next_year ~ 0 | sexe + generation_group2 + grade + duration + duration2 + I_condC + I_condE + I_echC, 
+               data = estim, reflevel = "no_exit")
 
-list_MNL = list(mlog0, mlog3, mlog5)
+
+list_MNL = list(mlog3, mlog5, mlog6)
 save(list_MNL, file = paste0(save_model_path, "mlog.rda"))
 
 # bundle up some models

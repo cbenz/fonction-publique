@@ -16,6 +16,9 @@ table(data_check$echelon[which(data_check$annee == y)])
 table(data_check$time_spent_in_grade_min[which(data_check$annee == y)])
 table(data_check$time_spent_in_grade_max[which(data_check$annee == y)])
 
+echelon = data_check$echelon[which(data_check$annee == y)]
+echelon_next = data_check$echelon[which(data_check$annee == y+1)]
+plot(echelon, echelon_next)
 
 #### Test thresholds ####
 data_check = data_stat_min[which(data_stat_min$c_cir_2011 == "TTH3" & data_stat_min$annee >= 2011),]
@@ -173,6 +176,40 @@ plot(hz[x,1], effectif[x], type ="l", lty = 2, lwd = 2, axes=F, xlab=NA, ylab=NA
 axis(side = 4)
 mtext(side = 4, line = 3, 'Nb obs.')
 legend("topleft", legend = c("Hazard", "Nb obs."), lwd = 3, lty = c(1,3), col = c("darkcyan", "black"), cex = 1.1)
+
+
+
+#### Check gains ib et echelon quand changement de grade
+
+filename = paste0(data_path, "/filter/data_ATT_2011_filtered_after_duration_var_added_new.csv")
+data_long = read.csv(filename)
+
+y = 2014
+g1 = "TTH3"
+g2 = "TTH4"
+list1 = data_long$ident[which(data_long$c_cir == g1 & data_long$grade_next == g2 & data_long$annee == y)]
+data_check = data_long[which(is.element(data_long$ident, list1)),]
+data_check = data_check[which(data_check$annee == y | data_check$annee == y+1), ]
+
+
+
+echelon = data_check$echelon[which(data_check$annee == y)]
+echelon_next = data_check$echelon[which(data_check$annee == y+1)]
+table(echelon_next, echelon)
+ib = data_check$ib[which(data_check$annee == y)]
+ib_next = data_check$ib[which(data_check$annee == y+1)]
+
+plot(echelon, echelon_next)
+table(echelon_next, echelon)
+plot(ib, ib_next)
+
+#### Check evo ancienneté dans échelon prédite
+load(paste0(simul_path, "predictions7_min.Rdata"))
+
+colnames(output_global)
+var = c('ident', 'annee', "grade_MNL_2",  'ib_MNL_2', 'echelon_MNL_2',  'anciennete_dans_echelon_MNL_2')
+View(output_global[, var])
+
 
 
 
