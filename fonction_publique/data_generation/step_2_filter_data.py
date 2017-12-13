@@ -9,6 +9,8 @@ import pandas as pd
 from fonction_publique.base import add_grilles_variable, grilles, output_directory_path, tmp_directory_path
 from fonction_publique.data_generation.add_durations import main_duration
 
+debug_path = "M:/CNRACL/test/"
+
 log = logging.getLogger(__name__)
 
 
@@ -242,6 +244,9 @@ def main(corps = None, first_year = None):
     data = select_non_missing_level(data)
     tracking.append(['Non missing echelons on K', len(data.ident.unique()), 
                    round(len(data.ident.unique())*100/tracking[0][1],2), round(len(data.ident.unique())*100/tracking[-1][1],2)] )
+    data.to_csv(
+    os.path.join(debug_path, "debug.csv")
+    )
     data = add_duration_var(data)
     log.info("Saving data with duration variables tmp_directory_path\filter")
     data = select_non_left_censored(data)

@@ -29,7 +29,7 @@ def add_rank_change_var(
         
     data = data.query('annee >= annee_min_to_consider')   
     data_change_grade = []  # Redefined at the end of the loop
-    annees = list(reversed(range(first_year, 2011)))
+    annees = list(reversed(range(first_year, 2012)))
     data_a_utiliser_pour_annee_precedente = None
     for annee in annees:
         log.info("processing year {}".format(annee))
@@ -192,18 +192,20 @@ def add_duration_var(data):
     return data
 
 
-def add_entry_in_2011_echelon_var(data, data_quarterly = None):
+def add_entry_in_2011_echelon_var(data, data_quarterly = None, reshape = False):
     """ /!\ : arbitrary use of 'annee_entry_max' """
     # FIXME deal with grille change
     if data_quarterly is None:
         data_quarterly = reshape_wide_to_long()
-    data_temp = data.query('annee <= 2011')[['ident', 'annee_entry_max']].drop_duplicates().copy()
+    if reshape is True and data_quarterly is not None:
+        data_quarterly =  reshape_wide_to_long(data_quarterly)
+    data_temp = data.query('annee <= 2011')[['ident', 'annee_entry_min']].drop_duplicates().copy()
     data_quarterly = data_quarterly.merge(
         data_temp,
         on = 'ident',
         how = 'inner'
-        )[['ident', 'annee', 'quarter', 'echelon', 'ib', 'annee_entry_max']].query(
-            '(annee >= annee_entry_max) & (annee <= 2011)').copy()
+        )[['ident', 'annee', 'quarter', 'echelon', 'ib', 'annee_entry_min']].query(
+            '(annee >= annee_entry_min) & (annee <= 2011)').copy()
 
     dict_periods = {1: '03-31', 2: '06-30', 3: '09-30', 4: '12-31'}
     data_quarterly['period'] = pd.to_datetime(
@@ -218,6 +220,9 @@ def add_entry_in_2011_echelon_var(data, data_quarterly = None):
     data_quarterly = data_quarterly.query('ib == ib_2011')[['ident', 'period']]
     data_quarterly['quarter_entry_echelon'] = data_quarterly.groupby('ident')['period'].transform(min)
     data_quarterly = data_quarterly[['ident', 'quarter_entry_echelon']].drop_duplicates()
+    
+    
+    
     return data.merge(data_quarterly, on = 'ident', how = 'left')
 
 
@@ -247,7 +252,7 @@ def main_duration(data = None):
     log.info('add year of entry variables')
     data6 = add_duration_var(data5)
     log.info('add duration in grade variables')
-    data7 = add_entry_in_2011_echelon_var(data6)
+    data7 = add_entry_in_2011_echelon_var(data6, data)
     log.info('add quarter of entry in 2011 echelon variable')
     data8 = add_initial_anciennete_in_echelon(data7)
     log.info('add initial anciennete in 2011 echelon')
