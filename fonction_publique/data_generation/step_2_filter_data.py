@@ -15,12 +15,12 @@ log = logging.getLogger(__name__)
 
 
 # Read data and replace cir codes for ATT interns
-def read_data(data_path = os.path.join(output_directory_path, 'select_data'), corps = None, first_year = None):
+def read_data(data_path = os.path.join(output_directory_path, 'select_data'), corps = None, first_year_data = None):
     """read output from step_1_extract_data_by_c_cir.py"""
     log.info("Reading data")
     assert corps is not None
-    assert first_year is not None
-    filename = 'corps{}_{}.csv'.format(corps, first_year)
+    assert first_year_data is not None
+    filename = 'corps{}_{}.csv'.format(corps, first_year_data)
     log.debug('Reading data from {}'.format(os.path.join(data_path, filename)))
     return pd.read_csv(
         os.path.join(data_path, filename),
@@ -72,29 +72,29 @@ def replace_interns_cir(data):
 
 
 # I. Sample selection
-def select_ATT_in_2011(data):
-    """select careers of agents who are ATT (interns and fonctionnaires) in 2011 according to their c_cir"""
-    log.info("Selecting ATT agents in 2011")
+def select_ATT(data, start_year):
+    """select careers of agents who are ATT (interns and fonctionnaires) in start_year according to their c_cir"""
+    log.info("Selecting ATT agents in {}".format(start_year))
     ATT_cir = ['TTH1', 'TTH2', 'TTH3', 'TTH4']
-    idents_keep = data.query('(annee == 2011) & (c_cir in @ATT_cir)').ident.unique()
+    idents_keep = data.query('(annee == @start_year) & (c_cir in @ATT_cir)').ident.unique()
     data = data.query('ident in @idents_keep').copy()
-    assert set(data.query('annee == 2011').c_cir.unique()) == set(ATT_cir)
+    assert set(data.query('annee == @start_year').c_cir.unique()) == set(ATT_cir)
     return data
 
 
-def select_next_state_in_fonction_publique(data):
-    """select careers of agents who are active the year after they leave their 2011 grade,
+def select_next_state_in_fonction_publique(data, start_year):
+    """select careers of agents who are active the year after they leave their grade in start_year,
      or who do not leave their grade"""
     log.info("Selecting next grade state active in civil service")
     data = data.merge(
         data.query(
-            'annee == 2011'
-            ).copy()[['ident', 'c_cir']].rename(columns = {"c_cir": "c_cir_2011"}), on = 'ident', how = 'left'
+            'annee == @start_year'
+            ).copy()[['ident', 'c_cir']].rename(columns = {"c_cir": "c_cir_start"}), on = 'ident', how = 'left'
         )
-    data_after_2011 = data.query('(annee > 2011) & (c_cir != c_cir_2011)').copy()[['ident', 'annee']]
-    data_after_2011['annee_exit'] = data_after_2011.groupby('ident')['annee'].transform(min)
-    data_after_2011 = data_after_2011[['ident', 'annee_exit']].drop_duplicates()
-    data = data.merge(data_after_2011, on = 'ident', how = 'left')
+    data_after_start_year = data.query('(annee > @start_year) & (c_cir != c_cir_start)').copy()[['ident', 'annee']]
+    data_after_start_year['annee_exit'] = data_after_start_year.groupby('ident')['annee'].transform(min)
+    data_after_start_year = data_after_start_year[['ident', 'annee_exit']].drop_duplicates()
+    data = data.merge(data_after_start_year, on = 'ident', how = 'left')
     data['annee_exit'] = data['annee_exit'].fillna(9999).astype(int)
     idents_keep = data.query('((annee == annee_exit) & (etat == 1)) | (annee_exit == 9999)').ident.unique()
     return data.query('ident in @idents_keep').copy()
@@ -111,26 +111,25 @@ def select_continuous_activity_state(data):
      (2003 by default) and the year they join civil service, and the last year they spend in their grade, included """
     log.info("Selecting continuous activity")
     data['annee_min_to_consider'] = np.where(data['an_aff'] >= 2003, data['an_aff'], 2003)
-    idents_del = data.query('(etat not in [1, 2, 3, 5, 6]) & (annee >= annee_min_to_consider) & (annee < annee_exit)').ident.unique()
+    idents_del = data.query('(etat not in [1, 2, 3, 5, 6]) & (annee >= annee_min_to_consider)').ident.unique()
     return data.query('ident not in @idents_del').copy()
-
 
 # II. Data issues
 def select_positive_ib(data):  # compare with interval (entry in grade, exit)
     """ select careers of agents who have a stricly positive ib between the maximum between the first year of observation
      (2003 by default) and the year they join civil service, and the minimum between the first year they spend in their
-     next grade, included, and 2015 """
+     next grade,  and 2015 """
     log.info("Selecting strictly positive ib")
-    idents_del = data.query('(ib <= 0) & (annee >= annee_min_to_consider) & (annee <= annee_exit)').ident.unique()
+    idents_del = data.query('(ib <= 0) & (annee >= annee_min_to_consider)').ident.unique()
     return data.query('ident not in @idents_del').copy()
 
 
-def select_non_missing_c_cir(data):
-    """ select careers of agents with no missing grade code between 2011 and their first year in next grade included (or
+def select_non_missing_c_cir(data, start_year):
+    """ select careers of agents with no missing grade code between start_year and their first year in next grade included (or
     2015 if they do not leave """
     log.info("Selecting non missing code cir")
-    data_after_2011 = data.query('(annee > 2011) & (annee <= annee_exit)').copy()
-    idents_del = data_after_2011[data_after_2011['c_cir'].isnull()].ident.unique()
+    data_after_start_year = data.query('(annee > @start_year) ').copy()
+    idents_del = data_after_start_year[data_after_start_year['c_cir'].isnull()].ident.unique()
     return data.query('ident not in @idents_del').copy()
 
 
@@ -143,13 +142,13 @@ def select_no_decrease_in_ATT_rank(data):
         columns = {'c_cir': 'c_cir_aft_exit'}
         ).reset_index()
     del data_exit[0]
-    data_exit = data_exit.merge(data[['ident', 'c_cir_2011']], on = 'ident', how = 'inner').query(
-        "c_cir_2011 != 'TTH1'"
+    data_exit = data_exit.merge(data[['ident', 'c_cir_start']], on = 'ident', how = 'inner').query(
+        "c_cir_start != 'TTH1'"
         ).drop_duplicates().query('c_cir in @ATT_cir')
-    data_exit = data_exit.query("c_cir_2011 != 'TTH1'").copy()
-    for col in ['c_cir', 'c_cir_2011']:
+    data_exit = data_exit.query("c_cir_start != 'TTH1'").copy()
+    for col in ['c_cir', 'c_cir_start']:
         data_exit[col] = data_exit[col].str[3:].astype(int)
-    idents_del = data_exit.query('c_cir < c_cir_2011').ident.unique()
+    idents_del = data_exit.query('c_cir < c_cir_start').ident.unique()
     return data.query('ident not in @idents_del')
 
 
@@ -170,7 +169,7 @@ def select_no_decrease_in_ib(data):
 def select_no_goings_and_comings_of_rank(data):
     """ select careers of agents who don't come back to their 2011 grade after leaving it """
     log.info("Selecting no goings and comings of grade")
-    idents_del = data.query('(annee > annee_exit) & (c_cir == c_cir_2011)').ident.unique()
+    idents_del = data.query('(annee > annee_exit) & (c_cir == c_cir_start)').ident.unique()
     return data.query('ident not in @idents_del')
 
 
@@ -185,7 +184,7 @@ def select_non_special_level(data):
 
 # V. Filters on echelon variable issues
 def select_non_missing_level(data):
-    """ select careers of agents with no missing echelon between 2011 and their first year in next grade included"""
+    """ select careers of agents with no missing echelon between start_year and their first year in next grade included"""
     log.info("Selecting non missing echelon")
     idents_del = data.query('(echelon == -1) & (annee <= annee_exit)').ident.unique()
     return data.query('ident not in @idents_del')
@@ -204,15 +203,15 @@ def select_non_left_censored(data):
     return data.query('left_censored == False')
 
 
-def main(corps = None, first_year = None):
+def main(corps = None, first_year_data = None, start_year = None):
     # use pipes to chain functions
     tracking = []
-    data = read_data(corps = corps, first_year = first_year)
- #   tracking.append(['ATT once btw. 2011-2015', len(data.ident.unique()), 100, 100])
+    data = read_data(corps = corps, first_year_data = first_year_data)
+ #   tracking.append(['ATT once btw. {}-2015'.format(start_year), len(data.ident.unique()), 100, 100])
     data = replace_interns_cir(data)
-    data = select_ATT_in_2011(data)
-    tracking.append(['ATT in 2011, interns included', len(data.ident.unique()), 100, 100])
-    data = select_next_state_in_fonction_publique(data)
+    data = select_ATT(data, start_year)
+    tracking.append(['ATT in {}, interns included'.format(start_year), len(data.ident.unique()), 100, 100])
+    data = select_next_state_in_fonction_publique(data, start_year = start_year)
     tracking.append(['Next grade state = activity in civil service', len(data.ident.unique()), 
                    round(len(data.ident.unique())*100/tracking[0][1],2), round(len(data.ident.unique())*100/tracking[-1][1],2)] )
     data = select_generation(data)
@@ -224,7 +223,7 @@ def main(corps = None, first_year = None):
     data = select_positive_ib(data)
     tracking.append(['IB > 0 on J', len(data.ident.unique()), 
                    round(len(data.ident.unique())*100/tracking[0][1],2), round(len(data.ident.unique())*100/tracking[-1][1],2)] )
-    data = select_non_missing_c_cir(data)
+    data = select_non_missing_c_cir(data, start_year)
     tracking.append(['Non missing c_cir on K', len(data.ident.unique()), 
                    round(len(data.ident.unique())*100/tracking[0][1],2), round(len(data.ident.unique())*100/tracking[-1][1],2)] )
     data = select_no_decrease_in_ATT_rank(data)
@@ -256,13 +255,13 @@ def main(corps = None, first_year = None):
     tracking = pd.DataFrame(tracking)
     print tracking.to_latex()
     data.to_csv(
-        os.path.join(output_directory_path, 'filter', "data_ATT_2011_filtered_after_duration_final.csv")
+        os.path.join(output_directory_path, 'filter', "data_ATT_{}_filtered_after_duration_final.csv".format{start_year})
         )
-    log.info(r"saving data to data_ATT_2011_filtered_after_duration_final.csv")
+    log.info(r"saving data to data_ATT_{}_filtered_after_duration_final.csv".format{start_year})
     return data
 
 
 if __name__ == "__main__":
     import sys
     logging.basicConfig(level = logging.DEBUG, stream = sys.stdout)
-    data = main(first_year = 2000, corps = 'AT')
+    data = main(first_year_data = 2000, corps = 'AT', start_year = 2012)

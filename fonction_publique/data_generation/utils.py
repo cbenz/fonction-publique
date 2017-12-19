@@ -281,7 +281,7 @@ def format_output(
 
 def get_career_transitions(
         data = None,
-        annee = 2011,
+        annee = None,
         unique = False,
         ):
     """Returns an empty dataframe which important part is the index"""

@@ -16,24 +16,25 @@ log = logging.getLogger(__name__)
 def add_rank_change_var(
         data = None,
         grilles = get_grilles_including_bef_ATT(grilles = grilles),
-        first_year = 2004
+        first_year = 2004,
+        start_year = None
         ):
-    """Add indicator of grade change between 2003 and 2011
+    """Add indicator of grade change between 2003 and start_year
     """
     log.info('add indicator of grade change between 2003 and 2011')
     if data is None:
         data = pd.read_csv(
-            os.path.join(output_directory_path, 'filter', 'data_ATT_2011_filtered.csv'),
+            os.path.join(output_directory_path, 'filter', 'data_ATT_{}_filtered.csv'.format(start_year)),
             index_col = 0,
             ).query('annee >= annee_min_to_consider')
         
     data = data.query('annee >= annee_min_to_consider')   
     data_change_grade = []  # Redefined at the end of the loop
-    annees = list(reversed(range(first_year, 2012)))
+    annees = list(reversed(range(first_year, (start_year+1) )))
     data_a_utiliser_pour_annee_precedente = None
     for annee in annees:
         log.info("processing year {}".format(annee))
-        if annee == 2011:
+        if annee == start_year:
             data_unique_transition = get_career_transitions(data, annee, unique = True)
             log.debug(data_unique_transition)
             data_with_change_grade_variable = add_change_grade_variable(
@@ -122,7 +123,7 @@ def add_rank_change_var(
                     )
             return results.merge(
                 data[[
-                    'ident', u'generation', u'sexe', u'an_aff', u'c_cir_2011', u'annee_exit',
+                    'ident', u'generation', u'sexe', u'an_aff', u'c_cir_start', u'annee_exit',
                     u'annee_min_to_consider'
                     ]], on = 'ident'
                 ).drop_duplicates()
@@ -178,10 +179,10 @@ def add_year_of_entry_var(data):
     return data
 
 
-def add_duration_var(data):
+def add_duration_var(data, start_year):
     data['duration_max_in_grade'] = None
     data['duration_min_in_grade'] = None
-    data.loc[(data['annee_entry_min'] != -1) & (data['annee'] >= 2011), 'duration_max_in_grade'] = data[
+    data.loc[(data['annee_entry_min'] != -1) & (data['annee'] >= start_year), 'duration_max_in_grade'] = data[
         'annee'
         ] - data['annee_entry_min'] + 1
     data.loc[data['annee_entry_max'] != -1, 'duration_min_in_grade'] = data[
@@ -192,20 +193,20 @@ def add_duration_var(data):
     return data
 
 
-def add_entry_in_2011_echelon_var(data, data_quarterly = None, reshape = False):
+def add_entry_in_echelon_var(data, data_quarterly = None, reshape = False, start_year = None):
     """ /!\ : arbitrary use of 'annee_entry_max' """
     # FIXME deal with grille change
     if data_quarterly is None:
         data_quarterly = reshape_wide_to_long()
     if reshape is True and data_quarterly is not None:
         data_quarterly =  reshape_wide_to_long(data_quarterly)
-    data_temp = data.query('annee <= 2011')[['ident', 'annee_entry_min']].drop_duplicates().copy()
+    data_temp = data.query('annee <= @start_year')[['ident', 'annee_entry_min']].drop_duplicates().copy()
     data_quarterly = data_quarterly.merge(
         data_temp,
         on = 'ident',
         how = 'inner'
         )[['ident', 'annee', 'quarter', 'echelon', 'ib', 'annee_entry_min']].query(
-            '(annee >= annee_entry_min) & (annee <= 2011)').copy()
+            '(annee >= annee_entry_min) & (annee <= @start_year)').copy()
 
     dict_periods = {1: '03-31', 2: '06-30', 3: '09-30', 4: '12-31'}
     data_quarterly['period'] = pd.to_datetime(
@@ -213,11 +214,11 @@ def add_entry_in_2011_echelon_var(data, data_quarterly = None, reshape = False):
         ).dt.strftime('%Y-%m-%d')
     echelon_2011 = data_quarterly.query('(annee == 2011) & (quarter == 4)').copy().filter(
         ['ident', 'ib', 'echelon'], axis = 1
-        ).drop_duplicates().rename(columns = {"ib": "ib_2011", "echelon": "echelon_2011"})
+        ).drop_duplicates().rename(columns = {"ib": "ib_start", "echelon": "echelon_start"})
     data_quarterly = data_quarterly.merge(echelon_2011, on = 'ident', how = 'left').query(
-        'ib == ib_2011'
+        'ib == ib_start'
         )
-    data_quarterly = data_quarterly.query('ib == ib_2011')[['ident', 'period']]
+    data_quarterly = data_quarterly.query('ib == ib_start')[['ident', 'period']]
     data_quarterly['quarter_entry_echelon'] = data_quarterly.groupby('ident')['period'].transform(min)
     data_quarterly = data_quarterly[['ident', 'quarter_entry_echelon']].drop_duplicates()
     
@@ -226,8 +227,8 @@ def add_entry_in_2011_echelon_var(data, data_quarterly = None, reshape = False):
     return data.merge(data_quarterly, on = 'ident', how = 'left')
 
 
-def add_initial_anciennete_in_echelon(data):
-    data['first_quarter_obs'] = pd.datetime(2011, 12, 31)
+def add_initial_anciennete_in_echelon(data, start_year = None):
+    data['first_quarter_obs'] = pd.datetime(start_year, 12, 31)
     data['quarter_entry_echelon'] = pd.to_datetime(data['quarter_entry_echelon'])
 
     def diff_month(d1, d2):
@@ -240,8 +241,8 @@ def add_initial_anciennete_in_echelon(data):
     return data
 
 
-def main_duration(data = None):
-    data1 = add_rank_change_var(data)
+def main_duration(data = None, start_year = None):
+    data1 = add_rank_change_var(data, start_year = start_year)
     data2 = add_censoring_var(data1)
     log.info('add left and right censoring indicator')
     data3 = add_grade_bef_var(data2)
@@ -250,12 +251,12 @@ def main_duration(data = None):
     log.info('add next grade / next grade situation variables')
     data5 = add_year_of_entry_var(data4)
     log.info('add year of entry variables')
-    data6 = add_duration_var(data5)
+    data6 = add_duration_var(data5, start_year)
     log.info('add duration in grade variables')
-    data7 = add_entry_in_2011_echelon_var(data6,  data_quarterly = data, reshape = True)
-    log.info('add quarter of entry in 2011 echelon variable')
-    data8 = add_initial_anciennete_in_echelon(data7)
-    log.info('add initial anciennete in 2011 echelon')
+    data7 = add_entry_in_echelon_var(data6,  data_quarterly = data, reshape = True, start_year = start_year)
+    log.info('add quarter of entry in {} echelon variable'.format(start_year))
+    data8 = add_initial_anciennete_in_echelon(data7, start_year = start_year)
+    log.info('add initial anciennete in {} echelon'.format(start_year))
     return data8
 
 
@@ -266,5 +267,6 @@ if __name__ == '__main__':
         data = pd.read_csv(
             os.path.join(output_directory_path, 'filter', 'data_ATT_2011_filtered.csv'),
             index_col = 0,
-            ).query('annee >= annee_min_to_consider')
+            ).query('annee >= annee_min_to_consider'),
+        start_year = 2011
         )
