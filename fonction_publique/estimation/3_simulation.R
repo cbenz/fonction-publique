@@ -230,7 +230,8 @@ predict_next_year_seq_m2 <- function(data_sim, m1, m2, modelname)
 increment_data_sim <- function(data_sim, simul_py)
 {
   # Deleting individuals with pbl
-  if (length(data_sim$ident) != length(simul_py$ident) | length(which(is.na(simul_py$ib)) >0 )  | length(which(is.na(simul_py$grade)) >0 ))
+  if (length(data_sim$ident) != length(simul_py$ident) | length(which(is.na(simul_py$ib)) >0 )  | 
+      length(which(is.na(simul_py$grade)) >0 | length(which(!is.element(simul_py$echelon, seq(1,12))))>0 ))
   {
     
     list_pbl_id1 = unique(setdiff(data_sim$ident, simul_py$ident))
@@ -245,7 +246,14 @@ increment_data_sim <- function(data_sim, simul_py)
     list_pbl_grade = unique(simul_py$ident[which(is.na(simul_py$grade) | simul_py$grade == "nan")])
     print(paste0("Il y a ",length(list_pbl_grade)," individus dans la simul  avec grade = NA"))
     
-    deleted_id = Reduce(union, list(list_pbl_id1, list_pbl_id2, list_pbl_ib, list_pbl_grade))
+    list_pbl_echelon = unique(simul_py$ident[which(!is.element(simul_py$echelon, seq(1,12)))])
+    print(paste0("Il y a ",length(list_pbl_grade)," individus dans la simul  avec echelon bizarre"))
+    
+    
+    deleted_id = Reduce(union, list(list_pbl_id1, list_pbl_id2, list_pbl_ib, list_pbl_grade, list_pbl_echelon))
+    
+    stopifnot(length(deleted_id) == 0)
+    
     data_sim = data_sim[which(!is.element(data_sim$ident, deleted_id)), ]
     simul_py = simul_py[which(!is.element(simul_py$ident, deleted_id)), ]
     

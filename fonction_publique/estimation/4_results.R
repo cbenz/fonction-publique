@@ -10,7 +10,7 @@
 
 source(paste0(wd, "0_Outils_CNRACL.R")) 
 # Load results
-load(paste0(simul_path, "predictions8_min.Rdata"))
+load(paste0(simul_path, "predictions9_min.Rdata"))
 
 ## NEW FILTER: à déplacer dans select_data
 list_id = unique(output_global$ident[which(output_global$echelon == -1)])
