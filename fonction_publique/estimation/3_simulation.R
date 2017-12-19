@@ -287,7 +287,7 @@ output_global = generate_data_output(data_path)
 
 add = generate_data_output(data_path)
 
-for (m in 1:3)
+for (m in 1:6)
 {
   if (m <= 3){modelname  =  paste0("MNL_", toString(m))}  
   if (m == 4){modelname = "BG_1"}
@@ -336,6 +336,6 @@ for (m in 1:3)
   output_global = merge(output_global, output, by = c("ident", "annee"), all.x = T)
 }
 
-save(output_global, file = paste0(simul_path, "predictions8_min.Rdata"))
+save(output_global, file = paste0(simul_path, "predictions9_min.Rdata"))
 
 

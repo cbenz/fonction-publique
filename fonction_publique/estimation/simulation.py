@@ -12,8 +12,6 @@ import pandas as pd
 from fonction_publique.base import (grilles, output_directory_path, simulation_directory_path)
 from fonction_publique.career_simulation_vectorized import AgentFpt
 
-simulation_directory_path = 'C:/Users/s.rabate/Desktop/temp/simulation/'
-
 
 log = logging.getLogger(__name__)
 
@@ -21,6 +19,7 @@ log = logging.getLogger(__name__)
 processed_grades = ['TTM1', 'TTM2','TTH1', 'TTH2', 'TTH3', 'TTH4']
 processed_grades_by_code = {24: 'TTM1', 551: 'TTM2', 793: 'TTH1', 794: 'TTH2', 795: 'TTH3', 796: 'TTH4'}
 
+# FIXME: ugly
 grilles = grilles.query("code_grade_NETNEH != 'TTM2' or echelon != -5")
 
 
@@ -193,8 +192,8 @@ def predict_echelon_next_period_when_exit(data, grilles):
         inplace = True,
         )
 
-    data_exit_echelon_pour_echelon = data_exit_merged.query("(next_grade not in ['TTM1', 'TTM2']) & (echelon == next_echelon)")
-    data_exit_ib_pour_ib = data_exit_merged.query("next_grade in ['TTM1', 'TTM2']")  # FIXME To generalize
+    data_exit_echelon_pour_echelon = data_exit_merged.query("(next_grade not in ['TTH4', 'TTM1', 'TTM2']) & (echelon == next_echelon)")
+    data_exit_ib_pour_ib = data_exit_merged.query("next_grade in ['TTH4', 'TTM1', 'TTM2']")  # FIXME To generalize
     data_exit_ib_pour_ib = (data_exit_ib_pour_ib
         .query('ib_grilles >= ib_data')
         .groupby(['ident']).agg({'ib_grilles': np.min})
@@ -303,7 +302,7 @@ def predict_next_period(data = None, grilles = None):
         data_with_next_grade_when_exit_to_other, grilles
         )
     results = data_with_next_echelon_when_no_exit.append(data_with_next_echelon_when_exit)
-    assert len(results.query("(next_situation != 'no_exit') & (next_grade not in ['TTM1', 'TTM2']) & (echelon != next_echelon)")) == 0
+    assert len(results.query("(next_situation != 'no_exit') & (next_grade not in ['TTH4', 'TTM1', 'TTM2']) & (echelon != next_echelon)")) == 0
     assert 'next_anciennete_dans_echelon' in results.columns
     results = results[['ident', 'next_annee', 'next_grade', 'next_echelon', 'next_situation', 'next_anciennete_dans_echelon']].copy()
     results['next_annee'] = results['next_annee'].astype(int)
@@ -318,12 +317,11 @@ def predict_next_period(data = None, grilles = None):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input-file', default = '2014_data_simul_withR_MNL_3.csv', help = 'input file (csv)')
+    parser.add_argument('-i', '--input-file', default = '2011_data_simul_withR_MNL_1.csv', help = 'input file (csv)')
     parser.add_argument('-o', '--output-file', default = 'results_2011_m1.csv', help = 'output file (csv)')
     parser.add_argument('-v', '--verbose', action = 'store_true', default = True, help = "increase output verbosity")
     parser.add_argument('-d', '--debug', action = 'store_true', default = False, help = "increase output verbosity (debug mode)")
 
-    # FIXME: ugly
     
     args = parser.parse_args()
     if args.verbose:
@@ -364,6 +362,8 @@ def main():
 
     log.info("Number of unique idents in output file: {}".format(len(output_idents)))
     log.info("Number of unique doubles in output file: {}".format(len(clones.ident.unique().tolist())))
+
+
 
     results  = results.drop_duplicates(subset = "ident")
 

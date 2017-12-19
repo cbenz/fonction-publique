@@ -120,10 +120,10 @@ m1_all  = mlogit(next_year ~ 0 | sexe + generation_group2 + grade +
 m1_TTH1 = mlogit(next_year ~ 0 | sexe + generation_group2 +  I_condE + I_condC +  
                    bef_seuil_TTH1 + bef_seuil2_TTH1 + mid_seuil_TTH1 + mid_seuil2_TTH1 + aft_seuil_TTH1  +  aft_seuil2_TTH1, 
                  data = estim[list1, ], reflevel = "no_exit")
-m1_TTH2 = mlogit(next_year ~ 0 | sexe + generation_group2 + 
+m1_TTH2 = mlogit(next_year ~ 0 | sexe + generation_group2 + I_echC +
                    I_condC + bef_seuil + aft_seuil   , 
                  data = estim[list2, ], reflevel = "no_exit")
-m1_TTH3 = mlogit(next_year ~ 0 | sexe + generation_group2 + 
+m1_TTH3 = mlogit(next_year ~ 0 | sexe + generation_group2  + I_echC + 
                    I_condC + bef_seuil + aft_seuil  , 
                  data = estim[list3, ], reflevel = "no_exit")
 m1_TTH4 = glm(exit2 ~  sexe + generation_group2 + 

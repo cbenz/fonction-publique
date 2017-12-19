@@ -10,7 +10,7 @@
 
 source(paste0(wd, "0_Outils_CNRACL.R")) 
 # Load results
-load(paste0(simul_path, "predictions7_min.Rdata"))
+load(paste0(simul_path, "predictions8_min.Rdata"))
 
 ## NEW FILTER: à déplacer dans select_data
 list_id = unique(output_global$ident[which(output_global$echelon == -1)])
@@ -153,8 +153,12 @@ movers_characteristics = function(data, exit_var)
   list =   which(data$exit == "exit_next" & data$c_cir_2011 == "TTH3")
   table_movers[30] = mean(data$cond[list], na.rm = T)
   return(table_movers)
-  }
+}
 
+list1 = which(output_global$situation == "exit_next" & output_global$annee == 2011 & output_global$c_cir_2011 == "TTH2")
+list2 = which(output_global$situation_BG_1 == "exit_next" & output_global$annee == 2011 & output_global$c_cir_2011 == "TTH2")
+table(output_global$echelon[list1])/length(list1)
+table(output_global$echelon[list2])/length(list2)
 
 table_obs =  movers_characteristics(data = output_global, exit_var = "situation")
 for (m in c("MNL_2", "MNL_3", "BG_1","MS_1"))
@@ -353,7 +357,7 @@ print(xtable(table,nrow = nrow(table), align = "l|c|cccc",
              ncol=ncol(table_movers)+1, byrow=T, digits = 2,
              caption = "Masses ib"),
       sanitize.text.function=identity,size="\\footnotesize", hline.after = c(0, 6, 10, 14, 18,22),
-      only.contents=T, include.colnames = T,
+      only.contents=T, include.colnames = T)
       file = paste0(fig_path,"masses_ib.tex"))
 
 
@@ -367,7 +371,7 @@ table_gain_ib = function(data, var_ib, var_situation, var_grade, details = F)
   data$gain_ib = data$next_ib - data$var_ib
   data$I_gain = ifelse(data$gain_ib >0, 1, 0)
   data$gain_ib_pct = 100*(data$gain_ib)/data$var_ib
-  data = data[which(data$annee < 2015),]
+  data = data[which(data$annee < 2012),]
   
   table = numeric(21)
   
@@ -542,9 +546,10 @@ print(xtable(table_all,nrow = nrow(table_all), align = "l|cccc", caption =  "Eca
 
 #### Ecart ib et echelon quand changement en 2011  ####
 
+var = c("ident", "echelon", "grade", "ib", "situation","echelon_BG_1", "grade_BG_1", "ib_BG_1", "situation_BG_1")
 
+comp_data = output_global[which(output_global$annee <= 2012),var]
 
-comp_data = output_global[which(output_global$annee <= 2012),]
 list_ok = comp_data$ident[which(comp_data$annee == 2011 & comp_data$situation ==comp_data$situation_BG_1)]
 comp_data = comp_data[which(is.element(comp_data$ident, list_ok)),]
 comp_data$ech_obs = comp_data$echelon
@@ -596,11 +601,14 @@ print(xtable(table,nrow = nrow(table), align = "lccccc",
 
 
 
+checkTTH3 = comp_data[which(comp_data$c_cir_2011 == "TTH2"),]
+table(comp_data$ech_sim[which(comp_data$annee == 2012)], comp_data$ech_obs[which(comp_data$annee == 2011)])
+table(comp_data$ech_obs[which(comp_data$annee == 2012)], comp_data$ech_obs[which(comp_data$annee == 2011)])
 
 
 
 comp_data = output_global[which(output_global$annee <= 2014),]
-list_ok = comp_data$ident[which(comp_data$annee == 2013 & comp_data$situation ==comp_data$situation_BG_1 & comp_data$grade ==comp_data$grade_BG_1)]
+list_ok = comp_data$ident[which(comp_data$annee == 2011 & comp_data$situation ==comp_data$situation_BG_1 & comp_data$grade ==comp_data$grade_BG_1)]
 comp_data = comp_data[which(is.element(comp_data$ident, list_ok)),]
 comp_data$ech_obs = comp_data$echelon
 comp_data$ech_sim = comp_data$echelon_BG_1
@@ -609,7 +617,7 @@ comp_data$ib_obs = comp_data$ib
 comp_data$ib_sim = comp_data$ib_BG_1
 comp_data$var_ib = comp_data$ib_obs - comp_data$ib_sim
 
-comp2011 = comp_data[comp_data$annee == 2013,]
+comp2011 = comp_data[comp_data$annee == 2011,]
 comp2012 = comp_data[comp_data$annee == 2012,]
 
 table = matrix(ncol = 5, nrow = 8)
@@ -627,14 +635,14 @@ for (g in 1:length(list_grade))
     subcomp2011 = comp2011[which(comp2011$grade == list_grade[g]),]
     subcomp2012 = comp2012[which(comp2011$grade == list_grade[g]),]
   }
-  table[1,g] = mean(subcomp2012$var_ech)
-  table[2,g] = mean(subcomp2012$var_ib)
-  table[3,g] = mean(subcomp2012$var_ech[which(subcomp2011$situation == "no_exit")])
-  table[4,g] = mean(subcomp2012$var_ib[which(subcomp2011$situation == "no_exit")])
-  table[5,g] = mean(subcomp2012$var_ech[which(subcomp2011$situation == "exit_next")])
-  table[6,g] = mean(subcomp2012$var_ib[which(subcomp2011$situation == "exit_next")])
-  table[7,g] = mean(subcomp2012$var_ech[which(subcomp2011$situation == "exit_oth")])
-  table[8,g] = mean(subcomp2012$var_ib[which(subcomp2011$situation == "exit_oth")])
+  table[1,g] = median(subcomp2012$var_ech)
+  table[2,g] = median(subcomp2012$var_ib)
+  table[3,g] = median(subcomp2012$var_ech[which(subcomp2011$situation == "no_exit")])
+  table[4,g] = median(subcomp2012$var_ib[which(subcomp2011$situation == "no_exit")])
+  table[5,g] = median(subcomp2012$var_ech[which(subcomp2011$situation == "exit_next")])
+  table[6,g] = median(subcomp2012$var_ib[which(subcomp2011$situation == "exit_next")])
+  table[7,g] = median(subcomp2012$var_ech[which(subcomp2011$situation == "exit_oth")])
+  table[8,g] = median(subcomp2012$var_ib[which(subcomp2011$situation == "exit_oth")])
 }
 
 colnames(table) = c("Tous", "TTH1", "TTH2","TTH3", "TTH4")
