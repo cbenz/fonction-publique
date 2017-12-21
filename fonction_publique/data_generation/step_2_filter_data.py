@@ -244,7 +244,7 @@ def main(corps = None, first_year_data = None, start_year = None):
     tracking.append(['Non missing echelons on K', len(data.ident.unique()), 
                    round(len(data.ident.unique())*100/tracking[0][1],2), round(len(data.ident.unique())*100/tracking[-1][1],2)] )
     data.to_csv(
-    os.path.join(debug_path, "debug.csv")
+    os.path.join(debug_path, "debug_{}.csv".format(start_year))
     )
     data = add_duration_var(data)
     log.info("Saving data with duration variables tmp_directory_path\filter")
@@ -255,9 +255,9 @@ def main(corps = None, first_year_data = None, start_year = None):
     tracking = pd.DataFrame(tracking)
     print tracking.to_latex()
     data.to_csv(
-        os.path.join(output_directory_path, 'filter', "data_ATT_{}_filtered_after_duration_final.csv".format{start_year})
+        os.path.join(output_directory_path, 'filter', "data_ATT_{}_filtered_after_duration_final.csv".format(start_year))
         )
-    log.info(r"saving data to data_ATT_{}_filtered_after_duration_final.csv".format{start_year})
+    log.info(r"saving data to data_ATT_{}_filtered_after_duration_final.csv".format(start_year))
     return data
 
 
