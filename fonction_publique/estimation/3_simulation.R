@@ -26,7 +26,7 @@ set.seed(1234)
 
 generate_data_sim <- function(data_path, use = "min")
 {
-datasets = load_and_clean(data_path, dataname = "filter/data_ATT_2011_filtered_after_duration_var_added_new.csv")
+datasets = load_and_clean(data_path, dataname = "filter/data_ATT_2011_filtered_after_duration_final.csv")
 if (use == "max"){data = datasets[[1]]}
 if (use == "min"){data = datasets[[2]]}
 list_var = c("ident", "annee",  "sexe", "c_cir_2011", "generation", "an_aff", "grade", 
@@ -41,7 +41,7 @@ return(data_sim)
 
 generate_data_output <- function(data_path)
 {
-  dataname = "filter/data_ATT_2011_filtered_after_duration_var_added_new.csv"
+  dataname = "filter/data_ATT_2011_filtered_after_duration_final.csv"
   filename = paste0(data_path, dataname)
   data_long = read.csv(filename)
   data_long$grade = data_long$c_cir
@@ -344,6 +344,6 @@ for (m in 1:6)
   output_global = merge(output_global, output, by = c("ident", "annee"), all.x = T)
 }
 
-save(output_global, file = paste0(simul_path, "predictions9_min.Rdata"))
+save(output_global, file = paste0(simul_path, "predictions10.Rdata"))
 
 

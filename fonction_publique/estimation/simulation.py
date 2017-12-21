@@ -49,19 +49,19 @@ regle_echelon_by_grade_de_depart = {
 
 regle_anciennete_dans_echelon_by_grade_de_depart = {
     'TTH1': {
-        'TTH2': 'conservation_echelon',
-        'others': 'conservation_ib',
+        'TTH2': 'conservation',
+        'others': 'reinitialisation',
         },
     'TTH2': {
-        'TTH3': 'conservation_echelon',
-        'others': 'conservation_ib',
+        'TTH3': 'conservation',
+        'others': 'reinitialisation',
         },
     'TTH3': {
-        'TTH4': 'conservation_ib',
-        'others': 'conservation_ib',
+        'TTH4': 'conservation',
+        'others': 'reinitialisation',
         },
     'TTH4': {
-        'others': 'conservation_ib',
+        'others': 'reinitialisation',
         },
     }
 
@@ -129,7 +129,7 @@ def predict_echelon_next_period_when_no_exit(data, grilles):
     # FIXME the latter should be more provided by the model
     # Replace by the following
     data_no_exit['code_grade_NETNEH'] = data_no_exit['grade']
-    data_no_exit.drop(['grade', 'next_annee', 'next_grade', 'next_anciennete_dans_echelon'], axis = 1, inplace = True)
+  #  data_no_exit.drop(['grade', 'next_annee', 'next_grade', 'next_anciennete_dans_echelon'], axis = 1, inplace = True)
     #    data_input = get_data(rebuild = False)[[
     #        'ident', 'period', 'grade', 'echelon'
     #        ]]
@@ -163,15 +163,17 @@ def predict_echelon_next_period_when_no_exit(data, grilles):
     log.debug("5. Number of idents = {} and number of lines is {}".format(
         len(data_no_exit.ident.unique()), len(data_no_exit.ident)))
 
-    assert is_any_int_dtype(data_no_exit['anciennete_dans_echelon']), "anciennete_dans_echelon is not an int"
-    assert data_no_exit['anciennete_dans_echelon'] in range(1000)
 
-    # data_no_exit['anciennete_dans_echelon'] = data_no_exit['anciennete_dans_echelon'].fillna(5)  # FIXME upstream
-    # data_no_exit['anciennete_dans_echelon'] = data_no_exit['anciennete_dans_echelon'].astype(int)
+    data_no_exit['anciennete_dans_echelon'] = data_no_exit['anciennete_dans_echelon'].astype(int)
+    assert is_any_int_dtype(data_no_exit['anciennete_dans_echelon']), "anciennete_dans_echelon is not an int"
+#    assert data_no_exit['anciennete_dans_echelon'].tolist() in range(1000)
+
     data_no_exit.loc[
         (data_no_exit['anciennete_dans_echelon'] < 2),
         'anciennete_dans_echelon'
         ] = 2  # FIXME very ugly to deal with anciennete_echelon edges !
+            
+            
     agents = AgentFpt(data_no_exit, end_date = pd.Timestamp(predicted_year + 1, 1, 1))  # < end_date
     agents.set_grille(agents_grilles)
     agents.compute_result()
@@ -193,23 +195,53 @@ def predict_echelon_next_period_when_no_exit(data, grilles):
         },
         inplace = True,
         )
-    # next_grade should be a string
-    resultats_annuel['next_grade'] = resultats_annuel['grade'].map(processed_grades_by_code)
-    del resultats_annuel['period']
-    del resultats_annuel['quarter']
 
     data_no_exit = data_no_exit.merge(
-        resultats_annuel[['ident', 'next_annee', 'next_grade', 'next_echelon', 'next_anciennete_dans_echelon']],
+        resultats_annuel[['ident', 'next_annee', 'next_echelon', 'next_anciennete_dans_echelon']],
         on = ['ident'],
         how = 'left',
         )
+    
+    del data_no_exit['period']
+    del data_no_exit['code_grade_NETNEH']
 
     return data_no_exit
 
 
 def predict_echelon_next_period_when_exit(data, grilles):
+    """
+    Prediction de l'échelon et de l'ancienneté dans l'échelon à la prochaine période pour les individus qui changent de grade. 
+    """    
     log.debug('Predict echelon next period when exit')
     data_exit = data.query("next_situation != 'no_exit'").copy()
+    
+    # 1. Définition des règles à appliquer pour chaque grade d'arrivée et de départ. 
+    grades_de_depart = data_exit.grade.unique()
+    data_exit['regle_echelon'] = None
+    data_exit['regle_anciennete_dans_echelon'] = None
+
+    for grade in grades_de_depart:
+        grades_d_arrivee = data_exit.query('grade == @grade')['next_grade'].unique()
+        for next_grade in grades_d_arrivee:
+            regle_echelon_by_grade_d_arrive = regle_echelon_by_grade_de_depart[grade]
+            regle_echelon = (
+                regle_echelon_by_grade_d_arrive[next_grade]
+                if next_grade in regle_echelon_by_grade_d_arrive.keys()
+                else regle_echelon_by_grade_d_arrive['others']
+                )
+            regle_anciennete_dans_echelon_by_grade_d_arrive = regle_anciennete_dans_echelon_by_grade_de_depart[grade]
+            regle_anciennete_dans_echelon = (
+                regle_anciennete_dans_echelon_by_grade_d_arrive[next_grade]
+                if next_grade in regle_anciennete_dans_echelon_by_grade_d_arrive.keys()
+                else regle_anciennete_dans_echelon_by_grade_d_arrive['others']
+                )
+            data_exit.loc[
+                (data_exit.grade == grade) & (data_exit.next_grade == next_grade),
+                ['regle_echelon', 'regle_anciennete_dans_echelon']
+                ] = [regle_echelon, regle_anciennete_dans_echelon]
+    
+    # 2. Merge avec les grilles en effet pour trouver les ib et échelon correspondant
+    
     grilles_in_effect = (grilles
         .query("date_effet_grille <= 2012")
         .groupby(['code_grade_NETNEH'])
@@ -221,7 +253,6 @@ def predict_echelon_next_period_when_exit(data, grilles):
         on = ['code_grade_NETNEH', 'date_effet_grille'],
         how = 'inner'
         )
-    # TODO: these echelon_x and echelon_y are ugly
     data_exit_merged = data_exit.merge(
         grilles[['code_grade_NETNEH', 'echelon', 'ib']],
         left_on = 'next_grade',
@@ -236,33 +267,12 @@ def predict_echelon_next_period_when_exit(data, grilles):
         inplace = True,
         )
 
-    grades_de_depart = data_exit_merged.grade.unique()
-    data_exit_merged['regle_echelon'] = None
-    data_exit_merged['regle_anciennete_dans_echelon'] = None
 
-    for grade in grades_de_depart:
-        grades_d_arrivee = data_exit_merged.query('grade == @grade')['next_grade'].unique()
-        for next_grade in grades_d_arrivee:
-            regle_echelon_by_grade_d_arrive = regle_echelon_by_grade_de_depart[grade]
-            regle_echelon = (
-                regle_echelon_by_grade_d_arrive[next_grade]
-                if next_grade in regle_echelon_by_grade_d_arrive.keys()
-                else regle_echelon_by_grade_d_arrive['others']
-                )
-            regle_anciennete_dans_echelon_by_grade_d_arrive = regle_anciennete_dans_echelon_by_grade_de_depart[grade]
-            regle_anciennete_dans_echelon = (
-                regle_anciennete_dans_echelon_by_grade_d_arrive[next_grade]
-                if next_grade in regle_anciennete_dans_echelon_by_grade_d_arrive.keys()
-                else regle_anciennete_dans_echelon_by_grade_d_arrive['others']
-                )
-            data_exit_merged.loc[
-                (data_exit_merged.grade == grade) & ((data_exit_merged.next_grade == next_grade),
-                ['regle_echelon', 'regle_anciennete_dans_echelon']
-                ] = [regle_echelon, regle_anciennete_dans_echelon]
-
-    # Application des règles de détermination l'échelon
+    # 3. Application des règles de détermination l'échelon
     data_exit_echelon_pour_echelon = data_exit_merged.query(
         "(regle_echelon == 'conservation_echelon') & (echelon == next_echelon)")
+    
+    
     data_exit_ib_pour_ib = data_exit_merged.query("(regle_echelon == 'conservation_ib')")  # FIXME To generalize
     data_exit_ib_pour_ib = (data_exit_ib_pour_ib
         .query('ib_grilles >= ib_data')
@@ -288,13 +298,20 @@ def predict_echelon_next_period_when_exit(data, grilles):
         data_exit_with_ib_pour_ib.columns]
 
     data_exit = data_exit_with_echelon_pour_echelon_right_col.append(data_exit_with_ib_pour_ib)
+    data_exit['next_annee'] = data_exit.annee + 1
 
-    assert data_exit['anciennete_dans_echelon'].notnull().all(), 'Somme anciennete_dans_echelon are NA'
-
-    # Application des règles d'anciennete dans l'échelon
-    data_exit.loc[data_exit.regle_anciennete_dans_echelon == 'conservation', 'anciennete_dans_echelon'] += 12
-    data_exit.loc[data_exit.regle_anciennete_dans_echelon == 'initialisation', 'anciennete_dans_echelon'] = 6
-
+    # 4. Application des règles d'anciennete dans l'échelon
+    selection = (data_exit.regle_anciennete_dans_echelon == 'conservation')
+    data_exit.loc[selection, 'next_anciennete_dans_echelon'] = data_exit.loc[selection, 'anciennete_dans_echelon'] +  12
+    selection = (data_exit.regle_anciennete_dans_echelon == 'reinitialisation')
+    data_exit.loc[selection, 'next_anciennete_dans_echelon'] = 6
+    assert data_exit['anciennete_dans_echelon'].notnull().all(), 'Some anciennete_dans_echelon are NA'
+    assert data_exit['next_anciennete_dans_echelon'].notnull().all(), 'Some next anciennete_dans_echelon are NA'
+    
+    del data_exit['regle_anciennete_dans_echelon']
+    del data_exit['regle_echelon']
+    del data_exit['next_ib'] # Ugly: recalculer dans get_ib pour tous => TODO: remonter get ib dans predict_no_exit
+    
     return data_exit
 
 
@@ -345,7 +362,7 @@ def get_ib(data, grilles):
 
 def predict_next_grade(data):
     # 1. Predict next period grade when no exit
-    selection = data['next_situation'] == 'no_exit'
+    selection = (data['next_situation'] == 'no_exit')
     data.loc[selection, 'next_grade'] = data.loc[selection, 'grade'].copy()
 
     # 2. Predict next period grade when exit to next grade
@@ -382,7 +399,6 @@ def predict_next_period(data = None, grilles = None):
     grilles = complete_echelon_speciaux(grilles.copy())
     data = data.query('echelon != 55555').copy()
 
-    # next_situations = ['no_exit', 'exit_next', 'exit_oth']
 
     predict_next_grade(data)  # data is changed inplace
 
@@ -390,9 +406,10 @@ def predict_next_period(data = None, grilles = None):
         data, grilles)
 
     data_with_next_echelon_when_exit = predict_echelon_next_period_when_exit(
-        data_with_next_grade_when_exit_to_other, grilles
+        data, grilles
         )
-
+    assert  set(data_with_next_echelon_when_no_exit.columns) == set(data_with_next_echelon_when_exit.columns),  \
+        "Les deux df n'ont pas les meme colonnes" 
     results = data_with_next_echelon_when_no_exit.append(data_with_next_echelon_when_exit)
     assert len(results.query(
         "(next_situation != 'no_exit') & (next_grade not in ['TTH4', 'TTM1', 'TTM2']) & (echelon != next_echelon)")
