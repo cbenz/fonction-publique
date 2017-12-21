@@ -1,6 +1,5 @@
 
 
-
 # Imputation des grades en rétrospectif
 
 Cette note vise récapituler et préciser l'approche pour l'imputation des grades en rétrospectif quand l'information
@@ -39,20 +38,23 @@ Dans la deuxième version du matching, l'approche sera la suivante:
 
 ### Détermination de la grille à traiter. 
 
-A discuter avec LS: modalité de choix de la grille (qu'affiche-t-on? année avant ou après? etc)
-Il faudra traiter autant de grille qu'il en existe sur la période considérée pour les grades considérés. 
-
+Une grille est déterminée à partir : (i) du libellé NETNEH (ii) de la période de validité. 
+La première étape est donc la saisie du libellé NETNEH à la volée, et de la comparaison avec la liste des libellés "officiels" que l'on veut classer. 
+On choisit donc à partir d'une liste présentée le libellé que l'on classe. 
+Sont présentées ensuite l'ensemble des grilles comportant ce nom, pour différentes périodes de validité. 
+L'utilisateur choisit ensuite la grille sur laquelle il veut classer les libellés. 
 
 ### Classification des libellés
 
 Une fois la grille sélectionnée, nous comparons le libellé "officiel" du grade avec l'ensemble des libéllés présents dans la base carrière parmi les libellés 
 (i) non classés (avec prise en compte ou non des étapes 1 et 2) et (ii) apparaissant dans la base aux années de validité de la grille. 
 
-
 Pour chaque libellé, un score de correspondance avec le libellé de référence est calculé. Le programme de matching affiche l'ensemble des libellés, 
 classés par score. On sélection alors les libellés que l'on souhaite classer dans la grille. 
 
-A DISCUTER AVEC LS: modalité de classement : nombre de libellés affichés, suppression du pool si libellé non classé à une étape. 
+Après discussion avec Laurent le classement suivra les modalités suivantes: 
+- Au plus 20 libellés affichés 
+- Sortie du pool des libellés à classer pour les libellés affichés qui ne sont pas classés d'une étape à l'autre. 
 
 
 ### Liste des problèmes à anticiper
