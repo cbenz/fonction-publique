@@ -3,6 +3,8 @@
 
 from __future__ import division
 
+
+import ConfigParser
 import logging
 import os
 import re
@@ -66,7 +68,11 @@ raw_directory_path = parser.get('data', 'raw')
 tmp_directory_path = parser.get('data', 'tmp')
 clean_directory_path = parser.get('data', 'clean')
 output_directory_path = parser.get('data', 'output')
-simulation_directory_path = parser.get('data', 'simulation')
+try:
+    simulation_directory_path = parser.get('data', 'simulation')
+except ConfigParser.NoOptionError:
+    log.info('Entry simulation in section data is absent. simulation_directory_path is not set')
+    simulation_directory_path = None
 
 
 # Options:

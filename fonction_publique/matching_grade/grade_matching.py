@@ -220,12 +220,12 @@ def select_grade_neg(libelle_saisi = None, annee = None, versant = None):  # Ren
     score_cutoff = 95
 
     grilles = get_grilles_cleaned(annee, versant = versant)
-    
+
     unique_grilles = grilles.groupby(['libelle_grade_NEG', 'code_grade_NEG']).count()
     unique_grilles = unique_grilles.reset_index()
     libelles_grade_NEG = grilles['libelle_grade_NEG'].unique()
-            
-    
+
+
     while True:
         grades_neg = query_grade_neg(query = libelle_saisi, choices = libelles_grade_NEG, score_cutoff = score_cutoff)
         print("\nGrade NEG possibles pour {} (score_cutoff = {}):\n{}".format(libelle_saisi, score_cutoff, grades_neg))
@@ -606,7 +606,7 @@ def print_stats(libemplois = None, annee = None, versant = None):
     result.selectionnes = result.selectionnes.astype(int)
     result['pct_pondere'] = 100 * result.selectionnes_ponderes / result.total_ponderes
     result['pct'] = 100 * result.selectionnes / result.total
-    print(result.sort(ascending = False))
+    print(result.sort_index(ascending = False))
 
     #     print("""
     # Pondéré:

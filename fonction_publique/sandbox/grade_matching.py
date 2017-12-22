@@ -587,7 +587,7 @@ def print_stats(libemplois = None, annee = None, versant = None):
     result.selectionnes = result.selectionnes.astype(int)
     result['pct_pondere'] = 100 * result.selectionnes_ponderes / result.total_ponderes
     result['pct'] = 100 * result.selectionnes / result.total
-    print(result.sort(ascending = False))
+    print(result.sort_index(ascending = False))
 
     #     print("""
     # Pondéré:
