@@ -44,6 +44,11 @@ grilles_txt_path = os.path.join(
     "neg_pour_ipp.txt",
     )
 
+focus_grille_xlsx_path = os.path.join(
+    grilles_path,
+    "corresp_neg_netneh_2018.xlsx",
+    )
+
 grilles_hdf_path = os.path.join(
     grilles_path,
     "grilles.h5",
