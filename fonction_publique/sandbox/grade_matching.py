@@ -103,6 +103,7 @@ def get_grilles_cleaned(annee=None):
     grilles = get_grilles(
         date_effet_max = "{}-12-31".format(annee),
         subset = ['libelle_FP', 'libelle_grade_NEG'],
+        force_rebuild = True
         )
     # Analyse des doublons
     #libelles_grade_NEG_1 = sorted(grilles[~grilles.libelle_grade_NEG_slug.duplicated()].libelle_grade_NEG.tolist())

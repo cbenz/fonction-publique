@@ -66,13 +66,14 @@ def get_correspondance_data_frame(which = None):
         return data_frame
 
 
-def get_grilles_cleaned(annee = None, versant = None):
+def get_grilles_cleaned(annee = None, versant = None, force_rebuild = False):
     '''
     Correction des doublons dans la grille initiale
     '''
     grilles = get_grilles(
         date_effet_max = "{}-12-31".format(annee),
-        subset = ['libelle_FP', 'libelle_grade_NEG','code_grade_NEG'],
+        subset = ['libelle_FP', 'libelle_grade_NEG', 'code_grade_NEG'],
+        force_rebuild = force_rebuild
         )
     # Analyse des doublons
     # libelles_grade_NEG_1 = sorted(grilles[~grilles.libelle_grade_NEG_slug.duplicated()].libelle_grade_NEG.tolist())

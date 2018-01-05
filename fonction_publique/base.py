@@ -54,7 +54,7 @@ grilles_hdf_path = os.path.join(
     "grilles.h5",
     )
 
-grilles_hdf_path_matching = os.path.join(
+grilles_matching_hdf_path = os.path.join(
     grilles_path,
     "grilles_matching.h5",
     )

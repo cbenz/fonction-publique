@@ -10,7 +10,11 @@ import os
 import sys
 
 from fonction_publique.base import (
-    focus_grille_xlsx_path, grilles_path, grilles_txt_path, grilles_hdf_path, table_correspondance_corps_path
+    focus_grille_xlsx_path,
+    grilles_hdf_path,
+    grilles_matching_hdf_path,
+    grilles_txt_path,
+    table_correspondance_corps_path,
     )
 
 app_name = os.path.splitext(os.path.basename(__file__))[0]
@@ -18,24 +22,52 @@ log = logging.getLogger(app_name)
 
 dtype_by_variable = {
     "categh": str,
+    "code_etat_grade": int,
+    "code_FP": int,
     "code_grade_NEG": str,
     "code_grade_NETNEH": str,
+    "code_type_groupe": str,
     "date_effet_grille": str,
+    "date_fin": str,
     "echelle": str,
     "echelon": str,
     "ib": float,
+    "libelle_FP": str,
     "libelle_grade_NEG": str,
     "max_mois": float,
     "min_mois": float,
     "moy_mois": float,
+    "type_grade": str,
     }
 
 
-def check_grilles():
+def read_correspondace_grade_corps():
+    correspondance_grade_corps = pd.read_csv(
+        table_correspondance_corps_path,
+        usecols = [
+            'CadredemploiNEG',
+            'cadredemploiNETNEH',
+            'CodeEmploiGrade_neg',
+            ],
+        dtype = {
+            'CadredemploiNEG': str,
+            'cadredemploiNETNEH': str,
+            'CodeEmploiGrade_neg': str,
+            },
+        sep = ';',
+        ).rename(columns = {
+            'CadredemploiNEG': 'corps_NEG',
+            'cadredemploiNETNEH': 'corps_NETNEH',
+            'CodeEmploiGrade_neg': 'code_grade_NEG',
+            })
+    correspondance_grade_corps['code_grade_NEG'] = [s.lstrip("0") for s in correspondance_grade_corps['code_grade_NEG']]
+    return correspondance_grade_corps
+
+
+def read_exhaustive():
     """
-    Check the coherence betwenn the following grilles:
-        grilles_txt_path (neg_pour_ipp.txt): almost exhaustive grilles
-        focus_grille_xlsx_path (corresp_neg_netneh_2018.xlsx): focus sample with additonal date_fin,  columns
+    Read almost exhaustive data on grilles and adjust dtypes and homogeneize variables
+    location: grilles_txt_path (neg_pour_ipp.txt)
     """
     exhaustive = pd.read_table(
         grilles_txt_path,
@@ -49,6 +81,7 @@ def check_grilles():
             'echelon',
             'ib',
             'libelle_grade_NEG',
+            'libelle_FP',
             'max_mois',
             'min_mois',
             'moy_mois',
@@ -57,32 +90,76 @@ def check_grilles():
     exhaustive['date_effet_grille'] = pd.to_datetime(
         exhaustive['date_effet_grille'],
         dayfirst = True,
-        infer_datetime_format = True
-        )
+        infer_datetime_format = True,
+        )  # .dt.to_period('M')
+    # Strip ending spaces in libelle_grade_NEG
+    exhaustive['libelle_grade_NEG'] = exhaustive['libelle_grade_NEG'].str.rstrip(' ')
+    return exhaustive
 
+
+def read_focus():
+    """
+    Read focus sample data on grilles and adjust dtypes and homogeneize variables
+    focus_grille_xlsx_path (corresp_neg_netneh_2018.xlsx): focus sample with additonal date_fin, etc columns
+    """
     focus = pd.read_excel(
         focus_grille_xlsx_path,
         dtype = dtype_by_variable,
         )
-    focus['date_effet_grille'] = pd.to_datetime(
-        focus['date_effet_grille'],
-        dayfirst = True,
-        infer_datetime_format = True
+
+    focus.rename(
+        columns = {
+            'Corps': 'corps',
+            'date_effet_grille': 'date_debut_grade',
+            'date_fin': 'date_fin_grade',
+            'Filiere': 'filiere',
+            },
+        inplace = True,
         )
 
-    commn_variables = set(focus.columns).intersection(set(exhaustive.columns))
+    focus.replace(
+        {
+            'code_grade_NETNEH': {
+                'inconnu': np.nan,
+                'Inconnu': np.nan,
+                },
+            },
+        inplace = True,
+        )
+
+    for date_variable in ['date_debut_grade', 'date_fin_grade']:
+        focus[date_variable] = pd.to_datetime(
+            focus[date_variable],
+            dayfirst = True,
+            infer_datetime_format = True,
+            errors = 'coerce'
+            )
 
     # Strip zeros from some variable in focus
     focus['echelle'] = focus['echelle'].str.lstrip('0')
     focus['echelle'].replace({'nan': np.nan}, inplace = True)
     focus['code_grade_NEG'] = focus['code_grade_NEG'].str.lstrip('0')
-
     # Strip ending spaces in libelle_grade_NEG
+    focus['libelle_grade_NEG'] = focus['libelle_grade_NEG'].str.replace("\(\*\)", "")
     focus['libelle_grade_NEG'] = focus['libelle_grade_NEG'].str.rstrip(' ')
-    exhaustive['libelle_grade_NEG'] = exhaustive['libelle_grade_NEG'].str.rstrip(' ')
+    focus['libelle_NETNEH'] = focus['libelle_NETNEH'].str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode('utf-8')
+    assert not focus[['code_grade_NEG', 'libelle_grade_NEG', 'libelle_NETNEH', 'date_debut_grade']].duplicated().any()
 
+    return focus
+
+
+def check_grilles():
+    """
+    Check the coherence betwenn the following grilles:
+        grilles_txt_path (neg_pour_ipp.txt): almost exhaustive grilles
+
+    """
+    exhaustive = read_exhaustive()
+    focus = read_focus()
+    common_variables = set(focus.columns).intersection(set(exhaustive.columns))
+    print common_variables
     problematic_variables = list()
-    for variable in commn_variables:
+    for variable in common_variables:
         differences = set(focus[variable].unique()).difference(set(exhaustive[variable].unique()))
         if differences:
             problematic_variables.append(variable)
@@ -97,39 +174,7 @@ def check_grilles():
         print '\n'
 
 
-def clean_grille(force_rebuild = False, hdf_path = grilles_hdf_path):
-    """ Extract relevant data from neg_pour_ipp.txt and change to convenient dtype then save to HDFStore."""
-    if force_rebuild is True:
-        grille = pd.read_table(
-            grilles_txt_path,
-            dtype = {
-                "categh": str,
-                "code_grade_NEG": str,
-                "code_grade_NETNEH": str,
-                "date_effet_grille": str,
-                "echelle": str,
-                "echelon": str,
-                "ib": float,
-                "libelle_grade_NEG": str,
-                "max_mois": float,
-                "min_mois": float,
-                "moy_mois": float,
-                },
-            usecols = [
-                'categh',
-                'code_grade_NEG',
-                'code_grade_NETNEH',
-                'date_effet_grille',
-                'echelle',
-                'echelon',
-                'ib',
-                'libelle_grade_NEG',
-                'max_mois',
-                'min_mois',
-                'moy_mois',
-                ]
-            )
-
+def prepare_grille(grille):
         # Filter some invalid IB's
         grille = grille[~grille['ib'].isin([-1, 0])].copy()
 
@@ -140,12 +185,7 @@ def clean_grille(force_rebuild = False, hdf_path = grilles_hdf_path):
         grille.loc[grille['echelon'].isin(special_echelons), 'echelon'] = '-5'
 
         # Creating anne_grille as int. Missing integers are coded as -1
-        grille['date_effet_grille'] = (
-            pd.to_datetime(
-                grille['date_effet_grille'],
-                dayfirst = True,
-                infer_datetime_format = True
-                )
+        grille['annee_effet_grille'] = (grille['date_effet_grille']
             .dt.year
             .fillna(-1)
             .astype('int32')
@@ -168,27 +208,17 @@ def clean_grille(force_rebuild = False, hdf_path = grilles_hdf_path):
                 'libelle_grade_NEG',
                 ]:
             grille[col] = grille[col].fillna(-1).astype(str)
+        #
+        return grille
 
-        corresp_grade_corps = pd.read_csv(
-            table_correspondance_corps_path,
-            usecols = [
-                'CadredemploiNEG',
-                'cadredemploiNETNEH',
-                'CodeEmploiGrade_neg',
-                ],
-            dtype = {
-                'CadredemploiNEG': str,
-                'cadredemploiNETNEH': str,
-                'CodeEmploiGrade_neg': str,
-                },
-            sep = ';',
-            ).rename(columns = {
-                'CadredemploiNEG': 'corps_NEG',
-                'cadredemploiNETNEH': 'corps_NETNEH',
-                'CodeEmploiGrade_neg': 'code_grade_NEG',
-                })
-        corresp_grade_corps['code_grade_NEG'] = [s.lstrip("0") for s in corresp_grade_corps['code_grade_NEG']]
-        grille = grille.merge(corresp_grade_corps, on = 'code_grade_NEG', how = 'left')
+
+def clean_grille(force_rebuild = False, hdf_path = grilles_hdf_path):
+    """ Extract relevant data from neg_pour_ipp.txt and change to convenient dtype then save to HDFStore."""
+    if force_rebuild is True:
+        grille = read_exhaustive()
+        grille = prepare_grille(grille)
+        correspondace_grade_corps = read_correspondace_grade_corps()
+        grille = grille.merge(correspondace_grade_corps, on = 'code_grade_NEG', how = 'left')
         grille.to_hdf(hdf_path, 'grilles', format = 'table', data_columns = True, mode = 'w')
         return True
     else:
@@ -199,9 +229,68 @@ def clean_grille(force_rebuild = False, hdf_path = grilles_hdf_path):
             clean_grille(force_rebuild = True, hdf_path = hdf_path)
 
 
+def build_clean_grille_for_matching(force_rebuild = False, hdf_path = grilles_matching_hdf_path):
+    """ Extract relevant data from neg_pour_ipp.txt and change to convenient dtype then save to HDFStore."""
+    if force_rebuild:
+        log.info('Rebuilding matching grilles')
+        exhaustive = read_exhaustive()
+        focus = read_focus()
+        grille = focus.merge(
+            exhaustive[[
+                'code_grade_NEG',
+                # 'code_grade_NETNEH',
+                'date_effet_grille',
+                'echelon',
+                'ib',
+                'libelle_grade_NEG',
+                'max_mois',
+                'min_mois',
+                'moy_mois',
+                ]],
+            on = ['code_grade_NEG', 'libelle_grade_NEG']
+            )
+        grille = prepare_grille(grille)
+        correspondace_grade_corps = read_correspondace_grade_corps()
+        grille = grille.merge(correspondace_grade_corps, on = 'code_grade_NEG', how = 'left')
+        log.info(grille.dtypes)
+        grille[[
+            'num_meme_corps',        # int64
+            # 'corps',                 # object  To translate from unicode
+            'num_meme_filiere',      # int64
+            # 'filiere',               # object  To translate from unicode
+            'code_grade_NEG',        # object
+            'code_FP',               # int64
+            'libelle_FP',            # object
+            'code_etat_grade',       # int64
+            'libelle_grade_NEG',     # object
+            'categh',                # object
+            'echelle',               # object
+            'date_debut_grade',      # datetime64[ns]
+            'date_fin_grade',        # datetime64[ns]
+            'code_grade_NETNEH',     # object
+            'type_grade',            # object
+            # 'libelle_NETNEH',        # object  To translate from unicode
+            'date_effet_grille',     # datetime64[ns]
+            'echelon',               # int32
+            'ib',                    # int32
+            'max_mois',              # int32
+            'min_mois',              # int32
+            'moy_mois',              # int32
+            'annee_effet_grille',    # int32
+            ]].to_hdf(hdf_path, 'grilles', format = 'table', data_columns = True, mode = 'w')
+        return True
+    else:
+        if os.path.exists(hdf_path):
+            log.info('Using existing {}'.format(hdf_path))
+            return True
+        else:
+            build_clean_grille_for_matching(force_rebuild = True, hdf_path = hdf_path)
+
+
 def main():
-    # clean_grille(force_rebuild = True, hdf_path = os.path.join(grilles_path, 'grilles.h5'))
+    # clean_grille(force_rebuild = True)
     check_grilles()
+
 
 if __name__ == "__main__":
     sys.exit(main())

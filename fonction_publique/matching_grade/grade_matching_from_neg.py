@@ -27,9 +27,6 @@ pd.options.display.max_rows = 999
 log = logging.getLogger(__name__)
 
 
-
-
-
 def select_grade_neg_by_hand(versant = None, libelles_grade_NEG = None, grilles = None):  # Rename select_grade_or_corps
     '''
     Parameters
@@ -80,7 +77,7 @@ selection: """)
                 break
 
 
-    # TODO: ne pas prendre le min mais toutes les grilles possibles avec ce neg. 
+    # TODO: ne pas prendre le min mais toutes les grilles possibles avec ce neg.
     grilles = grilles.loc[
         grilles.libelle_grade_NEG == grade_neg
         ].date_effet_grille.min().strftime('%Y-%m-%d')
@@ -124,7 +121,7 @@ def main():
                 continue
 
         annee = 2014
-        grilles = get_grilles_cleaned(annee, versant)
+        grilles = get_grilles_cleaned(annee, versant, force_rebuild = True)
         print_stats(libemplois = libemplois, annee = annee, versant = versant)
         libelle_FP = 'FONCTION PUBLIQUE HOSPITALIERE' if versant == 'H' else 'FONCTION PUBLIQUE TERRITORIALE'  # noqa
         libelles_grade_NEG = grilles.query('libelle_FP == @libelle_FP')['libelle_grade_NEG'].unique()
