@@ -20,6 +20,7 @@ from fonction_publique.matching_grade.grade_matching import (
     get_grilles_cleaned,
     libelles_emploi_directory,
     print_stats,
+    select_libelles_emploi,
     validate_and_save,
     VERSANTS,
     )
@@ -91,8 +92,9 @@ selection: """)
             print(grilles)
             date_debut_grade = grilles.date_debut_grade.dt.strftime('%Y-%m-%d').unique()[0]
             date_fin_grade = grilles.date_fin_grade.dt.strftime('%Y-%m-%d').unique()[0]
-            print date_debut_grade
-            print(u"\nIl n'y a qu'un seul grade qui correspond. Ce grade convient-il ? ")
+            print(u"\nUn seul grade {} est identifié: il débute le {} et finit le {}.\nCe grade convient-il ? ".format(
+                grade, date_debut_grade, date_fin_grade
+                ))
             libelle_saisi = raw_input("""
 VALIDER ?, oui (o), quitter (q)
 selection: """)
@@ -104,17 +106,20 @@ selection: """)
                 continue
     else:
         while True:
-            print("\nGrade  possibles:\n{}".format(
-                grilles))
+            print("\nGrades possibles:\n{}".format(
+                grilles[['date_debut_grade', 'date_fin_grade', 'libelle_NETNEH', 'code_grade_NEG']]))
             selection2 = raw_input("""
 NOMBRE, quitter (q)
 selection: """)
             if selection2 == "q":
                 return "quit"
             elif selection2.isdigit() and int(selection2) in grilles.index:
-                        grade = grilles.loc[int(selection2), "libelle_NETNEH"]
-                        print("Le grade NETNEH {} a été choisi".format(grade))
-                        break
+                    grade = grilles.loc[int(selection2), "libelle_NETNEH"]
+                    date_debut_grade = grilles.loc[int(selection2), "date_debut_grade"].strftime('%Y-%m-%d')
+                    date_fin_grade = grilles.loc[int(selection2), "date_fin_grade"].strftime('%Y-%m-%d')
+                    print("Le grade NETNEH {} débutant le {} et finissant le {} a été choisi ".format(
+                        grade, date_debut_grade, date_fin_grade))
+                    break
             else:
                 continue
 
