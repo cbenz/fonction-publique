@@ -76,7 +76,6 @@ selection: """)
                         break
                 break
 
-
     # TODO: ne pas prendre le min mais toutes les grilles possibles avec ce neg.
     grilles = grilles.loc[
         grilles.libelle_grade_NEG == grade_neg

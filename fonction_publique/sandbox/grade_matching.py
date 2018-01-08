@@ -341,7 +341,6 @@ def load_libelles_emploi_data(decennie = None, debug = False, force_recreate = F
     return libemplois
 
 
-
 def select_corps(libelle_saisi = None, annee = None, versant = None):
     '''
     Sélectionne le corps dans la liste des corps dans le versant idoine
@@ -374,6 +373,8 @@ def select_libelles_emploi(grade_triplet = None, libemplois = None, annee = None
     Arguments
     ---------
     grade_triplet : tuple (versant, annee, grade), grade de la nomenclature choisi à l'étape précédente
+
+
     libemplois :  list, libellés classés par versant, annee, frequence
 
     Returns
@@ -547,8 +548,6 @@ def store_libelles_emploi(libelles_emploi = None, annee = None, grade_triplet = 
         annee = annee,
         versant = versant
         )
-
-
 
 
 def print_stats(libemplois = None, annee = None, versant = None):

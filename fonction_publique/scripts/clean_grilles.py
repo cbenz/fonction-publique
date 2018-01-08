@@ -142,7 +142,9 @@ def read_focus():
     # Strip ending spaces in libelle_grade_NEG
     focus['libelle_grade_NEG'] = focus['libelle_grade_NEG'].str.replace("\(\*\)", "")
     focus['libelle_grade_NEG'] = focus['libelle_grade_NEG'].str.rstrip(' ')
-    focus['libelle_NETNEH'] = focus['libelle_NETNEH'].str.normalize('NFKD').str.encode('ascii', errors='ignore').str.decode('utf-8')
+    for problematic_mixed_string in ['corps', 'filiere', 'libelle_NETNEH']:
+        focus[problematic_mixed_string] = focus[problematic_mixed_string].str.normalize('NFKD').str.encode(
+            'ascii', errors='ignore').str.decode('utf-8').astype(str)
     assert not focus[['code_grade_NEG', 'libelle_grade_NEG', 'libelle_NETNEH', 'date_debut_grade']].duplicated().any()
 
     return focus
@@ -252,14 +254,13 @@ def build_clean_grille_for_matching(force_rebuild = False, hdf_path = grilles_ma
         grille = prepare_grille(grille)
         correspondace_grade_corps = read_correspondace_grade_corps()
         grille = grille.merge(correspondace_grade_corps, on = 'code_grade_NEG', how = 'left')
-        log.info(grille.dtypes)
         grille[[
             'num_meme_corps',        # int64
-            # 'corps',                 # object  To translate from unicode
+            'corps',                 # object  To translate from unicode
             'num_meme_filiere',      # int64
-            # 'filiere',               # object  To translate from unicode
+            'filiere',               # object  To translate from unicode
             'code_grade_NEG',        # object
-            'code_FP',               # int64
+            'code_FP',               # int64unidecode.unidecode
             'libelle_FP',            # object
             'code_etat_grade',       # int64
             'libelle_grade_NEG',     # object
@@ -268,8 +269,8 @@ def build_clean_grille_for_matching(force_rebuild = False, hdf_path = grilles_ma
             'date_debut_grade',      # datetime64[ns]
             'date_fin_grade',        # datetime64[ns]
             'code_grade_NETNEH',     # object
-            'type_grade',            # object
-            # 'libelle_NETNEH',        # object  To translate from unicode
+            # 'type_grade',            # object VIDE
+            'libelle_NETNEH',        # object  To translate from unicode
             'date_effet_grille',     # datetime64[ns]
             'echelon',               # int32
             'ib',                    # int32
@@ -288,8 +289,9 @@ def build_clean_grille_for_matching(force_rebuild = False, hdf_path = grilles_ma
 
 
 def main():
-    # clean_grille(force_rebuild = True)
-    check_grilles()
+    # read_focus()
+    build_clean_grille_for_matching(force_rebuild = True)
+    # check_grilles()
 
 
 if __name__ == "__main__":
